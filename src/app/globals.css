@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/*
+  Design tokens — premium, light, calm (spec §14).
+  Warm off-white background, deep navy primary, restrained teal for trusted/healthy,
+  amber for attention, red reserved for risk / permission issues only.
+*/
+@theme {
+  --color-canvas: #f7f6f3;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1efeb;
+  --color-line: #e6e3dd;
+  --color-line-strong: #d4d0c8;
+  --color-ink: #14213d;
+  --color-ink-muted: #5b6273;
+  --color-ink-faint: #8b91a0;
+  --color-navy: #14213d;
+  --color-navy-600: #1f3260;
+  --color-navy-100: #e7ebf4;
+  --color-teal: #0f766e;
+  --color-teal-100: #d7f0ec;
+  --color-amber: #b45309;
+  --color-amber-100: #fdecd2;
+  --color-risk: #b91c1c;
+  --color-risk-100: #fde2e2;
+  --font-sans: ui-sans-serif, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+html, body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+}
+
+::selection { background: #d7dff0; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Tables: dense, quiet, readable */
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th {
+  text-align: left; font-weight: 500; color: var(--color-ink-muted);
+  padding: 8px 12px; border-bottom: 1px solid var(--color-line); white-space: nowrap;
+  font-size: 12px; letter-spacing: 0.01em;
+}
+table.data td { padding: 9px 12px; border-bottom: 1px solid var(--color-line); vertical-align: top; }
+table.data tr:hover td { background: #fbfaf8; }
+table.data tr:last-child td { border-bottom: none; }
+
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
+  border: 1px solid var(--color-line-strong); border-bottom-width: 2px; border-radius: 4px;
+  padding: 1px 5px; background: var(--color-surface); color: var(--color-ink-muted);
+}

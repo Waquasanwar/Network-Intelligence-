@@ -1,0 +1,674 @@
+// Network Intelligence Platform — data model
+// Tenant-owned records carry tenantId. Partners are a restricted tenant type.
+// Relationship notes and evidence are private by default and never exposed to partners.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Tenancy & identity ----------
+
+enum TenantType {
+  PLATFORM_OWNER
+  CONSULTANCY // e.g. Amana Expert Network
+  RECRUITMENT_PARTNER
+  DIRECT_CLIENT
+}
+
+model Tenant {
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  name      String
+  type      TenantType
+  brandName String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  users              User[]
+  people             Person[]
+  opportunities      Opportunity[]
+  partnerProfile     Partner?
+  auditLogs          AuditLog[]
+  savedViews         SavedView[]
+  introductions      Introduction[]
+  scheduledMeetings  ScheduledConversation[]
+}
+
+enum Role {
+  OWNER        // platform owner / founder
+  ADMIN
+  CONTRIBUTOR  // e.g. Amana contributors
+  PARTNER      // recruitment partner user — restricted
+  CLIENT       // direct client user — restricted
+  MEMBER       // network member self-service (later phase)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  tenantId      String
+  email         String    @unique
+  name          String
+  passwordHash  String?
+  role          Role      @default(CONTRIBUTOR)
+  mfaEnabled    Boolean   @default(false)
+  emailVerified DateTime?
+  image         String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant                Tenant                  @relation(fields: [tenantId], references: [id])
+  accounts              Account[]
+  sessions              Session[]
+  relationships         Relationship[]          @relation("NetworkOwner")
+  evidence              Evidence[]              @relation("Observer")
+  conversations         Conversation[]          @relation("ConductedBy")
+  approvedConversations Conversation[]          @relation("ApprovedBy")
+  matchDecisions        Match[]                 @relation("MatchApprover")
+  requestedIntros       Introduction[]          @relation("IntroRequester")
+  approvedIntros        Introduction[]          @relation("IntroApprover")
+  schedulingConnections SchedulingConnection[]
+  scheduledMeetings     ScheduledConversation[]
+  auditLogs             AuditLog[]
+  savedViews            SavedView[]
+
+  @@index([tenantId])
+}
+
+// Auth.js tables
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- People & relationships ----------
+
+enum Seniority {
+  ASSOCIATE
+  MANAGER
+  SENIOR_MANAGER
+  DIRECTOR
+  EXECUTIVE
+  C_LEVEL
+}
+
+enum EngagementRoute {
+  PERMANENT
+  CONTRACT
+  INTERIM
+  FRACTIONAL
+  ADVISORY
+  SOW
+}
+
+// Availability is a spectrum, not a boolean (spec §7)
+enum AvailabilityStatus {
+  AVAILABLE_NOW
+  OPEN_TO_CONVERSATIONS
+  QUIETLY_EXPLORING
+  RIGHT_OPPORTUNITY_ONLY
+  FINISHING_ENGAGEMENT_SOON
+  FRACTIONAL_AVAILABILITY
+  SOW_ONLY
+  PERMANENT_ONLY
+  CONTRACT_ONLY
+  HAPPY_WHERE_I_AM
+  NOT_LOOKING_KEEP_IN_TOUCH
+  UNAVAILABLE_UNTIL
+  TAKING_A_BREAK
+  NEEDS_REFRESH
+}
+
+enum SourceType {
+  PERSONAL_NETWORK
+  INTRODUCTION
+  WORKED_TOGETHER
+  CLIENT
+  PARTNER_REFERRAL
+  EVENT
+  INBOUND
+  LINKEDIN
+  OTHER
+}
+
+model Person {
+  id                     String             @id @default(cuid())
+  tenantId               String
+  firstName              String
+  lastName               String
+  preferredName          String?
+  email                  String?
+  phone                  String?
+  linkedinUrl            String?
+  headline               String?
+  currentCompany         String?
+  currentRole            String?
+  primaryCity            String?
+  primaryCountry         String?
+  targetLocations        String[]           @default([])
+  capabilities           String[]           @default([])
+  sectors                String[]           @default([])
+  seniority              Seniority?
+  languages              String[]           @default([])
+  engagementPreferences  EngagementRoute[]  @default([])
+  rateExpectation        String?
+  salaryExpectation      String?
+  noticePeriod           String?
+  availabilityStatus     AvailabilityStatus @default(NEEDS_REFRESH)
+  availabilityDate       DateTime?
+  availabilityConfirmedAt DateTime?
+  availabilitySource     String?
+  availabilityConfidence Int                @default(50) // 0-100
+  nextCheckDate          DateTime?
+  opportunityInterest    String?
+  relocationInterest     Boolean            @default(false)
+  workingStyle           String?
+  constraints            String?
+  nextAction             String?
+  nextActionDate         DateTime?
+  amanaBench             Boolean            @default(false) // trusted expert for Amana SOW work
+  usedByAmana            Boolean            @default(false)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id])
+  relationships     Relationship[]
+  evidence          Evidence[]
+  conversations     Conversation[]
+  matches           Match[]
+  introductions     Introduction[]
+  relocationProfile RelocationProfile?
+  scheduledMeetings ScheduledConversation[]
+  introducedPeople  Relationship[]          @relation("IntroducedBy")
+  teamMemberships   TeamShortlistMember[]
+
+  @@index([tenantId])
+  @@index([tenantId, availabilityStatus])
+  @@index([tenantId, lastName, firstName])
+}
+
+enum RelationshipType {
+  DIRECT
+  INTRODUCED
+  WORKED_WITH
+  MANAGED
+  REPORTED_TO
+  CLIENT_OF
+  PEER
+  MENTORED
+  KNOWS_OF
+}
+
+model Relationship {
+  id                     String           @id @default(cuid())
+  personId               String
+  networkOwnerId         String
+  sourceType             SourceType
+  introducedById         String?
+  relationshipType       RelationshipType
+  workedTogether         Boolean          @default(false)
+  workedTogetherContext  String?
+  yearsKnown             Int?
+  wouldWorkTogetherAgain Boolean?
+  relationshipNotes      String? // PRIVATE — never exposed to partners or clients
+  lastContactDate        DateTime?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  person       Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+  networkOwner User    @relation("NetworkOwner", fields: [networkOwnerId], references: [id])
+  introducedBy Person? @relation("IntroducedBy", fields: [introducedById], references: [id])
+
+  @@index([personId])
+  @@index([networkOwnerId])
+}
+
+enum EvidenceType {
+  DELIVERY_OBSERVED
+  REFERENCE
+  CLIENT_FEEDBACK
+  PEER_FEEDBACK
+  OUTCOME
+  CAUTION
+}
+
+enum Visibility {
+  PRIVATE       // owner tenant only
+  TENANT        // visible within owning tenant
+  PARTNER_SAFE  // may be summarised to partners after identity reveal
+}
+
+model Evidence {
+  id           String       @id @default(cuid())
+  personId     String
+  observerId   String
+  evidenceType EvidenceType
+  context      String
+  description  String
+  confidence   Int          @default(70) // 0-100
+  dateObserved DateTime?
+  visibility   Visibility   @default(TENANT)
+  createdAt    DateTime     @default(now())
+
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  observer User   @relation("Observer", fields: [observerId], references: [id])
+
+  @@index([personId])
+}
+
+// ---------- Conversations ----------
+
+enum ConversationType {
+  INTRO_CALL
+  CATCH_UP
+  OPPORTUNITY_DISCUSSION
+  REFERENCE
+  IN_PERSON
+  MESSAGE_THREAD
+}
+
+enum ApprovalStatus {
+  DRAFT
+  NEEDS_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model Conversation {
+  id               String           @id @default(cuid())
+  personId         String
+  conductedById    String
+  scheduledEventId String?          @unique
+  date             DateTime
+  type             ConversationType @default(INTRO_CALL)
+  rawNotes         String?
+  transcript       String?          // untrusted input — never executed as instructions
+  aiSummary        Json?            // structured extraction, pending review
+  approvedSummary  Json?            // authoritative once approved
+  approvedById     String?
+  approvalStatus   ApprovalStatus   @default(DRAFT)
+  followUpDate     DateTime?
+  tags             String[]         @default([])
+  consentReference String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  person         Person                 @relation(fields: [personId], references: [id], onDelete: Cascade)
+  conductedBy    User                   @relation("ConductedBy", fields: [conductedById], references: [id])
+  approvedBy     User?                  @relation("ApprovedBy", fields: [approvedById], references: [id])
+  scheduledEvent ScheduledConversation? @relation(fields: [scheduledEventId], references: [id])
+
+  @@index([personId])
+  @@index([approvalStatus])
+}
+
+// ---------- Opportunities, matches, introductions ----------
+
+enum OpportunitySource {
+  AMANA
+  PARTNER
+  DIRECT_CLIENT
+  FOUNDER
+  REFERRAL
+}
+
+enum OpportunityStatus {
+  INTAKE
+  QUALIFYING
+  MATCHING
+  SHORTLIST
+  INTRODUCING
+  ENGAGED
+  CLOSED_WON
+  CLOSED_LOST
+  ON_HOLD
+}
+
+model Opportunity {
+  id                    String            @id @default(cuid())
+  tenantId              String
+  sourceType            OpportunitySource
+  clientName            String?
+  partnerId             String?
+  title                 String
+  problemStatement      String
+  desiredOutcomes       String?
+  engagementRoute       EngagementRoute
+  location              String?
+  duration              String?
+  startDate             DateTime?
+  budget                Decimal?          @db.Decimal(14, 2)
+  currency              String?           @default("GBP")
+  requiredCapabilities  String[]          @default([])
+  preferredCapabilities String[]          @default([])
+  sectors               String[]          @default([])
+  seniority             Seniority?
+  status                OpportunityStatus @default(INTAKE)
+  isAmana               Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  partner       Partner?       @relation(fields: [partnerId], references: [id])
+  matches       Match[]
+  introductions Introduction[]
+  teamShortlist TeamShortlistMember[]
+
+  @@index([tenantId, status])
+}
+
+enum HumanDecision {
+  UNDECIDED
+  RECOMMEND
+  POSSIBLE
+  NEED_MORE_EVIDENCE
+  NOT_FOR_THIS_REQUIREMENT
+}
+
+model Match {
+  id                   String        @id @default(cuid())
+  opportunityId        String
+  personId             String
+  fitScore             Int           // 0-100, per-opportunity only; never a global ranking
+  fitExplanation       String
+  evidenceStrength     Int
+  relationshipStrength Int
+  availabilityFit      Int
+  commercialFit        Int
+  uncertainty          String[]      @default([])
+  humanDecision        HumanDecision @default(UNDECIDED)
+  humanNotes           String?
+  approvedById         String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  person      Person      @relation(fields: [personId], references: [id], onDelete: Cascade)
+  approvedBy  User?       @relation("MatchApprover", fields: [approvedById], references: [id])
+
+  @@unique([opportunityId, personId])
+}
+
+enum ConsentStatus {
+  NOT_REQUESTED
+  REQUESTED
+  GRANTED
+  DECLINED
+}
+
+enum IntroductionStatus {
+  REQUESTED
+  APPROVED
+  IDENTITY_REVEALED
+  INTRODUCED
+  IN_PROGRESS
+  ENGAGED
+  DECLINED
+  WITHDRAWN
+}
+
+enum CommercialModel {
+  NONE
+  INTRODUCTION_FEE
+  SUCCESS_SHARE
+  SUBSCRIPTION_INCLUDED
+  AMANA_SOW
+}
+
+model Introduction {
+  id                   String             @id @default(cuid())
+  tenantId             String
+  opportunityId        String
+  personId             String
+  requestedById        String
+  approvedById         String?
+  consentStatus        ConsentStatus      @default(NOT_REQUESTED)
+  introducedAt         DateTime?
+  status               IntroductionStatus @default(REQUESTED)
+  route                EngagementRoute
+  recruitmentPartnerId String?
+  commercialModel      CommercialModel    @default(NONE)
+  commercialSharePct   Decimal?           @db.Decimal(5, 2) // configurable, never hard-coded
+  commercialValue      Decimal?           @db.Decimal(14, 2)
+  currency             String?            @default("GBP")
+  notes                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  tenant            Tenant      @relation(fields: [tenantId], references: [id])
+  opportunity       Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  person            Person      @relation(fields: [personId], references: [id], onDelete: Cascade)
+  requestedBy       User        @relation("IntroRequester", fields: [requestedById], references: [id])
+  approvedBy        User?       @relation("IntroApprover", fields: [approvedById], references: [id])
+  recruitmentPartner Partner?   @relation(fields: [recruitmentPartnerId], references: [id])
+
+  @@index([tenantId])
+  @@index([opportunityId])
+}
+
+// Amana SOW / proposal team builder
+model TeamShortlistMember {
+  id            String   @id @default(cuid())
+  opportunityId String
+  personId      String
+  roleOnTeam    String
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  person      Person      @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([opportunityId, personId])
+}
+
+// ---------- Partners ----------
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+model Partner {
+  id                  String             @id @default(cuid())
+  tenantId            String             @unique
+  name                String
+  contactName         String?
+  contactEmail        String?
+  subscriptionStatus  SubscriptionStatus @default(TRIAL)
+  subscriptionTier    String?
+  commercialModel     CommercialModel    @default(SUCCESS_SHARE)
+  commercialSharePct  Decimal?           @db.Decimal(5, 2)
+  monthlyFee          Decimal?           @db.Decimal(12, 2)
+  currency            String             @default("GBP")
+  licensedForPermanent Boolean           @default(true)
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  tenant        Tenant               @relation(fields: [tenantId], references: [id])
+  requirements  PartnerRequirement[]
+  opportunities Opportunity[]
+  introductions Introduction[]
+}
+
+enum RequirementStatus {
+  SUBMITTED
+  REVIEWING
+  RESULTS_SHARED
+  INTRO_REQUESTED
+  CLOSED
+}
+
+model PartnerRequirement {
+  id                   String            @id @default(cuid())
+  partnerId            String
+  title                String
+  description          String
+  engagementRoute      EngagementRoute
+  location             String?
+  requiredCapabilities String[]          @default([])
+  seniority            Seniority?
+  budget               String?
+  status               RequirementStatus @default(SUBMITTED)
+  linkedOpportunityId  String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId])
+}
+
+// ---------- Relocation ----------
+
+enum AdvisoryStatus {
+  INTEREST_CAPTURED
+  DISCOVERY_CALL
+  PROPOSAL_SENT
+  ACTIVE
+  COMPLETED
+  NOT_PROCEEDING
+}
+
+model RelocationProfile {
+  personId                  String         @id
+  currentLocation           String?
+  targetLocation            String?
+  targetMoveWindow          String?
+  familyMove                Boolean        @default(false)
+  schoolGuidanceInterest    Boolean        @default(false)
+  housingGuidanceInterest   Boolean        @default(false)
+  relocationAdvisoryInterest Boolean       @default(false)
+  employerSponsored         Boolean        @default(false)
+  advisoryStatus            AdvisoryStatus @default(INTEREST_CAPTURED)
+  notes                     String?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Scheduling ----------
+
+enum SchedulingProviderKind {
+  MICROSOFT_GRAPH
+  CALENDLY
+  MANUAL
+}
+
+model SchedulingConnection {
+  id                           String                 @id @default(cuid())
+  userId                       String
+  provider                     SchedulingProviderKind
+  externalAccountId            String?
+  scopes                       String[]               @default([])
+  connectedAt                  DateTime               @default(now())
+  revokedAt                    DateTime?
+  encryptedCredentialReference String? // KMS reference, never the raw token
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+}
+
+enum MeetingStatus {
+  PROPOSED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_SHOW
+}
+
+model ScheduledConversation {
+  id              String                 @id @default(cuid())
+  tenantId        String
+  personId        String
+  ownerId         String
+  provider        SchedulingProviderKind
+  externalEventId String?
+  eventUrl        String?
+  startAt         DateTime
+  endAt           DateTime
+  timezone        String                 @default("Europe/London")
+  meetingType     ConversationType       @default(INTRO_CALL)
+  status          MeetingStatus          @default(SCHEDULED)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  person       Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  owner        User          @relation(fields: [ownerId], references: [id])
+  conversation Conversation?
+
+  @@index([tenantId, startAt])
+}
+
+// ---------- Saved views, audit ----------
+
+model SavedView {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  name      String
+  page      String   // e.g. "network"
+  query     Json
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  actorId    String?
+  action     String   // e.g. person.create, identity.reveal, summary.approve
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  actor  User?  @relation(fields: [actorId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([entityType, entityId])
+}
