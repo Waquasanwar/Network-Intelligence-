@@ -42,6 +42,19 @@ Demo accounts (all use password `Password123!`, development only):
 | `partner@harboursearch.local` | Recruitment partner | Restricted partner portal only |
 | `client@meridian.local` | Direct client | Client workspace only |
 
+## Loading your own contacts
+
+1. Sign in as the owner and open **Setup → Import contacts** (`/network/import`), or click **Import** on the Network page.
+2. Download the CSV template, or export from Excel / Google Sheets / LinkedIn with columns such as `first_name, last_name, email, company, role, city, country, capabilities, source, relationship, introduced_by, notes`. Header names are matched loosely ("Surname", "Job Title", "Skills" all work).
+3. Upload the file or paste rows. The preview validates every row, flags duplicates already in the network, and links `introduced_by` to people by name.
+4. Confirm. Everyone arrives as *Needs refresh* with you as the relationship owner, so the reconnect queue becomes your call list.
+
+To remove the seeded demo network first and keep your user accounts:
+
+```bash
+npm run db:clear-demo
+```
+
 ## Scripts
 
 ```bash
@@ -52,6 +65,7 @@ npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 npm run db:migrate   # prisma migrate dev
 npm run db:seed      # reseed demo data
+npm run db:clear-demo # remove demo people/opportunities, keep users and partners
 ```
 
 ## Architecture in one paragraph

@@ -12,6 +12,7 @@ import { AvailabilityBadge, DecisionBadge, RouteBadge, StageBadge } from "@/comp
 import { DateText } from "@/components/domain/date";
 import { AvailabilityDrawer, EditProfileDrawer, AddRelationshipDrawer, AddEvidenceDrawer, ScheduleDrawer, CaptureConversationDrawer, RelocationDrawer } from "@/components/domain/person-drawers";
 import { fullName } from "@/lib/utils";
+import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
 
@@ -46,7 +47,6 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const freshness = assessFreshness({ availabilityStatus: person.availabilityStatus, availabilityConfirmedAt: person.availabilityConfirmedAt, nextCheckDate: person.nextCheckDate });
   const approved = person.conversations.filter((c) => c.approvalStatus === "APPROVED");
   const latestSummary = approved[0]?.approvedSummary as ExtractedSummary | null | undefined;
-  const workedWith = person.relationships.filter((r) => r.workedTogether);
 
   const tabs = [
     { key: "overview", label: "Overview" },
@@ -60,7 +60,6 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
   return (
     <>
-      <div className="mb-1 text-[11px] text-ink-faint"><Link href="/network" className="hover:text-ink">Network</Link> / {fullName(person)}</div>
       <div className="flex items-start justify-between gap-4 mb-5">
         <div className="flex items-start gap-3">
           <Avatar person={person} size="lg" />
@@ -68,12 +67,12 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             <h1 className="text-xl font-semibold tracking-tight">{fullName(person)}</h1>
             <div className="text-[13px] text-ink-muted">{person.headline ?? "—"}</div>
             <div className="text-xs text-ink-faint mt-0.5">{[person.currentRole, person.currentCompany].filter(Boolean).join(" · ")}{person.primaryCity ? ` · ${[person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")}` : ""}</div>
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            {person.relationships[0] ? <div className="mt-2"><ProvenanceThread owner={person.relationships[0].networkOwner} introducer={person.relationships[0].introducedBy} person={person} workedTogether={person.relationships[0].workedTogether} /></div> : null}
+            <div className="flex flex-wrap items-center gap-2.5 mt-2">
               <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
               {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
-              {person.amanaBench ? <Badge tone="teal">Amana bench</Badge> : null}
-              {workedWith.length ? <Badge tone="teal">worked with</Badge> : null}
-              {person.relocationInterest ? <Badge>relocation</Badge> : null}
+              {person.amanaBench ? <Badge tone="teal" filled>Amana bench</Badge> : null}
+              {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
             </div>
           </div>
         </div>

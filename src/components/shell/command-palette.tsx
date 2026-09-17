@@ -21,8 +21,13 @@ export function CommandPalette({ items }: { items: Item[] }) {
       }
       if (e.key === "Escape") setOpen(false);
     };
+    const onOpen = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("ni:open-palette", onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("ni:open-palette", onOpen);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -47,8 +52,8 @@ export function CommandPalette({ items }: { items: Item[] }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)}>
-      <div className="absolute inset-0 bg-ink/20" />
-      <div className="absolute left-1/2 top-[15%] -translate-x-1/2 w-[560px] max-w-[92vw] rounded-lg border border-line bg-surface shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-ink/25 anim-fade" />
+      <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-xl bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 px-3 border-b border-line">
           <Search className="h-4 w-4 text-ink-faint" />
           <input
@@ -72,7 +77,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
               <button
                 onMouseEnter={() => setIdx(i)}
                 onClick={() => go(r)}
-                className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 cursor-pointer ${i === idx ? "bg-navy-100" : ""}`}
+                className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 cursor-pointer rounded-md mx-1 ${i === idx ? "bg-navy-50" : ""}`} style={{ width: "calc(100% - 8px)" }}
               >
                 <span className="text-[13px] text-ink">{r.label}</span>
                 <span className="text-[11px] text-ink-faint truncate">{r.hint ?? r.group}</span>

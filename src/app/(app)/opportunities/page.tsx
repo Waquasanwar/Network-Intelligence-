@@ -39,7 +39,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             <tbody>
               {opps.map((o) => (
                 <tr key={o.id}>
-                  <td><Link href={`/opportunities/${o.id}`} className="font-medium text-ink hover:underline underline-offset-4">{o.title}</Link>{o.isAmana ? <Badge tone="teal" className="ml-2">Amana</Badge> : null}</td>
+                  <td><Link href={`/opportunities/${o.id}`} className="font-medium text-ink hover:underline underline-offset-4">{o.title}</Link>{o.isAmana ? <Badge tone="teal" filled className="ml-2">Amana</Badge> : null}</td>
                   <td><RouteBadge route={o.engagementRoute} /></td>
                   <td className="text-xs">{o.sourceType.replace(/_/g, " ").toLowerCase()}{o.partner ? <div className="text-[11px] text-ink-faint">{o.partner.name}</div> : null}</td>
                   <td className="text-xs text-ink-muted">{o.clientName ?? "—"}</td>

@@ -13,6 +13,8 @@ import { formatMoney, fullName } from "@/lib/utils";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { PipelineChart } from "@/components/domain/pipeline-chart";
+import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
 
 export const metadata = { title: "Overview" };
 
@@ -70,6 +72,17 @@ export default async function OverviewPage() {
         actions={<AddPersonDrawer people={existingPeopleForDrawer} />}
       />
 
+      {total < 25 ? (
+        <Card className="mb-5 border-navy/15 bg-navy-50/60">
+          <CardBody className="pt-4 flex items-center justify-between gap-4">
+            <div>
+              <div className="text-[13px] font-semibold">Start with the people you already know</div>
+              <div className="text-[12.5px] text-ink-muted mt-0.5">Import your contact list from a spreadsheet, then book conversations from the reconnect queue. Provenance is recorded for every person automatically.</div>
+            </div>
+            <Link href="/network/import" className="flex-none"><Button><Upload className="h-3.5 w-3.5" /> Import contacts</Button></Link>
+          </CardBody>
+        </Card>
+      ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 mb-6">
         <Stat label="Network" value={total} href="/network" />
         <Stat label="Worked with" value={workedWith} hint="direct delivery seen" href="/network?workedWith=1" />
@@ -156,7 +169,7 @@ export default async function OverviewPage() {
                     {evidenceGaps.map((p) => (
                       <li key={p.id} className="py-2 flex items-center justify-between gap-2">
                         <PersonLink person={p} />
-                        <Badge tone="amber">no evidence</Badge>
+                        <Badge tone="amber">No evidence</Badge>
                       </li>
                     ))}
                   </ul>
@@ -248,7 +261,7 @@ export default async function OverviewPage() {
                   {relocation.map((r) => (
                     <li key={r.personId} className="py-2 flex items-center justify-between gap-2">
                       <PersonLink person={r.person} sub={`${r.currentLocation ?? "?"} → ${r.targetLocation ?? "?"}`} />
-                      {r.employerSponsored ? <Badge tone="teal">employer</Badge> : <Badge>individual</Badge>}
+                      {r.employerSponsored ? <Badge tone="teal">Employer funded</Badge> : <Badge>Individual</Badge>}
                     </li>
                   ))}
                 </ul>

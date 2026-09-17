@@ -6,14 +6,15 @@ import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { Input, Select } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/badge";
+import { Badge, Chip } from "@/components/ui/badge";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { AVAILABILITY_LABELS, ROUTE_LABELS, SOURCE_LABELS } from "@/lib/labels";
 import type { AvailabilityStatus, EngagementRoute, Prisma } from "@prisma/client";
-import { Search } from "lucide-react";
+import { Search, Upload } from "lucide-react";
+import { ProvenanceThread } from "@/components/domain/provenance";
 
 export const metadata = { title: "Network" };
 
@@ -65,7 +66,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   let people = await prisma.person.findMany({
     where,
-    include: { relationships: { include: { introducedBy: { select: { firstName: true, lastName: true } }, networkOwner: { select: { name: true } } } }, evidence: { select: { id: true } }, conversations: { select: { approvalStatus: true } } },
+    include: { relationships: { include: { introducedBy: { select: { id: true, firstName: true, lastName: true } }, networkOwner: { select: { name: true } } } }, evidence: { select: { id: true } }, conversations: { select: { approvalStatus: true } } },
     orderBy: [{ updatedAt: "desc" }],
     take: 300,
   });
@@ -87,7 +88,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<AddPersonDrawer people={allPeopleLite} />} />
+      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<><Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import</Button></Link><AddPersonDrawer people={allPeopleLite} /></>} />
 
       <form className="flex gap-2 mb-3">
         <div className="relative flex-1">
@@ -132,7 +133,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      <div className="rounded-lg border border-line bg-surface overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-x-auto">
         {people.length === 0 ? (
           <EmptyState title="No one matches" description="Try a broader search, or add the person you have in mind." />
         ) : (
@@ -143,9 +144,8 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
                 <th>Provenance</th>
                 <th>Expertise</th>
                 <th>Location</th>
-                <th>Availability</th>
-                <th>Routes</th>
-                <th>Evidence</th>
+                <th>Availability · routes</th>
+                <th className="num">Evidence</th>
                 <th>Next action</th>
               </tr>
             </thead>
@@ -154,21 +154,20 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
                 const primary = p.relationships[0];
                 return (
                   <tr key={p.id}>
-                    <td><PersonLink person={p} sub={p.currentRole ? `${p.currentRole}${p.currentCompany ? ` · ${p.currentCompany}` : ""}` : p.headline} /></td>
-                    <td className="text-xs text-ink-muted">
+                    <td className="max-w-[240px]"><PersonLink person={p} sub={p.currentRole ? `${p.currentRole}${p.currentCompany ? ` · ${p.currentCompany}` : ""}` : p.headline} /></td>
+                    <td>
                       {primary ? (
                         <>
-                          <div>{SOURCE_LABELS[primary.sourceType]}{primary.workedTogether ? <span className="text-teal"> · worked with</span> : null}</div>
-                          <div className="text-[11px] text-ink-faint">{primary.introducedBy ? `via ${primary.introducedBy.firstName} ${primary.introducedBy.lastName}` : `known by ${primary.networkOwner.name.split(" ")[0]}`}</div>
+                          <ProvenanceThread owner={primary.networkOwner} introducer={primary.introducedBy} person={p} workedTogether={primary.workedTogether} compact />
+                          <div className="text-[11px] text-ink-faint mt-1">{SOURCE_LABELS[primary.sourceType]}</div>
                         </>
-                      ) : <span className="text-amber">missing</span>}
+                      ) : <Badge tone="amber">missing</Badge>}
                     </td>
-                    <td><div className="flex flex-wrap gap-1 max-w-[260px]">{p.capabilities.slice(0, 3).map((c) => <Chip key={c}>{c}</Chip>)}{p.capabilities.length > 3 ? <span className="text-[11px] text-ink-faint">+{p.capabilities.length - 3}</span> : null}</div></td>
-                    <td className="text-xs text-ink-muted">{[p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—"}{p.targetLocations.length ? <div className="text-[11px] text-ink-faint">→ {p.targetLocations.join(", ")}</div> : null}</td>
-                    <td><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} /></td>
-                    <td className="text-xs text-ink-muted">{p.engagementPreferences.map((r) => ROUTE_LABELS[r]).join(", ") || "—"}</td>
-                    <td className="text-xs tabular text-ink-muted">{p.evidence.length} · {p.conversations.filter((c) => c.approvalStatus === "APPROVED").length} conv</td>
-                    <td className="text-xs text-ink-muted max-w-[200px]">{p.nextAction ?? "—"}{p.nextActionDate ? <div className="text-[11px] text-ink-faint"><DateText date={p.nextActionDate} relative /></div> : null}</td>
+                    <td><div className="flex items-center gap-1 overflow-hidden w-[200px]">{p.capabilities.slice(0, 2).map((c) => <Chip key={c} className="max-w-[120px] overflow-hidden text-ellipsis block">{c}</Chip>)}{p.capabilities.length > 2 ? <span className="text-[11px] text-ink-faint flex-none">+{p.capabilities.length - 2}</span> : null}</div></td>
+                    <td className="text-xs text-ink-muted whitespace-nowrap">{[p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—"}{p.targetLocations.length ? <div className="text-[11px] text-ink-faint">→ {p.targetLocations.join(", ")}</div> : null}</td>
+                    <td className="whitespace-nowrap"><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} /><div className="text-[11px] text-ink-faint mt-0.5">{p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : ROUTE_LABELS[r])).join(", ") || "Routes not confirmed"}</div></td>
+                    <td className="num text-xs text-ink-muted">{p.evidence.length} <span className="text-ink-faint">· {p.conversations.filter((c) => c.approvalStatus === "APPROVED").length} conv</span></td>
+                    <td className="text-xs text-ink-muted min-w-[130px] max-w-[170px]">{p.nextAction ?? "—"}{p.nextActionDate ? <div className="text-[11px] text-ink-faint"><DateText date={p.nextActionDate} relative /></div> : null}</td>
                   </tr>
                 );
               })}

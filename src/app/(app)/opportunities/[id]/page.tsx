@@ -41,10 +41,9 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <div className="mb-1 text-[11px] text-ink-faint"><Link href="/opportunities" className="hover:text-ink">Opportunities</Link> / {opp.title}</div>
-      <PageHeader
+            <PageHeader
         title={opp.title}
-        description={<span className="flex flex-wrap items-center gap-1.5"><RouteBadge route={opp.engagementRoute} /><StageBadge status={opp.status} />{opp.isAmana ? <Badge tone="teal">Amana Expert Network</Badge> : null}<span className="text-ink-faint">· {opp.clientName ?? opp.sourceType.toLowerCase()}{opp.partner ? ` via ${opp.partner.name}` : ""}</span></span>}
+        description={<span className="flex flex-wrap items-center gap-1.5"><RouteBadge route={opp.engagementRoute} /><StageBadge status={opp.status} />{opp.isAmana ? <Badge tone="teal" filled>Amana Expert Network</Badge> : null}<span className="text-ink-faint">· {opp.clientName ?? opp.sourceType.toLowerCase()}{opp.partner ? ` via ${opp.partner.name}` : ""}</span></span>}
         actions={
           <form action={setOpportunityStatus} className="flex items-center gap-2">
             <input type="hidden" name="opportunityId" value={opp.id} />
@@ -104,9 +103,9 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                         </div>
                         <p className="text-[13px] mt-3 leading-5">{m.fitExplanation}</p>
                         <div className="flex flex-wrap gap-1.5 mt-2 text-[11px]">
-                          {m.person.relationships.some((r) => r.workedTogether) ? <Badge tone="teal">worked with</Badge> : <Badge>not worked with directly</Badge>}
-                          <Badge tone={m.person.evidence.length ? "teal" : "amber"}>{m.person.evidence.length} evidence</Badge>
-                          {cautions ? <Badge tone="amber">{cautions} caution</Badge> : null}
+                          {m.person.relationships.some((r) => r.workedTogether) ? <Badge tone="teal" filled>worked with</Badge> : <Badge filled>not worked with directly</Badge>}
+                          <Badge tone={m.person.evidence.length ? "teal" : "amber"} filled>{m.person.evidence.length} evidence</Badge>
+                          {cautions ? <Badge tone="amber" filled>{cautions} caution</Badge> : null}
                         </div>
                         {m.uncertainty.length ? (
                           <div className="mt-2 rounded-md bg-amber-100/60 border border-amber/20 px-3 py-2">

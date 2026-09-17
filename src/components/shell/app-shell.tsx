@@ -1,5 +1,6 @@
 import { Sidebar } from "./sidebar";
 import { CommandPalette } from "./command-palette";
+import { TopBar } from "./topbar";
 import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
@@ -36,9 +37,12 @@ export async function AppShell({ user, children }: { user: SessionUser; children
   return (
     <div className="flex min-h-screen">
       <Sidebar user={user} />
-      <main className="flex-1 min-w-0">
-        <div className="max-w-[1280px] mx-auto px-8 py-6">{children}</div>
-      </main>
+      <div className="flex-1 min-w-0 flex flex-col">
+        <TopBar />
+        <main className="flex-1">
+          <div className="max-w-[1320px] mx-auto px-6 py-6">{children}</div>
+        </main>
+      </div>
       <CommandPalette items={items} />
     </div>
   );
