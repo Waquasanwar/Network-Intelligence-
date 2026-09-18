@@ -47,7 +47,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
 
       {tab === "upcoming" ? (
         upcoming.length === 0 ? <EmptyState title="Nothing booked" description="Book a conversation from a person's profile." /> : (
-          <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
             <table className="data">
               <thead><tr><th>When</th><th>Person</th><th>Type</th><th>Provider</th><th></th></tr></thead>
               <tbody>
@@ -73,7 +73,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
 
       {tab === "followups" ? (
         followUps.length === 0 ? <EmptyState title="No follow-ups due" /> : (
-          <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
             <table className="data"><thead><tr><th>Due</th><th>Person</th><th>From conversation</th><th></th></tr></thead>
               <tbody>{followUps.map((c) => <tr key={c.id}><td><DateText date={c.followUpDate} relative className={c.followUpDate! < now ? "text-amber font-medium" : ""} /></td><td><PersonLink person={c.person} /></td><td className="text-xs text-ink-muted"><DateText date={c.date} /> · {c.type.replace(/_/g, " ").toLowerCase()}</td><td className="text-right"><CaptureConversationDrawer personId={c.personId} label="Log follow-up" /></td></tr>)}</tbody>
             </table>
@@ -84,7 +84,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
       {tab === "review" ? (
         review.length === 0 ? <EmptyState title="Nothing to review" description="Captured conversations appear here with a structured draft for approval." /> : (
           <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-4">
-            <div className="rounded-lg border border-line bg-surface overflow-hidden self-start">
+            <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden self-start">
               <ul className="divide-y divide-line">
                 {review.map((c) => (
                   <li key={c.id}>
@@ -153,7 +153,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
 
       {tab === "completed" ? (
         completed.length === 0 ? <EmptyState title="No approved conversations yet" /> : (
-          <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
             <table className="data"><thead><tr><th>Date</th><th>Person</th><th>Type</th><th>Summary</th><th>By</th><th>Follow-up</th></tr></thead>
               <tbody>{completed.map((c) => { const s = c.approvedSummary as ExtractedSummary | null; return <tr key={c.id}><td><DateText date={c.date} /></td><td><PersonLink person={c.person} sub={null} /></td><td className="text-xs">{c.type.replace(/_/g, " ").toLowerCase()}</td><td className="text-xs text-ink-muted max-w-[380px]">{s?.summary ?? "—"}</td><td className="text-xs">{c.conductedBy.name.split(" ")[0]}{c.approvedBy ? <div className="text-[11px] text-ink-faint">approved by {c.approvedBy.name.split(" ")[0]}</div> : null}</td><td><DateText date={c.followUpDate} relative /></td></tr>; })}</tbody>
             </table>

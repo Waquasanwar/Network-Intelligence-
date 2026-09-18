@@ -41,7 +41,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
     <>
       <PageHeader title="Partners" description="Licensed recruitment partners get controlled, anonymised access. They never see the black book. Commercial terms are configured per partner." actions={<NewRequirementDrawer partners={partners.map((p) => ({ id: p.id, name: p.name }))} />} />
       <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr] gap-4">
-        <div className="rounded-lg border border-line bg-surface overflow-hidden self-start">
+        <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden self-start">
           <ul className="divide-y divide-line">
             {partners.map((p) => (
               <li key={p.id}>

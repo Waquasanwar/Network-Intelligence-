@@ -35,3 +35,9 @@ export function parseList(input: string | null | undefined): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+/** Compact money for tiles: £213k, £1.2m. */
+export function formatMoneyCompact(value: number | null | undefined, currency = "GBP") {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency, notation: "compact", maximumFractionDigits: 1 }).format(value);
+}

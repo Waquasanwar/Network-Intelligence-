@@ -45,7 +45,7 @@ export default async function RelocationPage() {
         <Stat label="Family moves" value={profiles.filter((p) => p.familyMove).length} />
       </div>
       {profiles.length === 0 ? <EmptyState title="No relocation interest captured" /> : (
-        <div className="rounded-lg border border-line bg-surface overflow-hidden">
+        <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
           <table className="data">
             <thead><tr><th>Person</th><th>Current</th><th>Target</th><th>Window</th><th>Interest</th><th>Funding</th><th>Status</th><th>Notes</th><th></th></tr></thead>
             <tbody>

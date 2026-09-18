@@ -9,7 +9,7 @@ import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge, StageBadge, IntroBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { Badge } from "@/components/ui/badge";
-import { formatMoney, fullName } from "@/lib/utils";
+import { formatMoneyCompact, fullName } from "@/lib/utils";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { PipelineChart } from "@/components/domain/pipeline-chart";
@@ -73,7 +73,7 @@ export default async function OverviewPage() {
       />
 
       {total < 25 ? (
-        <Card className="mb-5 border-navy/15 bg-navy-50/60">
+        <Card className="mb-5 border-navy-400/20 bg-[linear-gradient(135deg,var(--color-navy-50),var(--color-teal-50))]">
           <CardBody className="pt-4 flex items-center justify-between gap-4">
             <div>
               <div className="text-[13px] font-semibold">Start with the people you already know</div>
@@ -88,10 +88,10 @@ export default async function OverviewPage() {
         <Stat label="Worked with" value={workedWith} hint="direct delivery seen" href="/network?workedWith=1" />
         <Stat label="Conversations" value={conversationsCompleted} hint="approved" href="/conversations?tab=completed" />
         <Stat label="Fresh status" value={`${freshPct}%`} tone={freshPct < 50 ? "amber" : "teal"} hint={`${total - fresh} need a check`} href="/network?freshness=stale" />
-        <Stat label="Active opportunities" value={activeOpps.length} href="/opportunities" />
+        <Stat label="Live opportunities" value={activeOpps.length} href="/opportunities" />
         <Stat label="Introductions" value={liveIntros.length} href="/opportunities" />
         <Stat label="Amana demand" value={amanaDemand} hint="open Amana requirements" href="/amana" />
-        <Stat label="Indicative pipeline" value={formatMoney(pipeline)} hint="rough, not forecast" />
+        <Stat label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

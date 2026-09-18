@@ -28,7 +28,7 @@ export function Badge({ tone = "neutral", className, children, filled = false, .
       risk: "bg-risk-100 text-risk",
     };
     return (
-      <span className={cn("inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap", fill[tone], className)} {...props}>
+      <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap", fill[tone], className)} {...props}>
         {children}
       </span>
     );
@@ -42,5 +42,5 @@ export function Badge({ tone = "neutral", className, children, filled = false, .
 }
 
 export function Chip({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={cn("inline-flex items-center rounded-[5px] bg-surface-muted px-1.5 py-[2px] text-[11.5px] text-ink-muted border border-line/80 leading-4 whitespace-nowrap", className)}>{children}</span>;
+  return <span className={cn("inline-flex items-center rounded-full bg-surface-muted px-2 py-[2px] text-[11.5px] text-ink-muted border border-line leading-4 whitespace-nowrap", className)}>{children}</span>;
 }

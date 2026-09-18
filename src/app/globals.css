@@ -1,39 +1,86 @@
 @import "tailwindcss";
 
 /*
-  Network Intelligence design tokens.
-  Light, calm, dense. Off-white canvas, deep navy ink, teal = trusted/healthy,
-  amber = needs attention, red = risk or permission issue only.
+  Network Intelligence — visual system.
+  Apple-grade calm: light canvas with ambient light, floating white surfaces, a deep navy rail,
+  teal for trusted/healthy, amber for attention, red only for risk.
 */
 @theme {
-  --color-canvas: #f8f7f4;
+  --color-canvas: #f2f2f5;
   --color-surface: #ffffff;
-  --color-surface-muted: #f3f1ed;
-  --color-surface-hover: #faf9f7;
-  --color-line: #e8e5df;
-  --color-line-strong: #d6d2ca;
-  --color-ink: #101828;
-  --color-ink-muted: #5c6370;
-  --color-ink-faint: #8d93a0;
-  --color-navy: #142240;
-  --color-navy-600: #1d2f5a;
-  --color-navy-100: #e8ecf5;
-  --color-navy-50: #f2f4f9;
-  --color-teal: #0e7268;
-  --color-teal-100: #d9efeb;
-  --color-teal-50: #eef7f5;
-  --color-amber: #a95a05;
-  --color-amber-100: #fbeacc;
-  --color-amber-50: #fdf5e6;
+  --color-surface-muted: #f5f5f8;
+  --color-surface-hover: #f8f8fb;
+  --color-line: rgba(16, 24, 40, 0.07);
+  --color-line-strong: rgba(16, 24, 40, 0.14);
+  --color-ink: #0f172a;
+  --color-ink-muted: #5b6474;
+  --color-ink-faint: #8a92a3;
+  --color-navy: #0f1e3d;
+  --color-navy-600: #1b2f5e;
+  --color-navy-400: #3b5ba9;
+  --color-navy-100: #e6eaf5;
+  --color-navy-50: #f1f3fa;
+  --color-teal: #0d7a6f;
+  --color-teal-400: #14b8a6;
+  --color-teal-100: #d5f0ec;
+  --color-teal-50: #ecf8f6;
+  --color-amber: #b05a00;
+  --color-amber-100: #fdebcf;
+  --color-amber-50: #fdf6ea;
   --color-risk: #b42318;
   --color-risk-100: #fde3e1;
+  --color-rail: #0c1730;
+  --color-rail-ink: rgba(255, 255, 255, 0.72);
+  --color-rail-ink-strong: #ffffff;
+  --color-rail-line: rgba(255, 255, 255, 0.08);
+  --color-rail-active: rgba(255, 255, 255, 0.1);
+  --color-chart-a: #0f1e3d;
+  --color-chart-b: #0d7a6f;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --shadow-drawer: 0 24px 64px -12px rgba(16, 24, 40, 0.28), 0 0 0 1px rgba(16, 24, 40, 0.06);
-  --shadow-pop: 0 12px 40px -8px rgba(16, 24, 40, 0.22), 0 0 0 1px rgba(16, 24, 40, 0.06);
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px -20px rgba(16, 24, 40, 0.25);
+  --shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 20px 40px -20px rgba(16, 24, 40, 0.3);
+  --shadow-drawer: 0 32px 80px -16px rgba(16, 24, 40, 0.35), 0 0 0 1px rgba(16, 24, 40, 0.05);
+  --shadow-pop: 0 20px 60px -12px rgba(16, 24, 40, 0.3), 0 0 0 1px rgba(16, 24, 40, 0.05);
+  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(15, 30, 61, 0.3), 0 6px 14px -8px rgba(15, 30, 61, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0b0f19;
+    --color-surface: #131a29;
+    --color-surface-muted: #182034;
+    --color-surface-hover: #1b2439;
+    --color-line: rgba(255, 255, 255, 0.08);
+    --color-line-strong: rgba(255, 255, 255, 0.16);
+    --color-ink: #eef1f7;
+    --color-ink-muted: #a3acbf;
+    --color-ink-faint: #6f7a90;
+    --color-navy: #dfe6f8;
+    --color-navy-600: #c9d4f3;
+    --color-navy-400: #8ea6e6;
+    --color-navy-100: #223054;
+    --color-navy-50: #1a2540;
+    --color-teal: #3fd2c0;
+    --color-teal-400: #2dd4bf;
+    --color-teal-100: #123c38;
+    --color-teal-50: #0f2c2a;
+    --color-amber: #f0a64a;
+    --color-amber-100: #3e2a10;
+    --color-amber-50: #2a1f0f;
+    --color-risk: #f87171;
+    --color-risk-100: #3b1414;
+    --color-rail: #070b14;
+    --color-chart-a: #8ea6e6;
+    --color-chart-b: #3fd2c0;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -20px rgba(0, 0, 0, 0.6);
+    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 40px -20px rgba(0, 0, 0, 0.7);
+    --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
 }
 
 html, body {
@@ -47,25 +94,41 @@ html, body {
   font-feature-settings: "cv11", "ss01", "ss03";
 }
 
-::selection { background: #dde4f3; }
+/* Ambient light: two soft washes behind everything. */
+.ambient {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(900px 500px at 12% -10%, rgba(15, 30, 61, 0.07), transparent 60%),
+    radial-gradient(800px 500px at 100% 10%, rgba(13, 122, 111, 0.08), transparent 60%);
+}
+@media (prefers-color-scheme: dark) {
+  .ambient {
+    background:
+      radial-gradient(900px 500px at 12% -10%, rgba(142, 166, 230, 0.12), transparent 60%),
+      radial-gradient(800px 500px at 100% 10%, rgba(63, 210, 192, 0.1), transparent 60%);
+  }
+}
 
-:focus-visible { outline: 2px solid var(--color-navy); outline-offset: 2px; border-radius: 4px; }
+::selection { background: rgba(13, 122, 111, 0.2); }
+:focus-visible { outline: 2px solid var(--color-navy-400); outline-offset: 2px; border-radius: 6px; }
 
 .tabular { font-variant-numeric: tabular-nums; }
 .mono { font-family: var(--font-mono); font-size: 12px; letter-spacing: -0.01em; }
+h1, h2, h3 { letter-spacing: -0.02em; }
 
-h1, h2, h3 { letter-spacing: -0.015em; }
+/* Glass */
+.glass { background: color-mix(in srgb, var(--color-surface) 72%, transparent); backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px); }
 
 /* Tables: dense, quiet, readable */
 table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 table.data th {
   position: sticky; top: 0; z-index: 1;
   text-align: left; font-weight: 500; color: var(--color-ink-faint);
-  padding: 9px 12px; background: var(--color-surface); border-bottom: 1px solid var(--color-line);
-  white-space: nowrap; font-size: 11.5px; letter-spacing: 0.02em; text-transform: uppercase;
+  padding: 10px 12px; background: var(--color-surface); border-bottom: 1px solid var(--color-line);
+  white-space: nowrap; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
 }
 table.data td { padding: 10px 12px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
-table.data tbody tr { transition: background-color 80ms ease; }
+table.data tbody tr { transition: background-color 90ms ease; }
 table.data tbody tr:hover td { background: var(--color-surface-hover); }
 table.data tr:last-child td { border-bottom: none; }
 table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -74,29 +137,43 @@ table.data tr:hover .row-actions, table.data tr:focus-within .row-actions { opac
 
 kbd {
   font-family: var(--font-mono); font-size: 10.5px; line-height: 1;
-  border: 1px solid var(--color-line-strong); border-bottom-width: 2px; border-radius: 4px;
-  padding: 2px 5px 1px; background: var(--color-surface); color: var(--color-ink-muted);
+  border: 1px solid var(--color-line-strong); border-radius: 5px;
+  padding: 3px 5px; background: var(--color-surface); color: var(--color-ink-muted);
 }
 
 /* Motion */
-@keyframes drawer-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes drawer-in { from { transform: translateX(24px) scale(0.985); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pop-in { from { transform: translateY(-4px) scale(0.99); opacity: 0; } to { transform: none; opacity: 1; } }
-.anim-drawer { animation: drawer-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
-.anim-fade { animation: fade-in 140ms ease-out; }
-.anim-pop { animation: pop-in 140ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes pop-in { from { transform: translateY(-6px) scale(0.985); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+.anim-drawer { animation: drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.anim-fade { animation: fade-in 160ms ease-out; }
+.anim-pop { animation: pop-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.reveal > * { animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.reveal > *:nth-child(1) { animation-delay: 0ms; }
+.reveal > *:nth-child(2) { animation-delay: 40ms; }
+.reveal > *:nth-child(3) { animation-delay: 80ms; }
+.reveal > *:nth-child(4) { animation-delay: 120ms; }
+.reveal > *:nth-child(5) { animation-delay: 160ms; }
+.reveal > *:nth-child(n+6) { animation-delay: 200ms; }
+.lift { transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease, border-color 160ms ease; }
+.lift:hover { transform: translateY(-1px); box-shadow: var(--shadow-card-hover); }
 @media (prefers-reduced-motion: reduce) {
-  .anim-drawer, .anim-fade, .anim-pop { animation: none; }
-  table.data tbody tr { transition: none; }
+  .anim-drawer, .anim-fade, .anim-pop, .reveal > * { animation: none; }
+  .lift, table.data tbody tr { transition: none; }
+  .lift:hover { transform: none; }
 }
 
-/* Provenance thread: the signature element. A thin line joining people who know each other. */
+/* Provenance thread: the signature element. */
 .thread { display: inline-flex; align-items: center; gap: 0; font-size: 11.5px; color: var(--color-ink-muted); white-space: nowrap; }
 .thread > .node { display: inline-flex; align-items: center; gap: 5px; }
-.thread > .node .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--color-navy); box-shadow: 0 0 0 2px var(--color-navy-100); flex: none; }
+.thread > .node .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--color-navy-400); box-shadow: 0 0 0 2px var(--color-navy-100); flex: none; }
 .thread > .node.trusted .dot { background: var(--color-teal); box-shadow: 0 0 0 2px var(--color-teal-100); }
 .thread > .node.self .dot { background: var(--color-ink-faint); box-shadow: 0 0 0 2px var(--color-surface-muted); }
 .thread > .link { width: 18px; height: 1px; background: var(--color-line-strong); margin: 0 4px; flex: none; position: relative; }
 .thread > .link.worked { background: var(--color-teal); }
 .thread > .link::after { content: ""; position: absolute; right: -1px; top: -2px; width: 5px; height: 5px; border-top: 1px solid currentColor; border-right: 1px solid currentColor; transform: rotate(45deg); color: var(--color-line-strong); }
 .thread > .link.worked::after { color: var(--color-teal); }
+
+/* Gradient ring for avatars */
+.ring { background: conic-gradient(from 210deg, var(--color-navy-400), var(--color-teal-400), var(--color-navy-400)); padding: 2px; border-radius: 999px; }

@@ -52,8 +52,8 @@ export function CommandPalette({ items }: { items: Item[] }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)}>
-      <div className="absolute inset-0 bg-ink/25 anim-fade" />
-      <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-xl bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-[#0f172a]/30 backdrop-blur-[2px] anim-fade" />
+      <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-[18px] bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 px-3 border-b border-line">
           <Search className="h-4 w-4 text-ink-faint" />
           <input

@@ -16,6 +16,12 @@ import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const p = await prisma.person.findUnique({ where: { id }, select: { firstName: true, lastName: true, preferredName: true } });
+  return { title: p ? fullName(p) : "Person" };
+}
+
 export default async function PersonPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const user = await requireInternal();
   const { id } = await params;
@@ -60,12 +66,12 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
   return (
     <>
-      <div className="flex items-start justify-between gap-4 mb-5">
-        <div className="flex items-start gap-3">
-          <Avatar person={person} size="lg" />
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="flex items-start gap-4">
+          <Avatar person={person} size="xl" ring />
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">{fullName(person)}</h1>
-            <div className="text-[13px] text-ink-muted">{person.headline ?? "—"}</div>
+            <h1 className="text-[28px] font-semibold tracking-[-0.03em] leading-8">{fullName(person)}</h1>
+            <div className="text-[14px] text-ink-muted mt-0.5">{person.headline ?? "—"}</div>
             <div className="text-xs text-ink-faint mt-0.5">{[person.currentRole, person.currentCompany].filter(Boolean).join(" · ")}{person.primaryCity ? ` · ${[person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")}` : ""}</div>
             {person.relationships[0] ? <div className="mt-2"><ProvenanceThread owner={person.relationships[0].networkOwner} introducer={person.relationships[0].introducedBy} person={person} workedTogether={person.relationships[0].workedTogether} /></div> : null}
             <div className="flex flex-wrap items-center gap-2.5 mt-2">
@@ -182,7 +188,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
       {tab === "relationships" ? (
         <Section title="Relationships" description="Relationship provenance and private notes. Notes never leave this tenant." action={<AddRelationshipDrawer personId={person.id} people={allPeople} />}>
-          <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
             <table className="data">
               <thead><tr><th>Known by</th><th>Type</th><th>Source</th><th>Worked together</th><th>Years</th><th>Again?</th><th>Last contact</th>{showNotes ? <th>Private notes</th> : null}</tr></thead>
               <tbody>
@@ -255,7 +261,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "opportunities" ? (
         <Section title="Opportunities" description="Where this person has been considered. Scores are per-opportunity, never a global rank.">
           {person.matches.length === 0 && person.teamMemberships.length === 0 ? <EmptyState title="Not yet considered for an opportunity" /> : (
-            <div className="rounded-lg border border-line bg-surface overflow-hidden">
+            <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
               <table className="data">
                 <thead><tr><th>Opportunity</th><th>Route</th><th>Stage</th><th>Fit</th><th>Human decision</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -307,7 +313,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "activity" ? (
         <Section title="Activity" description="Audit trail of sensitive actions on this record.">
           {audit.length === 0 ? <EmptyState title="No activity recorded" /> : (
-            <div className="rounded-lg border border-line bg-surface overflow-hidden">
+            <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
               <table className="data"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
                 <tbody>{audit.map((a) => <tr key={a.id}><td><DateText date={a.createdAt} relative /></td><td>{a.actor?.name ?? "system"}</td><td className="font-mono text-[11px]">{a.action}</td><td>{a.entityType}</td><td className="text-xs text-ink-muted font-mono">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody>
               </table>

@@ -46,7 +46,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex w-[48%] bg-navy text-white flex-col justify-between p-12 relative overflow-hidden">
+      <div className="hidden lg:flex w-[48%] bg-rail text-white flex-col justify-between p-12 relative overflow-hidden">
         <div className="flex items-center gap-2.5 relative z-10">
           <span className="h-7 w-7 rounded-[7px] bg-white text-navy text-[11px] font-semibold inline-flex items-center justify-center">NI</span>
           <span className="text-[13px] font-medium">Network Intelligence</span>
@@ -71,8 +71,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="text-[12px] text-white/45 relative z-10">Human-led. AI-enhanced. The relationship intelligence is the asset.</div>
       </div>
-      <div className="flex-1 flex items-center justify-center p-8 bg-canvas">
-        <div className="w-full max-w-[360px]">
+      <div className="flex-1 flex items-center justify-center p-8 bg-canvas relative overflow-hidden">
+        <div className="ambient" aria-hidden="true" />
+        <div className="w-full max-w-[400px] relative z-[1] rounded-[22px] border border-line bg-surface/85 backdrop-blur-xl shadow-[var(--shadow-drawer)] p-8 anim-pop">
           <h2 className="text-[20px] font-semibold tracking-[-0.02em]">Sign in</h2>
           <p className="text-[13px] text-ink-muted mt-1">Access is provisioned by the platform owner.</p>
           {sp.error ? <div className="mt-4 rounded-md border border-risk/25 bg-risk-100 px-3 py-2 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
@@ -80,7 +81,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/"} />
             <Field label="Email" required><Input name="email" type="email" autoComplete="email" required placeholder="you@company.com" className="h-9" /></Field>
             <Field label="Password" required><Input name="password" type="password" autoComplete="current-password" required minLength={8} className="h-9" /></Field>
-            <Button type="submit" size="lg" className="w-full">Continue</Button>
+            <Button type="submit" size="lg" className="w-full rounded-full">Continue</Button>
           </form>
           {hasEntra ? (
             <form action={loginEntra} className="mt-3">

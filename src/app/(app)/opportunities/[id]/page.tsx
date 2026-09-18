@@ -17,6 +17,12 @@ import { DECISION_LABELS, OPPORTUNITY_STATUS_LABELS, ROUTE_LABELS, SENIORITY_LAB
 import { formatMoney, fullName } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const o = await prisma.opportunity.findUnique({ where: { id }, select: { title: true } });
+  return { title: o?.title ?? "Opportunity" };
+}
+
 export default async function OpportunityPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireInternal();
   const { id } = await params;

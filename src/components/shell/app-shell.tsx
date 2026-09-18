@@ -35,12 +35,13 @@ export async function AppShell({ user, children }: { user: SessionUser; children
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen relative">
+      <div className="ambient" aria-hidden="true" />
       <Sidebar user={user} />
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col relative z-[1]">
         <TopBar />
         <main className="flex-1">
-          <div className="max-w-[1320px] mx-auto px-6 py-6">{children}</div>
+          <div className="max-w-[1360px] mx-auto px-7 py-7 reveal">{children}</div>
         </main>
       </div>
       <CommandPalette items={items} />

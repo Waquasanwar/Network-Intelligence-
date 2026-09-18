@@ -3,7 +3,7 @@ import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { getAIProvider } from "@/lib/ai";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
-import { PageHeader, EmptyState } from "@/components/ui/page";
+import { PageHeader, EmptyState, Pill } from "@/components/ui/page";
 import { Input, Select } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Badge, Chip } from "@/components/ui/badge";
@@ -80,9 +80,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
     for (const [k, v] of Object.entries(filters)) if (v && k !== "view" && k !== key) params.set(k, v);
     if (!active) params.set(key, value);
     return (
-      <Link key={`${key}-${value}`} href={`/network?${params}`} className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? "bg-navy text-white border-navy" : "border-line text-ink-muted hover:border-line-strong"}`}>
-        {label}
-      </Link>
+      <Pill key={`${key}-${value}`} href={`/network?${params}`} active={active}>{label}</Pill>
     );
   };
 
@@ -92,19 +90,19 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
       <form className="flex gap-2 mb-3">
         <div className="relative flex-1">
-          <Search className="h-4 w-4 text-ink-faint absolute left-2.5 top-2" />
-          <Input name="q" defaultValue={filters.q ?? ""} placeholder='e.g. "programme director available soon who we have worked with, open to Dubai"' className="pl-8" />
+          <Search className="h-4 w-4 text-ink-faint absolute left-3.5 top-3" />
+          <Input name="q" defaultValue={filters.q ?? ""} placeholder='e.g. "programme director available soon who we have worked with, open to Dubai"' className="pl-9 rounded-full h-10 shadow-[var(--shadow-card)]" />
         </div>
-        <Select name="status" defaultValue={filters.status ?? ""} className="w-[200px]">
+        <Select name="status" defaultValue={filters.status ?? ""} className="w-[200px] h-10 rounded-full">
           <option value="">Any status</option>
           {Object.entries(AVAILABILITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Select name="route" defaultValue={filters.route ?? ""} className="w-[150px]">
+        <Select name="route" defaultValue={filters.route ?? ""} className="w-[150px] h-10 rounded-full">
           <option value="">Any route</option>
           {Object.entries(ROUTE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Input name="location" defaultValue={filters.location ?? ""} placeholder="Location" className="w-[140px]" />
-        <Button type="submit" variant="secondary">Search</Button>
+        <Input name="location" defaultValue={filters.location ?? ""} placeholder="Location" className="w-[140px] h-10 rounded-full" />
+        <Button type="submit" variant="secondary" size="lg" className="rounded-full">Search</Button>
       </form>
 
       <div className="flex flex-wrap items-center gap-1.5 mb-4">
@@ -116,7 +114,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         <span className="mx-1 text-ink-faint">·</span>
         <span className="text-[11px] text-ink-faint">Saved views:</span>
         {savedViews.map((v) => (
-          <Link key={v.id} href={`/network?view=${v.id}`} className={`px-2.5 py-1 rounded-full text-xs border ${filters.view === v.id ? "bg-navy-100 border-navy/20 text-navy" : "border-line text-ink-muted hover:border-line-strong"}`}>{v.name}</Link>
+          <Pill key={v.id} href={`/network?view=${v.id}`} active={filters.view === v.id}>{v.name}</Pill>
         ))}
         {Object.values(filters).some(Boolean) ? <Link href="/network" className="text-xs text-ink-faint hover:text-ink ml-2">Clear</Link> : null}
       </div>
@@ -133,7 +131,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      <div className="rounded-lg border border-line bg-surface overflow-x-auto">
+      <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
         {people.length === 0 ? (
           <EmptyState title="No one matches" description="Try a broader search, or add the person you have in mind." />
         ) : (
@@ -154,7 +152,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
                 const primary = p.relationships[0];
                 return (
                   <tr key={p.id}>
-                    <td className="max-w-[240px]"><PersonLink person={p} sub={p.currentRole ? `${p.currentRole}${p.currentCompany ? ` · ${p.currentCompany}` : ""}` : p.headline} /></td>
+                    <td className="max-w-[220px]"><PersonLink person={p} sub={p.currentRole ? `${p.currentRole}${p.currentCompany ? ` · ${p.currentCompany}` : ""}` : p.headline} /></td>
                     <td>
                       {primary ? (
                         <>

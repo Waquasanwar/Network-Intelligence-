@@ -9,11 +9,11 @@ export function PipelineChart({ data }: { data: { stage: string; count: number }
     <div className="h-[140px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barCategoryGap={18}>
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#8b91a0" }} axisLine={false} tickLine={false} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#8b91a0" }} axisLine={false} tickLine={false} />
-          <Tooltip cursor={{ fill: "#f1efeb" }} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e6e3dd" }} />
-          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-            {rows.map((r, i) => <Cell key={i} fill={i >= 4 ? "#0f766e" : "#14213d"} />)}
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--color-ink-faint)" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--color-ink-faint)" }} axisLine={false} tickLine={false} />
+          <Tooltip cursor={{ fill: "var(--color-surface-muted)" }} contentStyle={{ fontSize: 12, borderRadius: 10, border: "1px solid var(--color-line)", background: "var(--color-surface)", color: "var(--color-ink)" }} />
+          <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+            {rows.map((r, i) => <Cell key={i} fill={i >= 4 ? "var(--color-chart-b)" : "var(--color-chart-a)"} />)}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
