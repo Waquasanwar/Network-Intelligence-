@@ -6,7 +6,7 @@ import * as React from "react";
 
 const NAMES: Record<string, string> = {
   overview: "Overview", network: "Network", import: "Import contacts", conversations: "Conversations", opportunities: "Opportunities", amana: "Amana Expert Network",
-  partners: "Partners", relocation: "Relocation", settings: "Settings", integrations: "Integrations", security: "Security", "partner-portal": "Partner portal", "client-workspace": "Client workspace",
+  partners: "Partners", relocation: "Relocation", settings: "Settings", integrations: "Integrations", security: "Security", "partner-portal": "Partner portal", "client-workspace": "Client workspace", requirements: "Requirements", portal: "Client & agency portal", commercials: "Commercials",
 };
 
 export function TopBar({ crumbs }: { crumbs?: { label: string; href?: string }[] }) {

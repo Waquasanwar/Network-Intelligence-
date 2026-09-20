@@ -30,7 +30,20 @@ export type AuditAction =
   | "user.role_change"
   | "data.deletion_request"
   | "team.add"
-  | "team.remove";
+  | "team.remove"
+  | "account.create"
+  | "brief.create"
+  | "brief.update"
+  | "brief.search"
+  | "brief.status"
+  | "brief.terms"
+  | "shortlist.decide"
+  | "fee.create"
+  | "fee.update"
+  | "ratecard.update"
+  | "portal.brief_submitted"
+  | "portal.response"
+  | "terms.accept";
 
 export async function audit(input: {
   tenantId: string;

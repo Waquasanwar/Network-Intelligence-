@@ -42,6 +42,15 @@ Demo accounts (all use password `Password123!`, development only):
 | `partner@harboursearch.local` | Recruitment partner | Restricted partner portal only |
 | `client@meridian.local` | Direct client | Client workspace only |
 
+## Requirements, co-pilot and the client / agency portal
+
+Demand comes from three kinds of paying party, all modelled as **accounts**: direct clients, recruitment agencies, and expert networks such as Amana.
+
+- **Co-pilot** (`/requirements`): type the need in plain words ("2 BAs already in Dubai with a visa, perm, retail banking, AED 360k"). `src/lib/demand.ts` structures it into roles, headcount, route, location, must-be-local, work rights, seniority, sectors, budget, duration and start, lists every assumption it made and every question it could not answer, and retrieves people from the network. Hard requirements (already in the location, work rights, open to the route) are checked and labelled met / unmet / to confirm; nobody is hidden.
+- **Requirement detail** (`/requirements/:id`): the brief in their words and in structure, the shortlist with human decisions (candidate → proposed → client interested → introduced → placed), commercial terms for this brief, fee lines, and a preview of exactly what the client sees.
+- **Portal** (`/portal`): what a client or agency sees. They submit requirements in plain words (with a preview of how we read them), accept terms, see anonymised cards (opaque reference, capability summary, region, availability band, work-rights status, rate band, evidence summary) and request introductions. Names appear only after introduction and consent. Every card passes `redactForPartner()` and a leak check.
+- **Commercials** (`/settings/commercials`): the rate card. Success fee % on permanent placements, referral share of an agency's fee, margin on day rates (or a share of the agency's margin), platform take on Amana expert hours, share of SOW value, flat introduction fee, and optional monthly portal access per account. Every number is editable; each account and each brief can override it. Fees are estimated as briefs are saved and recorded as forecast → agreed → invoiced → paid.
+
 ## Loading your own contacts
 
 1. Sign in as the owner and open **Setup → Import contacts** (`/network/import`), or click **Import** on the Network page.

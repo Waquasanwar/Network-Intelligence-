@@ -26,9 +26,14 @@ model Tenant {
   name      String
   type      TenantType
   brandName String?
+  rateCard  Json? // commercial defaults (see src/lib/demand.ts RateCard); configurable, never hard-coded
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  accounts           CommercialAccount[]
+  briefs             Brief[]
+  feeLines           FeeLine[]
+  portalAccount      CommercialAccount? @relation("PortalTenant")
   users              User[]
   people             Person[]
   opportunities      Opportunity[]
@@ -216,6 +221,8 @@ model Person {
   scheduledMeetings ScheduledConversation[]
   introducedPeople  Relationship[]          @relation("IntroducedBy")
   teamMemberships   TeamShortlistMember[]
+  shortlistItems    ShortlistItem[]
+  feeLines          FeeLine[]
 
   @@index([tenantId])
   @@index([tenantId, availabilityStatus])
@@ -672,4 +679,170 @@ model AuditLog {
 
   @@index([tenantId, createdAt])
   @@index([entityType, entityId])
+}
+
+// ---------- Demand: accounts, briefs, shortlists, fees (spec §4, §10, §12) ----------
+
+enum AccountKind {
+  CLIENT
+  AGENCY
+  EXPERT_NETWORK
+}
+
+enum AccountStatus {
+  PROSPECT
+  ACTIVE
+  PAUSED
+}
+
+/// A paying party: a direct client, a recruitment agency, or an expert network such as Amana.
+model CommercialAccount {
+  id             String        @id @default(cuid())
+  tenantId       String // the network owner
+  name           String
+  kind           AccountKind
+  status         AccountStatus @default(PROSPECT)
+  contactName    String?
+  contactEmail   String?
+  currency       String        @default("GBP")
+  monthlyFee     Decimal?      @db.Decimal(12, 2) // optional portal access fee
+  terms          Json? // per-account overrides of the rate card (Terms)
+  partnerId      String? // licensed recruitment partner, where the account is an agency
+  portalTenantId String?       @unique // tenant whose users log into the portal for this account
+  portalEnabled  Boolean       @default(true)
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  portalTenant Tenant?   @relation("PortalTenant", fields: [portalTenantId], references: [id])
+  briefs       Brief[]
+  feeLines     FeeLine[]
+
+  @@index([tenantId, kind])
+}
+
+enum BriefStatus {
+  NEW
+  QUALIFYING
+  SEARCHING
+  SHORTLISTED
+  INTRODUCING
+  FILLED
+  CLOSED
+}
+
+enum BriefVia {
+  OWNER
+  PORTAL
+}
+
+/// A requirement in the client's or agency's words, structured by the co-pilot and corrected by a human.
+model Brief {
+  id              String           @id @default(cuid())
+  tenantId        String
+  accountId       String
+  submittedVia    BriefVia         @default(OWNER)
+  status          BriefStatus      @default(NEW)
+  rawText         String
+  title           String
+  engagementRoute EngagementRoute?
+  headcount       Int              @default(1)
+  roles           String[]         @default([])
+  capabilities    String[]         @default([])
+  sectors         String[]         @default([])
+  seniority       Seniority?
+  locations       String[]         @default([])
+  mustBeLocal     Boolean          @default(false)
+  workRights      String?
+  budgetKind      String? // SALARY | DAY_RATE | HOURLY | PROJECT
+  budgetAmount    Decimal?         @db.Decimal(14, 2)
+  budgetMax       Decimal?         @db.Decimal(14, 2)
+  budgetCurrency  String?
+  durationMonths  Int?
+  startBy         String?
+  assumptions     String[]         @default([])
+  questions       String[]         @default([])
+  feeModel        String // FeeModel in src/lib/demand.ts
+  feePct          Decimal?         @db.Decimal(5, 2)
+  feeFlat         Decimal?         @db.Decimal(12, 2)
+  feeCurrency     String           @default("GBP")
+  expertHours     Int?
+  termsAccepted   Boolean          @default(false)
+  termsAcceptedAt DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+  account   CommercialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  shortlist ShortlistItem[]
+  feeLines  FeeLine[]
+
+  @@index([tenantId, status])
+  @@index([accountId])
+}
+
+enum ShortlistDecision {
+  CANDIDATE
+  SHORTLISTED
+  PROPOSED
+  CLIENT_INTERESTED
+  CLIENT_PASSED
+  INTRODUCED
+  PLACED
+  NOT_FOR_THIS
+}
+
+/// One person retrieved for one brief. The human decision is the only thing that exposes an anonymised card to the portal.
+model ShortlistItem {
+  id             String            @id @default(cuid())
+  briefId        String
+  personId       String
+  fitScore       Int
+  fitExplanation String
+  dimensions     Json
+  uncertainty    String[]          @default([])
+  checks         Json // HardCheck[]
+  tier           String // meets | conversation | stretch
+  decision       ShortlistDecision @default(CANDIDATE)
+  note           String?
+  clientNote     String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  brief  Brief  @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([briefId, personId])
+}
+
+enum FeeStatus {
+  FORECAST
+  AGREED
+  INVOICED
+  PAID
+  WRITTEN_OFF
+}
+
+model FeeLine {
+  id        String    @id @default(cuid())
+  tenantId  String
+  briefId   String
+  accountId String
+  personId  String?
+  model     String
+  basis     String
+  gross     Decimal   @db.Decimal(14, 2)
+  ourTake   Decimal   @db.Decimal(14, 2)
+  currency  String
+  status    FeeStatus @default(FORECAST)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  brief   Brief   @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  account CommercialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  person  Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
 }

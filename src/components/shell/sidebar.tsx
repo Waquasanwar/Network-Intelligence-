@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
@@ -10,19 +10,22 @@ const INTERNAL_NAV = [
   { href: "/network", label: "Network", icon: Users },
   { href: "/conversations", label: "Conversations", icon: MessagesSquare },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
+  { href: "/requirements", label: "Requirements", icon: ListChecks },
 ];
 const WORKSPACES = [
   { href: "/amana", label: "Amana Expert Network", icon: Building2 },
+  { href: "/portal", label: "Client & agency portal", icon: MonitorSmartphone },
   { href: "/partners", label: "Partners", icon: Handshake },
   { href: "/relocation", label: "Relocation", icon: Plane },
 ];
 const SETTINGS_NAV = [
   { href: "/network/import", label: "Import contacts", icon: Upload },
+  { href: "/settings/commercials", label: "Commercials", icon: Percent },
   { href: "/settings/integrations", label: "Integrations", icon: Plug },
   { href: "/settings/security", label: "Security", icon: ShieldCheck },
 ];
-const PARTNER_NAV = [{ href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
-const CLIENT_NAV = [{ href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
+const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
+const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 
 export function Sidebar({ user }: { user: { name: string; email: string; role: Role; tenantName: string } }) {
   const pathname = usePathname();

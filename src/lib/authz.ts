@@ -61,9 +61,9 @@ export function assertSameTenant(actor: Actor, recordTenantId: string) {
 
 /** Pages each role may navigate to. Enforced in the layout and in the middleware. */
 export function allowedPaths(actor: Actor): string[] {
-  if (isPartner(actor)) return ["/partner-portal", "/settings/security"];
-  if (isClient(actor)) return ["/client-workspace", "/settings/security"];
-  return ["/overview", "/network", "/conversations", "/opportunities", "/amana", "/partners", "/relocation", "/settings"];
+  if (isPartner(actor)) return ["/partner-portal", "/portal", "/settings/security"];
+  if (isClient(actor)) return ["/client-workspace", "/portal", "/settings/security"];
+  return ["/overview", "/network", "/conversations", "/opportunities", "/requirements", "/portal", "/amana", "/partners", "/relocation", "/settings"];
 }
 
 export function canAccessPath(actor: Actor, pathname: string) {
