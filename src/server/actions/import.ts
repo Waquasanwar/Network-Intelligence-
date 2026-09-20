@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { requireInternalAction } from "@/server/session";
 import { parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, type ImportColumnKey } from "@/lib/csv";
+import * as XLSX from "xlsx";
 import type { RelationshipType, SourceType } from "@prisma/client";
 
 export type ImportRow = {
@@ -58,15 +59,25 @@ export async function previewImport(_prev: ImportPreview | null, formData: FormD
   const user = await requireInternalAction();
   const file = formData.get("file");
   let text = String(formData.get("text") || "");
+  let grid: string[][] | null = null;
   if (file instanceof File && file.size > 0) {
-    if (file.size > 2_000_000) return { ok: false, error: "File is larger than 2 MB. Split it and import in batches.", rows: [], unknownHeaders: [], mappedColumns: [], totals: { total: 0, ready: 0, blocked: 0, duplicates: 0 } };
-    text = await file.text();
+    if (file.size > 5_000_000) return { ok: false, error: "File is larger than 5 MB. Split it and import in batches.", rows: [], unknownHeaders: [], mappedColumns: [], totals: { total: 0, ready: 0, blocked: 0, duplicates: 0 } };
+    if (/\.xlsx?$|\.xlsm$/i.test(file.name)) {
+      try {
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const name = wb.SheetNames.find((n) => /contacts|people|network/i.test(n)) ?? wb.SheetNames[0];
+        grid = (XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: false, defval: "" }) as string[][]).map((r) => r.map((v) => String(v ?? "").trim()));
+      } catch {
+        return { ok: false, error: "Could not open that workbook. Save it as .xlsx and try again, or paste the rows.", rows: [], unknownHeaders: [], mappedColumns: [], totals: { total: 0, ready: 0, blocked: 0, duplicates: 0 } };
+      }
+    } else text = await file.text();
   }
-  if (!text.trim()) return { ok: false, error: "Choose a CSV file or paste rows first.", rows: [], unknownHeaders: [], mappedColumns: [], totals: { total: 0, ready: 0, blocked: 0, duplicates: 0 } };
+  if (!grid && !text.trim()) return { ok: false, error: "Choose an Excel or CSV file, or paste rows first.", rows: [], unknownHeaders: [], mappedColumns: [], totals: { total: 0, ready: 0, blocked: 0, duplicates: 0 } };
 
   const defaultSource = String(formData.get("defaultSource") || "PERSONAL_NETWORK");
   const defaultRel = String(formData.get("defaultRelationship") || "DIRECT");
-  const grid = parseCsv(text);
+  grid = grid ?? parseCsv(text);
+  grid = grid.filter((r) => r.some((v) => v.trim() !== ""));
   if (grid.length < 2) return { ok: false, error: "Need a header row and at least one contact row.", rows: [], unknownHeaders: [], mappedColumns: [], totals: { total: 0, ready: 0, blocked: 0, duplicates: 0 } };
   const { map, unknown } = mapHeaders(grid[0]);
   if (map.first_name === undefined && map.last_name === undefined) {

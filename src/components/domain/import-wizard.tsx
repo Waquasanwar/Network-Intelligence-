@@ -41,7 +41,7 @@ export function ImportWizard() {
     <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-4 items-start">
       <div className="space-y-4">
         <Card>
-          <CardHeader title="1. Get the template" description="Or use your own headers. Names are required; everything else is optional." action={<a href="/api/import/template" download><Button variant="secondary" size="sm"><Download className="h-3.5 w-3.5" /> Template</Button></a>} />
+          <CardHeader title="1. Start from the template, or your own spreadsheet" description="Only first name and last name are required. Everything else improves matching and can be filled in later from conversations." action={<a href="/api/import/template" download><Button variant="secondary" size="sm"><Download className="h-3.5 w-3.5" /> Template</Button></a>} />
           <CardBody>
             <div className="text-[12px] text-ink-muted leading-5">
               Recognised columns: <span className="text-ink">first_name, last_name</span>, email, phone, headline, company, role, city, country, capabilities, sectors, linkedin, source, relationship, introduced_by, worked_together, notes.
@@ -50,17 +50,17 @@ export function ImportWizard() {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="2. Upload or paste" description="CSV, or rows copied straight out of Excel or Google Sheets." />
+          <CardHeader title="2. Upload the file, or paste the rows" description="Excel (.xlsx), CSV, or rows copied straight out of a spreadsheet." />
           <CardBody>
             <form action={runPreview} className="space-y-4">
               <label className="block rounded-lg border border-dashed border-line-strong bg-surface-muted/50 px-4 py-6 text-center cursor-pointer hover:border-navy/40 transition-colors">
-                <input ref={fileRef} type="file" name="file" accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain" className="sr-only" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} />
+                <input ref={fileRef} type="file" name="file" accept=".xlsx,.xls,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" className="sr-only" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} />
                 <FileUp className="h-5 w-5 text-ink-faint mx-auto" />
-                <div className="text-[13px] font-medium mt-2">{fileName ?? "Choose a CSV file"}</div>
-                <div className="text-[11.5px] text-ink-faint mt-0.5">Up to 2 MB, 2,000 rows per import</div>
+                <div className="text-[13px] font-medium mt-2">{fileName ?? "Choose an Excel or CSV file"}</div>
+                <div className="text-[11.5px] text-ink-faint mt-0.5">.xlsx or .csv, up to 2,000 rows per import</div>
               </label>
               <div className="text-center text-[11px] text-ink-faint">or</div>
-              <Field label="Paste rows" hint="Include the header row. Tabs or commas both work."><Textarea name="text" className="min-h-[110px] mono" placeholder={"first_name,last_name,email,company,capabilities\nSarah,Okonkwo,sarah@example.com,Independent,Programme director; Turnaround"} /></Field>
+              <Field label="Paste rows" hint="Include the header row. Copying cells from Excel works as is."><Textarea name="text" className="min-h-[110px] mono" placeholder={"first_name,last_name,email,company,capabilities\nSarah,Okonkwo,sarah@example.com,Independent,Programme director; Turnaround"} /></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Default source" hint="Used when a row has no source"><Select name="defaultSource" defaultValue="PERSONAL_NETWORK">{Object.entries(SOURCE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
                 <Field label="Default relationship" hint="Used when a row has none"><Select name="defaultRelationship" defaultValue="DIRECT">{Object.entries(RELATIONSHIP_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
@@ -82,7 +82,7 @@ export function ImportWizard() {
         ) : (
           <Card>
             <CardHeader
-              title="3. Check and confirm"
+              title="3. Check the preview, then import"
               description={`${preview.totals.total} rows · ${preview.totals.ready} ready · ${preview.totals.duplicates} already in the network · ${preview.totals.blocked} need a fix`}
               action={
                 <form action={runCommit}>

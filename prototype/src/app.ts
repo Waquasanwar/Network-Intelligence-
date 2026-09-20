@@ -216,7 +216,7 @@ async function boot() {
     if (form.hasAttribute("data-search")) { const qp = new URLSearchParams(); for (const [k, v] of fd.entries()) if (String(v).trim()) qp.set(k, String(v).trim()); location.hash = `#/network?${qp}`; return; }
     const a = form.dataset.action; if (a && views.forms[a]) Promise.resolve(views.forms[a](fd, form)).catch((err) => { console.error(err); toast("Could not save", "risk"); });
   });
-  document.addEventListener("change", (e) => { const t = e.target as HTMLInputElement; if (t.matches("[data-file]")) document.getElementById("drop-label")!.textContent = t.files?.[0]?.name ?? "Choose a CSV file"; });
+  document.addEventListener("change", (e) => { const t = e.target as HTMLInputElement; if (t.matches("[data-file]")) { document.getElementById("drop-label")!.textContent = t.files?.[0]?.name ?? "Choose an Excel or CSV file"; if (t.files?.[0]) t.form?.requestSubmit(); } });
   document.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); if (document.getElementById("palette")!.hidden) openPalette(); else closePalette(); return; }
     if (e.key === "Escape") { closePalette(); if (!document.getElementById("drawer")!.hidden) closeDrawer(); }
