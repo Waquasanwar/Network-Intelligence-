@@ -26,6 +26,10 @@ export function isInternal(actor: Actor) {
   return INTERNAL_ROLES.includes(actor.role) && actor.tenantType !== "RECRUITMENT_PARTNER" && actor.tenantType !== "DIRECT_CLIENT";
 }
 
+export function isMember(actor: Actor) {
+  return actor.role === "MEMBER";
+}
+
 export function isPartner(actor: Actor) {
   return actor.role === "PARTNER" || actor.tenantType === "RECRUITMENT_PARTNER";
 }
@@ -63,7 +67,8 @@ export function assertSameTenant(actor: Actor, recordTenantId: string) {
 export function allowedPaths(actor: Actor): string[] {
   if (isPartner(actor)) return ["/partner-portal", "/portal", "/settings/security"];
   if (isClient(actor)) return ["/client-workspace", "/portal", "/settings/security"];
-  return ["/overview", "/network", "/conversations", "/opportunities", "/requirements", "/portal", "/amana", "/partners", "/relocation", "/settings"];
+  if (actor.role === "MEMBER") return ["/member", "/screening", "/settings/security"];
+  return ["/overview", "/network", "/conversations", "/opportunities", "/requirements", "/referrals", "/portal", "/member", "/screening", "/amana", "/partners", "/relocation", "/settings"];
 }
 
 export function canAccessPath(actor: Actor, pathname: string) {

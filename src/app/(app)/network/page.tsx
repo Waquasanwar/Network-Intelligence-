@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { TrustMini } from "@/components/domain/trust";
+import { trustScore } from "@/lib/trust";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { getAIProvider } from "@/lib/ai";
@@ -66,7 +68,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   let people = await prisma.person.findMany({
     where,
-    include: { relationships: { include: { introducedBy: { select: { id: true, firstName: true, lastName: true } }, networkOwner: { select: { name: true } } } }, evidence: { select: { id: true } }, conversations: { select: { approvalStatus: true } } },
+    include: { relationships: { include: { introducedBy: { select: { id: true, firstName: true, lastName: true } }, networkOwner: { select: { name: true } } } }, evidence: true, conversations: { select: { approvalStatus: true } }, vouches: true, referralsMade: { select: { status: true } } },
     orderBy: [{ updatedAt: "desc" }],
     take: 300,
   });
@@ -143,6 +145,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
                 <th>Expertise</th>
                 <th>Location</th>
                 <th>Availability · routes</th>
+                <th>Trust</th>
                 <th className="num">Evidence</th>
                 <th>Next action</th>
               </tr>
@@ -164,6 +167,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
                     <td><div className="flex items-center gap-1 overflow-hidden w-[200px]">{p.capabilities.slice(0, 2).map((c) => <Chip key={c} className="max-w-[120px] overflow-hidden text-ellipsis block">{c}</Chip>)}{p.capabilities.length > 2 ? <span className="text-[11px] text-ink-faint flex-none">+{p.capabilities.length - 2}</span> : null}</div></td>
                     <td className="text-xs text-ink-muted whitespace-nowrap">{[p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—"}{p.targetLocations.length ? <div className="text-[11px] text-ink-faint">→ {p.targetLocations.join(", ")}</div> : null}</td>
                     <td className="whitespace-nowrap"><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} /><div className="text-[11px] text-ink-faint mt-0.5">{p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : ROUTE_LABELS[r])).join(", ") || "Routes not confirmed"}</div></td>
+                    <td><TrustMini t={trustScore({ vouches: p.vouches.map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })), workedWith: p.relationships.filter((r) => r.workedTogether).length, wouldWorkAgain: p.relationships.filter((r) => r.wouldWorkTogetherAgain === true).length, evidence: p.evidence.filter((e) => e.evidenceType !== "CAUTION").length, cautions: p.evidence.filter((e) => e.evidenceType === "CAUTION").length, approvedConversations: p.conversations.filter((c) => c.approvalStatus === "APPROVED").length, screened: p.screeningStatus === "APPROVED" || !!p.screenedAt, freshness: assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now), referralsAccepted: p.referralsMade.filter((r) => r.status === "ACCEPTED").length })} /></td>
                     <td className="num text-xs text-ink-muted">{p.evidence.length} <span className="text-ink-faint">· {p.conversations.filter((c) => c.approvalStatus === "APPROVED").length} conv</span></td>
                     <td className="text-xs text-ink-muted min-w-[130px] max-w-[170px]">{p.nextAction ?? "—"}{p.nextActionDate ? <div className="text-[11px] text-ink-faint"><DateText date={p.nextActionDate} relative /></div> : null}</td>
                   </tr>

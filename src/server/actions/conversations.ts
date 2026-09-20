@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import type { ScreeningResult } from "@/lib/screening";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -152,6 +153,17 @@ export async function approveSummary(formData: FormData) {
       where: { id },
       data: { approvedSummary: approved as unknown as Prisma.InputJsonValue, approvedById: user.id, approvalStatus: "APPROVED", followUpDate: followUp },
     });
+    if (conv.type === "SCREENING") {
+      const r = (conv.screening as { result?: ScreeningResult } | null)?.result;
+      const p = conv.person; const prof = r?.profile;
+      await tx.person.update({ where: { id: p.id }, data: {
+        screenedAt: conv.date, screeningStatus: "APPROVED", memberSince: p.memberSince ?? conv.date, referralConsent: prof?.referralConsent ?? p.referralConsent ?? "ask",
+        workRights: prof?.workRights.length ? prof.workRights : p.workRights, targetLocations: prof?.targetLocations.length ? [...new Set([...p.targetLocations, ...prof.targetLocations])] : p.targetLocations,
+        noticePeriod: prof?.noticePeriod ?? p.noticePeriod, rateExpectation: prof?.rateExpectation ?? p.rateExpectation, salaryExpectation: prof?.salaryExpectation ?? p.salaryExpectation, seniority: prof?.seniority ?? p.seniority,
+        primaryCity: prof?.primaryCity ?? p.primaryCity, primaryCountry: prof?.primaryCountry ?? p.primaryCountry, relocationInterest: p.relocationInterest || !!prof?.relocationInterest, nextAction: null, nextActionDate: null,
+      } });
+      if (r?.evidenceCandidate) await tx.evidence.create({ data: { personId: p.id, observerId: user.id, evidenceType: "REFERENCE", context: "Screening: proudest piece of work (self-reported)", description: r.evidenceCandidate.slice(0, 2000), confidence: 50, dateObserved: conv.date, visibility: "TENANT" } });
+    }
     if (applyToProfile) {
       const p = conv.person;
       const merge = (a: string[], b: string[]) => [...new Set([...a, ...b.map((s) => s.trim()).filter(Boolean)])];

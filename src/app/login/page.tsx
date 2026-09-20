@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 
 export const metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; callbackUrl?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; callbackUrl?: string; registered?: string }> }) {
   const sp = await searchParams;
   const hasEntra = Boolean(process.env.AUTH_MICROSOFT_ENTRA_ID_ID);
 
@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     const requested = String(formData.get("callbackUrl") || "/");
     const email = String(formData.get("email") || "").toLowerCase();
     const existing = await prisma.user.findUnique({ where: { email }, select: { role: true } });
-    const home = existing?.role === "PARTNER" ? "/partner-portal" : existing?.role === "CLIENT" ? "/client-workspace" : "/overview";
+    const home = existing?.role === "PARTNER" ? "/partner-portal" : existing?.role === "CLIENT" ? "/client-workspace" : existing?.role === "MEMBER" ? "/member" : "/overview";
     const callbackUrl = requested === "/" || requested === "/login" ? home : requested;
     try {
       await signIn("credentials", { email, password: String(formData.get("password") || ""), redirectTo: callbackUrl });

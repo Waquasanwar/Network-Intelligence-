@@ -5,6 +5,7 @@ import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
 import { fullName } from "@/lib/utils";
+import { alertsFor } from "@/server/actions/members";
 
 export async function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
   const pages = [
@@ -20,6 +21,7 @@ export async function AppShell({ user, children }: { user: SessionUser; children
   ];
 
   let items = pages;
+  const alerts = isInternal(user) ? (await alertsFor(user.tenantId)).map((a) => ({ ...a, when: a.when.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) })) : [];
   if (isInternal(user)) {
     const [people, opps] = await Promise.all([
       prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { id: true, firstName: true, lastName: true, preferredName: true, headline: true }, take: 500, orderBy: { updatedAt: "desc" } }),
@@ -31,7 +33,7 @@ export async function AppShell({ user, children }: { user: SessionUser; children
       ...opps.map((o) => ({ id: `opp-${o.id}`, label: o.title, hint: o.clientName ?? "Opportunity", href: `/opportunities/${o.id}`, group: "Opportunities" })),
     ];
   } else {
-    items = user.role === "PARTNER" ? [{ id: "p-portal", label: "Partner portal", href: "/partner-portal", group: "Pages" }] : [{ id: "p-client", label: "Client workspace", href: "/client-workspace", group: "Pages" }];
+    items = user.role === "PARTNER" ? [{ id: "p-portal", label: "Partner portal", href: "/partner-portal", group: "Pages" }, { id: "p-req", label: "Requirements", href: "/portal", group: "Pages" }] : user.role === "MEMBER" ? [{ id: "p-member", label: "My network profile", href: "/member", group: "Pages" }] : [{ id: "p-client", label: "Client workspace", href: "/client-workspace", group: "Pages" }, { id: "p-req", label: "Requirements", href: "/portal", group: "Pages" }];
   }
 
   return (
@@ -39,7 +41,7 @@ export async function AppShell({ user, children }: { user: SessionUser; children
       <div className="ambient" aria-hidden="true" />
       <Sidebar user={user} />
       <div className="flex-1 min-w-0 flex flex-col relative z-[1]">
-        <TopBar />
+        <TopBar alerts={alerts} />
         <main className="flex-1">
           <div className="max-w-[1360px] mx-auto px-7 py-7 reveal">{children}</div>
         </main>

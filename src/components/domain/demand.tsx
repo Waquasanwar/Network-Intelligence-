@@ -68,6 +68,22 @@ export function CheckList({ checks }: { checks: HardCheck[] }) {
   );
 }
 
+/** Fit against the traits a brief asks for: strong, moderate, gap, or not assessed. Never used to exclude. */
+export function FitChecks({ checks }: { checks: { key: string; label: string; state: "strong" | "moderate" | "unknown" | "gap"; note: string }[] }) {
+  if (!checks.length) return null;
+  return (
+    <ul className="flex flex-wrap gap-x-4 gap-y-1.5 mt-1.5">
+      <li className="text-[10.5px] uppercase tracking-[0.08em] text-ink-faint self-center">Fit</li>
+      {checks.map((c) => (
+        <li key={c.key} title={c.note} className={cn("inline-flex items-center gap-1.5 text-[12.5px] font-medium cursor-help", c.state === "strong" ? "text-teal" : c.state === "gap" ? "text-risk" : c.state === "moderate" ? "text-navy" : "text-amber")}>
+          <span className={cn("inline-grid place-items-center h-4 w-4 rounded-full text-[10px]", c.state === "strong" ? "bg-teal-100" : c.state === "gap" ? "bg-risk-100" : c.state === "moderate" ? "bg-navy-100" : "bg-amber-100")}>{c.state === "strong" ? <Check className="h-2.5 w-2.5" /> : c.state === "gap" ? <X className="h-2.5 w-2.5" /> : c.state === "moderate" ? "~" : <HelpCircle className="h-2.5 w-2.5" />}</span>
+          {c.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function FeeBox({ est, model, pct, label = "Estimated fee to us", extra }: { est: FeeEstimate; model?: FeeModel; pct?: number | null; label?: string; extra?: React.ReactNode }) {
   return (
     <div className={cn("rounded-[16px] border px-4 py-3.5", est.confident ? "border-teal/30 bg-[linear-gradient(135deg,rgba(20,184,166,0.14),rgba(79,111,214,0.10))]" : "border-line bg-surface-muted")}>

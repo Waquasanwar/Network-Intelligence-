@@ -60,6 +60,7 @@ model User {
   name          String
   passwordHash  String?
   role          Role      @default(CONTRIBUTOR)
+  personId      String?   @unique // MEMBER users are linked to their own person record
   mfaEnabled    Boolean   @default(false)
   emailVerified DateTime?
   image         String?
@@ -81,6 +82,8 @@ model User {
   scheduledMeetings     ScheduledConversation[]
   auditLogs             AuditLog[]
   savedViews            SavedView[]
+  person                Person?                 @relation(fields: [personId], references: [id])
+  vouchesGiven          Vouch[]                 @relation("VoucherUser")
 
   @@index([tenantId])
 }
@@ -188,6 +191,11 @@ model Person {
   capabilities           String[]           @default([])
   sectors                String[]           @default([])
   workRights             String[]           @default([]) // visas / rights to work, checked against briefs; never nationality
+  screeningStatus        ScreeningStatus    @default(NONE)
+  screenedAt             DateTime?
+  referralConsent        String?            // yes | ask | no — the person decides whether they are on the radar
+  memberSince            DateTime?
+  attributes             Json?              // self-assessed FitScores from the screening (working style, never protected characteristics)
   seniority              Seniority?
   languages              String[]           @default([])
   engagementPreferences  EngagementRoute[]  @default([])
@@ -223,6 +231,12 @@ model Person {
   teamMemberships   TeamShortlistMember[]
   shortlistItems    ShortlistItem[]
   feeLines          FeeLine[]
+  vouches           Vouch[]         @relation("VouchedPerson")
+  vouchesGiven      Vouch[]         @relation("VoucherPerson")
+  referralsMade     Referral[]      @relation("Referrer")
+  referredBy        Referral[]      @relation("ReferredPerson")
+  pitches           Pitch[]
+  memberUser        User?
 
   @@index([tenantId])
   @@index([tenantId, availabilityStatus])
@@ -301,6 +315,7 @@ model Evidence {
 // ---------- Conversations ----------
 
 enum ConversationType {
+  SCREENING
   INTRO_CALL
   CATCH_UP
   OPPORTUNITY_DISCUSSION
@@ -326,6 +341,7 @@ model Conversation {
   rawNotes         String?
   transcript       String?          // untrusted input — never executed as instructions
   aiSummary        Json?            // structured extraction, pending review
+  screening        Json?            // ScreeningResult (answers, profile suggestions, attributes) for SCREENING conversations
   approvedSummary  Json?            // authoritative once approved
   approvedById     String?
   approvalStatus   ApprovalStatus   @default(DRAFT)
@@ -770,6 +786,8 @@ model Brief {
   expertHours     Int?
   termsAccepted   Boolean          @default(false)
   termsAcceptedAt DateTime?
+  openToMembers   Boolean          @default(false) // visible, anonymised, to network members for pitches and referrals
+  memberSummary   String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -777,6 +795,8 @@ model Brief {
   account   CommercialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   shortlist ShortlistItem[]
   feeLines  FeeLine[]
+  referrals Referral[]
+  pitches   Pitch[]
 
   @@index([tenantId, status])
   @@index([accountId])
@@ -845,4 +865,95 @@ model FeeLine {
   person  Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, status])
+}
+
+// ---------- Referral network: vouches, referrals, pitches, screening ----------
+
+enum ScreeningStatus {
+  NONE
+  REGISTERED
+  INVITED
+  BOOKED
+  SUBMITTED
+  APPROVED
+}
+
+enum VouchKind {
+  USER
+  PERSON
+  EXTERNAL
+}
+
+/// A person putting their name behind someone. Builds the trust score. EXTERNAL = e.g. a LinkedIn recommendation, weighted lower.
+model Vouch {
+  id             String    @id @default(cuid())
+  personId       String
+  voucherKind    VouchKind
+  voucherUserId  String?
+  voucherPersonId String?
+  voucherName    String?
+  source         String?
+  context        String
+  statement      String?
+  wouldRecommend Boolean   @default(true)
+  attributes     Json? // observed FitScores
+  createdAt      DateTime  @default(now())
+
+  person        Person  @relation("VouchedPerson", fields: [personId], references: [id], onDelete: Cascade)
+  voucherUser   User?   @relation("VoucherUser", fields: [voucherUserId], references: [id], onDelete: SetNull)
+  voucherPerson Person? @relation("VoucherPerson", fields: [voucherPersonId], references: [id], onDelete: SetNull)
+
+  @@index([personId])
+}
+
+enum ReferralStatus {
+  NEW
+  CONTACTED
+  SCREENING
+  ACCEPTED
+  DECLINED
+}
+
+/// A member referring someone they would stand behind. The referrer is never revealed outside the network.
+model Referral {
+  id               String         @id @default(cuid())
+  tenantId         String
+  referrerPersonId String
+  referredPersonId String?
+  name             String
+  email            String?
+  context          String
+  note             String?
+  briefId          String?
+  status           ReferralStatus @default(NEW)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  referrer Person  @relation("Referrer", fields: [referrerPersonId], references: [id], onDelete: Cascade)
+  referred Person? @relation("ReferredPerson", fields: [referredPersonId], references: [id], onDelete: SetNull)
+  brief    Brief?  @relation(fields: [briefId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+}
+
+enum PitchStatus {
+  SUBMITTED
+  SHORTLISTED
+  DECLINED
+}
+
+/// A member pitching themselves for a brief that was opened to members.
+model Pitch {
+  id        String      @id @default(cuid())
+  briefId   String
+  personId  String
+  note      String
+  status    PitchStatus @default(SUBMITTED)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  brief  Brief  @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([briefId, personId])
 }

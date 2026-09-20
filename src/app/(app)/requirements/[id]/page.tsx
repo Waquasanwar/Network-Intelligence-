@@ -6,6 +6,9 @@ import { PageHeader, EmptyState, Score, Section } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input, Select, Field, Checkbox } from "@/components/ui/form";
+import { setBriefMembers } from "@/server/actions/members";
+import { FitChecks } from "@/components/domain/demand";
+import { parseFitTraits, fitChecks, fitProfile, type FitScores } from "@/lib/fit";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge } from "@/components/domain/badges";
@@ -31,7 +34,7 @@ const TIER_ORDER: Record<string, number> = { meets: 0, conversation: 1, stretch:
 export default async function RequirementPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireInternal();
   const { id } = await params;
-  const b = await prisma.brief.findUnique({ where: { id }, include: { account: true, shortlist: { include: { person: { include: { evidence: true, relationships: true } } } }, feeLines: { include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } } } });
+  const b = await prisma.brief.findUnique({ where: { id }, include: { account: true, shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: true } } } }, pitches: { include: { person: { select: { id: true, firstName: true, lastName: true, headline: true } } } }, referrals: { include: { referrer: { select: { firstName: true, lastName: true } } } }, feeLines: { include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } } } });
   if (!b || b.tenantId !== user.tenantId) notFound();
   const [card, audit] = await Promise.all([loadRateCard(user.tenantId), prisma.auditLog.findMany({ where: { tenantId: user.tenantId, entityId: id }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 8 })]);
   const d = await toDomain(b);
@@ -39,6 +42,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
   const items = b.shortlist.slice().sort((x, y) => TIER_ORDER[x.tier] - TIER_ORDER[y.tier] || y.fitScore - x.fitScore);
   const visible = items.filter((s) => PORTAL_VISIBLE.includes(s.decision));
   const placedOrIntroduced = (s: string) => ["INTRODUCED", "PLACED"].includes(s);
+  const traits = parseFitTraits(b.rawText);
 
   return (
     <>
@@ -76,8 +80,9 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
                 {items.map((s) => { const dims = (s.dimensions as MatchResult["dimensions"]).slice(0, 5); const checks = s.checks as HardCheck[]; const rec = ["PROPOSED", "CLIENT_INTERESTED", "INTRODUCED", "PLACED"].includes(s.decision); return (
                   <Card key={s.id} className={rec ? "border-teal/40" : s.decision === "NOT_FOR_THIS" || s.decision === "CLIENT_PASSED" ? "opacity-60" : ""}>
                     <CardBody className="pt-3">
-                      <div className="flex items-start justify-between gap-3"><PersonLink person={s.person} sub={s.person.headline} /><div className="flex flex-wrap items-center gap-2 justify-end shrink-0"><TierBadge tier={s.tier} /><AvailabilityBadge status={s.person.availabilityStatus} confirmedAt={s.person.availabilityConfirmedAt} nextCheckDate={s.person.nextCheckDate} /><ShortlistBadge decision={s.decision} /></div></div>
+                      <div className="flex items-start justify-between gap-3"><PersonLink person={s.person} sub={s.person.headline} /><div className="flex flex-wrap items-center gap-2 justify-end shrink-0"><TierBadge tier={s.tier} /><Badge tone={s.person.vouches.filter((v) => v.wouldRecommend).length ? "teal" : "neutral"} filled>vouched by {s.person.vouches.filter((v) => v.wouldRecommend).length}</Badge><AvailabilityBadge status={s.person.availabilityStatus} confirmedAt={s.person.availabilityConfirmedAt} nextCheckDate={s.person.nextCheckDate} /><ShortlistBadge decision={s.decision} /></div></div>
                       <CheckList checks={checks} />
+                      <FitChecks checks={fitChecks(traits, fitProfile((s.person.attributes as FitScores | null) ?? null, s.person.vouches.map((v) => v.attributes as FitScores | null).filter((a): a is FitScores => !!a)))} />
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name}><div className="text-[10px] uppercase text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>
                       <p className="text-[13px] mt-3 leading-5">{s.fitExplanation}</p>
                       {s.uncertainty.length ? <div className="mt-2 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2 text-[12px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-0.5">Uncertainty</div><ul className="pl-4 list-disc space-y-0.5">{s.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul></div> : null}
@@ -96,6 +101,13 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
         </div>
 
         <div className="space-y-4">
+          <Card>
+            <CardHeader title="Private to you" description="Requirements are only ever seen by you and your team. Clients see their own; members see only what you open to them, without the client's name." />
+            <CardBody>
+              <form action={setBriefMembers} className="space-y-3"><input type="hidden" name="briefId" value={b.id} /><Checkbox name="openToMembers" label="Open to network members (anonymised)" defaultChecked={b.openToMembers} /><Field label="What members see"><Input name="memberSummary" defaultValue={b.memberSummary ?? ""} placeholder="The need in plain words, no client name." /></Field><div className="flex justify-end"><SubmitButton size="sm" variant="secondary" pendingText="…">Save</SubmitButton></div></form>
+              {b.pitches.length || b.referrals.length ? <ul className="mt-3 divide-y divide-line text-[12.5px]">{b.pitches.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><PersonLink person={x.person} sub={null} /><small className="block text-ink-faint">pitched · {x.status.toLowerCase()}</small></span><Link href="/referrals?tab=pitches" className="text-navy hover:underline text-[12px]">Review</Link></li>)}{b.referrals.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><b>{x.name}</b><small className="block text-ink-faint">referred by {x.referrer.firstName} {x.referrer.lastName} · {x.status.toLowerCase()}</small></span><Link href="/referrals" className="text-navy hover:underline text-[12px]">Review</Link></li>)}</ul> : null}
+            </CardBody>
+          </Card>
           <Card>
             <CardHeader title="Commercials" description={`Who pays: ${b.account.name}. Change the model or the % here for this brief only.`} />
             <CardBody>

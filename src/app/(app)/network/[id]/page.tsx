@@ -12,6 +12,11 @@ import { AvailabilityBadge, DecisionBadge, RouteBadge, StageBadge } from "@/comp
 import { DateText } from "@/components/domain/date";
 import { AvailabilityDrawer, EditProfileDrawer, AddRelationshipDrawer, AddEvidenceDrawer, ScheduleDrawer, CaptureConversationDrawer, RelocationDrawer } from "@/components/domain/person-drawers";
 import { fullName } from "@/lib/utils";
+import { TrustCard, FitCard, VouchList, ScreeningBadge } from "@/components/domain/trust";
+import { VouchDrawer } from "@/components/domain/member-drawers";
+import { trustFor, fitFor, startScreening } from "@/server/actions/members";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { ClipboardList } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
@@ -31,6 +36,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
     where: { id },
     include: {
       relationships: { include: { networkOwner: { select: { name: true } }, introducedBy: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" } },
+      vouches: { include: { voucherUser: { select: { name: true } }, voucherPerson: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } },
+      referralsMade: { select: { status: true } },
       evidence: { include: { observer: { select: { name: true } } }, orderBy: { dateObserved: "desc" } },
       conversations: { include: { conductedBy: { select: { name: true } } }, orderBy: { date: "desc" } },
       matches: { include: { opportunity: true }, orderBy: { updatedAt: "desc" } },
@@ -43,6 +50,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   });
   if (!person || person.tenantId !== user.tenantId) notFound(); // object-level check; never reveal existence across tenants
 
+  const [trust, fit, users] = await Promise.all([trustFor(person), fitFor(person), prisma.user.findMany({ where: { tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true, name: true } })]);
   const [audit, allPeople, connections] = await Promise.all([
     prisma.auditLog.findMany({ where: { tenantId: user.tenantId, OR: [{ entityId: id }, { metadata: { path: ["personId"], equals: id } }] }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 40 }),
     prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }),
@@ -79,10 +87,13 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
               {person.amanaBench ? <Badge tone="teal" filled>Amana bench</Badge> : null}
               {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
+              {person.memberSince ? <Badge tone="teal" filled>network member</Badge> : null}
+              <ScreeningBadge status={person.screeningStatus} />
             </div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
+          <form action={startScreening}><input type="hidden" name="personId" value={person.id} /><SubmitButton size="sm" variant="secondary" pendingText="…"><ClipboardList className="h-3.5 w-3.5" /> Screening call</SubmitButton></form>
           <ScheduleDrawer personId={person.id} connections={connections.map((c) => c.provider)} />
           <CaptureConversationDrawer personId={person.id} />
           <AvailabilityDrawer person={person} />
@@ -142,8 +153,11 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                 </CardBody>
               </Card>
             </div>
+            <FitCard rows={fit} />
           </div>
           <div className="space-y-4">
+            <TrustCard t={trust} firstName={person.firstName} screened={person.screeningStatus === "APPROVED" || !!person.screenedAt} workedWith={person.relationships.some((r) => r.workedTogether)} action={<VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} />} />
+            <VouchList vouches={person.vouches} />
             <Card>
               <CardHeader title="Provenance" description="Who knows them and how" />
               <CardBody>

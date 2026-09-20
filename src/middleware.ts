@@ -11,18 +11,19 @@ export default auth((req) => {
   const user = req.auth?.user as (typeof req.auth extends null ? never : { id: string; tenantId: string; role: Role; tenantType: TenantType }) | undefined;
 
   if (!user) {
-    if (pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname === "/api/health") return NextResponse.next();
+    if (pathname === "/login" || pathname === "/join" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname === "/api/health") return NextResponse.next();
     const url = new URL("/login", req.nextUrl);
     url.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(url);
   }
 
   if (pathname === "/" || pathname === "/login") {
-    const home = user.role === "PARTNER" ? "/partner-portal" : user.role === "CLIENT" ? "/client-workspace" : "/overview";
+    const home = user.role === "PARTNER" ? "/partner-portal" : user.role === "CLIENT" ? "/client-workspace" : user.role === "MEMBER" ? "/member" : "/overview";
     return NextResponse.redirect(new URL(home, req.nextUrl));
   }
 
   // Server-side route authorisation by role (spec §12). Object-level checks happen in server code.
+  if (pathname === "/join") return NextResponse.next();
   if (!pathname.startsWith("/api") && !canAccessPath({ id: user.id, tenantId: user.tenantId, role: user.role, tenantType: user.tenantType }, pathname)) {
     return NextResponse.redirect(new URL("/forbidden", req.nextUrl));
   }

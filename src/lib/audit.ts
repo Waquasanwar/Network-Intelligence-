@@ -43,7 +43,18 @@ export type AuditAction =
   | "ratecard.update"
   | "portal.brief_submitted"
   | "portal.response"
-  | "terms.accept";
+  | "terms.accept"
+  | "vouch.create"
+  | "screening.start"
+  | "screening.submit"
+  | "screening.approve"
+  | "referral.create"
+  | "referral.update"
+  | "pitch.create"
+  | "pitch.update"
+  | "consent.update"
+  | "member.register"
+  | "brief.members";
 
 export async function audit(input: {
   tenantId: string;

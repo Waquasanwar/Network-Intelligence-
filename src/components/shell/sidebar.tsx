@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
@@ -11,25 +11,29 @@ const INTERNAL_NAV = [
   { href: "/conversations", label: "Conversations", icon: MessagesSquare },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/requirements", label: "Requirements", icon: ListChecks },
+  { href: "/referrals", label: "Referrals & pitches", icon: UserPlus },
 ];
 const WORKSPACES = [
   { href: "/amana", label: "Amana Expert Network", icon: Building2 },
   { href: "/portal", label: "Client & agency portal", icon: MonitorSmartphone },
+  { href: "/member", label: "Member portal", icon: BadgeCheck },
   { href: "/partners", label: "Partners", icon: Handshake },
   { href: "/relocation", label: "Relocation", icon: Plane },
 ];
 const SETTINGS_NAV = [
   { href: "/network/import", label: "Import contacts", icon: Upload },
+  { href: "/join", label: "Join link", icon: Link2 },
   { href: "/settings/commercials", label: "Commercials", icon: Percent },
   { href: "/settings/integrations", label: "Integrations", icon: Plug },
   { href: "/settings/security", label: "Security", icon: ShieldCheck },
 ];
 const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
+const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Refer someone", icon: UserPlus }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 
 export function Sidebar({ user }: { user: { name: string; email: string; role: Role; tenantName: string } }) {
   const pathname = usePathname();
-  const restricted = user.role === "PARTNER" || user.role === "CLIENT";
+  const restricted = user.role === "PARTNER" || user.role === "CLIENT" || user.role === "MEMBER";
 
   const Item = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
     const active = href === "/network" ? pathname === "/network" || (pathname.startsWith("/network/") && !pathname.startsWith("/network/import")) : pathname === href || pathname.startsWith(href + "/");
@@ -52,7 +56,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
   return (
     <aside className="w-[232px] flex-none bg-rail h-screen sticky top-0 flex flex-col text-rail-ink">
       <div className="px-4 pt-5 pb-4">
-        <Link href={restricted ? (user.role === "PARTNER" ? "/partner-portal" : "/client-workspace") : "/overview"} className="flex items-center gap-2.5">
+        <Link href={restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview"} className="flex items-center gap-2.5">
           <span className="h-8 w-8 rounded-[9px] bg-gradient-to-br from-white/20 to-white/5 text-white text-[11.5px] font-semibold inline-flex items-center justify-center tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-white/10">NI</span>
           <span className="leading-tight">
             <span className="block text-[13px] font-semibold text-white">Network Intelligence</span>
@@ -61,7 +65,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         </Link>
       </div>
       <nav className="px-2.5 flex-1 space-y-0.5 overflow-y-auto">
-        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
+        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {INTERNAL_NAV.map((i) => <Item key={i.href} {...i} />)}
             <Group label="Workspaces" />
