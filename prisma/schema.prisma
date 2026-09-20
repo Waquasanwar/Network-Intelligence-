@@ -182,6 +182,7 @@ model Person {
   targetLocations        String[]           @default([])
   capabilities           String[]           @default([])
   sectors                String[]           @default([])
+  workRights             String[]           @default([]) // visas / rights to work, checked against briefs; never nationality
   seniority              Seniority?
   languages              String[]           @default([])
   engagementPreferences  EngagementRoute[]  @default([])

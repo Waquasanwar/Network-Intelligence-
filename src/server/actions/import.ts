@@ -19,6 +19,7 @@ export type ImportRow = {
   country: string | null;
   capabilities: string[];
   sectors: string[];
+  workRights: string[];
   linkedin: string | null;
   source: SourceType;
   relationship: RelationshipType;
@@ -114,7 +115,7 @@ export async function previewImport(_prev: ImportPreview | null, formData: FormD
       line: i + 2,
       firstName, lastName, email,
       phone: get(r, "phone"), headline: get(r, "headline"), company: get(r, "company"), role: get(r, "role"), city: get(r, "city"), country: get(r, "country"),
-      capabilities: list(get(r, "capabilities")), sectors: list(get(r, "sectors")), linkedin: get(r, "linkedin"),
+      capabilities: list(get(r, "capabilities")), sectors: list(get(r, "sectors")), workRights: list(get(r, "work_rights")), linkedin: get(r, "linkedin"),
       source: src.value as SourceType, relationship: rel.value as RelationshipType,
       introducedBy: get(r, "introduced_by"), workedTogether: worked, notes: get(r, "notes"),
       issues, warnings, duplicateOf,
@@ -155,6 +156,7 @@ export async function commitImport(_prev: ImportResult | null, formData: FormDat
         primaryCountry: r.country?.slice(0, 80) ?? null,
         capabilities: r.capabilities.slice(0, 30).map((c) => c.slice(0, 80)),
         sectors: r.sectors.slice(0, 20).map((c) => c.slice(0, 80)),
+        workRights: r.workRights.slice(0, 10).map((c) => c.slice(0, 80)),
         linkedinUrl: r.linkedin && /^https?:\/\//i.test(r.linkedin) ? r.linkedin.slice(0, 300) : null,
         availabilityStatus: "NEEDS_REFRESH",
         nextAction: "Book first conversation",

@@ -1,5 +1,6 @@
 import type { AvailabilityStatus, EngagementRoute, Seniority, SourceType, RelationshipType, EvidenceType, HumanDecision, OpportunityStatus, IntroductionStatus, ConsentStatus, AdvisoryStatus, CommercialModel } from "@prisma/client";
 import type { ExtractedSummary } from "@/lib/ai/types";
+import type { AccountKind, Brief, BriefStatus, Terms, ShortlistDecision, HardCheck, FeeModel, FeeStatus, RateCard } from "@/lib/demand";
 
 export type User = { id: string; name: string; role: "OWNER" | "CONTRIBUTOR" };
 export type Person = {
@@ -9,7 +10,7 @@ export type Person = {
   rateExpectation?: string | null; salaryExpectation?: string | null; noticePeriod?: string | null;
   availabilityStatus: AvailabilityStatus; availabilityConfirmedAt?: string | null; availabilitySource?: string | null; availabilityConfidence: number; nextCheckDate?: string | null;
   relocationInterest: boolean; workingStyle?: string | null; constraints?: string | null; nextAction?: string | null; nextActionDate?: string | null;
-  amanaBench: boolean; usedByAmana: boolean; createdAt: string; updatedAt: string;
+  workRights?: string[]; amanaBench: boolean; usedByAmana: boolean; createdAt: string; updatedAt: string;
 };
 export type Relationship = { id: string; personId: string; networkOwnerId: string; sourceType: SourceType; introducedById?: string | null; relationshipType: RelationshipType; workedTogether: boolean; workedTogetherContext?: string | null; yearsKnown?: number | null; wouldWorkTogetherAgain?: boolean | null; relationshipNotes?: string | null; lastContactDate?: string | null };
 export type Evidence = { id: string; personId: string; observerId: string; evidenceType: EvidenceType; context: string; description: string; confidence: number; dateObserved?: string | null; visibility: "PRIVATE" | "TENANT" | "PARTNER_SAFE" };
@@ -22,6 +23,10 @@ export type TeamMember = { id: string; opportunityId: string; personId: string; 
 export type Partner = { id: string; name: string; contactName?: string | null; subscriptionStatus: "TRIAL" | "ACTIVE" | "PAUSED" | "CANCELLED"; subscriptionTier?: string | null; commercialModel: CommercialModel; commercialSharePct?: number | null; monthlyFee?: number | null; currency: string; licensedForPermanent: boolean; notes?: string | null };
 export type PartnerRequirement = { id: string; partnerId: string; title: string; description: string; engagementRoute: EngagementRoute; location?: string | null; requiredCapabilities: string[]; seniority?: Seniority | null; budget?: string | null; status: "SUBMITTED" | "REVIEWING" | "RESULTS_SHARED" | "INTRO_REQUESTED" | "CLOSED"; linkedOpportunityId?: string | null; createdAt: string };
 export type Relocation = { personId: string; currentLocation?: string | null; targetLocation?: string | null; targetMoveWindow?: string | null; familyMove: boolean; schoolGuidanceInterest: boolean; housingGuidanceInterest: boolean; relocationAdvisoryInterest: boolean; employerSponsored: boolean; advisoryStatus: AdvisoryStatus; notes?: string | null; updatedAt: string };
+export type Account = { id: string; name: string; kind: AccountKind; contactName?: string | null; contactEmail?: string | null; status: "PROSPECT" | "ACTIVE" | "PAUSED"; currency: string; terms?: Partial<Terms> | null; monthlyFee?: number | null; partnerId?: string | null; notes?: string | null; portalEnabled: boolean; createdAt: string };
+export type StoredBrief = Brief & { id: string; accountId: string; submittedVia: "OWNER" | "PORTAL"; status: BriefStatus; terms: Terms; expertHours?: number | null; termsAccepted: boolean; createdAt: string; updatedAt: string };
+export type ShortlistItem = { id: string; briefId: string; personId: string; fitScore: number; fitExplanation: string; dimensions: { name: string; score: number; note: string }[]; uncertainty: string[]; checks: HardCheck[]; tier: "meets" | "conversation" | "stretch"; decision: ShortlistDecision; note?: string | null; clientNote?: string | null; createdAt: string; updatedAt: string };
+export type FeeLine = { id: string; briefId: string; accountId: string; personId?: string | null; model: FeeModel; basis: string; gross: number; ourTake: number; currency: string; status: FeeStatus; createdAt: string; updatedAt: string };
 export type AuditEntry = { id: string; actorId: string; action: string; entityType: string; entityId?: string | null; detail?: string | null; createdAt: string };
 
 export type State = {
@@ -29,5 +34,6 @@ export type State = {
   people: Person[]; relationships: Relationship[]; evidence: Evidence[]; conversations: Conversation[]; scheduled: Scheduled[];
   opportunities: Opportunity[]; matches: Match[]; introductions: Introduction[]; team: TeamMember[];
   partners: Partner[]; requirements: PartnerRequirement[]; relocation: Relocation[]; audit: AuditEntry[];
+  accounts: Account[]; briefs: StoredBrief[]; shortlist: ShortlistItem[]; fees: FeeLine[]; rateCard: RateCard;
   connections: string[];
 };

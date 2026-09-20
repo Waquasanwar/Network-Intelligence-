@@ -36,6 +36,7 @@ export const IMPORT_COLUMNS = [
   { key: "country", label: "Country", aliases: [] },
   { key: "capabilities", label: "Capabilities", aliases: ["skills", "expertise", "capability", "specialisms"] },
   { key: "sectors", label: "Sectors", aliases: ["industries", "industry", "sector"] },
+  { key: "work_rights", label: "Work rights", aliases: ["visa", "visa status", "right to work", "work permit", "residency", "work authorisation", "work authorization"] },
   { key: "linkedin", label: "LinkedIn URL", aliases: ["linkedin url", "linkedin_url", "profile url"] },
   { key: "source", label: "Source", aliases: ["how met", "source type"] },
   { key: "relationship", label: "Relationship", aliases: ["relationship type", "how known"] },
@@ -79,7 +80,7 @@ export function templateCsv(): string {
   const header = IMPORT_COLUMNS.map((c) => c.key).join(",");
   const example = [
     "Sarah", "Okonkwo", "sarah@example.com", "", "Programme director who stabilises troubled transformations", "Independent", "Programme Director", "London", "UK",
-    "Programme director; Transformation; Systems integrator challenge", "Banking; Insurance", "https://linkedin.com/in/example", "worked together", "worked with", "", "yes", "Best in recovery situations. Prefers a call over email.",
+    "Programme director; Transformation; Systems integrator challenge", "Banking; Insurance", "UK citizen; UAE residence visa", "https://linkedin.com/in/example", "worked together", "worked with", "", "yes", "Best in recovery situations. Prefers a call over email.",
   ].map((v) => (/[,"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)).join(",");
   return `${header}\n${example}\n`;
 }
