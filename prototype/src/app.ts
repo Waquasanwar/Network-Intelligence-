@@ -9,6 +9,9 @@ import { parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv
 import { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } from "@/lib/labels";
 import { redactForPartner } from "@/lib/authz";
 import { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt as fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS } from "@/lib/demand";
+import { trustScore, TRUST_BAND_LABEL } from "@/lib/trust";
+import { SCREENING_SCRIPT, SCREENING_MINUTES, screeningToResult } from "@/lib/screening";
+import { ATTRIBUTES, fitProfile, fitChecks, fitHighlights, parseFitTraits } from "@/lib/fit";
 import { views, setContext, type Ctx } from "./views";
 
 // ---------- helpers ----------
@@ -24,7 +27,7 @@ export const list = (s: string | null | undefined) => (s ? s.split(/[,;\n]/).map
 // ---------- store ----------
 export let S: State = seed();
 let persist: Persist;
-const COLLECTIONS = ["people", "relationships", "evidence", "conversations", "scheduled", "opportunities", "matches", "introductions", "team", "relocation", "requirements", "partners", "accounts", "briefs", "shortlist", "fees"];
+const COLLECTIONS = ["people", "relationships", "evidence", "conversations", "scheduled", "opportunities", "matches", "introductions", "team", "relocation", "requirements", "partners", "accounts", "briefs", "shortlist", "fees", "vouches", "referrals", "pitches"];
 const keyOf = (c: string, d: any) => (c === "relocation" ? d.personId : d.id);
 export async function commit(collection: string, doc: any, audit?: { action: string; entityType: string; entityId?: string | null; detail?: string | null }) {
   const arr = (S as any)[collection] as any[];
@@ -51,7 +54,7 @@ function overlay(loaded: Record<string, any[]>) {
   if (log?.entries) S.audit = [...log.entries, ...S.audit.filter((a) => !log.entries.some((e: AuditEntry) => e.id === a.id))];
 }
 export const person = (id: string) => S.people.find((p) => p.id === id);
-export const userName = (id: string) => S.users.find((u) => u.id === id)?.name ?? S.partners.find((p) => p.id === id)?.name ?? "Someone";
+export const userName = (id: string) => S.users.find((u) => u.id === id)?.name ?? S.partners.find((p) => p.id === id)?.name ?? (S.people.find((p) => p.id === id) ? full(S.people.find((p) => p.id === id)!) : null) ?? S.accounts.find((a) => a.id === id)?.name ?? "Someone";
 export const relsOf = (id: string) => S.relationships.filter((r) => r.personId === id);
 export const evOf = (id: string) => S.evidence.filter((e) => e.personId === id);
 export const convOf = (id: string) => S.conversations.filter((c) => c.personId === id).sort((a, b) => b.date.localeCompare(a.date));
@@ -60,7 +63,24 @@ export function toMatchPerson(p: Person): MatchPerson {
   return { id: p.id, capabilities: p.capabilities, sectors: p.sectors, seniority: p.seniority ?? null, engagementPreferences: p.engagementPreferences, primaryCity: p.primaryCity ?? null, primaryCountry: p.primaryCountry ?? null, targetLocations: p.targetLocations, availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt ? new Date(p.availabilityConfirmedAt) : null, nextCheckDate: p.nextCheckDate ? new Date(p.nextCheckDate) : null, rateExpectation: p.rateExpectation, salaryExpectation: p.salaryExpectation, relationships: relsOf(p.id).map((r) => ({ relationshipType: r.relationshipType, workedTogether: r.workedTogether, wouldWorkTogetherAgain: r.wouldWorkTogetherAgain ?? null, yearsKnown: r.yearsKnown ?? null })), evidence: evOf(p.id).map((e) => ({ evidenceType: e.evidenceType, confidence: e.confidence, context: e.context })), approvedConversations: convOf(p.id).filter((c) => c.approvalStatus === "APPROVED").length };
 }
 /** How well the network knows someone (0-100). About our knowledge, never their quality. */
-export const toBriefPerson = (p: Person) => ({ ...toMatchPerson(p), workRights: p.workRights ?? [], relocationInterest: p.relocationInterest });
+export const vouchesOf = (id: string) => S.vouches.filter((v) => v.personId === id);
+export const observedAttrs = (id: string) => vouchesOf(id).map((v) => v.attributes).filter((a): a is NonNullable<typeof a> => !!a);
+export const fitOf = (p: Person) => fitProfile(p.attributes ?? null, observedAttrs(p.id));
+export const toBriefPerson = (p: Person) => ({ ...toMatchPerson(p), workRights: p.workRights ?? [], relocationInterest: p.relocationInterest, attributes: p.attributes ?? null, observedAttributes: observedAttrs(p.id), vouchedBy: vouchesOf(p.id).filter((v) => v.wouldRecommend).length });
+export function trustOf(p: Person) {
+  const r = relsOf(p.id), e = evOf(p.id), c = convOf(p.id).filter((x) => x.approvalStatus === "APPROVED");
+  return trustScore({ vouches: vouchesOf(p.id).map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })), workedWith: r.filter((x) => x.workedTogether).length, wouldWorkAgain: r.filter((x) => x.wouldWorkTogetherAgain === true).length, evidence: e.filter((x) => x.evidenceType !== "CAUTION").length, cautions: e.filter((x) => x.evidenceType === "CAUTION").length, approvedConversations: c.length, screened: p.screeningStatus === "APPROVED" || !!p.screenedAt, freshness: fresh(p) as "fresh" | "aging" | "stale" | "unknown", referralsAccepted: S.referrals.filter((x) => x.referrerPersonId === p.id && x.status === "ACCEPTED").length });
+}
+/** Things that need the owner's attention, derived from the data. */
+export function alerts() {
+  const out: { kind: string; text: string; href: string; when: string; tone: string }[] = [];
+  for (const p of S.people) { if (p.screeningStatus === "REGISTERED") out.push({ kind: "New member", text: `${full(p)} registered and needs a screening call`, href: `#/people/${p.id}`, when: p.memberSince ?? p.createdAt, tone: "teal" }); if (p.screeningStatus === "SUBMITTED") out.push({ kind: "Screening", text: `${full(p)} completed the AI screening. Review the summary.`, href: `#/conversations?tab=review`, when: p.updatedAt, tone: "amber" }); }
+  for (const r of S.referrals) if (r.status === "NEW") out.push({ kind: "Referral", text: `${userName(r.referrerPersonId)} referred ${r.name}${r.briefId ? " for a requirement" : ""}`, href: "#/referrals", when: r.createdAt, tone: "navy" });
+  for (const p of S.pitches) if (p.status === "SUBMITTED") out.push({ kind: "Pitch", text: `${userName(p.personId)} pitched for "${S.briefs.find((b) => b.id === p.briefId)?.title ?? "a requirement"}"`, href: "#/referrals?tab=pitches", when: p.createdAt, tone: "navy" });
+  for (const b of S.briefs) if (b.status === "NEW" && b.submittedVia === "PORTAL") out.push({ kind: "Requirement", text: `${S.accounts.find((a) => a.id === b.accountId)?.name ?? "A client"} sent a new requirement`, href: `#/requirements/${b.id}`, when: b.createdAt, tone: "amber" });
+  for (const s of S.shortlist) if (s.decision === "CLIENT_INTERESTED") { const b = S.briefs.find((x) => x.id === s.briefId); out.push({ kind: "Introduction", text: `${S.accounts.find((a) => a.id === b?.accountId)?.name ?? "A client"} wants an introduction to ${userName(s.personId)}`, href: `#/requirements/${s.briefId}`, when: s.updatedAt, tone: "teal" }); }
+  return out.sort((a, b) => b.when.localeCompare(a.when));
+}
 export function depth(p: Person) {
   const r = relsOf(p.id), e = evOf(p.id), c = convOf(p.id).filter((x) => x.approvalStatus === "APPROVED");
   let d = Math.min(25, r.length * 12 + (r.some((x) => x.workedTogether) ? 13 : 0)) + Math.min(30, e.length * 12) + Math.min(30, c.length * 18);
@@ -82,11 +102,12 @@ export function openDrawer(title: string, desc: string, body: Raw, onSubmit: typ
   setTimeout(() => (root.querySelector("input:not([type=hidden]),textarea,select") as HTMLElement | null)?.focus(), 30);
 }
 export function closeDrawer() { const root = document.getElementById("drawer")!; root.hidden = true; root.innerHTML = ""; document.body.style.overflow = ""; drawerSubmit = null; }
+let renderShell: () => void = () => {};
 let paletteIdx = 0;
 function openPalette() { const root = document.getElementById("palette")!; root.hidden = false; const inp = root.querySelector("input") as HTMLInputElement; inp.value = ""; paletteIdx = 0; renderPalette(""); setTimeout(() => inp.focus(), 20); }
 function closePalette() { document.getElementById("palette")!.hidden = true; }
 function paletteItems(q: string) {
-  const pages = [["Overview", "#/overview"], ["Network", "#/network"], ["Conversations", "#/conversations"], ["Opportunities", "#/opportunities"], ["Requirements & co-pilot", "#/requirements"], ["Client & agency portal", "#/portal"], ["Amana Expert Network", "#/amana"], ["Partners", "#/partners"], ["Relocation", "#/relocation"], ["Import contacts", "#/import"], ["Commercials", "#/settings?tab=commercials"], ["Settings", "#/settings"]].map(([l, href]) => ({ label: l, hint: "Page", href }));
+  const pages = [["Overview", "#/overview"], ["Network", "#/network"], ["Conversations", "#/conversations"], ["Opportunities", "#/opportunities"], ["Requirements & co-pilot", "#/requirements"], ["Client & agency portal", "#/portal"], ["Referrals & pitches", "#/referrals"], ["Member portal", "#/member"], ["Join the network", "#/join"], ["Amana Expert Network", "#/amana"], ["Partners", "#/partners"], ["Relocation", "#/relocation"], ["Import contacts", "#/import"], ["Commercials", "#/settings?tab=commercials"], ["Settings", "#/settings"]].map(([l, href]) => ({ label: l, hint: "Page", href }));
   const briefs = S.briefs.map((b) => ({ label: b.title, hint: `Requirement · ${S.accounts.find((a) => a.id === b.accountId)?.name ?? ""}`, href: `#/requirements/${b.id}` }));
   const people = S.people.map((p) => ({ label: full(p), hint: p.headline ?? "Person", href: `#/people/${p.id}` }));
   const opps = S.opportunities.map((o) => ({ label: o.title, hint: o.clientName ?? "Opportunity", href: `#/opportunities/${o.id}` }));
@@ -107,9 +128,15 @@ function route(): View {
   const seg = path.split("/").filter(Boolean);
   if (seg[0] === "people" && seg[1]) return views.person(seg[1], q);
   if (seg[0] === "opportunities" && seg[1]) return views.opportunity(seg[1]);
+  const role = S.viewAs.role;
+  const allowed = role === "OWNER" ? null : role === "MEMBER" ? ["member", "screening", "people"] : ["portal"];
+  if (allowed && seg[0] && !allowed.includes(seg[0])) { location.hash = role === "MEMBER" ? "#/member" : "#/portal"; return views.overview(); }
+  if (allowed && !seg[0]) { location.hash = role === "MEMBER" ? "#/member" : "#/portal"; return views.overview(); }
+  if (role === "MEMBER" && seg[0] === "people" && seg[1] !== S.viewAs.personId) { location.hash = "#/member"; return views.overview(); }
   if (seg[0] === "requirements" && seg[1]) return views.requirement(seg[1]);
+  if (seg[0] === "screening" && seg[1]) return views.screening(seg[1], q);
   const v = (views as any)[seg[0]];
-  return typeof v === "function" && seg[0] !== "person" && seg[0] !== "opportunity" && seg[0] !== "requirement" ? v(q) : views.overview();
+  return typeof v === "function" && seg[0] !== "person" && seg[0] !== "opportunity" && seg[0] !== "requirement" && seg[0] !== "screening" ? v(q) : views.overview();
 }
 export function render() {
   const v = route();
@@ -121,6 +148,7 @@ export function render() {
   const path = location.hash.split("?")[0].replace(/^#/, "") || "/overview";
   document.querySelectorAll<HTMLAnchorElement>("#rail a[data-nav]").forEach((a) => a.classList.toggle("active", path === a.dataset.nav || (path.startsWith(a.dataset.nav + "/")) || (a.dataset.nav === "/network" && path.startsWith("/people/"))));
   countUp(main); v.after?.();
+  const bell = document.getElementById("bell-count"); if (bell) { const n = S.viewAs.role === "OWNER" ? alerts().length : 0; bell.textContent = String(n); bell.hidden = n === 0; }
 }
 function countUp(root: HTMLElement) {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -187,6 +215,9 @@ async function boot() {
     opportunities: '<path d="M12 3l9 9-9 9-9-9z"/>',
     requirements: '<path d="M4 6h16M4 12h10M4 18h7"/><circle cx="17.5" cy="16.5" r="3"/><path d="m20 19 2 2"/>',
     portal: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3M7 9h6M7 13h4"/>',
+    referrals: '<circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5"/><path d="M17 8h4M19 6v4"/>',
+    member: '<circle cx="12" cy="9" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M12 2.5l1 1.8 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L9 4.6l2-.3z"/>',
+    join: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
     amana: '<path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/>',
     partners: '<path d="M8 12l3 3 5-5"/><circle cx="12" cy="12" r="9"/>',
     relocation: '<path d="M3 12h13"/><path d="M12 6l6 6-6 6"/><path d="M19 4v16"/>',
@@ -194,21 +225,40 @@ async function boot() {
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
   };
   const ico = (k: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICO[k]}</svg>`;
+  const railNav = () => {
+    const role = S.viewAs.role;
+    const link = ([p, l, i]: string[]) => `<a data-nav="${p}" href="#${p}"><i>${ico(i)}</i>${l}</a>`;
+    if (role === "MEMBER") return `<nav>${[["/member", "My network profile", "member"], ["/member?tab=opportunities", "Opportunities", "opportunities"], ["/member?tab=refer", "Refer someone", "referrals"]].map(link).join("")}</nav>`;
+    if (role !== "OWNER") return `<nav>${[["/portal", "Requirements", "requirements"], ["/portal?tab=shortlists", "Shortlists", "portal"]].map(link).join("")}</nav>`;
+    return `<nav>${[["/overview", "Overview", "overview"], ["/network", "Network", "network"], ["/conversations", "Conversations", "conversations"], ["/opportunities", "Opportunities", "opportunities"], ["/requirements", "Requirements", "requirements"], ["/referrals", "Referrals & pitches", "referrals"]].map(link).join("")}<div class="group">Workspaces</div>${[["/amana", "Amana Expert Network", "amana"], ["/portal", "Client & agency portal", "portal"], ["/member", "Member portal", "member"], ["/partners", "Partners", "partners"], ["/relocation", "Relocation", "relocation"]].map(link).join("")}<div class="group">Setup</div>${[["/import", "Import contacts", "import"], ["/join", "Join link", "join"], ["/settings", "Settings", "settings"]].map(link).join("")}</nav>`;
+  };
+  const whoAmI = () => { const va = S.viewAs; if (va.role === "MEMBER") { const p = S.people.find((x) => x.id === va.personId); return { name: p ? full(p) : "Member", sub: "Network member", ini: p ? `${p.firstName[0]}${p.lastName[0]}` : "M" }; } if (va.role === "AGENCY" || va.role === "CLIENT") { const a = S.accounts.find((x) => x.id === va.accountId); return { name: a?.name ?? "Account", sub: va.role === "AGENCY" ? "Agency login" : "Client login", ini: (a?.name ?? "A").slice(0, 2).toUpperCase() }; } return { name: S.me.name, sub: "Owner", ini }; };
+  const roleOptions = () => { const va = S.viewAs; const sel = (k: string) => (k === `${va.role}:${va.accountId ?? va.personId ?? ""}` ? "selected" : ""); return `<option value="OWNER:" ${sel("OWNER:")}>Owner · ${esc(S.me.name)}</option><optgroup label="Agency and client logins">${S.accounts.filter((a) => a.portalEnabled && a.kind !== "EXPERT_NETWORK").map((a) => `<option value="${a.kind === "AGENCY" ? "AGENCY" : "CLIENT"}:${a.id}" ${sel(`${a.kind === "AGENCY" ? "AGENCY" : "CLIENT"}:${a.id}`)}>${esc(a.name)} · ${a.kind === "AGENCY" ? "agency" : "client"}</option>`).join("")}</optgroup><optgroup label="Network member logins">${S.people.filter((p) => p.memberSince).slice(0, 8).map((p) => `<option value="MEMBER:${p.id}" ${sel(`MEMBER:${p.id}`)}>${esc(full(p))} · member</option>`).join("")}</optgroup>`; };
+  const renderShellInner = () => {
+    const me = whoAmI();
+    document.getElementById("rail")!.innerHTML = `<a class="brand" href="#/${S.viewAs.role === "OWNER" ? "overview" : S.viewAs.role === "MEMBER" ? "member" : "portal"}"><span class="mark">NI</span><span><b>Network Intelligence</b><small>${S.viewAs.role === "OWNER" ? "Founder network" : S.viewAs.role === "MEMBER" ? "Referral network" : "Client & agency portal"}</small></span></a>${railNav()}
+      <div class="me"><span class="avatar hue-1 md"><span>${esc(me.ini)}</span></span><div><b>${esc(me.name)}</b><small>${esc(me.sub)}</small></div><button type="button" class="icon" id="theme" title="Toggle theme" aria-label="Toggle theme">◐</button></div>
+      <label class="signin"><span>Signed in as</span><select id="viewas" aria-label="Sign in as">${roleOptions()}</select></label>`;
+    document.getElementById("theme")!.addEventListener("click", () => { const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); const next = cur === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = next; try { localStorage.setItem("ni-theme", next); } catch { /* no storage */ } });
+    document.getElementById("viewas")!.addEventListener("change", (e) => { const [role, id] = (e.target as HTMLSelectElement).value.split(":"); const v = role === "MEMBER" ? { role: "MEMBER" as const, personId: id } : role === "OWNER" ? { role: "OWNER" as const } : { role: role as "AGENCY" | "CLIENT", accountId: id }; S.viewAs = v; try { localStorage.setItem("ni-viewas", JSON.stringify(v)); } catch { /* no storage */ } location.hash = role === "OWNER" ? "#/overview" : role === "MEMBER" ? "#/member" : "#/portal"; renderShellInner(); render(); });
+  };
+  renderShell = renderShellInner;
   app.innerHTML = `
     <div class="ambient" aria-hidden="true"></div>
-    <aside id="rail"><a class="brand" href="#/overview"><span class="mark">NI</span><span><b>Network Intelligence</b><small>Founder network</small></span></a>
-      <nav>${[["/overview", "Overview", "overview"], ["/network", "Network", "network"], ["/conversations", "Conversations", "conversations"], ["/opportunities", "Opportunities", "opportunities"], ["/requirements", "Requirements", "requirements"]].map(([p, l, i]) => `<a data-nav="${p}" href="#${p}"><i>${ico(i)}</i>${l}</a>`).join("")}<div class="group">Workspaces</div>${[["/amana", "Amana Expert Network", "amana"], ["/portal", "Client & agency portal", "portal"], ["/partners", "Partners", "partners"], ["/relocation", "Relocation", "relocation"]].map(([p, l, i]) => `<a data-nav="${p}" href="#${p}"><i>${ico(i)}</i>${l}</a>`).join("")}<div class="group">Setup</div>${[["/import", "Import contacts", "import"], ["/settings", "Settings", "settings"]].map(([p, l, i]) => `<a data-nav="${p}" href="#${p}"><i>${ico(i)}</i>${l}</a>`).join("")}</nav>
-      <div class="me"><span class="avatar hue-1 md"><span>${esc(ini)}</span></span><div><b>${esc(S.me.name)}</b><small>Owner</small></div><button type="button" class="icon" id="theme" title="Toggle theme" aria-label="Toggle theme">◐</button></div></aside>
-    <div class="content"><header id="top"><nav id="crumbs" aria-label="Breadcrumb"></nav><button type="button" class="searchbtn" id="open-palette"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search people, opportunities… <kbd>⌘K</kbd></button></header><main id="main"></main></div>
+    <aside id="rail"></aside>
+    <div class="content"><header id="top"><nav id="crumbs" aria-label="Breadcrumb"></nav><div class="top-actions"><button type="button" class="searchbtn" id="open-palette"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search people, opportunities… <kbd>⌘K</kbd></button><button type="button" class="bell" id="bell" aria-label="Alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><i id="bell-count" hidden>0</i></button></div></header><div id="alerts" hidden></div><main id="main"></main></div>
     <div id="drawer" hidden></div><div id="palette" hidden><div class="scrim" data-close-palette></div><div class="box"><div class="in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="Search people, opportunities, pages…" aria-label="Search"><kbd>esc</kbd></div><ul id="palette-list"></ul></div></div><div id="toasts"></div>`;
   try { const t = localStorage.getItem("ni-theme"); if (t) document.documentElement.dataset.theme = t; } catch { /* no storage */ }
-  document.getElementById("theme")!.addEventListener("click", () => { const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); const next = cur === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = next; try { localStorage.setItem("ni-theme", next); } catch { /* no storage */ } });
   persist = await createPersist();
-  try { const loaded = await persist.loadAll([...COLLECTIONS, "audit", "settings"]); overlay(loaded); const rc = loaded.settings?.find((d) => d.id === "rateCard"); if (rc) S.rateCard = { ...S.rateCard, ...rc }; if (loaded.settings?.find((d) => d.id === "prefs")?.hideDemo) { const demoIds = new Set(seed().people.map((p) => p.id)); S.people = S.people.filter((p) => !demoIds.has(p.id)); } } catch { /* start from seed */ }
-  const ctx: Ctx = { S: () => S, ai, esc, raw, h: null as any, uid, nowISO, full, list, person, userName, relsOf, evOf, convOf, fresh, depth, toMatchPerson, commit, removeDoc, logAudit, toast, openDrawer, closeDrawer, render, constellation, retrieveMatches, capabilityCoverage, suggestNextCheck, ACTIVE_STATUSES, redactForPartner, parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv, seed, persistMode: () => persist.mode, savePref: (k, v) => persist.save("settings", "prefs", { [k]: v }).catch(() => {}), saveRateCard: (card) => { S.rateCard = card; return persist.save("settings", "rateCard", card).catch(() => {}); }, toBriefPerson, demand: { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt: fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS }, labels: { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } };
+  try { const loaded = await persist.loadAll([...COLLECTIONS, "audit", "settings"]); overlay(loaded); const rc = loaded.settings?.find((d) => d.id === "rateCard"); if (rc) S.rateCard = { ...S.rateCard, ...rc }; try { const va = localStorage.getItem("ni-viewas"); if (va) S.viewAs = JSON.parse(va); } catch { /* default owner */ } if (loaded.settings?.find((d) => d.id === "prefs")?.hideDemo) { const demoIds = new Set(seed().people.map((p) => p.id)); S.people = S.people.filter((p) => !demoIds.has(p.id)); } } catch { /* start from seed */ }
+  const ctx: Ctx = { S: () => S, ai, esc, raw, h: null as any, uid, nowISO, full, list, person, userName, relsOf, evOf, convOf, fresh, depth, toMatchPerson, commit, removeDoc, logAudit, toast, openDrawer, closeDrawer, render, constellation, retrieveMatches, capabilityCoverage, suggestNextCheck, ACTIVE_STATUSES, redactForPartner, parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv, seed, persistMode: () => persist.mode, savePref: (k, v) => persist.save("settings", "prefs", { [k]: v }).catch(() => {}), saveRateCard: (card) => { S.rateCard = card; return persist.save("settings", "rateCard", card).catch(() => {}); }, toBriefPerson, trustOf, fitOf, vouchesOf, alerts, setViewAs: (v) => { S.viewAs = v; try { localStorage.setItem("ni-viewas", JSON.stringify(v)); } catch { /* no storage */ } renderShell(); }, trust: { TRUST_BAND_LABEL }, screening: { SCREENING_SCRIPT, SCREENING_MINUTES, screeningToResult }, fit: { ATTRIBUTES, fitProfile, fitChecks, fitHighlights, parseFitTraits }, demand: { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt: fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS }, labels: { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } };
   setContext(ctx);
+  renderShellInner();
   document.addEventListener("click", (e) => {
     const t = e.target as HTMLElement;
+    if (t.closest("#bell")) { const panel = document.getElementById("alerts")!; if (!panel.hidden) { panel.hidden = true; return; } const items = alerts(); panel.innerHTML = `<div class="alerts-panel"><header><b>Needs your attention</b><small>${items.length} item${items.length === 1 ? "" : "s"}</small></header>${items.length ? `<ul>${items.map((a) => `<li><a href="${a.href}" data-alert><span class="badge filled tone-${a.tone}">${esc(a.kind)}</span><span>${esc(a.text)}</span><small>${esc(new Date(a.when).toLocaleDateString("en-GB", { day: "numeric", month: "short" }))}</small></a></li>`).join("")}</ul>` : '<p class="dim">Nothing waiting. New registrations, screenings, referrals, pitches and client requests appear here.</p>'}</div>`; panel.hidden = false; return; }
+    if (t.closest("[data-alert]")) { document.getElementById("alerts")!.hidden = true; return; }
+    if (!t.closest("#alerts")) document.getElementById("alerts")!.hidden = true;
     const act = t.closest<HTMLElement>("[data-act]"); if (act && !(act as HTMLButtonElement).disabled) { e.preventDefault(); Promise.resolve(views.actions[act.dataset.act!]?.(act)).catch((err) => { console.error(err); toast("Something went wrong", "risk"); }); return; }
     if (t.closest("[data-close]")) { closeDrawer(); return; }
     if (t.closest("[data-close-palette]")) { closePalette(); return; }

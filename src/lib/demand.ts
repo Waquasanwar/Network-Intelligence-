@@ -13,6 +13,7 @@
  */
 import type { EngagementRoute, Seniority } from "@prisma/client";
 import { retrieveMatches, type MatchPerson, type MatchResult } from "./matching";
+import { parseFitTraits, fitChecks, fitProfile, type AttributeKey, type FitScores } from "./fit";
 
 // ---------- Brief ----------
 
@@ -34,6 +35,7 @@ export type Brief = {
   budget: Budget | null;
   durationMonths: number | null;
   startBy: string | null;
+  fitTraits: AttributeKey[]; // working-style traits the brief asks for, e.g. political awareness
   assumptions: string[]; // what the co-pilot inferred
   questions: string[]; // what it could not infer
 };
@@ -160,19 +162,22 @@ export function parseBrief(text: string): Brief {
   else { const q = /\bq([1-4])\b/i.exec(t); const mo = /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\b/i.exec(t); const wk = /\bin (\d{1,2}) weeks?\b/i.exec(t); startBy = q ? `Q${q[1]}` : mo ? mo[1][0].toUpperCase() + mo[1].slice(1).toLowerCase() : wk ? `In ${wk[1]} weeks` : null; }
   if (!startBy) questions.push("When does this need to start?");
 
+  const fitTraits = parseFitTraits(t);
+  if (fitTraits.length) assumptions.push(`Working style matters here: ${fitTraits.join(", ").replace(/political/, "political awareness").replace(/commercial/, "commercial awareness").replace(/conflict/, "conflict handling")}. Fit is labelled from screening and vouches, never used to exclude.`);
   const title = [headcount > 1 ? `${headcount} × ` : "", roles[0] ?? "Requirement", route ? ` (${route.toLowerCase()})` : "", locations.length ? ` · ${locations[0]}` : ""].join("").trim();
-  return { rawText: t, title, engagementRoute: route, headcount, roles, capabilities, sectors, seniority, locations, mustBeLocal, workRights, budget, durationMonths, startBy, assumptions, questions };
+  return { rawText: t, title, engagementRoute: route, headcount, roles, capabilities, sectors, seniority, locations, mustBeLocal, workRights, budget, durationMonths, startBy, fitTraits, assumptions, questions };
 }
 
 // ---------- Matching against a brief ----------
 
-export type BriefPerson = MatchPerson & { workRights: string[]; relocationInterest: boolean };
+export type BriefPerson = MatchPerson & { workRights: string[]; relocationInterest: boolean; attributes?: FitScores | null; observedAttributes?: FitScores[]; vouchedBy?: number };
 
 export type HardCheck = { label: string; state: "met" | "unmet" | "unknown"; note: string };
 
 export type BriefMatch = {
   match: MatchResult;
   checks: HardCheck[];
+  fit: ReturnType<typeof fitChecks>;
   /** "meets" = every hard check met; "conversation" = a hard check is unknown; "stretch" = a hard check is unmet (still shown, never hidden). */
   tier: "meets" | "conversation" | "stretch";
 };
@@ -224,9 +229,11 @@ export function matchBrief(brief: Brief, people: BriefPerson[], limit = 12, now 
   const byId = new Map(people.map((p) => [p.id, p]));
   const results = retrieveMatches(opp, people, Math.max(limit, 30), now);
   const out: BriefMatch[] = results.map((match) => {
-    const checks = hardChecks(brief, byId.get(match.personId)!);
+    const p = byId.get(match.personId)!;
+    const checks = hardChecks(brief, p);
+    const fit = fitChecks(brief.fitTraits ?? [], fitProfile(p.attributes, p.observedAttributes ?? []));
     const tier: BriefMatch["tier"] = checks.some((c) => c.state === "unmet") ? "stretch" : checks.some((c) => c.state === "unknown") ? "conversation" : "meets";
-    return { match, checks, tier };
+    return { match, checks, fit, tier };
   });
   const order = { meets: 0, conversation: 1, stretch: 2 };
   return out.sort((a, b) => order[a.tier] - order[b.tier] || b.match.fitScore - a.match.fitScore).slice(0, limit);

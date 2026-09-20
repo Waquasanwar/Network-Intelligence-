@@ -8,6 +8,7 @@ import { requireInternalAction, requireUser, type SessionUser } from "@/server/s
 import { assertSameTenant, isInternal } from "@/lib/authz";
 import { parseList } from "@/lib/utils";
 import { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt, type Brief, type BudgetKind, type BriefPerson, type RateCard, type Terms, type FeeModel, type ShortlistDecision, type BriefStatus, type FeeStatus } from "@/lib/demand";
+import { parseFitTraits } from "@/lib/fit";
 import type { Brief as DbBrief, CommercialAccount, EngagementRoute, Seniority, Prisma } from "@prisma/client";
 
 // ---------- shared helpers (also used by pages) ----------
@@ -22,7 +23,7 @@ export async function toDomain(b: DbBrief): Promise<Brief & { terms: Terms; expe
   return {
     rawText: b.rawText, title: b.title, engagementRoute: b.engagementRoute, headcount: b.headcount, roles: b.roles, capabilities: b.capabilities, sectors: b.sectors, seniority: b.seniority,
     locations: b.locations, mustBeLocal: b.mustBeLocal, workRights: b.workRights, budget: b.budgetAmount ? { kind: (b.budgetKind ?? "DAY_RATE") as BudgetKind, amount: Number(b.budgetAmount), max: b.budgetMax ? Number(b.budgetMax) : null, currency: b.budgetCurrency ?? b.feeCurrency } : null,
-    durationMonths: b.durationMonths, startBy: b.startBy, assumptions: b.assumptions, questions: b.questions,
+    durationMonths: b.durationMonths, startBy: b.startBy, fitTraits: parseFitTraits(b.rawText), assumptions: b.assumptions, questions: b.questions,
     terms: { model: b.feeModel as FeeModel, pct: b.feePct ? Number(b.feePct) : null, flat: b.feeFlat ? Number(b.feeFlat) : null, currency: b.feeCurrency },
     expertHours: b.expertHours,
   };
