@@ -332,6 +332,15 @@ export const SHORTLIST_LABELS: Record<ShortlistDecision, string> = {
   CANDIDATE: "Candidate", SHORTLISTED: "Shortlisted", PROPOSED: "Proposed to client", CLIENT_INTERESTED: "Client interested", CLIENT_PASSED: "Client passed", INTRODUCED: "Introduced", PLACED: "Placed / engaged", NOT_FOR_THIS: "Not for this requirement",
 };
 
+/** The same decision reads differently depending on who is being shown it: a client, an agency, or Amana. */
+export function shortlistLabel(decision: ShortlistDecision, kind: AccountKind): string {
+  const who = kind === "AGENCY" ? "agency" : kind === "EXPERT_NETWORK" ? "Amana" : "client";
+  if (decision === "PROPOSED") return `Proposed to ${who}`;
+  if (decision === "CLIENT_INTERESTED") return `${who[0].toUpperCase()}${who.slice(1)} interested`;
+  if (decision === "CLIENT_PASSED") return `${who[0].toUpperCase()}${who.slice(1)} passed`;
+  return SHORTLIST_LABELS[decision];
+}
+
 /** Decisions that make an entry visible in the client / agency portal (anonymised). */
 export const PORTAL_VISIBLE: ShortlistDecision[] = ["PROPOSED", "CLIENT_INTERESTED", "CLIENT_PASSED", "INTRODUCED", "PLACED"];
 

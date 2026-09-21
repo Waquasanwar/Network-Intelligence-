@@ -54,7 +54,9 @@ export type AuditAction =
   | "pitch.update"
   | "consent.update"
   | "member.register"
-  | "brief.members";
+  | "brief.members"
+  | "brief.on_spec"
+  | "shortlist.referred";
 
 export async function audit(input: {
   tenantId: string;

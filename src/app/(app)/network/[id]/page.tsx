@@ -15,6 +15,11 @@ import { fullName } from "@/lib/utils";
 import { TrustCard, FitCard, VouchList, ScreeningBadge } from "@/components/domain/trust";
 import { VouchDrawer } from "@/components/domain/member-drawers";
 import { trustFor, fitFor, startScreening } from "@/server/actions/members";
+import { ReferDrawer, type ReferTarget } from "@/components/domain/refer";
+import { ReferredCard, type ReferredRow } from "@/components/domain/referred-card";
+import { loadRateCard, toDomain } from "@/server/actions/demand";
+import { estimateFee, PORTAL_VISIBLE, FEE_STATUS_LABELS, type AccountKind, type ShortlistDecision } from "@/lib/demand";
+import { ROUTE_LABELS } from "@/lib/labels";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ClipboardList } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
@@ -57,6 +62,30 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
     prisma.schedulingConnection.findMany({ where: { userId: user.id, revokedAt: null }, select: { provider: true } }),
   ]);
 
+  // Where this person has been put forward, and who we could still refer them to.
+  const [shortlisted, openAccounts, card] = await Promise.all([
+    prisma.shortlistItem.findMany({ where: { personId: id, OR: [{ referred: true }, { decision: { in: PORTAL_VISIBLE } }] }, include: { brief: { include: { account: { select: { name: true, kind: true } }, feeLines: { where: { personId: id }, take: 1 } } } }, orderBy: { updatedAt: "desc" } }),
+    prisma.commercialAccount.findMany({ where: { tenantId: user.tenantId, status: { not: "PAUSED" } }, include: { briefs: { where: { status: { notIn: ["FILLED", "CLOSED"] } }, orderBy: { updatedAt: "desc" }, select: { id: true, title: true, engagementRoute: true, headcount: true, shortlist: { where: { personId: id }, select: { decision: true } } } } }, orderBy: { name: "asc" } }),
+    loadRateCard(user.tenantId),
+  ]);
+  const referredRows: ReferredRow[] = await Promise.all(shortlisted.map(async (s) => {
+    const d = await toDomain(s.brief);
+    const est = estimateFee({ ...d, headcount: 1 }, d.terms, card, d.expertHours);
+    const fee = s.brief.feeLines[0];
+    return {
+      itemId: s.id, briefId: s.briefId, briefTitle: s.brief.title, routeLabel: s.brief.engagementRoute ? ROUTE_LABELS[s.brief.engagementRoute] : "Route to confirm",
+      accountName: s.brief.account.name, kind: s.brief.account.kind as AccountKind, decision: s.decision as ShortlistDecision, referred: s.referred,
+      clientNote: s.clientNote, updatedAt: s.updatedAt,
+      fee: fee ? { ourTake: Number(fee.ourTake), currency: fee.currency, statusLabel: FEE_STATUS_LABELS[fee.status].toLowerCase() } : null,
+      estimate: { ourTake: est.ourTake, currency: est.currency, basis: est.basis, confident: est.confident },
+    };
+  }));
+  const referTargets: ReferTarget[] = openAccounts.map((a) => ({
+    accountId: a.id, accountName: a.name, kindLabel: a.kind === "AGENCY" ? "Agency" : a.kind === "CLIENT" ? "Client" : "Expert network",
+    briefs: a.briefs.map((b) => ({ id: b.id, label: `${b.title} · ${b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"}${b.headcount > 1 ? ` × ${b.headcount}` : ""}`, already: b.shortlist.some((x) => PORTAL_VISIBLE.includes(x.decision as ShortlistDecision)) })),
+  }));
+  const referSuggestion = person.vouches.find((v) => v.statement)?.statement ?? person.relationships.find((r) => r.workedTogetherContext)?.workedTogetherContext ?? person.headline ?? "";
+
   const showNotes = canViewRelationshipNotes(user, person.tenantId);
   const freshness = assessFreshness({ availabilityStatus: person.availabilityStatus, availabilityConfirmedAt: person.availabilityConfirmedAt, nextCheckDate: person.nextCheckDate });
   const approved = person.conversations.filter((c) => c.approvalStatus === "APPROVED");
@@ -93,6 +122,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
+          <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} size="sm" />
           <form action={startScreening}><input type="hidden" name="personId" value={person.id} /><SubmitButton size="sm" variant="secondary" pendingText="…"><ClipboardList className="h-3.5 w-3.5" /> Screening call</SubmitButton></form>
           <ScheduleDrawer personId={person.id} connections={connections.map((c) => c.provider)} />
           <CaptureConversationDrawer personId={person.id} />
@@ -157,6 +187,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
           <div className="space-y-4">
             <TrustCard t={trust} firstName={person.firstName} screened={person.screeningStatus === "APPROVED" || !!person.screenedAt} workedWith={person.relationships.some((r) => r.workedTogether)} action={<VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} />} />
+            <ReferredCard rows={referredRows} action={<ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} variant="secondary" size="sm" label="Refer" />} />
             <VouchList vouches={person.vouches} />
             <Card>
               <CardHeader title="Provenance" description="Who knows them and how" />

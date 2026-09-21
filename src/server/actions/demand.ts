@@ -227,6 +227,76 @@ export async function decideShortlist(formData: FormData) {
   revalidatePath(`/requirements/${item.briefId}`); revalidatePath("/requirements"); revalidatePath("/portal");
 }
 
+/** Refer someone by hand — perm or contract — to a client or agency requirement, or on spec where there is no brief yet. */
+const referSchema = z.object({
+  personId: z.string(),
+  target: z.string().min(1),
+  route: z.enum(["", "PERMANENT", "CONTRACT", "INTERIM", "FRACTIONAL", "ADVISORY", "SOW"]).optional(),
+  clientNote: z.string().max(300).optional(),
+  model: z.enum(["", "PERM_PCT", "AGENCY_REFERRAL", "CONTRACT_MARGIN", "AGENCY_CONTRACT_SHARE", "EXPERT_HOURLY", "SOW_SHARE", "INTRODUCTION_FEE"]).optional(),
+  pct: z.string().optional(),
+  createFee: z.coerce.boolean().optional(),
+});
+
+export async function referPerson(formData: FormData) {
+  const user = await requireInternalAction();
+  const d = referSchema.parse(Object.fromEntries(formData));
+  const person = await prisma.person.findUnique({ where: { id: d.personId } });
+  if (!person) throw new Error("Not found");
+  assertSameTenant(user, person.tenantId);
+  const card = await loadRateCard(user.tenantId);
+
+  let b: DbBrief;
+  if (d.target.startsWith("spec:")) {
+    const account = await prisma.commercialAccount.findUnique({ where: { id: d.target.slice(5) } });
+    if (!account) throw new Error("Choose a client or agency");
+    assertSameTenant(user, account.tenantId);
+    const route = ((d.route || person.engagementPreferences[0] || "CONTRACT") as EngagementRoute);
+    const where = [person.primaryCity, person.primaryCountry].filter(Boolean).join(", ");
+    const parsed = parseBrief(`${person.currentRole ?? "Senior practitioner"} in ${where || "the network"}`);
+    const terms = await termsFor(account, route, card);
+    const onSpec: Brief = { ...parsed, title: `On spec · ${person.currentRole ?? person.headline ?? "introduction"}`, rawText: `Put forward on spec by ${user.name}. No requirement yet.`, roles: person.currentRole ? [person.currentRole] : parsed.roles, capabilities: person.capabilities.slice(0, 6), sectors: person.sectors.slice(0, 3), seniority: person.seniority, locations: [person.primaryCity ?? person.primaryCountry ?? ""].filter(Boolean), mustBeLocal: false, workRights: null, engagementRoute: route, headcount: 1, budget: null, durationMonths: null, startBy: null, questions: [], assumptions: ["Introduced on spec, not against a brief."] };
+    b = await prisma.brief.create({ data: { tenantId: user.tenantId, accountId: account.id, submittedVia: "OWNER", status: "SHORTLISTED", ...briefData(onSpec, terms) } });
+    await audit({ tenantId: user.tenantId, actorId: user.id, action: "brief.on_spec", entityType: "Brief", entityId: b.id, metadata: { account: account.name, personId: person.id } });
+  } else {
+    b = await ownedBrief(user, d.target);
+  }
+
+  if (d.model || d.pct) {
+    const model = (d.model || b.feeModel) as FeeModel;
+    const base = defaultTerms(card, model);
+    const n = d.pct ? Number(d.pct.replace(/[^0-9.]/g, "")) : 0;
+    b = await prisma.brief.update({ where: { id: b.id }, data: { feeModel: model, feePct: model === "INTRODUCTION_FEE" ? null : n || base.pct, feeFlat: model === "INTRODUCTION_FEE" ? n || base.flat : null } });
+    await audit({ tenantId: user.tenantId, actorId: user.id, action: "brief.terms", entityType: "Brief", entityId: b.id, metadata: { model, pct: n || null } });
+  }
+
+  const domain = await toDomain(b);
+  const bp = (await briefPeople(user.tenantId)).find((x) => x.id === person.id)!;
+  const res = matchBrief(domain, [bp], 1)[0];
+  const checks = res?.checks ?? hardChecks(domain, bp);
+  const tier = res?.tier ?? (checks.some((c) => c.state === "unmet") ? "stretch" : checks.some((c) => c.state === "unknown") ? "conversation" : "meets");
+  const clientNote = (d.clientNote ?? "").trim() || null;
+  const common = {
+    fitScore: res?.match.fitScore ?? 0, fitExplanation: res?.match.fitExplanation ?? `Referred by hand by ${user.name}, not retrieved by the matcher.`,
+    dimensions: (res?.match.dimensions ?? []) as unknown as Prisma.InputJsonValue, uncertainty: res?.match.uncertainty ?? [], checks: checks as unknown as Prisma.InputJsonValue, tier,
+    decision: "PROPOSED" as ShortlistDecision, referred: true, referredById: user.id, clientNote,
+  };
+  await prisma.shortlistItem.upsert({ where: { briefId_personId: { briefId: b.id, personId: person.id } }, create: { briefId: b.id, personId: person.id, note: `Referred by ${user.name}`, ...common }, update: common });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "shortlist.referred", entityType: "Brief", entityId: b.id, metadata: { personId: person.id } });
+
+  const est = estimateFee({ ...domain, headcount: 1 }, domain.terms, card, domain.expertHours);
+  if ((d.createFee ?? false) && est.confident) {
+    const exists = await prisma.feeLine.findFirst({ where: { briefId: b.id, personId: person.id } });
+    if (!exists) {
+      await prisma.feeLine.create({ data: { tenantId: user.tenantId, briefId: b.id, accountId: b.accountId, personId: person.id, model: domain.terms.model, basis: est.basis, gross: est.gross, ourTake: est.ourTake, currency: est.currency, status: "FORECAST" } });
+      await audit({ tenantId: user.tenantId, actorId: user.id, action: "fee.create", entityType: "Brief", entityId: b.id, metadata: { ourTake: est.ourTake, currency: est.currency, personId: person.id } });
+    }
+  }
+  if (["NEW", "QUALIFYING", "SEARCHING"].includes(b.status)) await prisma.brief.update({ where: { id: b.id }, data: { status: "SHORTLISTED" } });
+  revalidatePath(`/network/${person.id}`); revalidatePath("/requirements"); revalidatePath("/portal");
+  redirect(`/requirements/${b.id}`);
+}
+
 // ---------- fees ----------
 
 export async function setFeeStatus(formData: FormData) {

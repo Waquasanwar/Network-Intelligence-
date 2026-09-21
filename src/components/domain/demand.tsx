@@ -1,7 +1,7 @@
 import { Badge, Chip } from "@/components/ui/badge";
 import { cn, formatMoney } from "@/lib/utils";
 import { ROUTE_LABELS, SENIORITY_LABELS } from "@/lib/labels";
-import { FEE_MODEL_LABELS, SHORTLIST_LABELS, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS, fmt, rateBand, type Brief, type HardCheck, type FeeEstimate, type ShortlistDecision, type BriefStatus, type FeeStatus, type AccountKind, type FeeModel } from "@/lib/demand";
+import { FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS, fmt, rateBand, type Brief, type HardCheck, type FeeEstimate, type ShortlistDecision, type BriefStatus, type FeeStatus, type AccountKind, type FeeModel } from "@/lib/demand";
 import { Check, X, HelpCircle } from "lucide-react";
 
 export const KIND_LABEL: Record<AccountKind, string> = { CLIENT: "Client", AGENCY: "Agency", EXPERT_NETWORK: "Expert network" };
@@ -12,7 +12,7 @@ const TIER_TONE: Record<string, "teal" | "amber" | "neutral"> = { meets: "teal",
 export function KindBadge({ kind }: { kind: AccountKind }) { return <Badge tone={KIND_TONE[kind]} filled>{KIND_LABEL[kind]}</Badge>; }
 export function TierBadge({ tier }: { tier: string }) { return <Badge tone={TIER_TONE[tier] ?? "neutral"} filled>{TIER_LABEL[tier] ?? tier}</Badge>; }
 export function BriefStatusBadge({ status }: { status: BriefStatus }) { return <Badge tone={status === "FILLED" ? "teal" : status === "CLOSED" ? "neutral" : "navy"}>{BRIEF_STATUS_LABELS[status]}</Badge>; }
-export function ShortlistBadge({ decision }: { decision: ShortlistDecision }) { return <Badge tone={decision === "PLACED" || decision === "INTRODUCED" ? "teal" : decision === "CLIENT_PASSED" || decision === "NOT_FOR_THIS" ? "neutral" : decision === "CANDIDATE" ? "neutral" : "navy"}>{SHORTLIST_LABELS[decision]}</Badge>; }
+export function ShortlistBadge({ decision, kind }: { decision: ShortlistDecision; kind?: AccountKind }) { return <Badge tone={decision === "PLACED" || decision === "INTRODUCED" ? "teal" : decision === "CLIENT_PASSED" || decision === "NOT_FOR_THIS" ? "neutral" : decision === "CANDIDATE" ? "neutral" : "navy"}>{kind ? shortlistLabel(decision, kind) : SHORTLIST_LABELS[decision]}</Badge>; }
 export function FeeStatusBadge({ status }: { status: FeeStatus }) { return <Badge tone={status === "PAID" ? "teal" : status === "FORECAST" ? "neutral" : status === "WRITTEN_OFF" ? "risk" : "navy"} filled>{FEE_STATUS_LABELS[status]}</Badge>; }
 
 export function routeLabel(r: string | null) { return r ? ROUTE_LABELS[r as keyof typeof ROUTE_LABELS] ?? r : "Route to confirm"; }
@@ -98,13 +98,13 @@ export function FeeBox({ est, model, pct, label = "Estimated fee to us", extra }
 }
 
 /** The anonymised card a client or agency sees. Never a name before introduction. */
-export function AnonCard({ refCode, headline, region, availabilityBand, evidenceSummary, rights, rateStated, tier, decision, clientNote, revealedName, actions }: { refCode: string; headline: string; region: string | null; availabilityBand: string; evidenceSummary: string; rights?: HardCheck; rateStated?: string | null; tier: string; decision: ShortlistDecision; clientNote?: string | null; revealedName?: string | null; actions?: React.ReactNode }) {
+export function AnonCard({ refCode, headline, region, availabilityBand, evidenceSummary, rights, rateStated, tier, decision, kind, referred, clientNote, revealedName, actions }: { refCode: string; headline: string; region: string | null; availabilityBand: string; evidenceSummary: string; rights?: HardCheck; rateStated?: string | null; tier: string; decision: ShortlistDecision; kind?: AccountKind; referred?: boolean; clientNote?: string | null; revealedName?: string | null; actions?: React.ReactNode }) {
   const band = rateBand(rateStated);
   return (
     <li className="py-3 border-b border-line last:border-b-0">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0"><code className="text-[11px] bg-surface-muted rounded px-1.5 py-0.5">{refCode}</code><span className="text-[13px] font-medium text-ink truncate">{revealedName ?? headline}</span></div>
-        <ShortlistBadge decision={decision} />
+        <div className="flex items-center gap-1.5 flex-none">{referred ? <Badge tone="teal" filled>referred by hand</Badge> : null}<ShortlistBadge decision={decision} kind={kind} /></div>
       </div>
       <div className="flex flex-wrap gap-1 mt-1.5">
         <Chip>{region ?? "region undisclosed"}</Chip><Chip>availability: {availabilityBand}</Chip>

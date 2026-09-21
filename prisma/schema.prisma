@@ -825,6 +825,9 @@ model ShortlistItem {
   checks         Json // HardCheck[]
   tier           String // meets | conversation | stretch
   decision       ShortlistDecision @default(CANDIDATE)
+  /// True when a human put this person forward by hand rather than the matcher retrieving them.
+  referred       Boolean           @default(false)
+  referredById   String?
   note           String?
   clientNote     String?
   createdAt      DateTime          @default(now())
