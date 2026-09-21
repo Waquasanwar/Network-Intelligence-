@@ -1,6 +1,7 @@
 /* Seed network for the live prototype. Mirrors prisma/seed.ts. */
 import type { State, Person, Relationship, Evidence, Conversation, Opportunity, Introduction, TeamMember, Partner, PartnerRequirement, Relocation, Scheduled, AuditEntry, Account, StoredBrief, FeeLine, Vouch, Referral, Pitch } from "./types";
 import { parseBrief, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD } from "@/lib/demand";
+import { SCREENING_SCRIPT } from "@/lib/screening";
 import type { AvailabilityStatus, EngagementRoute, Seniority } from "@prisma/client";
 import { suggestNextCheck } from "@/lib/availability";
 
@@ -184,7 +185,7 @@ export function seed(): State {
     { id: "rf-2", referrerPersonId: pid("sarah"), name: "Ben Hughes", email: "ben@example.com", context: "Ran programme recovery for me on the insurance programme", note: "Good with systems integrators.", status: "NEW", createdAt: daysAgo(2), updatedAt: daysAgo(2) },
   ];
   const pitches: Pitch[] = [
-    { id: "pi-1", briefId: "b-4", personId: pid("marcus"), note: "I built the Gulf operation for a logistics group from nothing. Happy to be in Dubai two weeks a month.", status: "SUBMITTED", createdAt: daysAgo(1), updatedAt: daysAgo(1) },
+    { id: "pi-1", briefId: "b-4", personId: pid("marcus"), note: "I built the Gulf operation for a logistics group from nothing, and I know what breaks in month three.", route: "FRACTIONAL", availableFrom: "From the first week of next month", rate: "£1,800/day", relevantWork: "Stood up a logistics operation in Dubai from zero to 40 people in nine months, including the local hiring.", status: "SUBMITTED", createdAt: daysAgo(1), updatedAt: daysAgo(1) },
   ];
   const audit: AuditEntry[] = [
     { id: "a-1", actorId: "u-waqas", action: "summary.approve", entityType: "Conversation", entityId: "c-priya-1", detail: "Priya Natarajan", createdAt: daysAgo(3) },
@@ -192,5 +193,5 @@ export function seed(): State {
     { id: "a-3", actorId: "u-richard", action: "team.add", entityType: "Opportunity", entityId: "o-4", detail: "Fatima Al Rashid", createdAt: daysAgo(1) },
     { id: "a-4", actorId: "u-waqas", action: "integration.connect", entityType: "SchedulingConnection", detail: "MANUAL", createdAt: daysAgo(30) },
   ];
-  return { users: USERS, me: USERS[0], people, relationships, evidence, conversations, scheduled, opportunities, matches: [], introductions, team, partners, requirements, relocation, audit, accounts, briefs, shortlist: [], fees, rateCard: { ...DEFAULT_RATE_CARD }, vouches, referrals, pitches, viewAs: { role: "OWNER" }, connections: ["MANUAL"] };
+  return { users: USERS, me: USERS[0], people, relationships, evidence, conversations, scheduled, opportunities, matches: [], introductions, team, partners, requirements, relocation, audit, accounts, briefs, shortlist: [], fees, rateCard: { ...DEFAULT_RATE_CARD }, vouches, referrals, pitches, viewAs: { role: "OWNER" }, screeningScript: JSON.parse(JSON.stringify(SCREENING_SCRIPT)), connections: ["MANUAL"] };
 }

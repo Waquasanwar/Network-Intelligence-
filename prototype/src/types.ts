@@ -1,7 +1,7 @@
 import type { AvailabilityStatus, EngagementRoute, Seniority, SourceType, RelationshipType, EvidenceType, HumanDecision, OpportunityStatus, IntroductionStatus, ConsentStatus, AdvisoryStatus, CommercialModel } from "@prisma/client";
 import type { ExtractedSummary } from "@/lib/ai/types";
 import type { AccountKind, Brief, BriefStatus, Terms, ShortlistDecision, HardCheck, FeeModel, FeeStatus, RateCard } from "@/lib/demand";
-import type { ScreeningResult } from "@/lib/screening";
+import type { ScreeningResult, ScreeningSection } from "@/lib/screening";
 import type { FitScores } from "@/lib/fit";
 
 export type User = { id: string; name: string; role: "OWNER" | "CONTRIBUTOR" };
@@ -29,7 +29,7 @@ export type Account = { id: string; name: string; kind: AccountKind; contactName
 export type StoredBrief = Brief & { id: string; accountId: string; submittedVia: "OWNER" | "PORTAL"; status: BriefStatus; terms: Terms; expertHours?: number | null; termsAccepted: boolean; openToMembers?: boolean; memberSummary?: string | null; createdAt: string; updatedAt: string };
 export type Vouch = { id: string; personId: string; voucherId: string; voucherKind: "USER" | "PERSON" | "EXTERNAL"; voucherName?: string | null; source?: string | null; context: string; statement?: string | null; wouldRecommend: boolean; attributes?: FitScores | null; createdAt: string };
 export type Referral = { id: string; referrerPersonId: string; referredPersonId?: string | null; name: string; email?: string | null; context: string; note?: string | null; briefId?: string | null; status: "NEW" | "CONTACTED" | "SCREENING" | "ACCEPTED" | "DECLINED"; createdAt: string; updatedAt: string };
-export type Pitch = { id: string; briefId: string; personId: string; note: string; status: "SUBMITTED" | "SHORTLISTED" | "DECLINED"; createdAt: string; updatedAt: string };
+export type Pitch = { id: string; briefId: string; personId: string; note: string; route?: string | null; availableFrom?: string | null; rate?: string | null; relevantWork?: string | null; status: "SUBMITTED" | "SHORTLISTED" | "DECLINED"; createdAt: string; updatedAt: string };
 export type ViewAs = { role: "OWNER" | "AGENCY" | "CLIENT" | "MEMBER"; accountId?: string | null; personId?: string | null };
 export type ShortlistItem = { id: string; briefId: string; personId: string; fitScore: number; fitExplanation: string; dimensions: { name: string; score: number; note: string }[]; uncertainty: string[]; checks: HardCheck[]; tier: "meets" | "conversation" | "stretch"; decision: ShortlistDecision; note?: string | null; clientNote?: string | null; createdAt: string; updatedAt: string };
 export type FeeLine = { id: string; briefId: string; accountId: string; personId?: string | null; model: FeeModel; basis: string; gross: number; ourTake: number; currency: string; status: FeeStatus; createdAt: string; updatedAt: string };
@@ -41,6 +41,6 @@ export type State = {
   opportunities: Opportunity[]; matches: Match[]; introductions: Introduction[]; team: TeamMember[];
   partners: Partner[]; requirements: PartnerRequirement[]; relocation: Relocation[]; audit: AuditEntry[];
   accounts: Account[]; briefs: StoredBrief[]; shortlist: ShortlistItem[]; fees: FeeLine[]; rateCard: RateCard;
-  vouches: Vouch[]; referrals: Referral[]; pitches: Pitch[]; viewAs: ViewAs;
+  vouches: Vouch[]; referrals: Referral[]; pitches: Pitch[]; viewAs: ViewAs; screeningScript: ScreeningSection[];
   connections: string[];
 };

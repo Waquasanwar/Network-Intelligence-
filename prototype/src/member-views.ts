@@ -2,13 +2,15 @@
 import type { Person, Conversation, Vouch, Referral, Pitch, StoredBrief, ShortlistItem, Relationship } from "./types";
 import type { View } from "./app";
 import type { H } from "./demand-views";
+import { speechSupported, speakSupported, speak, stopSpeaking, listen, stopListening, listening, matchChoice, matchScale, splitSpokenList } from "./voice";
 
 const REF_STATUS: Record<Referral["status"], string> = { NEW: "New", CONTACTED: "Contacted", SCREENING: "Screening booked", ACCEPTED: "In the network", DECLINED: "Not now" };
 const PITCH_STATUS: Record<Pitch["status"], string> = { SUBMITTED: "Submitted", SHORTLISTED: "On the shortlist", DECLINED: "Not this time" };
 const SCREEN_STATUS: Record<string, [string, string]> = { NONE: ["Not screened", "neutral"], REGISTERED: ["Registered · needs screening", "amber"], INVITED: ["Invited to screening", "amber"], BOOKED: ["Screening call booked", "navy"], SUBMITTED: ["Screening submitted · review", "amber"], APPROVED: ["Screened", "teal"] };
 
-type ScreenState = { personId: string; mode: "owner" | "member"; step: number; answers: Record<string, unknown>; startedAt: number };
+type ScreenState = { personId: string; mode: "owner" | "member"; step: number; answers: Record<string, unknown>; startedAt: number; voice: boolean; muted: boolean; started: boolean };
 let scr: ScreenState | null = null;
+const newScreen = (personId: string, mode: "owner" | "member"): ScreenState => ({ personId, mode, step: 0, answers: {}, startedAt: Date.now(), voice: false, muted: false, started: false });
 
 export function memberViews(h: H) {
   const { esc, raw, badge, chip, card, field, input, textarea, select, check, btn, stat, empty, personLink, availBadge, opt, rel, avatar } = h;
@@ -27,31 +29,123 @@ export function memberViews(h: H) {
   const vouchList = (p: Person) => { const vs = C().vouchesOf(p.id); return card(`Vouched for by ${vs.length}`, vs.length ? `<ul class="rows">${vs.map((v: Vouch) => `<li class="col"><div class="row"><b>${esc(v.voucherKind === "EXTERNAL" ? v.voucherName ?? "External" : C().userName(v.voucherId))}</b><span class="meta">${v.voucherKind === "EXTERNAL" ? badge(v.source ?? "external", "neutral", true) : badge(v.voucherKind === "USER" ? "network owner" : "network member", "teal", true)}${v.wouldRecommend ? "" : badge("would not recommend", "amber", true)}</span></div><small class="dim">${esc(v.context)}</small>${v.statement ? `<p class="quote-sm">“${esc(v.statement)}”</p>` : ""}${v.attributes ? `<div class="chips">${Object.entries(v.attributes).filter(([, n]) => (n as number) >= 4).map(([k]) => chip(C().fit.ATTRIBUTES.find((a: any) => a.key === k)?.label.toLowerCase() ?? k)).join("")}</div>` : ""}<small class="dim">${esc(rel(v.createdAt))}</small></li>`).join("")}</ul>` : '<span class="dim">Nobody has vouched yet. Ask someone who has seen them deliver.</span>', { desc: "Each vouch is a person putting their name behind them. LinkedIn recommendations count at a lower weight." }); };
 
   // ----- screening flow -----
-  const allQuestions = () => C().screening.SCREENING_SCRIPT.flatMap((s: any) => s.questions.map((q: any) => ({ ...q, section: s })));
+  /** What an expert may read about a requirement: never the client's words, never their name. */
+  const safeSummary = (b: StoredBrief) => {
+    const bits = [`${b.headcount > 1 ? `${b.headcount} people` : "One person"} needed`, b.roles.length ? `as ${b.roles.join(" or ").toLowerCase()}` : "", b.engagementRoute ? `on a ${(L().ROUTE_LABELS[b.engagementRoute] ?? "").toLowerCase()} basis` : "", b.locations.length ? `in ${b.locations.join(" or ")}` : "", b.sectors.length ? `in ${b.sectors.join(" / ").toLowerCase()}` : ""].filter(Boolean).join(" ");
+    return `${bits}.${b.mustBeLocal ? " You need to be there already." : ""}${b.workRights ? ` ${b.workRights}.` : ""}${b.startBy ? ` Starting ${b.startBy}.` : ""} We have not named the client; ask us if you want to know more.`;
+  };
+  const script = () => C().screening.script() as any[];
+  const allQuestions = () => script().flatMap((s: any) => s.questions.map((q: any) => ({ ...q, section: s })));
+  const scriptMinutes = () => script().reduce((a: number, x: any) => a + (x.minutes || 0), 0);
   function screening(personId: string, q: URLSearchParams): View {
     const p = C().person(personId);
     if (!p) return { title: "Screening", crumbs: [["Screening"]], html: raw(empty("Person not found")) };
     const mode: "owner" | "member" = me().role === "MEMBER" ? "member" : "owner";
-    if (!scr || scr.personId !== personId) scr = { personId, mode, step: 0, answers: {}, startedAt: Date.now() };
-    if (q.get("restart")) { scr = { personId, mode, step: 0, answers: {}, startedAt: Date.now() }; history.replaceState(null, "", `#/screening/${personId}`); }
-    const qs = allQuestions(); const st = scr; const cur = qs[st.step]; const sec = cur.section; const secIdx = C().screening.SCREENING_SCRIPT.indexOf(sec);
+    if (!scr || scr.personId !== personId) scr = newScreen(personId, mode);
+    if (q.get("restart")) { scr = newScreen(personId, mode); history.replaceState(null, "", `#/screening/${personId}`); }
+    const st = scr; const qs = allQuestions();
+    // The call starts on a lobby screen so the person chooses voice or typing, and grants the mic once.
+    if (!st.started) return lobby(p, mode, st);
+    const cur = qs[st.step]; const sec = cur.section; const secIdx = script().indexOf(sec);
     const done = Object.keys(st.answers).length; const pct = Math.round((st.step / qs.length) * 100);
     const val = st.answers[cur.key];
+    const answered = Array.isArray(val) ? val.length > 0 : !!val;
     const control = (() => {
       switch (cur.kind) {
         case "text": return `<input name="a" class="lg" value="${esc(val ?? "")}" placeholder="${esc(cur.placeholder ?? "")}" autocomplete="off">`;
-        case "long": return `<textarea name="a" rows="5" class="lg" placeholder="${esc(cur.placeholder ?? "Take your time. Specifics beat adjectives.")}">${esc(val ?? "")}</textarea>`;
+        case "long": return `<textarea name="a" rows="4" class="lg" placeholder="${esc(cur.placeholder ?? "Take your time. Specifics beat adjectives.")}">${esc(val ?? "")}</textarea>`;
         case "select": return `<div class="choice">${(cur.options as [string, string][]).map(([k, l]) => `<label class="${val === k ? "on" : ""}"><input type="radio" name="a" value="${k}" ${val === k ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div>`;
         case "multi": return `<div class="choice">${(cur.options as [string, string][]).map(([k, l]) => `<label class="${Array.isArray(val) && (val as string[]).includes(k) ? "on" : ""}"><input type="checkbox" name="a" value="${k}" ${Array.isArray(val) && (val as string[]).includes(k) ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div>`;
         case "chips": return `<input name="a" class="lg" value="${esc(Array.isArray(val) ? (val as string[]).join(", ") : val ?? "")}" placeholder="${esc(cur.placeholder ?? "")}" autocomplete="off"><small class="dim">Separate with commas.</small>`;
         case "scale": { const n = Number(val ?? 0); return `<div class="scale"><small>${esc(cur.low)}</small><div class="scale-btns">${[1, 2, 3, 4, 5].map((i) => `<label class="${n === i ? "on" : ""}"><input type="radio" name="a" value="${i}" ${n === i ? "checked" : ""}><span>${i}</span></label>`).join("")}</div><small>${esc(cur.high)}</small></div>`; }
-        case "people": { const rows = (Array.isArray(val) ? (val as any[]) : [{}, {}]) as { name?: string; context?: string; email?: string }[]; return `<div class="people-rows" id="people-rows">${rows.map((r) => `<div class="grid-3f"><input name="pn" value="${esc(r.name ?? "")}" placeholder="Full name"><input name="pc" value="${esc(r.context ?? "")}" placeholder="What you have seen them do, and how you know them"><input name="pe" value="${esc(r.email ?? "")}" placeholder="Email (optional)"></div>`).join("")}</div>${btn("＋ Another person", 'data-act="scrAddPerson"', "ghost sm")}`; }
+        case "people": { const rows = (Array.isArray(val) ? (val as any[]) : [{}, {}]) as { name?: string; context?: string; email?: string }[]; return `<div class="people-rows" id="people-rows">${rows.map((r) => `<div class="grid-3f"><input name="pn" value="${esc(r.name ?? "")}" placeholder="Full name"><input name="pc" value="${esc(r.context ?? "")}" placeholder="What you have seen them do"><input name="pe" value="${esc(r.email ?? "")}" placeholder="Email (optional)"></div>`).join("")}</div>${btn("＋ Another person", 'data-act="scrAddPerson"', "ghost sm")}`; }
       }
     })();
-    const html = `<div class="screen"><aside class="screen-nav"><div class="eyebrow">${mode === "member" ? "AI screening" : "Screening call"}</div><h2>${esc(mode === "member" ? "Your 30-minute screening" : `Screening · ${C().full(p)}`)}</h2><p class="dim">${mode === "member" ? "A structured conversation. Answer in your own words; specifics beat adjectives. Nothing goes on your profile until a person has reviewed it." : `Run the call from this script. About ${C().screening.SCREENING_MINUTES} minutes. Every answer maps to a profile field.`}</p><ol>${C().screening.SCREENING_SCRIPT.map((s: any, i: number) => `<li class="${i < secIdx ? "done" : i === secIdx ? "now" : ""}"><b>${esc(s.title)}</b><small>${s.minutes} min · ${esc(s.intent)}</small></li>`).join("")}</ol><div class="screen-meta"><span>${done} of ${qs.length} answered</span><span>${Math.round((Date.now() - st.startedAt) / 60000)} min elapsed</span></div>${mode === "owner" ? `<a class="btn ghost sm" href="#/people/${p.id}">Back to profile</a>` : ""}</aside>
-      <section class="screen-main"><div class="progress"><div style="width:${pct}%"></div></div><div class="q-eyebrow">Section ${secIdx + 1} of ${C().screening.SCREENING_SCRIPT.length} · ${esc(sec.title)} · ~${sec.minutes} min</div><h1>${esc(cur.prompt)}</h1>${cur.help ? `<p class="help">${esc(cur.help)}</p>` : ""}<form data-action="scrNext" class="stack q-form">${control}<div class="row q-actions"><span>${st.step > 0 ? btn("← Back", 'data-act="scrBack"', "ghost") : ""}</span><span class="row">${cur.required ? '<small class="dim">Required</small>' : btn("Skip", 'data-act="scrSkip"', "ghost")}<button class="btn primary" type="submit">${st.step === qs.length - 1 ? "Finish screening" : "Next →"}</button></span></div></form></section></div>`;
-    return { title: "Screening", crumbs: mode === "member" ? [["My network profile", "#/member"], ["Screening"]] : [["Network", "#/network"], [C().full(p), `#/people/${p.id}`], ["Screening"]], html: raw(html), after: () => { const el = document.querySelector<HTMLElement>(".q-form input:not([type=radio]):not([type=checkbox]), .q-form textarea"); el?.focus(); } };
+    const answeredList = qs.slice(0, st.step).filter((x: any) => st.answers[x.key]).slice(-4).map((x: any) => { const v = st.answers[x.key]; const text = Array.isArray(v) ? (typeof v[0] === "object" ? (v as any[]).map((r) => r.name).filter(Boolean).join(", ") : (v as string[]).join(", ")) : String(v); return `<li><small>${esc(x.section.title)}</small><span>${esc(text.length > 90 ? text.slice(0, 88) + "…" : text)}</span></li>`; }).join("");
+    const html = `<div class="call ${st.voice ? "voice" : "typed"}">
+      <header class="call-top"><div class="call-who"><span class="call-dot"></span><b>${esc(mode === "member" ? "Your conversation with Amana Network" : `Screening · ${C().full(p)}`)}</b><small>${secIdx + 1} of ${script().length} · ${esc(sec.title)}</small></div>
+        <div class="call-top-actions">${speechSupported() ? `<button type="button" class="chip-btn ${st.voice ? "on" : ""}" data-act="scrVoiceToggle">${st.voice ? "◉ Voice on" : "Switch to voice"}</button>${st.voice && speakSupported() ? `<button type="button" class="chip-btn ${st.muted ? "on" : ""}" data-act="scrMute">${st.muted ? "Unmute" : "Mute"}</button>` : ""}` : ""}<button type="button" class="chip-btn" data-act="scrLeave">Save and leave</button></div>
+        <div class="call-progress"><div style="width:${pct}%"></div></div></header>
+      <div class="call-body">
+        <div class="call-stage">
+          ${st.voice ? `<div class="orb" id="orb"><span></span><span></span><span></span></div>` : ""}
+          <div class="q-eyebrow">${esc(sec.intent)}</div>
+          <h1>${esc(cur.prompt)}</h1>
+          ${cur.help ? `<p class="help">${esc(cur.help)}</p>` : ""}
+          ${st.voice ? `<div class="call-state"><b id="voice-status">Connecting…</b><p id="voice-heard" class="heard"></p></div>` : ""}
+          <form data-action="scrNext" class="stack q-form ${st.voice ? "quiet" : ""}">${st.voice ? `<details class="type-instead" ${answered ? "open" : ""}><summary>${cur.kind === "text" || cur.kind === "long" || cur.kind === "chips" ? "What I heard, edit if needed" : "Or choose"}</summary><div class="ti-body">${control}</div></details>` : control}
+            <div class="row q-actions"><span>${st.step > 0 ? btn("← Back", 'data-act="scrBack"', "ghost") : ""}</span><span class="row">${cur.required ? "" : btn("Skip", 'data-act="scrSkip"', "ghost")}<button class="btn primary" type="submit">${st.step === qs.length - 1 ? "Finish" : "Next →"}</button></span></div>
+          </form>
+          ${st.voice ? `<div class="mic-row"><button type="button" class="mic" id="mic" aria-label="Start or stop listening"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg><span class="pulse"></span></button><small>Speak when the circle is live. It moves on when you stop.</small></div>` : ""}
+        </div>
+        <aside class="call-side">
+          <div class="call-sections">${script().map((x: any, i: number) => `<div class="cs ${i < secIdx ? "done" : i === secIdx ? "now" : ""}"><i></i><b>${esc(x.title)}</b><small>${x.minutes} min</small></div>`).join("")}</div>
+          ${answeredList ? `<div class="call-answers"><small class="lbl">Captured so far</small><ul>${answeredList}</ul></div>` : `<div class="call-answers"><small class="lbl">Captured so far</small><p class="dim">Your answers appear here as we go. Nothing is on your profile until a person has read it.</p></div>`}
+          <div class="call-meta"><span>${done} of ${qs.length} answered</span><span>${Math.round((Date.now() - st.startedAt) / 60000)} min</span></div>
+        </aside>
+      </div></div>`;
+    return { title: "Screening", crumbs: mode === "member" ? [["My expert profile", "#/member"], ["Conversation"]] : [["Experts", "#/network"], [C().full(p), `#/people/${p.id}`], ["Screening"]], html: raw(html), after: () => { wireVoice(cur); if (!scr?.voice) { const el = document.querySelector<HTMLElement>(".q-form input:not([type=radio]):not([type=checkbox]), .q-form textarea"); el?.focus(); } } };
   }
+
+  /** Lobby: choose how to do it, and grant the microphone once. */
+  function lobby(p: Person, mode: "owner" | "member", st: ScreenState): View {
+    const mins = scriptMinutes(); const canVoice = speechSupported();
+    const html = `<div class="lobby"><div class="lobby-card">
+      <div class="eyebrow">${mode === "member" ? "Joining the network" : `Screening · ${esc(C().full(p))}`}</div>
+      <h1>${mode === "member" ? `Let's have a ${mins}-minute conversation` : `Run the ${mins}-minute screening`}</h1>
+      <p>${mode === "member" ? "It is a proper conversation, not a form. I ask, you talk, and I write it up. You can read and change every word before it goes anywhere, and nothing reaches your profile until a person has reviewed it." : "The script is read aloud so you can run it like a real call, or you can type the answers as you go."}</p>
+      <div class="lobby-sections">${script().map((x: any) => `<div><b>${esc(x.title)}</b><small>${x.minutes} min · ${esc(x.intent)}</small></div>`).join("")}</div>
+      <div class="lobby-actions">${canVoice ? btn("🎙 Start the voice conversation", 'data-act="scrStartVoice"', "primary lg") : ""}${btn(canVoice ? "I would rather type" : "Start", 'data-act="scrStartTyped"', canVoice ? "glass lg" : "primary lg")}</div>
+      <small class="dim">${canVoice ? "Your browser will ask for the microphone. Audio stays on this device; only the text is kept." : "Voice is not available in this browser, so we will do it in writing."}</small>
+    </div></div>`;
+    return { title: "Screening", crumbs: mode === "member" ? [["My expert profile", "#/member"], ["Conversation"]] : [["Experts", "#/network"], [C().full(p), `#/people/${p.id}`], ["Screening"]], html: raw(html) };
+  }
+
+  /** Put a spoken answer into whatever control this question uses. */
+  function applySpoken(cur: any, said: string) {
+    const form = document.querySelector<HTMLFormElement>(".q-form"); if (!form || !said.trim()) return;
+    if (cur.kind === "text" || cur.kind === "long" || cur.kind === "chips") { const el = form.querySelector<HTMLInputElement | HTMLTextAreaElement>("[name=a]"); if (el) el.value = said; return; }
+    if (cur.kind === "select" || cur.kind === "multi") {
+      const key = matchChoice(said, cur.options as [string, string][]);
+      if (key) { const inp = form.querySelector<HTMLInputElement>(`input[name=a][value="${key}"]`); if (inp) { inp.checked = cur.kind === "multi" ? true : inp.checked || true; inp.closest("label")?.classList.add("on"); } }
+      return;
+    }
+    if (cur.kind === "scale") { const n = matchScale(said); if (n) { const inp = form.querySelector<HTMLInputElement>(`input[name=a][value="${n}"]`); if (inp) { inp.checked = true; form.querySelectorAll(".scale-btns label").forEach((l, i) => l.classList.toggle("on", i + 1 === n)); } } return; }
+    if (cur.kind === "people") { const names = splitSpokenList(said); const rows = form.querySelectorAll<HTMLInputElement>("input[name=pn]"); names.forEach((n, i) => { if (rows[i]) rows[i].value = n; }); const ctx = form.querySelector<HTMLInputElement>("input[name=pc]"); if (ctx && !ctx.value) ctx.value = said; }
+  }
+
+  function setVoiceUI(status: string, heard?: string, on = false, speaking = false) {
+    const s1 = document.getElementById("voice-status"); const s2 = document.getElementById("voice-heard"); const mic = document.getElementById("mic"); const orb = document.getElementById("orb");
+    if (s1) s1.textContent = status;
+    if (s2 && heard !== undefined) s2.textContent = heard;
+    mic?.classList.toggle("on", on);
+    if (orb) { orb.classList.toggle("listening", on); orb.classList.toggle("speaking", speaking); }
+  }
+
+  function startListening(cur: any) {
+    const ok = listen({
+      onText: (finalText, interim) => { setVoiceUI("Listening", [finalText, interim].filter(Boolean).join(" "), true); },
+      onEnd: (reason, message) => {
+        const heard = document.getElementById("voice-heard")?.textContent ?? "";
+        if (reason === "error") { setVoiceUI(message ?? "Voice is not available. You can type instead.", heard, false); return; }
+        if (heard.trim()) { applySpoken(cur, heard.trim()); setVoiceUI("Got that. Check it reads right, then continue.", heard, false); const d = document.querySelector<HTMLDetailsElement>(".type-instead"); if (d) d.open = true; }
+        else setVoiceUI("I did not catch that. Tap the microphone to try again, or type.", "", false);
+      },
+    });
+    if (ok) setVoiceUI("Listening", "", true);
+    else setVoiceUI("Voice is not available in this browser. You can type instead.", "", false);
+  }
+
+  function wireVoice(cur: any) {
+    const st = scr; if (!st) return;
+    if (!st.voice) { stopListening(); stopSpeaking(); return; }
+    const mic = document.getElementById("mic");
+    mic?.addEventListener("click", () => { if (listening()) { stopListening(); setVoiceUI("Stopped. Tap to listen again.", undefined, false); } else { stopSpeaking(); startListening(cur); } });
+    const prompt = [cur.prompt, cur.kind === "scale" ? `On a scale of one to five, where one is ${cur.low} and five is ${cur.high}.` : "", cur.kind === "select" || cur.kind === "multi" ? `Options are: ${(cur.options as [string, string][]).map(([, l]) => l).join(", ")}.` : ""].filter(Boolean).join(" ");
+    setVoiceUI(st.muted ? "Tap the microphone when you are ready" : "Asking…", "", false, !st.muted);
+    speak(prompt, st.muted).then(() => { if (scr === st && st.voice && document.getElementById("mic")) startListening(cur); });
+  }
+
   function readAnswer(form: HTMLFormElement) {
     const qs = allQuestions(); const cur = qs[scr!.step]; const fd = new FormData(form);
     switch (cur.kind) {
@@ -63,6 +157,7 @@ export function memberViews(h: H) {
   }
   async function finishScreening() {
     const st = scr!; const p = C().person(st.personId)!; const r = C().screening.screeningToResult(st.answers); const now = C().nowISO();
+    stopListening(); stopSpeaking();
     const c: Conversation = { id: C().uid(), personId: p.id, conductedById: st.mode === "member" ? p.id : S().me.id, date: now, type: "SCREENING", rawNotes: Object.entries(st.answers).map(([k, v]) => `${k}: ${Array.isArray(v) ? JSON.stringify(v) : v}`).join("\n"), transcript: null, aiSummary: r.summary, screening: r, approvalStatus: "NEEDS_REVIEW", tags: ["screening"] };
     await C().commit("conversations", c, { action: "summary.generate", entityType: "Conversation", entityId: c.id, detail: `${C().full(p)} · screening (${r.completeness}% complete)` });
     for (const ref of r.referrals) await C().commit("referrals", { id: C().uid(), referrerPersonId: p.id, referredPersonId: S().people.find((x) => C().full(x).toLowerCase() === ref.name.toLowerCase())?.id ?? null, name: ref.name, email: ref.email ?? null, context: ref.context, note: "Named in screening", briefId: null, status: "NEW", createdAt: now, updatedAt: now } as Referral);
@@ -82,12 +177,12 @@ export function memberViews(h: H) {
     const screened = p.screeningStatus === "APPROVED" || !!p.screenedAt; const submitted = p.screeningStatus === "SUBMITTED";
     const anon = C().redactForPartner({ ...p, tenantId: "t", evidence: C().evOf(p.id), relationships: C().relsOf(p.id) });
     const highlights = C().fit.fitHighlights(C().fitOf(p));
-    const oppCard = (b: StoredBrief) => { const pitched = myPitches.find((x: Pitch) => x.briefId === b.id); const refd = myRefs.filter((r: Referral) => r.briefId === b.id); return `<section class="card opp"><div class="body"><div class="row"><div><b class="t">${esc(b.roles[0] ?? "Requirement")}${b.headcount > 1 ? ` × ${b.headcount}` : ""}</b><small class="sub">${esc(b.engagementRoute ? L().ROUTE_LABELS[b.engagementRoute] : "route to confirm")} · ${esc(b.locations.join(" / ") || "location flexible")} · ${esc(b.sectors.join(", ") || "any sector")}</small></div>${badge("client name hidden", "neutral", true)}</div><p>${esc(b.memberSummary ?? b.rawText)}</p><div class="chips">${b.capabilities.map(chip).join("")}${b.workRights ? chip(b.workRights) : ""}${(b.fitTraits ?? []).map((k: string) => chip(`needs ${C().fit.ATTRIBUTES.find((a: any) => a.key === k)?.label.toLowerCase() ?? k}`)).join("")}</div><div class="row wrap">${pitched ? badge(`You pitched · ${PITCH_STATUS[pitched.status]}`, pitched.status === "SHORTLISTED" ? "teal" : "navy", true) : screened ? btn("Pitch with my profile", `data-act="pitch" data-id="${b.id}"`, "primary sm") : `<small class="dim">Complete your screening to pitch.</small>`}${btn("Refer someone", `data-act="referFor" data-id="${b.id}"`, "glass sm")}${refd.length ? badge(`${refd.length} referred`, "teal", true) : ""}</div></div></section>`; };
+    const oppCard = (b: StoredBrief) => { const pitched = myPitches.find((x: Pitch) => x.briefId === b.id); const refd = myRefs.filter((r: Referral) => r.briefId === b.id); return `<section class="card opp"><div class="body"><div class="row"><div><b class="t">${esc(b.roles[0] ?? "Requirement")}${b.headcount > 1 ? ` × ${b.headcount}` : ""}</b><small class="sub">${esc(b.engagementRoute ? L().ROUTE_LABELS[b.engagementRoute] : "route to confirm")} · ${esc(b.locations.join(" / ") || "location flexible")} · ${esc(b.sectors.join(", ") || "any sector")}</small></div>${badge("client name hidden", "neutral", true)}</div><p>${esc(b.memberSummary ?? safeSummary(b))}</p><div class="chips">${b.capabilities.map(chip).join("")}${b.workRights ? chip(b.workRights) : ""}${(b.fitTraits ?? []).map((k: string) => chip(`needs ${C().fit.ATTRIBUTES.find((a: any) => a.key === k)?.label.toLowerCase() ?? k}`)).join("")}</div><div class="row wrap">${pitched ? badge(`You pitched · ${PITCH_STATUS[pitched.status]}`, pitched.status === "SHORTLISTED" ? "teal" : "navy", true) : screened ? btn("Pitch with my profile", `data-act="pitch" data-id="${b.id}"`, "primary sm") : `<small class="dim">Complete your screening to pitch.</small>`}${btn("Refer someone", `data-act="referFor" data-id="${b.id}"`, "glass sm")}${refd.length ? badge(`${refd.length} referred`, "teal", true) : ""}</div></div></section>`; };
     let body = "";
     if (tab === "opportunities") body = `<div class="sect-head"><div><h2>Opportunities open to members</h2><p>Anonymised. Pitch with your own profile, or refer someone you would put your name behind. You are only ever named to a client with your consent.</p></div></div>${open.length ? `<div class="stack">${open.map(oppCard).join("")}</div>` : empty("Nothing open right now", "When a requirement is opened to members, it appears here.")}`;
     else if (tab === "refer") body = `<div class="grid-3"><div class="col-2 stack">${card("Refer someone", `<form data-action="refer" class="stack"><p class="dim">Only people you would genuinely stand behind. Your referral is anonymous to clients; we tell the person you sent them only if you say we can.</p><div class="grid-2">${field("Full name", input("name", "required"), undefined, true)}${field("Email or LinkedIn", input("email", 'placeholder="so we can reach them"'))}</div>${field("How you know them and what you have seen them do", textarea("context", 'rows="3" required placeholder="e.g. Ran the requirements workstream for me on the payments hub. Precise, calm, well liked by the business."'), undefined, true)}<div class="grid-2">${field("For an open opportunity?", select("briefId", opt(Object.fromEntries(open.map((b: StoredBrief) => [b.id, `${b.roles[0] ?? "Requirement"} · ${b.locations[0] ?? ""}`])), "", "— general referral —")))}${field("Anything else", input("note"))}</div>${check("tell", "You may tell them I referred them", true)}<div class="row end"><button class="btn primary" type="submit">Send referral</button></div></form>`, { desc: "This is what makes the network compound." })}</div><div class="stack">${card("Your referrals", myRefs.length ? `<ul class="rows">${myRefs.map((r: Referral) => `<li class="col"><div class="row"><b>${esc(r.name)}</b>${badge(REF_STATUS[r.status], r.status === "ACCEPTED" ? "teal" : r.status === "DECLINED" ? "neutral" : "amber", true)}</div><small class="dim">${esc(r.context)}</small></li>`).join("")}</ul>` : '<span class="dim">None yet.</span>', { desc: `${myRefs.filter((r: Referral) => r.status === "ACCEPTED").length} accepted into the network` })}</div></div>`;
     else body = `<div class="grid-3"><div class="col-2 stack">
-      ${card("Your screening", screened ? `<div class="row"><span>${screenLabel(p)}<small class="sub">Completed ${esc(rel(p.screenedAt ?? p.memberSince))}. Your profile is live in the network.</small></span>${btn("Redo screening", `data-act="startScreening" data-id="${p.id}"`, "ghost sm")}</div>` : submitted ? `<div class="row"><span>${screenLabel(p)}<small class="sub">A person is reviewing your answers. You will be on the radar for opportunities as soon as it is confirmed.</small></span></div>` : `<div class="screen-cta"><div><b>Do your ${C().screening.SCREENING_MINUTES}-minute screening</b><p class="dim">Seven short sections: your story, expertise, availability, location and work rights, commercials, how you work, and who you would vouch for. It is the one thing every member does, and it is what puts you on the radar for opportunities.</p></div><div class="row wrap">${btn("Start the AI screening", `data-act="startScreening" data-id="${p.id}"`, "primary")}${btn("Book a real call instead", `data-act="bookScreening" data-id="${p.id}"`, "glass")}</div></div>`, { desc: "A real conversation, structured. Nothing goes live until a person has reviewed it." })}
+      ${card("Your screening", screened ? `<div class="row"><span>${screenLabel(p)}<small class="sub">Completed ${esc(rel(p.screenedAt ?? p.memberSince))}. Your profile is live in the network.</small></span>${btn("Redo screening", `data-act="startScreening" data-id="${p.id}"`, "ghost sm")}</div>` : submitted ? `<div class="row"><span>${screenLabel(p)}<small class="sub">A person is reviewing your answers. You will be on the radar for opportunities as soon as it is confirmed.</small></span></div>` : `<div class="screen-cta"><div><b>Do your ${C().screening.SCREENING_MINUTES}-minute screening</b><p class="dim">Seven short sections: your story, expertise, availability, location and work rights, commercials, how you work, and who you would vouch for. It is the one thing every member does, and it is what puts you on the radar for opportunities.</p></div><div class="row wrap">${btn(speechSupported() ? "Start the voice interview" : "Start the screening", `data-act="startScreening" data-id="${p.id}"`, "primary")}${btn("Book a real call instead", `data-act="bookScreening" data-id="${p.id}"`, "glass")}</div></div>`, { desc: "A real conversation, structured. Nothing goes live until a person has reviewed it." })}
       <div class="sect-head"><div><h2>Open to members</h2><p>Requirements you can pitch for or refer into. Client names stay hidden.</p></div><a class="btn ghost sm" href="#/member?tab=opportunities">All</a></div>${open.length ? `<div class="stack">${open.slice(0, 2).map(oppCard).join("")}</div>` : empty("Nothing open right now")}
       ${fitCard(p, { self: true })}</div>
       <div class="stack">${trustCard(p, { self: true })}
@@ -99,6 +194,31 @@ export function memberViews(h: H) {
     return { title: "Member portal", crumbs: [["My network profile"]], html: raw(html) };
   }
 
+  /** Admin editor for the screening script. Sections and questions, reorderable, saved for everyone. */
+  function scriptEditor(): string {
+    const sections = script();
+    const kinds: Record<string, string> = { text: "Short answer", long: "Long answer", chips: "List (comma separated)", select: "Choose one", multi: "Choose several", scale: "1–5 scale", people: "People they know" };
+    return card("The screening conversation", `<p class="dim">This is what every expert is asked, in order. It is read aloud on the voice call and used as the script when you run it yourself. Changes apply to the next conversation.</p>
+      <div class="script-edit">${sections.map((sec: any, si: number) => `<section class="sec-edit">
+        <form class="sec-head" data-action="secEdit" data-i="${si}">
+          <input name="title" value="${esc(sec.title)}" class="t" aria-label="Section title">
+          <input name="minutes" type="number" min="1" max="20" value="${sec.minutes}" class="mins" aria-label="Minutes"><span class="unit">min</span>
+          <input name="intent" value="${esc(sec.intent)}" class="i" placeholder="Why this section exists" aria-label="Intent">
+          <button class="btn glass sm" type="submit">Save</button>
+          ${si > 0 ? btn("↑", `data-act="secUp" data-i="${si}"`, "ghost sm") : ""}${si < sections.length - 1 ? btn("↓", `data-act="secDown" data-i="${si}"`, "ghost sm") : ""}${btn("Remove", `data-act="secDel" data-i="${si}"`, "ghost sm")}
+        </form>
+        <ul class="q-edit">${sec.questions.map((q: any, qi: number) => `<li><form data-action="qEdit" data-i="${si}" data-q="${qi}">
+          <input name="prompt" value="${esc(q.prompt)}" class="p" aria-label="Question">
+          <input name="help" value="${esc(q.help ?? "")}" class="h" placeholder="Help text (optional)" aria-label="Help">
+          <select name="kind" class="k" aria-label="Answer type">${opt(kinds, q.kind)}</select>
+          <label class="check sm"><input type="checkbox" name="required" ${q.required ? "checked" : ""}><span>Required</span></label>
+          <button class="btn glass sm" type="submit">Save</button>${qi > 0 ? btn("↑", `data-act="qUp" data-i="${si}" data-q="${qi}"`, "ghost sm") : ""}${btn("✕", `data-act="qDel" data-i="${si}" data-q="${qi}"`, "ghost sm")}
+        </form></li>`).join("")}</ul>
+        ${btn("＋ Add question", `data-act="qAdd" data-i="${si}"`, "ghost sm")}
+      </section>`).join("")}</div>
+      <div class="row wrap" style="margin-top:14px">${btn("＋ Add section", 'data-act="secAdd"', "glass sm")}${btn("Reset to the default script", 'data-act="scriptReset"', "ghost sm")}<span class="dim" style="margin-left:auto">${sections.length} sections · ${allQuestions().length} questions · about ${scriptMinutes()} minutes</span></div>`, { desc: "Configurable. What you ask is your call.", action: `<a class="btn glass sm" href="#/screening/${S().people[0]?.id ?? ""}?restart=1">Preview the call</a>` });
+  }
+
   // ----- owner: referrals & pitches inbox -----
   function referrals(q: URLSearchParams): View {
     const tab = q.get("tab") ?? "referrals";
@@ -108,7 +228,7 @@ export function memberViews(h: H) {
     const html = `<div class="page-head"><div><div class="eyebrow">Referral network</div><h1>Referrals & pitches</h1><p>People who know people. Every referral carries the referrer's name inside the network and nothing outside it.</p></div></div>
       <div class="stats-row">${stat("New referrals", refs.filter((r: Referral) => r.status === "NEW").length, "to triage")}${stat("Accepted", refs.filter((r: Referral) => r.status === "ACCEPTED").length, "into the network", undefined, "teal")}${stat("Pitches", pitches.filter((x: Pitch) => x.status === "SUBMITTED").length, "waiting")}${stat("Joining", joiners.length, "registered or in screening")}${stat("Members screened", S().people.filter((p: Person) => p.screeningStatus === "APPROVED" || p.screenedAt).length, undefined, undefined, "teal")}</div>
       <nav class="tabs">${[["referrals", "Referrals", refs.length], ["pitches", "Pitches", pitches.length], ["joining", "Joining", joiners.length]].map(([k, l, n]) => `<a href="#/referrals?tab=${k}" class="${tab === k ? "active" : ""}">${l}<i>${n}</i></a>`).join("")}</nav>
-      ${tab === "pitches" ? (pitches.length ? `<div class="stack">${pitches.map((x: Pitch) => { const p = C().person(x.personId)!; const b = S().briefs.find((y: StoredBrief) => y.id === x.briefId); return `<section class="card"><div class="body"><div class="row">${personLink(p)}<span class="meta">${trustMini(p)}${badge(PITCH_STATUS[x.status], x.status === "SHORTLISTED" ? "teal" : "navy")}</span></div><p class="quote-sm">“${esc(x.note)}”</p><small class="dim">For <a href="#/requirements/${x.briefId}"><b>${esc(b?.title ?? "requirement")}</b></a> · ${esc(rel(x.createdAt))}</small>${x.status === "SUBMITTED" ? `<div class="row wrap" style="margin-top:10px">${btn("Add to shortlist", `data-act="pitchShortlist" data-id="${x.id}"`, "primary sm")}${btn("Not this time", `data-act="pitchDecline" data-id="${x.id}"`, "ghost sm")}</div>` : ""}</div></section>`; }).join("")}</div>` : empty("No pitches yet", "Members pitch from their portal when a requirement is opened to them."))
+      ${tab === "pitches" ? (pitches.length ? `<div class="stack">${pitches.map((x: Pitch) => { const p = C().person(x.personId)!; const b = S().briefs.find((y: StoredBrief) => y.id === x.briefId); return `<section class="card"><div class="body"><div class="row">${personLink(p)}<span class="meta">${trustMini(p)}${badge(PITCH_STATUS[x.status], x.status === "SHORTLISTED" ? "teal" : "navy")}</span></div><p class="quote-sm">“${esc(x.note)}”</p>${x.relevantWork ? `<small class="dim">Closest work: ${esc(x.relevantWork)}</small>` : ""}<div class="chips">${x.route ? chip(L().ROUTE_LABELS[x.route] ?? x.route) : ""}${x.availableFrom ? chip(`from ${x.availableFrom}`) : ""}${x.rate ? chip(x.rate) : ""}</div><small class="dim">For <a href="#/requirements/${x.briefId}"><b>${esc(b?.title ?? "requirement")}</b></a> · ${esc(rel(x.createdAt))}</small>${x.status === "SUBMITTED" ? `<div class="row wrap" style="margin-top:10px">${btn("Add to shortlist", `data-act="pitchShortlist" data-id="${x.id}"`, "primary sm")}${btn("Not this time", `data-act="pitchDecline" data-id="${x.id}"`, "ghost sm")}</div>` : ""}</div></section>`; }).join("")}</div>` : empty("No pitches yet", "Members pitch from their portal when a requirement is opened to them."))
       : tab === "joining" ? (joiners.length ? `<div class="card table-card"><div class="scroll"><table class="data"><thead><tr><th>Person</th><th>Came via</th><th>Status</th><th>Trust</th><th></th></tr></thead><tbody>${joiners.map((p: Person) => { const r = C().relsOf(p.id)[0]; return `<tr><td>${personLink(p)}</td><td class="dim">${esc(r ? L().SOURCE_LABELS[r.sourceType] : "—")}${r?.introducedById && C().person(r.introducedById) ? `<small class="sub">via ${esc(C().full(C().person(r.introducedById)!))}</small>` : ""}</td><td>${screenLabel(p)}</td><td>${trustMini(p)}</td><td class="nowrap">${p.screeningStatus === "SUBMITTED" ? `<a class="btn primary sm" href="#/conversations?tab=review">Review screening</a>` : `${btn("Run screening", `data-act="startScreening" data-id="${p.id}"`, "primary sm")} ${btn("Book call", `data-act="bookScreening" data-id="${p.id}"`, "glass sm")}`}</td></tr>`; }).join("")}</tbody></table></div></div>` : empty("Nobody joining right now", "New registrations from the join link appear here and in your alerts."))
       : (refs.length ? `<div class="stack">${refs.map((r: Referral) => { const ref = C().person(r.referrerPersonId); const existing = r.referredPersonId ? C().person(r.referredPersonId) : S().people.find((p: Person) => C().full(p).toLowerCase() === r.name.toLowerCase()); const b = r.briefId ? S().briefs.find((y: StoredBrief) => y.id === r.briefId) : null; return `<section class="card"><div class="body"><div class="row"><span><b class="t">${esc(r.name)}</b><small class="sub">referred by ${ref ? `<a href="#/people/${ref.id}">${esc(C().full(ref))}</a>` : "a member"} · ${esc(rel(r.createdAt))}${b ? ` · for <a href="#/requirements/${b.id}">${esc(b.title)}</a>` : ""}</small></span><span class="meta">${ref ? trustMini(ref) : ""}${badge(REF_STATUS[r.status], r.status === "ACCEPTED" ? "teal" : r.status === "NEW" ? "amber" : "navy")}</span></div><p class="quote-sm">“${esc(r.context)}”</p>${r.note ? `<small class="dim">${esc(r.note)}</small>` : ""}${existing ? `<small class="dim">Already in the network: ${personLink(existing, null)}</small>` : ""}${r.status === "NEW" || r.status === "CONTACTED" ? `<div class="row wrap" style="margin-top:10px">${btn(existing ? "Link and accept" : "Accept into network", `data-act="refAccept" data-id="${r.id}"`, "primary sm")}${btn("Book screening", `data-act="refScreen" data-id="${r.id}"`, "glass sm")}${btn("Not now", `data-act="refDecline" data-id="${r.id}"`, "ghost sm")}</div>` : ""}</div></section>`; }).join("")}</div>` : empty("No referrals yet", "Members refer people from their portal and name them in screenings."))}`;
     return { title: "Referrals & pitches", crumbs: [["Referrals & pitches"]], html: raw(html) };
@@ -117,7 +237,9 @@ export function memberViews(h: H) {
   // ----- join (registration) -----
   function join(): View {
     const invited = S().people.filter((p: Person) => p.memberSince).length;
-    const html = `<div class="join"><div class="join-hero"><div class="eyebrow">Invitation only</div><h1>Known. Not just matched.</h1><p>A referral network of people who know people. You join by invitation, do one real screening conversation, and from then on you are on the radar for work that suits you, and you can put your name behind people you trust.</p><ul class="join-points"><li><b>One screening, 30 minutes.</b> Your story, expertise, availability, work rights and how you work.</li><li><b>Anonymous until you say yes.</b> Clients see a capability card, never your name.</li><li><b>Trust, built by people.</b> Every person who vouches for you adds to your trust score.</li><li><b>Refer and be referred.</b> Pitch for opportunities, or refer someone you would stand behind.</li></ul><small class="dim">${invited} members in the network</small></div>
+    const html = `<div class="join"><div class="join-hero"><div class="eyebrow">Invitation only</div><h1>Known. Not just matched.</h1><p>A referral network of people who know people. You join by invitation, have one real conversation, and from then on you are on the radar for work that suits you, and you can put your name behind people you trust. <b>Free for members, always.</b></p><ul class="join-points"><li><b>Free to join, free to stay.</b> Members are never charged. Companies and agencies pay us when a hire works out.</li>
+      <li><b>One conversation, 30 minutes.</b> Talk it through out loud or type it. Your story, expertise, availability, work rights and how you work.</li><li><b>Anonymous until you say yes.</b> Clients see a capability card, never your name.</li><li><b>Trust, built by people.</b> Every person who vouches for you adds to your trust score.</li><li><b>Refer and be referred.</b> Pitch for opportunities, or refer someone you would stand behind.</li>
+      <li><b>You are in control.</b> Say whether you want to be on the radar, and change your mind whenever.</li></ul><small class="dim">${invited} members · free to join · invitation only</small></div>
       <section class="card join-form"><div class="body"><h3>Register</h3><p class="dim">Takes a minute. Your screening comes next.</p><form data-action="register" class="stack"><div class="grid-2">${field("First name", input("firstName", "required"), undefined, true)}${field("Last name", input("lastName", "required"), undefined, true)}</div>${field("Email", input("email", 'type="email" required'), undefined, true)}${field("What you are known for", input("headline", 'placeholder="One line"'))}${field("LinkedIn profile", input("linkedinUrl", 'placeholder="https://linkedin.com/in/…"'), "Optional. We can import recommendations from here.")}${field("Who invited you?", select("referrerId", opt(Object.fromEntries(S().people.filter((p: Person) => p.memberSince).map((p: Person) => [p.id, C().full(p)])), "", "— choose —")), "Only members can invite. If you were not invited, ask the person who told you about us.", true)}${check("consent", "I understand my profile is anonymous to clients until I consent to an introduction", true)}<button class="btn primary" type="submit">Register and start screening</button></form></div></section></div>`;
     return { title: "Join the network", crumbs: [["Join the network"]], html: raw(html) };
   }
@@ -140,14 +262,29 @@ export function memberViews(h: H) {
         await C().commit("people", { ...p, screeningStatus: "BOOKED", nextAction: "Screening call", nextActionDate: start.toISOString() }, { action: "conversation.schedule", entityType: "Person", entityId: p.id, detail: `Screening call · ${C().full(p)}` }); C().closeDrawer(); C().toast("Screening call booked"); C().render();
       }, { submitLabel: "Book" });
     },
+    async secUp(el) { const i = Number(el.dataset.i); const sc = [...script()]; [sc[i - 1], sc[i]] = [sc[i], sc[i - 1]]; await C().saveScript(sc); C().render(); },
+    async secDown(el) { const i = Number(el.dataset.i); const sc = [...script()]; [sc[i + 1], sc[i]] = [sc[i], sc[i + 1]]; await C().saveScript(sc); C().render(); },
+    async secDel(el) { const i = Number(el.dataset.i); if (!confirm("Remove this section and its questions?")) return; const sc = script().filter((_: any, x: number) => x !== i); await C().saveScript(sc); C().logAudit("screening.config", "Settings", null, "section removed"); C().render(); },
+    async secAdd() { const sc = [...script(), { key: `s${Date.now()}`, title: "New section", minutes: 3, intent: "What this section is for", questions: [{ key: `q${Date.now()}`, prompt: "Your question?", kind: "long" }] }]; await C().saveScript(sc); C().toast("Section added"); C().render(); },
+    async qAdd(el) { const i = Number(el.dataset.i); const sc = script().map((x: any, n: number) => (n === i ? { ...x, questions: [...x.questions, { key: `q${Date.now()}`, prompt: "Your question?", kind: "long" }] } : x)); await C().saveScript(sc); C().render(); },
+    async qUp(el) { const i = Number(el.dataset.i), qi = Number(el.dataset.q); const sc = script().map((x: any, n: number) => { if (n !== i) return x; const qq = [...x.questions]; [qq[qi - 1], qq[qi]] = [qq[qi], qq[qi - 1]]; return { ...x, questions: qq }; }); await C().saveScript(sc); C().render(); },
+    async qDel(el) { const i = Number(el.dataset.i), qi = Number(el.dataset.q); const sc = script().map((x: any, n: number) => (n === i ? { ...x, questions: x.questions.filter((_: any, m: number) => m !== qi) } : x)); await C().saveScript(sc); C().render(); },
+    async scriptReset() { if (!confirm("Reset the screening conversation to the default script?")) return; await C().saveScript(JSON.parse(JSON.stringify(C().screening.SCREENING_SCRIPT))); C().logAudit("screening.config", "Settings", null, "reset to default"); C().toast("Reset to the default script"); C().render(); },
+    scrStartVoice() { if (!scr) return; scr.voice = true; scr.started = true; scr.startedAt = Date.now(); C().render(); },
+    scrStartTyped() { if (!scr) return; scr.voice = false; scr.started = true; scr.startedAt = Date.now(); C().render(); },
+    scrVoiceToggle() { if (!scr) return; scr.voice = !scr.voice; stopListening(); stopSpeaking(); C().render(); },
+    scrMute() { if (!scr) return; scr.muted = !scr.muted; if (scr.muted) stopSpeaking(); C().render(); },
+    scrLeave() { stopListening(); stopSpeaking(); const st = scr; C().toast("Saved. Pick up where you left off whenever."); location.hash = st?.mode === "member" ? "#/member" : `#/people/${st?.personId}`; },
     scrAddPerson() { const rows = document.getElementById("people-rows"); if (rows) rows.insertAdjacentHTML("beforeend", `<div class="grid-3f"><input name="pn" placeholder="Full name"><input name="pc" placeholder="What you have seen them do, and how you know them"><input name="pe" placeholder="Email (optional)"></div>`); },
-    scrBack() { if (scr && scr.step > 0) { scr.step--; C().render(); } },
-    async scrSkip() { if (!scr) return; const qs = allQuestions(); if (scr.step >= qs.length - 1) { await finishScreening(); return; } scr.step++; C().render(); },
+    scrBack() { if (scr && scr.step > 0) { stopListening(); stopSpeaking(); scr.step--; C().render(); } },
+    async scrSkip() { if (!scr) return; stopListening(); stopSpeaking(); const qs = allQuestions(); if (scr.step >= qs.length - 1) { await finishScreening(); return; } scr.step++; C().render(); },
     pitch(el) {
       const b = S().briefs.find((x: StoredBrief) => x.id === el.dataset.id)!; const p = memberPerson()!;
-      C().openDrawer("Pitch for this opportunity", "Your profile goes with it. Say, in a few sentences, why you and what you have done that is closest to this.", raw(`<div class="how-read">${chip(b.roles[0] ?? "Requirement")}${chip(b.locations.join(" / ") || "flexible")}${chip(b.engagementRoute ? L().ROUTE_LABELS[b.engagementRoute] : "route tbc")}</div>${field("Your pitch", textarea("note", 'rows="5" required placeholder="What you have done that is closest to this, and why now."'), undefined, true)}`), async (fd: FormData) => {
-        const now = C().nowISO(); await C().commit("pitches", { id: C().uid(), briefId: b.id, personId: p.id, note: String(fd.get("note") || ""), status: "SUBMITTED", createdAt: now, updatedAt: now } as Pitch, { action: "pitch.create", entityType: "Brief", entityId: b.id, detail: `${C().full(p)} pitched` }); C().closeDrawer(); C().toast("Pitch sent. You will hear back after review."); C().render();
-      }, { submitLabel: "Send pitch" });
+      C().openDrawer("Put yourself forward", "The client never sees your name. They see what you can do, and they come to Amana Network to ask for you.", raw(`<div class="how-read">${chip(b.roles[0] ?? "Requirement")}${chip(b.locations.join(" / ") || "flexible")}${chip(b.engagementRoute ? L().ROUTE_LABELS[b.engagementRoute] : "route tbc")}${b.workRights ? chip(b.workRights) : ""}</div>${field("Why you, in your own words", textarea("note", 'rows="4" required placeholder="What you have done that is closest to this, and why now."'), "This is the line the client reads on your anonymous card.", true)}${field("The closest piece of work you have done", textarea("relevantWork", 'rows="3" placeholder="Situation, what you did, what happened."'), "Shown to the client as evidence, still without your name.")}<div class="grid-2">${field("What you want here", select("route", opt(L().ROUTE_LABELS, b.engagementRoute ?? p.engagementPreferences[0] ?? "CONTRACT")), "Permanent, contract, fractional…")}${field("When you could start", input("availableFrom", 'placeholder="e.g. 4 weeks, or from January"', p.noticePeriod ?? ""))}${field("Rate or salary you want", input("rate", 'placeholder="e.g. £1,200/day or £150k"', p.rateExpectation ?? p.salaryExpectation ?? ""), "Shown to the client as a band, never the exact number.")}</div>`), async (fd: FormData) => {
+        const now = C().nowISO(); const note = String(fd.get("note") || "");
+        if (note.trim().length < 5) { C().toast("Say a little about why you", "amber"); return; }
+        await C().commit("pitches", { id: C().uid(), briefId: b.id, personId: p.id, note, relevantWork: String(fd.get("relevantWork") || "") || null, route: String(fd.get("route") || "") || null, availableFrom: String(fd.get("availableFrom") || "") || null, rate: String(fd.get("rate") || "") || null, status: "SUBMITTED", createdAt: now, updatedAt: now } as Pitch, { action: "pitch.create", entityType: "Brief", entityId: b.id, detail: `${C().full(p)} put themselves forward` }); C().closeDrawer(); C().toast("Sent. Amana Network will come back to you."); C().render();
+      }, { wide: true, submitLabel: "Put me forward" });
     },
     referFor(el) { location.hash = `#/member?tab=refer&for=${el.dataset.id}`; setTimeout(() => { const sel = document.querySelector<HTMLSelectElement>("form[data-action=refer] select[name=briefId]"); if (sel) sel.value = el.dataset.id!; }, 50); },
     async refAccept(el) {
@@ -173,13 +310,16 @@ export function memberViews(h: H) {
     async scrNext(fd, form) {
       if (!scr) return; const qs = allQuestions(); const cur = qs[scr.step]; const a = readAnswer(form);
       if (cur.required && (Array.isArray(a) ? !a.length : !a)) { C().toast("This one matters. Give it a go.", "amber"); return; }
-      scr.answers[cur.key] = a; if (scr.step >= qs.length - 1) { await finishScreening(); return; } scr.step++; C().render();
+      stopListening(); stopSpeaking();
+    scr.answers[cur.key] = a; if (scr.step >= qs.length - 1) { await finishScreening(); return; } scr.step++; C().render();
     },
     async refer(fd) {
       const p = memberPerson() ?? S().people.find((x: Person) => x.memberSince)!; const now = C().nowISO();
       const r: Referral = { id: C().uid(), referrerPersonId: p.id, referredPersonId: S().people.find((x: Person) => C().full(x).toLowerCase() === String(fd.get("name")).trim().toLowerCase())?.id ?? null, name: String(fd.get("name") || "").trim(), email: String(fd.get("email") || "") || null, context: String(fd.get("context") || ""), note: [String(fd.get("note") || ""), fd.get("tell") === "on" ? "May be told who referred them." : "Do not reveal the referrer."].filter(Boolean).join(" "), briefId: String(fd.get("briefId") || "") || null, status: "NEW", createdAt: now, updatedAt: now };
       if (!r.name) return; await C().commit("referrals", r, { action: "referral.create", entityType: "Person", entityId: p.id, detail: `${C().full(p)} referred ${r.name}` }); C().toast(`Thank you. ${r.name} is with us to review.`); location.hash = "#/member?tab=refer"; C().render();
     },
+    async secEdit(fd, form) { const i = Number(form.dataset.i); const sc = script().map((x: any, n: number) => (n === i ? { ...x, title: String(fd.get("title") || x.title), minutes: Number(fd.get("minutes") || x.minutes), intent: String(fd.get("intent") || x.intent) } : x)); await C().saveScript(sc); C().logAudit("screening.config", "Settings", null, `section: ${fd.get("title")}`); C().toast("Saved"); C().render(); },
+    async qEdit(fd, form) { const i = Number(form.dataset.i), qi = Number(form.dataset.q); const sc = script().map((x: any, n: number) => (n === i ? { ...x, questions: x.questions.map((q: any, m: number) => (m === qi ? { ...q, prompt: String(fd.get("prompt") || q.prompt), help: String(fd.get("help") || "") || undefined, kind: String(fd.get("kind") || q.kind), required: fd.get("required") === "on" } : q)) } : x)); await C().saveScript(sc); C().logAudit("screening.config", "Settings", null, `question: ${fd.get("prompt")}`); C().toast("Saved"); C().render(); },
     async consent(fd, form) { const p = C().person(form.dataset.id!)!; await C().commit("people", { ...p, referralConsent: String(fd.get("referralConsent")) as Person["referralConsent"], updatedAt: C().nowISO() }, { action: "consent.update", entityType: "Person", entityId: p.id, detail: String(fd.get("referralConsent")) }); C().toast("Saved"); C().render(); },
     async register(fd) {
       const now = C().nowISO(); const referrer = C().person(String(fd.get("referrerId") || ""));
@@ -192,5 +332,5 @@ export function memberViews(h: H) {
     },
   };
 
-  return { screening, member, referrals, join, trustCard, fitCard, vouchList, trustMini, screenLabel, actions, forms };
+  return { screening, member, referrals, join, scriptEditor, trustCard, fitCard, vouchList, trustMini, screenLabel, actions, forms };
 }
