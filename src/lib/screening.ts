@@ -32,7 +32,7 @@ export const SCREENING_SCRIPT: ScreeningSection[] = [
     { key: "seniority", prompt: "What level do you operate at?", kind: "select", options: SENIORITY },
     { key: "avoid", prompt: "What do you not want to be put forward for?", help: "Greenfield builds, hands-on delivery, politically sensitive roles…", kind: "chips" },
   ] },
-  { key: "availability", title: "Availability", minutes: 4, intent: "Where they are on the spectrum, and for what kind of work.", questions: [
+  { key: "availability", title: "Availability", minutes: 3, intent: "Where they are on the spectrum, and for what kind of work.", questions: [
     { key: "status", prompt: "Where are you right now?", help: "Status is a spectrum, not a yes or no.", kind: "select", options: STATUSES, required: true },
     { key: "routes", prompt: "What kinds of engagement would you consider?", kind: "multi", options: ROUTES },
     { key: "noticePeriod", prompt: "How quickly could you start, or what is your notice period?", kind: "text", placeholder: "e.g. 4 weeks, or from January" },
@@ -47,12 +47,17 @@ export const SCREENING_SCRIPT: ScreeningSection[] = [
     { key: "rate", prompt: "What day rate, or salary, are you looking for?", kind: "text", placeholder: "e.g. £1,200/day or £150k" },
     { key: "constraints", prompt: "Any constraints we should respect? Travel, days on site, confidentiality, a current employer not to approach…", kind: "chips" },
   ] },
-  { key: "fit", title: "How you work", minutes: 5, intent: "Working style and attitude, so we can judge where they will land well. Self-assessed here; people who vouch for them add what they have seen.", questions: [
-    ...ATTRIBUTES.map((a) => ({ key: `attr:${a.key}`, prompt: a.question, help: a.label, kind: "scale" as QuestionKind, low: a.low, high: a.high })),
-    { key: "pushback", prompt: "Tell me about a time you had to push back on a senior stakeholder. What did you do, and how did it land?", help: "This is the story we test with the people who vouch for you.", kind: "long" },
+  // Working style is read out of stories, not out of self-ratings: nobody describes their own
+  // assertiveness usefully. src/lib/interview.ts scores the attributes from these answers, and a
+  // vouch from someone who worked with them carries more weight than either.
+  { key: "fit", title: "How you work", minutes: 6, intent: "Four stories that show how they operate. The attributes are read from these, never asked for as a score.", questions: [
+    { key: "pushback", prompt: "Tell me about a time you had to push back on a senior stakeholder. What did you do, and how did it land?", help: "Assertiveness, conflict and influence all come out of this one.", kind: "long" },
+    { key: "politics", prompt: "On your last piece of work, how did you work out who really decided — and what they needed to hear?", help: "Political awareness, in their own words.", kind: "long" },
+    { key: "commercialCall", prompt: "What commercial trade-off have you had to make? Cost against scope, margin against goodwill, that sort of thing.", help: "Commercial awareness, and whether they think past delivery.", kind: "long" },
+    { key: "ambiguity", prompt: "Tell me about starting something where nobody could tell you what good looked like. What did you do first?", help: "Comfort with ambiguity, and pace.", kind: "long" },
     { key: "workingStyle", prompt: "What kind of team, client or culture brings out your best, and what wears you down?", kind: "long" },
   ] },
-  { key: "network", title: "Your network", minutes: 5, intent: "Who they know and would vouch for. This is what makes the network compound.", questions: [
+  { key: "network", title: "Your network", minutes: 4, intent: "Who they know and would vouch for. This is what makes the network compound.", questions: [
     { key: "knows", prompt: "Who do you know that you would genuinely put your name behind? Anyone already in our network, or someone we should meet.", help: "Name, what you have seen them do, and how you know them. We only contact them with your say-so.", kind: "people" },
     { key: "referralConsent", prompt: "Are you happy for people in the network to refer you for opportunities, anonymously until you say yes?", kind: "select", options: [["yes", "Yes, refer me"], ["ask", "Ask me each time"], ["no", "Not for now"]], required: true },
     { key: "contactPreference", prompt: "How do you prefer to be contacted, and when should we check in next?", kind: "text", placeholder: "e.g. WhatsApp, check in after Q1" },
@@ -98,14 +103,14 @@ export function screeningToResult(a: ScreeningAnswers, now = new Date()): Screen
   };
   const attributes: FitScores = {};
   for (const at of ATTRIBUTES) { const v = Number(str(a[`attr:${at.key}`])); if (v >= 1 && v <= 5) attributes[at.key] = v; }
-  const required = ["headline", "capabilities", "status", "location", "referralConsent"]; const important = ["currentRole", "proudest", "sectors", "routes", "workRights", "rate", "knows", "contactPreference", "attr:political", "attr:commercial"];
+  const required = ["headline", "capabilities", "status", "location", "referralConsent"]; const important = ["currentRole", "proudest", "sectors", "routes", "workRights", "rate", "knows", "contactPreference", "pushback", "politics", "commercialCall"];
   const answered = (k: string) => { const v = a[k]; return Array.isArray(v) ? v.length > 0 : !!str(v); };
   const missing = [...required.filter((k) => !answered(k)), ...important.filter((k) => !answered(k))];
   const completeness = Math.round(((required.filter(answered).length * 2 + important.filter(answered).length) / (required.length * 2 + important.length)) * 100);
   const summary: ExtractedSummary = {
     headline: profile.headline ?? "", capabilities: profile.capabilities.map((c) => c.toLowerCase()), sectors: profile.sectors.map((c) => c.toLowerCase()), engagementPreferences: routes, locationPreferences: [loc, ...profile.targetLocations].filter((x): x is string => !!x).map((x) => x.toLowerCase()),
     currentStatus: [str(a.currentRole), status ? STATUSES.find(([k]) => k === status)?.[1] : null, str(a.noticePeriod) ? `notice: ${str(a.noticePeriod)}` : null].filter(Boolean).join(" · "), suggestedAvailabilityStatus: status ?? undefined, ratesOrSalary: rate ?? "",
-    workingCharacteristics: [profile.workingStyle, ...ATTRIBUTES.filter((at) => (attributes[at.key] ?? 0) >= 4).map((at) => `${at.label}: ${at.high.toLowerCase()} (self-assessed ${attributes[at.key]}/5)`)].filter((x): x is string => !!x), constraints: list(a.constraints), strengths: profile.capabilities.slice(0, 5), avoid: list(a.avoid),
+    workingCharacteristics: [profile.workingStyle, ...ATTRIBUTES.filter((at) => (attributes[at.key] ?? 0) >= 4).map((at) => `${at.label}: ${at.high.toLowerCase()} (${attributes[at.key]}/5, read from the conversation)`)].filter((x): x is string => !!x), constraints: list(a.constraints), strengths: profile.capabilities.slice(0, 5), avoid: list(a.avoid),
     followUpDate: str(a.contactPreference) ?? undefined, unresolvedQuestions: missing.map((k) => `Screening did not cover: ${labelFor(k)}`), summary: buildSummary(a, profile, referrals.length),
   };
   return { summary, profile, referrals, attributes, attitudeStory: str(a.pushback), evidenceCandidate: str(a.proudest), completeness, missing: missing.map(labelFor) };

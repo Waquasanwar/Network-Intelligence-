@@ -40,7 +40,33 @@ export function speak(text: string, muted: boolean): Promise<void> {
   });
 }
 
-export function stopSpeaking() { try { if (speakSupported()) window.speechSynthesis.cancel(); } catch { /* ignore */ } }
+/**
+ * The natural voice. The page never holds an API key: it posts the line to the platform's own
+ * /api/voice/speak, which speaks it with the tenant's ElevenLabs account and streams audio back.
+ * Returns false when the platform is not there (a standalone prototype, or no key configured), so
+ * the caller can fall back to the device voice without the conversation stalling.
+ */
+let audio: HTMLAudioElement | null = null;
+let naturalOff = false;
+
+export async function speakNatural(text: string, muted: boolean, names: string[] = []): Promise<boolean> {
+  if (muted || naturalOff || typeof fetch !== "function") return false;
+  try {
+    const res = await fetch("/api/voice/speak", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, names }) });
+    if (!res.ok || !res.headers.get("content-type")?.includes("audio")) { naturalOff = true; return false; }
+    const url = URL.createObjectURL(await res.blob());
+    stopAudio();
+    const el = new Audio(url); audio = el;
+    await new Promise<void>((resolve) => { el.onended = () => resolve(); el.onerror = () => resolve(); el.play().catch(() => resolve()); });
+    URL.revokeObjectURL(url);
+    return true;
+  } catch { naturalOff = true; return false; }
+}
+
+export const naturalAvailable = () => !naturalOff;
+export function stopAudio() { if (audio) { try { audio.pause(); } catch { /* ignore */ } audio = null; } }
+
+export function stopSpeaking() { stopAudio(); try { if (speakSupported()) window.speechSynthesis.cancel(); } catch { /* ignore */ } }
 
 export type ListenHandlers = { onText: (finalText: string, interim: string) => void; onEnd: (reason: "silence" | "stopped" | "error", message?: string) => void };
 

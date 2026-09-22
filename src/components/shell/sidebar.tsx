@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2 } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
@@ -24,6 +24,7 @@ const SETTINGS_NAV = [
   { href: "/network/import", label: "Import contacts", icon: Upload },
   { href: "/join", label: "Join link", icon: Link2 },
   { href: "/settings/commercials", label: "Commercials", icon: Percent },
+  { href: "/settings/screening", label: "Screening call", icon: MicVocal },
   { href: "/settings/integrations", label: "Integrations", icon: Plug },
   { href: "/settings/security", label: "Security", icon: ShieldCheck },
 ];

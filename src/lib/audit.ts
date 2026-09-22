@@ -56,7 +56,8 @@ export type AuditAction =
   | "member.register"
   | "brief.members"
   | "brief.on_spec"
-  | "shortlist.referred";
+  | "shortlist.referred"
+  | "screening.config";
 
 export async function audit(input: {
   tenantId: string;

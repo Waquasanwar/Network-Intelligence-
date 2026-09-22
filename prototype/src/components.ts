@@ -16,7 +16,7 @@ const BASE = `
   :host { --ink: var(--c-ink, #131714); --ink-2: var(--c-ink-2, #5c635c); --ink-3: var(--c-ink-3, #8e948d);
     --rule: var(--c-rule, rgba(19,23,20,0.12)); --paper: var(--c-paper, #fff); --sunk: var(--c-sunk, #f3f4f1);
     --trust: var(--c-trust, #186b4e); --trust-b: var(--c-trust-b, #2f9e6f); --alert: var(--c-alert, #9a6212); --alert-b: var(--c-alert-b, #d08a1f); --stop: var(--c-stop, #a3352b);
-    --mono: "Geist Mono", ui-monospace, monospace; --sans: "Geist", ui-sans-serif, system-ui, sans-serif; --serif: "Fraunces", Georgia, serif;
+    --mono: "Geist Mono", ui-monospace, monospace; --sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif; --serif: "Instrument Serif", Georgia, serif;
     display: inline-block; }
   * { box-sizing: border-box; }
 `;
@@ -94,10 +94,10 @@ class Quote extends HTMLElement {
   attributeChangedCallback() { this.#render(); }
   #render() {
     const size = this.getAttribute("size") ?? "md";
-    const px = size === "xl" ? 40 : size === "lg" ? 24 : size === "sm" ? 15 : 18;
+    const px = size === "xl" ? 46 : size === "lg" ? 26 : size === "sm" ? 16 : 19;
     this.#root.adoptedStyleSheets = [sheet(`${BASE}
       :host { display: block; }
-      blockquote { margin: 0; font: italic 400 ${px}px/${size === "xl" ? 1.18 : 1.42} var(--serif); letter-spacing: ${size === "xl" ? "-0.02em" : "-0.005em"}; color: var(--ink); text-wrap: pretty; }
+      blockquote { margin: 0; font: italic 400 ${px}px/${size === "xl" ? 1.1 : 1.4} var(--serif); letter-spacing: ${size === "xl" ? "-0.02em" : "-0.005em"}; color: var(--ink); text-wrap: pretty; }
       .a { margin-top: ${size === "xl" ? 20 : 10}px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
         font: 500 ${size === "xl" ? 12 : 11}px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); }
       .a b { color: var(--ink-2); font-weight: 600; }

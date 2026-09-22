@@ -27,6 +27,8 @@ model Tenant {
   type      TenantType
   brandName String?
   rateCard  Json? // commercial defaults (see src/lib/demand.ts RateCard); configurable, never hard-coded
+  /// Which voice the AI interviewer speaks in (see src/lib/voice-config.ts). Never holds an API key.
+  voiceSettings Json?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 

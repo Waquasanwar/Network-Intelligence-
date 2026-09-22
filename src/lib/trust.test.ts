@@ -60,6 +60,8 @@ describe("screening", () => {
       rate: "£1,350/day", constraints: ["No greenfield"], workingStyle: "Direct. Best in recovery situations.",
       knows: [{ name: "Ben Hughes", context: "Ran recovery for me on the insurance programme" }], referralConsent: "yes", contactPreference: "Call, check in after the programme ends",
       "attr:assertiveness": "5", "attr:political": "4", "attr:commercial": "3", pushback: "Told the CIO the SI plan was fiction; re-baselined in front of the board.",
+      politics: "The CIO decided, not the steering group, so I took him the one number he cared about every week.",
+      commercialCall: "Cut the reporting scope rather than lose the margin, and made the business case for the delay myself.",
     });
     expect(r.attributes).toEqual({ assertiveness: 5, political: 4, commercial: 3 });
     expect(r.attitudeStory).toMatch(/CIO/);

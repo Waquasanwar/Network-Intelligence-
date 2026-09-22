@@ -9,7 +9,7 @@ export type Ctx = {
   S: () => State; ai: any; esc: (s: unknown) => string; raw: (s: string) => RawT; h: any; uid: () => string; nowISO: () => string; full: (p: { firstName: string; lastName: string }) => string; list: (s: string | null | undefined) => string[];
   person: (id: string) => Person | undefined; userName: (id: string) => string; relsOf: (id: string) => Relationship[]; evOf: (id: string) => Evidence[]; convOf: (id: string) => Conversation[]; fresh: (p: Person) => string; depth: (p: Person) => number; toMatchPerson: (p: Person) => any;
   commit: (c: string, doc: any, audit?: { action: string; entityType: string; entityId?: string | null; detail?: string | null }) => Promise<void>; removeDoc: (c: string, id: string) => Promise<void>; logAudit: (a: string, t: string, id: string | null, d: string | null) => void;
-  toast: (m: string, tone?: string) => void; openDrawer: (t: string, d: string, body: RawT, onSubmit: any, opts?: { wide?: boolean; submitLabel?: string }) => void; closeDrawer: () => void; render: () => void; constellation: (c: HTMLCanvasElement | null) => void;
+  toast: (m: string, tone?: string) => void; openDrawer: (t: string, d: string, body: RawT, onSubmit: any, opts?: { wide?: boolean; submitLabel?: string }) => void; setDrawerStep: (t: string, d: string, body: RawT, onSubmit: any, opts?: { submitLabel?: string; back?: boolean; step?: [number, number] }) => void; setStepBack: (fn: (() => void) | null) => void; closeDrawer: () => void; render: () => void; constellation: (c: HTMLCanvasElement | null) => void;
   retrieveMatches: any; capabilityCoverage: any; suggestNextCheck: any; ACTIVE_STATUSES: string[]; redactForPartner: any; parseCsv: any; mapHeaders: any; SOURCE_ALIASES: Record<string, string>; RELATIONSHIP_ALIASES: Record<string, string>; templateCsv: () => string; seed: () => State; persistMode: () => string; savePref: (k: string, v: unknown) => void;
   saveRateCard: (card: any) => Promise<void>; saveScript: (sections: any[]) => Promise<void>; toBriefPerson: (p: Person) => any; demand: any;
   trustOf: (p: Person) => any; fitOf: (p: Person) => any; vouchesOf: (id: string) => any[]; alerts: () => any[]; setViewAs: (v: any) => void; trust: any; screening: any; fit: any;
@@ -96,6 +96,20 @@ function overview(): View {
   const voucherName = (v: any) => (v.voucherKind === "EXTERNAL" ? v.voucherName ?? "External reference" : C.userName(v.voucherId));
   const chainData = (id: string) => { const vs = S.vouches.filter((v) => v.personId === id && v.wouldRecommend); return { names: vs.map(voucherName).join("|"), count: vs.length }; };
   const fc = featureOf ? chainData(featureOf.id) : { names: "", count: 0 };
+  // Setup, as a thread rather than a scavenger hunt. Each step is one click from here, and the
+  // card disappears the moment the network can actually earn.
+  const steps: { done: boolean; label: string; hint: string; act?: string; href?: string }[] = [
+    { done: total > 0, label: "Add people you know", hint: `${total} in the network`, act: "addPerson" },
+    { done: S.accounts.some((a) => a.kind === "CLIENT" || a.kind === "AGENCY"), label: "Add a client or an agency", hint: "Who pays, and on what terms", act: "setupClient" },
+    { done: S.briefs.length > 0, label: "Take a requirement", hint: "A role to fill, in plain words", href: "#/requirements" },
+    { done: screened > 0, label: "Run a screening conversation", hint: "The 30-minute call that builds a profile", href: "#/referrals?tab=joining" },
+    { done: S.shortlist.some((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)), label: "Propose someone", hint: "They see an anonymised card, never a name", href: "#/requirements" },
+    { done: S.fees.length > 0, label: "See the fee that rides on it", hint: "Forecast, agreed, invoiced, paid", href: "#/settings?tab=commercials" },
+  ];
+  const doneN = steps.filter((x) => x.done).length;
+  const setupCard = doneN === steps.length ? "" : card("Getting set up", `<div class="setup-bar"><div style="width:${Math.round((doneN / steps.length) * 100)}%"></div></div>
+    <ul class="checklist">${steps.map((x) => `<li class="${x.done ? "done" : ""}"><span class="tick"><ni-icon name="check" size="13"></ni-icon></span><span><b>${esc(x.label)}</b><small>${esc(x.hint)}</small></span>${x.done ? "" : x.act ? btn("Do it", `data-act="${x.act}"`, "glass sm") : `<a class="btn glass sm" href="${x.href}">Do it</a>`}</li>`).join("")}</ul>`, { desc: `${doneN} of ${steps.length} done. Nothing here is compulsory — it is just the shortest path to a fee.` });
+
   const html = `
     <section class="masthead">
       <div class="mh-eyebrow"><ni-icon name="vouch" size="13" tone="trust"></ni-icon> ${hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening"}, ${esc(me.name.split(" ")[0])} — what the network says today</div>
@@ -110,6 +124,7 @@ function overview(): View {
       ${([["Open requirements", String(S.briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length), `${S.briefs.filter((b) => b.submittedVia === "PORTAL").length} came from clients`, "#/requirements"], ["People proposed", String(S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)).length), "anonymised", "#/requirements"], ["Referrals", String(S.referrals.length), `${S.referrals.filter((r) => r.status === "ACCEPTED").length} joined`, "#/referrals"], ["Pitches waiting", String(S.pitches.filter((x) => x.status === "SUBMITTED").length), "from experts", "#/referrals?tab=pitches"], ["Needs a check", String(total - freshN), "status has gone stale", "#/network?freshness=stale"], ["Amana bench", String(S.people.filter((p) => p.amanaBench).length), "trusted for SOW work", "#/amana"]] as [string, string, string, string][]).map(([l, v, n, href]) => `<a href="${href}"><ni-figure label="${esc(l)}" value="${esc(v)}" note="${esc(n)}"></ni-figure></a>`).join("")}
     </section>
     <div class="grid-3"><div class="col-2 stack">
+      ${setupCard}
       ${card("Most trusted right now", `<div class="scroll"><table class="data"><thead><tr><th>Expert</th><th>Known for</th><th>Who stands behind them</th><th>Availability</th></tr></thead><tbody>${[...S.people].map((p) => ({ p, t: C.trustOf(p) })).sort((a, b) => b.t.score - a.t.score).slice(0, 6).map(({ p, t }) => `<tr><td>${personLink(p, null)}</td><td class="dim wrap">${esc(p.headline ?? "—")}</td><td>${mv.chainOf(p)}</td><td class="nowrap">${availBadge(p)}</td></tr>`).join("")}</tbody></table></div>`, { desc: "Who the network stands behind, and how current we are on them.", flush: true, action: `<a class="btn ghost sm" href="#/network">All experts</a>` })}
       ${card("Suggested next actions", rows(sugg.map((s) => `<a class="action" href="${s.href}"><i></i>${esc(s.text)}</a>`), "Nothing pressing. The network is in good shape."), { desc: "Generated from the state of the network. You decide." })}
       <div class="grid-2">

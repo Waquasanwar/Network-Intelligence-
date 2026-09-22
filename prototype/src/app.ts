@@ -102,11 +102,53 @@ export function openDrawer(title: string, desc: string, body: Raw, onSubmit: typ
   root.hidden = false; document.body.style.overflow = "hidden";
   setTimeout(() => (root.querySelector("input:not([type=hidden]),textarea,select") as HTMLElement | null)?.focus(), 30);
 }
-export function closeDrawer() { const root = document.getElementById("drawer")!; root.hidden = true; root.innerHTML = ""; document.body.style.overflow = ""; drawerSubmit = null; }
+/**
+ * Swap what a drawer is showing without closing it: used by the guided flows, so adding a client
+ * feels like one continuous thing rather than three dialogs. The panel stays put; only the
+ * content moves, and it moves the way iOS moves — out to the left, in from the right.
+ */
+export function setDrawerStep(title: string, desc: string, body: Raw, onSubmit: typeof drawerSubmit, opts: { submitLabel?: string; back?: boolean; step?: [number, number] } = {}) {
+  const root = document.getElementById("drawer")!;
+  const panel = root.querySelector(".panel");
+  if (!panel) { openDrawer(title, desc, body, onSubmit, { submitLabel: opts.submitLabel }); return; }
+  drawerSubmit = onSubmit;
+  const head = panel.querySelector("header > div")!;
+  const old = panel.querySelector("#drawer-form") as HTMLElement | null;
+  const dots = opts.step ? `<div class="step-dots">${Array.from({ length: opts.step[1] }, (_, i) => `<i class="${i < opts.step![0] ? "done" : i === opts.step![0] ? "now" : ""}"></i>`).join("")}</div>` : "";
+  head.innerHTML = `<h2>${esc(title)}</h2><p>${esc(desc)}</p>${dots}`;
+  const next = document.createElement("form");
+  next.id = "drawer-form"; next.className = "content step-in";
+  next.innerHTML = `${body.s}<footer>${opts.back ? '<button type="button" class="btn ghost" data-step-back>← Back</button>' : '<button type="button" class="btn ghost" data-close>Cancel</button>'}<button type="submit" class="btn primary">${esc(opts.submitLabel ?? "Continue")}</button></footer>`;
+  if (old) { old.classList.add("step-out"); setTimeout(() => old.remove(), 180); }
+  panel.appendChild(next);
+  setTimeout(() => (next.querySelector("input:not([type=hidden]),textarea,select") as HTMLElement | null)?.focus(), 60);
+}
+
+export function closeDrawer() { const root = document.getElementById("drawer")!; root.hidden = true; root.innerHTML = ""; document.body.style.overflow = ""; drawerSubmit = null; stepBack = null; }
+/** Set by a guided flow so the drawer's Back button can walk the steps. */
+export let stepBack: (() => void) | null = null;
+export function setStepBack(fn: (() => void) | null) { stepBack = fn; }
 let renderShell: () => void = () => {};
 let paletteIdx = 0;
 function openPalette() { const root = document.getElementById("palette")!; root.hidden = false; const inp = root.querySelector("input") as HTMLInputElement; inp.value = ""; paletteIdx = 0; renderPalette(""); setTimeout(() => inp.focus(), 20); }
 function closePalette() { document.getElementById("palette")!.hidden = true; }
+
+/** One place to start anything. Same items wherever you are, so nothing is buried in a page. */
+const NEW_ITEMS: { act: string; label: string; hint: string; icon: string }[] = [
+  { act: "addPerson", label: "Add a person", hint: "Someone you know", icon: "person" },
+  { act: "setupClient", label: "Add a client", hint: "Hires directly, pays on success", icon: "brief" },
+  { act: "setupAgency", label: "Add an agency", hint: "Places our people, shares the fee", icon: "money" },
+  { act: "newRequirement", label: "Add a requirement", hint: "A role to fill", icon: "arrow" },
+  { act: "inviteMember", label: "Invite someone to the network", hint: "Join link and screening", icon: "referral" },
+  { act: "goImport", label: "Import contacts", hint: "Excel or CSV", icon: "evidence" },
+];
+function toggleNewMenu() {
+  const root = document.getElementById("newmenu")!;
+  const btn = document.getElementById("new-btn")!;
+  if (!root.hidden) { root.hidden = true; btn.setAttribute("aria-expanded", "false"); return; }
+  root.innerHTML = `<div class="menu-panel" role="menu">${NEW_ITEMS.map((i) => `<button type="button" role="menuitem" data-new-item data-act="${i.act}"><ni-icon name="${i.icon}" size="15" tone="mute"></ni-icon><span><b>${esc(i.label)}</b><small>${esc(i.hint)}</small></span></button>`).join("")}</div>`;
+  root.hidden = false; btn.setAttribute("aria-expanded", "true");
+}
 function paletteItems(q: string) {
   const pages = [["Overview", "#/overview"], ["Experts", "#/network"], ["Conversations", "#/conversations"], ["Amana delivery", "#/opportunities"], ["Requirements & co-pilot", "#/requirements"], ["Client & agency view", "#/portal"], ["Referrals & pitches", "#/referrals"], ["Expert view", "#/member"], ["Join the network", "#/join"], ["Amana Expert Network", "#/amana"], ["Partners", "#/partners"], ["Relocation", "#/relocation"], ["Import contacts", "#/import"], ["Commercials", "#/settings?tab=commercials"], ["Settings", "#/settings"]].map(([l, href]) => ({ label: l, hint: "Page", href }));
   const briefs = S.briefs.map((b) => ({ label: b.title, hint: `Requirement · ${S.accounts.find((a) => a.id === b.accountId)?.name ?? ""}`, href: `#/requirements/${b.id}` }));
@@ -139,9 +181,28 @@ function route(): View {
   const v = (views as any)[seg[0]];
   return typeof v === "function" && seg[0] !== "person" && seg[0] !== "opportunity" && seg[0] !== "requirement" && seg[0] !== "screening" ? v(q) : views.overview();
 }
+/**
+ * Which light the interface is standing in. A client and an agency are not the same audience
+ * and should not look the same: the accent, the gradients and the primary action follow the view.
+ */
+function viewLight(): "" | "client" | "agency" | "member" {
+  const path = location.hash.split("?")[0].replace(/^#/, "") || "/overview";
+  if (path.startsWith("/member") || path.startsWith("/screening") || path.startsWith("/join")) return "member";
+  if (path.startsWith("/portal")) {
+    const q = new URLSearchParams(location.hash.split("?")[1] ?? "");
+    const va = S.viewAs;
+    const acc = (va.role === "CLIENT" || va.role === "AGENCY" ? S.accounts.find((a) => a.id === va.accountId) : undefined) ?? S.accounts.find((a) => a.id === q.get("account")) ?? S.accounts.find((a) => a.portalEnabled);
+    return acc?.kind === "AGENCY" ? "agency" : acc?.kind === "CLIENT" ? "client" : "";
+  }
+  if (S.viewAs.role === "MEMBER") return "member";
+  return "";
+}
+
 export function render() {
   const v = route();
   document.title = `${v.title} · Network Intelligence`;
+  const light = viewLight();
+  if (light) document.documentElement.dataset.view = light; else delete document.documentElement.dataset.view;
   const main = document.getElementById("main")!;
   main.innerHTML = v.html.s;
   window.scrollTo(0, 0);
@@ -248,12 +309,12 @@ async function boot() {
   app.innerHTML = `
     <div class="ambient" aria-hidden="true"></div>
     <aside id="rail"></aside>
-    <div class="content"><header id="top"><nav id="crumbs" aria-label="Breadcrumb"></nav><div class="top-actions"><button type="button" class="searchbtn" id="open-palette"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search people, opportunities… <kbd>⌘K</kbd></button><button type="button" class="bell" id="bell" aria-label="Alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><i id="bell-count" hidden>0</i></button></div></header><div id="alerts" hidden></div><main id="main"></main></div>
+    <div class="content"><header id="top"><nav id="crumbs" aria-label="Breadcrumb"></nav><div class="top-actions"><button type="button" class="searchbtn" id="open-palette"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search people, opportunities… <kbd>⌘K</kbd></button><button type="button" class="newbtn" id="new-btn" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New</button><button type="button" class="bell" id="bell" aria-label="Alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><i id="bell-count" hidden>0</i></button></div></header><div id="alerts" hidden></div><div id="newmenu" hidden></div><main id="main"></main></div>
     <div id="drawer" hidden></div><div id="palette" hidden><div class="scrim" data-close-palette></div><div class="box"><div class="in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="Search people, opportunities, pages…" aria-label="Search"><kbd>esc</kbd></div><ul id="palette-list"></ul></div></div><div id="toasts"></div>`;
   try { const t = localStorage.getItem("ni-theme"); if (t) document.documentElement.dataset.theme = t; } catch { /* no storage */ }
   persist = await createPersist();
   try { const loaded = await persist.loadAll([...COLLECTIONS, "audit", "settings"]); overlay(loaded); const rc = loaded.settings?.find((d) => d.id === "rateCard"); if (rc) S.rateCard = { ...S.rateCard, ...rc }; const sc = loaded.settings?.find((d) => d.id === "screeningScript") as { sections?: typeof S.screeningScript } | undefined; if (sc?.sections?.length) S.screeningScript = sc.sections; try { const va = localStorage.getItem("ni-viewas"); if (va) S.viewAs = JSON.parse(va); } catch { /* default owner */ } if (loaded.settings?.find((d) => d.id === "prefs")?.hideDemo) { const demoIds = new Set(seed().people.map((p) => p.id)); S.people = S.people.filter((p) => !demoIds.has(p.id)); } } catch { /* start from seed */ }
-  const ctx: Ctx = { S: () => S, ai, esc, raw, h: null as any, uid, nowISO, full, list, person, userName, relsOf, evOf, convOf, fresh, depth, toMatchPerson, commit, removeDoc, logAudit, toast, openDrawer, closeDrawer, render, constellation, retrieveMatches, capabilityCoverage, suggestNextCheck, ACTIVE_STATUSES, redactForPartner, parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv, seed, persistMode: () => persist.mode, savePref: (k, v) => persist.save("settings", "prefs", { [k]: v }).catch(() => {}), saveRateCard: (card) => { S.rateCard = card; return persist.save("settings", "rateCard", card).catch(() => {}); }, saveScript: (sections) => { S.screeningScript = sections; return persist.save("settings", "screeningScript", { sections }).catch(() => {}); }, toBriefPerson, trustOf, fitOf, vouchesOf, alerts, setViewAs: (v) => { S.viewAs = v; try { localStorage.setItem("ni-viewas", JSON.stringify(v)); } catch { /* no storage */ } renderShell(); }, trust: { TRUST_BAND_LABEL }, screening: { SCREENING_SCRIPT, SCREENING_MINUTES, screeningToResult, script: () => S.screeningScript }, fit: { ATTRIBUTES, fitProfile, fitChecks, fitHighlights, parseFitTraits }, demand: { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt: fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS }, labels: { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } };
+  const ctx: Ctx = { S: () => S, ai, esc, raw, h: null as any, uid, nowISO, full, list, person, userName, relsOf, evOf, convOf, fresh, depth, toMatchPerson, commit, removeDoc, logAudit, toast, openDrawer, setDrawerStep, setStepBack, closeDrawer, render, constellation, retrieveMatches, capabilityCoverage, suggestNextCheck, ACTIVE_STATUSES, redactForPartner, parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv, seed, persistMode: () => persist.mode, savePref: (k, v) => persist.save("settings", "prefs", { [k]: v }).catch(() => {}), saveRateCard: (card) => { S.rateCard = card; return persist.save("settings", "rateCard", card).catch(() => {}); }, saveScript: (sections) => { S.screeningScript = sections; return persist.save("settings", "screeningScript", { sections }).catch(() => {}); }, toBriefPerson, trustOf, fitOf, vouchesOf, alerts, setViewAs: (v) => { S.viewAs = v; try { localStorage.setItem("ni-viewas", JSON.stringify(v)); } catch { /* no storage */ } renderShell(); }, trust: { TRUST_BAND_LABEL }, screening: { SCREENING_SCRIPT, SCREENING_MINUTES, screeningToResult, script: () => S.screeningScript }, fit: { ATTRIBUTES, fitProfile, fitChecks, fitHighlights, parseFitTraits }, demand: { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt: fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS }, labels: { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } };
   setContext(ctx);
   renderShellInner();
   document.addEventListener("click", (e) => {
@@ -262,7 +323,11 @@ async function boot() {
     if (t.closest("[data-alert]")) { document.getElementById("alerts")!.hidden = true; return; }
     if (!t.closest("#alerts")) document.getElementById("alerts")!.hidden = true;
     const act = t.closest<HTMLElement>("[data-act]"); if (act && !(act as HTMLButtonElement).disabled) { e.preventDefault(); Promise.resolve(views.actions[act.dataset.act!]?.(act)).catch((err) => { console.error(err); toast("Something went wrong", "risk"); }); return; }
+    if (t.closest("[data-step-back]")) { stepBack?.(); return; }
     if (t.closest("[data-close]")) { closeDrawer(); return; }
+    if (t.closest("#new-btn")) { toggleNewMenu(); return; }
+    if (t.closest("[data-new-item]")) { document.getElementById("newmenu")!.hidden = true; return; }
+    if (!t.closest("#newmenu")) document.getElementById("newmenu")!.hidden = true;
     if (t.closest("[data-close-palette]")) { closePalette(); return; }
     if (t.closest("#open-palette")) { openPalette(); return; }
     if (t.closest("[data-palette-item]")) { closePalette(); return; }
@@ -275,6 +340,14 @@ async function boot() {
     const a = form.dataset.action; if (a && views.forms[a]) Promise.resolve(views.forms[a](fd, form)).catch((err) => { console.error(err); toast("Could not save", "risk"); });
   });
   document.addEventListener("change", (e) => { const t = e.target as HTMLInputElement; if (t.matches("[data-file]")) { document.getElementById("drop-label")!.textContent = t.files?.[0]?.name ?? "Choose an Excel or CSV file"; if (t.files?.[0]) t.form?.requestSubmit(); } });
+  // Radio and checkbox groups drawn as pills keep their own selected state, wherever they appear.
+  document.addEventListener("change", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (!(t instanceof HTMLInputElement) || (t.type !== "radio" && t.type !== "checkbox")) return;
+    const group = t.closest(".choice"); if (!group) return;
+    if (t.type === "radio") group.querySelectorAll("label").forEach((l) => l.classList.toggle("on", !!l.querySelector<HTMLInputElement>("input")?.checked));
+    else t.closest("label")?.classList.toggle("on", t.checked);
+  });
   document.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); if (document.getElementById("palette")!.hidden) openPalette(); else closePalette(); return; }
     if (e.key === "Escape") { closePalette(); if (!document.getElementById("drawer")!.hidden) closeDrawer(); }

@@ -2,15 +2,29 @@
 import type { Person, Conversation, Vouch, Referral, Pitch, StoredBrief, ShortlistItem, Relationship } from "./types";
 import type { View } from "./app";
 import type { H } from "./demand-views";
-import { speechSupported, speakSupported, speak, stopSpeaking, listen, stopListening, listening, matchChoice, matchScale, splitSpokenList } from "./voice";
+import { speechSupported, speakSupported, speak, speakNatural, stopSpeaking, listen, stopListening, listening, matchChoice, matchScale, splitSpokenList } from "./voice";
+import { opening, closing, CALL_OFFER, askLine, bridge, ack, probe, answerQuality, inferAttributes, attributeNarrative, type Turn } from "@/lib/interview";
+import { PROVIDER_LABELS } from "@/lib/voice-config";
 
 const REF_STATUS: Record<Referral["status"], string> = { NEW: "New", CONTACTED: "Contacted", SCREENING: "Screening booked", ACCEPTED: "In the network", DECLINED: "Not now" };
 const PITCH_STATUS: Record<Pitch["status"], string> = { SUBMITTED: "Submitted", SHORTLISTED: "On the shortlist", DECLINED: "Not this time" };
 const SCREEN_STATUS: Record<string, [string, string]> = { NONE: ["Not screened", "neutral"], REGISTERED: ["Registered · needs screening", "amber"], INVITED: ["Invited to screening", "amber"], BOOKED: ["Screening call booked", "navy"], SUBMITTED: ["Screening submitted · review", "amber"], APPROVED: ["Screened", "teal"] };
 
-type ScreenState = { personId: string; mode: "owner" | "member"; step: number; answers: Record<string, unknown>; startedAt: number; voice: boolean; muted: boolean; started: boolean };
+/**
+ * A live conversation, not a form walk. `turns` is what was actually said on both sides, `probed`
+ * remembers which questions we have already pushed on (never twice), and `phase` carries the
+ * closing offer of a real call with a person.
+ */
+type ScreenState = {
+  personId: string; mode: "owner" | "member"; step: number; answers: Record<string, unknown>; startedAt: number;
+  voice: boolean; muted: boolean; started: boolean;
+  turns: Turn[]; spokenUpTo: number; probed: Record<string, boolean>; probing: boolean; phase: "qa" | "offer"; wantsCall: boolean; naturalVoice: boolean;
+};
 let scr: ScreenState | null = null;
-const newScreen = (personId: string, mode: "owner" | "member"): ScreenState => ({ personId, mode, step: 0, answers: {}, startedAt: Date.now(), voice: false, muted: false, started: false });
+const newScreen = (personId: string, mode: "owner" | "member"): ScreenState => ({ personId, mode, step: 0, answers: {}, startedAt: Date.now(), voice: false, muted: false, started: false, turns: [], spokenUpTo: 0, probed: {}, probing: false, phase: "qa", wantsCall: false, naturalVoice: false });
+const lastSaid = (st: ScreenState) => [...st.turns].reverse().find((t) => t.who === "interviewer")?.text ?? "";
+const say = (st: ScreenState, text: string, key?: string) => { if (text) st.turns.push({ who: "interviewer", text, at: Date.now(), key }); };
+const heard = (st: ScreenState, text: string, key?: string) => { if (text) st.turns.push({ who: "person", text, at: Date.now(), key }); };
 
 export function memberViews(h: H) {
   const { esc, raw, badge, chip, card, field, input, textarea, select, check, btn, stat, empty, personLink, availBadge, opt, rel, avatar } = h;
@@ -76,6 +90,18 @@ export function memberViews(h: H) {
       }
     })();
     const answeredList = qs.slice(0, st.step).filter((x: any) => st.answers[x.key]).slice(-4).map((x: any) => { const v = st.answers[x.key]; const text = Array.isArray(v) ? (typeof v[0] === "object" ? (v as any[]).map((r) => r.name).filter(Boolean).join(", ") : (v as string[]).join(", ")) : String(v); return `<li><small>${esc(x.section.title)}</small><span>${esc(text.length > 90 ? text.slice(0, 88) + "…" : text)}</span></li>`; }).join("");
+    if (st.phase === "offer") {
+      const mins = Math.max(1, Math.round((Date.now() - st.startedAt) / 60000));
+      const inferred = inferAttributes(st.answers);
+      const offerHtml = `<div class="call ${st.voice ? "voice" : "typed"}"><div class="call-body offer"><div class="call-stage">
+        ${st.voice ? `<ni-orb id="orb" state="speaking"></ni-orb>` : ""}
+        <div class="q-eyebrow">That is everything</div><h1>${esc(CALL_OFFER)}</h1>
+        <p class="help">${mins} minute${mins === 1 ? "" : "s"}, ${Object.keys(st.answers).length} things captured. ${esc(attributeNarrative(inferred))}</p>
+        <div class="row q-actions offer-actions">${btn("Yes, I would like a call", 'data-act="scrWantCall"', "primary lg")}${btn("No need — the summary is fine", 'data-act="scrNoCall"', "glass lg")}</div>
+        <small class="dim">Either way you see the write-up first, and nothing goes on your profile until a person has read it.</small>
+      </div></div></div>`;
+      return { title: "Screening", crumbs: st.mode === "member" ? [["My expert profile", "#/member"], ["Conversation"]] : [["Experts", "#/network"], [C().full(p), `#/people/${p.id}`], ["Screening"]], html: raw(offerHtml), after: () => wireVoice(qs[qs.length - 1]) };
+    }
     const html = `<div class="call ${st.voice ? "voice" : "typed"}">
       <header class="call-top"><div class="call-who"><span class="call-dot"></span><b>${esc(mode === "member" ? "Your conversation with Amana Network" : `Screening · ${C().full(p)}`)}</b><small>${secIdx + 1} of ${script().length} · ${esc(sec.title)}</small></div>
         <div class="call-top-actions">${speechSupported() ? `<button type="button" class="chip-btn ${st.voice ? "on" : ""}" data-act="scrVoiceToggle">${st.voice ? "◉ Voice on" : "Switch to voice"}</button>${st.voice && speakSupported() ? `<button type="button" class="chip-btn ${st.muted ? "on" : ""}" data-act="scrMute">${st.muted ? "Unmute" : "Mute"}</button>` : ""}` : ""}<button type="button" class="chip-btn" data-act="scrLeave">Save and leave</button></div>
@@ -84,17 +110,18 @@ export function memberViews(h: H) {
         <div class="call-stage">
           ${st.voice ? `<ni-orb id="orb" state="idle"></ni-orb>` : ""}
           <div class="q-eyebrow">${esc(sec.intent)}</div>
-          <h1>${esc(cur.prompt)}</h1>
-          ${cur.help ? `<p class="help">${esc(cur.help)}</p>` : ""}
+          <h1>${esc(st.probing ? lastSaid(st) : askLine(cur, st.personId))}</h1>
+          ${st.probing ? `<p class="help">Still on: ${esc(cur.prompt)}</p>` : cur.help ? `<p class="help">${esc(cur.help)}</p>` : ""}
           ${st.voice ? `<div class="call-state"><b id="voice-status">Connecting…</b><p id="voice-heard" class="heard"></p></div>` : ""}
-          <form data-action="scrNext" class="stack q-form ${st.voice ? "quiet" : ""}">${st.voice ? `<details class="type-instead" ${answered ? "open" : ""}><summary>${cur.kind === "text" || cur.kind === "long" || cur.kind === "chips" ? "What I heard, edit if needed" : "Or choose"}</summary><div class="ti-body">${control}</div></details>` : control}
+          <form data-action="scrNext" data-k="${esc(cur.key)}" class="stack q-form ${st.voice ? "quiet" : ""}">${st.voice ? `<details class="type-instead" ${answered ? "open" : ""}><summary>${cur.kind === "text" || cur.kind === "long" || cur.kind === "chips" ? "What I heard, edit if needed" : "Or choose"}</summary><div class="ti-body">${control}</div></details>` : control}
             <div class="row q-actions"><span>${st.step > 0 ? btn("← Back", 'data-act="scrBack"', "ghost") : ""}</span><span class="row">${cur.required ? "" : btn("Skip", 'data-act="scrSkip"', "ghost")}<button class="btn primary" type="submit">${st.step === qs.length - 1 ? "Finish" : "Next →"}</button></span></div>
           </form>
           ${st.voice ? `<div class="mic-row"><button type="button" class="mic" id="mic" aria-label="Start or stop listening"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg><span class="pulse"></span></button><small>Speak when the circle is live. It moves on when you stop.</small></div>` : ""}
         </div>
         <aside class="call-side">
           <div class="call-sections">${script().map((x: any, i: number) => `<div class="cs ${i < secIdx ? "done" : i === secIdx ? "now" : ""}"><i></i><b>${esc(x.title)}</b><small>${x.minutes} min</small></div>`).join("")}</div>
-          ${answeredList ? `<div class="call-answers"><small class="lbl">Captured so far</small><ul>${answeredList}</ul></div>` : `<div class="call-answers"><small class="lbl">Captured so far</small><p class="dim">Your answers appear here as we go. Nothing is on your profile until a person has read it.</p></div>`}
+          <div class="transcript"><small class="lbl">The conversation</small>${st.turns.length ? `<ul>${st.turns.slice(-8).map((t) => `<li class="${t.who}"><span>${esc(t.text)}</span></li>`).join("")}</ul>` : '<p class="dim">What we both say appears here. Nothing reaches your profile until a person has read it.</p>'}</div>
+          ${answeredList ? `<div class="call-answers"><small class="lbl">Captured so far</small><ul>${answeredList}</ul></div>` : ""}
           <div class="call-meta"><span>${done} of ${qs.length} answered</span><span>${Math.round((Date.now() - st.startedAt) / 60000)} min</span></div>
         </aside>
       </div></div>`;
@@ -109,8 +136,9 @@ export function memberViews(h: H) {
       <h1>${mode === "member" ? `Let's have a ${mins}-minute conversation` : `Run the ${mins}-minute screening`}</h1>
       <p>${mode === "member" ? "It is a proper conversation, not a form. I ask, you talk, and I write it up. You can read and change every word before it goes anywhere, and nothing reaches your profile until a person has reviewed it." : "The script is read aloud so you can run it like a real call, or you can type the answers as you go."}</p>
       <div class="lobby-sections">${script().map((x: any) => `<div><b>${esc(x.title)}</b><small>${x.minutes} min · ${esc(x.intent)}</small></div>`).join("")}</div>
-      <div class="lobby-actions">${canVoice ? btn("🎙 Start the voice conversation", 'data-act="scrStartVoice"', "primary lg") : ""}${btn(canVoice ? "I would rather type" : "Start", 'data-act="scrStartTyped"', canVoice ? "glass lg" : "primary lg")}</div>
-      <small class="dim">${canVoice ? "Your browser will ask for the microphone. Audio stays on this device; only the text is kept." : "Voice is not available in this browser, so we will do it in writing."}</small>
+      <div class="lobby-voice"><small class="lbl">Voice</small><div class="choice compact">${[["natural", PROVIDER_LABELS.elevenlabs], ["device", PROVIDER_LABELS.device]].map(([k, l], i) => `<label class="${i === 0 ? "on" : ""}"><input type="radio" name="voiceKind" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div><small class="dim">The natural voice runs through the platform, so the key never reaches this page and the vendor is only ever sent our questions — never your answers, your name or your numbers. If it is not set up, we fall back to this device.</small></div>
+      <div class="lobby-actions">${canVoice ? btn("Start the conversation", 'data-act="scrStartVoice"', "primary lg") : ""}${btn(canVoice ? "I would rather type" : "Start", 'data-act="scrStartTyped"', canVoice ? "glass lg" : "primary lg")}</div>
+      <small class="dim">${canVoice ? "Your browser will ask for the microphone. What you say is turned into text on your own device; the audio is never uploaded." : "Voice is not available in this browser, so we will do it in writing."}</small>
     </div></div>`;
     return { title: "Screening", crumbs: mode === "member" ? [["My expert profile", "#/member"], ["Conversation"]] : [["Experts", "#/network"], [C().full(p), `#/people/${p.id}`], ["Screening"]], html: raw(html) };
   }
@@ -150,14 +178,33 @@ export function memberViews(h: H) {
     else setVoiceUI("Voice is not available in this browser. You can type instead.", "", false);
   }
 
+  /** Speak one line: the platform's natural voice if it is there, the device voice if it is not. */
+  async function sayAloud(st: ScreenState, text: string, names: string[]) {
+    if (!text) return;
+    if (st.naturalVoice && (await speakNatural(text, st.muted, names))) return;
+    await speak(text, st.muted);
+  }
+
+  /**
+   * Run the current turn out loud: anything the interviewer has said since the last render, then
+   * the question itself, then start listening. Interruptions (a re-render, a click) cancel cleanly.
+   */
   function wireVoice(cur: any) {
     const st = scr; if (!st) return;
     if (!st.voice) { stopListening(); stopSpeaking(); return; }
+    const p = C().person(st.personId); const names = p ? [C().full(p)] : [];
     const mic = document.getElementById("mic");
     mic?.addEventListener("click", () => { if (listening()) { stopListening(); setVoiceUI("Stopped. Tap to listen again.", undefined, false); } else { stopSpeaking(); startListening(cur); } });
-    const prompt = [cur.prompt, cur.kind === "scale" ? `On a scale of one to five, where one is ${cur.low} and five is ${cur.high}.` : "", cur.kind === "select" || cur.kind === "multi" ? `Options are: ${(cur.options as [string, string][]).map(([, l]) => l).join(", ")}.` : ""].filter(Boolean).join(" ");
-    setVoiceUI(st.muted ? "Tap the microphone when you are ready" : "Asking…", "", false, !st.muted);
-    speak(prompt, st.muted).then(() => { if (scr === st && st.voice && document.getElementById("mic")) startListening(cur); });
+    const pending = st.turns.slice(st.spokenUpTo).filter((t) => t.who === "interviewer").map((t) => t.text);
+    st.spokenUpTo = st.turns.length;
+    const question = st.phase === "offer" || st.probing ? "" : [askLine(cur, st.personId), cur.kind === "scale" ? `One to five, where one is ${cur.low} and five is ${cur.high}.` : "", cur.kind === "select" || cur.kind === "multi" ? `Options are: ${(cur.options as [string, string][]).map(([, l]: [string, string]) => l).join(", ")}.` : ""].filter(Boolean).join(" ");
+    const lines = [...pending, question].filter(Boolean);
+    setVoiceUI(st.muted ? "Tap the microphone when you are ready" : "Speaking…", "", false, !st.muted);
+    (async () => {
+      for (const line of lines) { if (scr !== st || !st.voice) return; await sayAloud(st, line, names); }
+      if (scr === st && st.voice && st.phase !== "offer" && document.getElementById("mic")) startListening(cur);
+      else if (scr === st && st.phase === "offer") setVoiceUI("Your call — yes or no is fine.", "", false);
+    })();
   }
 
   function readAnswer(form: HTMLFormElement) {
@@ -172,13 +219,27 @@ export function memberViews(h: H) {
   async function finishScreening() {
     const st = scr!; const p = C().person(st.personId)!; const r = C().screening.screeningToResult(st.answers); const now = C().nowISO();
     stopListening(); stopSpeaking();
-    const c: Conversation = { id: C().uid(), personId: p.id, conductedById: st.mode === "member" ? p.id : S().me.id, date: now, type: "SCREENING", rawNotes: Object.entries(st.answers).map(([k, v]) => `${k}: ${Array.isArray(v) ? JSON.stringify(v) : v}`).join("\n"), transcript: null, aiSummary: r.summary, screening: r, approvalStatus: "NEEDS_REVIEW", tags: ["screening"] };
-    await C().commit("conversations", c, { action: "summary.generate", entityType: "Conversation", entityId: c.id, detail: `${C().full(p)} · screening (${r.completeness}% complete)` });
-    for (const ref of r.referrals) await C().commit("referrals", { id: C().uid(), referrerPersonId: p.id, referredPersonId: S().people.find((x) => C().full(x).toLowerCase() === ref.name.toLowerCase())?.id ?? null, name: ref.name, email: ref.email ?? null, context: ref.context, note: "Named in screening", briefId: null, status: "NEW", createdAt: now, updatedAt: now } as Referral);
-    await C().commit("people", { ...p, screeningStatus: "SUBMITTED", attributes: Object.keys(r.attributes).length ? { ...(p.attributes ?? {}), ...r.attributes } : p.attributes ?? null, memberSince: p.memberSince ?? now, updatedAt: now });
-    scr = null; C().toast(st.mode === "member" ? "Thank you. A person will review this and confirm your profile." : "Screening captured. Review the summary to apply it to the profile.");
-    location.hash = st.mode === "member" ? "#/member" : `#/conversations?tab=review&open=${c.id}`;
+    // Working style is read out of what they actually said; anything they rated themselves wins.
+    const inferred = inferAttributes(st.answers);
+    const attributes = { ...inferred, ...(r.attributes ?? {}) };
+    const transcript = st.turns.map((t) => `${t.who === "interviewer" ? "Interviewer" : C().full(p)}: ${t.text}`).join("\n");
+    const summary = { ...r.summary, workingCharacteristics: [...(r.summary.workingCharacteristics ?? []), attributeNarrative(attributes)].filter(Boolean) };
+    for (const line of closing(C().full(p), { missing: r.missing ?? [], wantsCall: st.wantsCall })) say(st, line);
+    const c: Conversation = { id: C().uid(), personId: p.id, conductedById: st.mode === "member" ? p.id : S().me.id, date: now, type: "SCREENING", rawNotes: Object.entries(st.answers).map(([k, v]) => `${k}: ${Array.isArray(v) ? JSON.stringify(v) : v}`).join("\n"), transcript, aiSummary: summary, screening: { ...r, attributes }, approvalStatus: "NEEDS_REVIEW", tags: ["screening", ...(st.wantsCall ? ["wants a call"] : [])] };
+    await C().commit("conversations", c, { action: "summary.generate", entityType: "Conversation", entityId: c.id, detail: `${C().full(p)} · conversation (${r.completeness}% captured)` });
+    for (const ref of r.referrals) await C().commit("referrals", { id: C().uid(), referrerPersonId: p.id, referredPersonId: S().people.find((x) => C().full(x).toLowerCase() === ref.name.toLowerCase())?.id ?? null, name: ref.name, email: ref.email ?? null, context: ref.context, note: "Named in the conversation", briefId: null, status: "NEW", createdAt: now, updatedAt: now } as Referral);
+    await C().commit("people", { ...p, screeningStatus: "SUBMITTED", attributes: Object.keys(attributes).length ? { ...(p.attributes ?? {}), ...attributes } : p.attributes ?? null, memberSince: p.memberSince ?? now, nextAction: st.wantsCall ? "Asked for a call" : p.nextAction, nextActionDate: st.wantsCall ? now : p.nextActionDate, updatedAt: now });
+    if (st.wantsCall) {
+      // A person asked for a person. That is a request for Waqas, not a task for the machine.
+      const start = new Date(Date.now() + 2 * 86_400_000);
+      await C().commit("scheduled", { id: C().uid(), personId: p.id, ownerId: S().me.id, provider: "MANUAL", startAt: start.toISOString(), endAt: new Date(start.getTime() + 30 * 60e3).toISOString(), meetingType: "FOLLOW_UP", status: "SCHEDULED" } as any, { action: "conversation.schedule", entityType: "Person", entityId: p.id, detail: `${C().full(p)} asked for a call` });
+    }
+    const wanted = st.wantsCall; const mode = st.mode;
+    scr = null;
+    C().toast(mode === "member" ? (wanted ? "Thank you. Waqas will come back to you to arrange the call." : "Thank you. A person will read this and confirm your profile.") : "Conversation captured. Review the summary to apply it.");
+    location.hash = mode === "member" ? "#/member" : `#/conversations?tab=review&open=${c.id}`;
   }
+
 
   // ----- member portal -----
   function member(q: URLSearchParams): View {
@@ -284,8 +345,16 @@ export function memberViews(h: H) {
     async qUp(el) { const i = Number(el.dataset.i), qi = Number(el.dataset.q); const sc = script().map((x: any, n: number) => { if (n !== i) return x; const qq = [...x.questions]; [qq[qi - 1], qq[qi]] = [qq[qi], qq[qi - 1]]; return { ...x, questions: qq }; }); await C().saveScript(sc); C().render(); },
     async qDel(el) { const i = Number(el.dataset.i), qi = Number(el.dataset.q); const sc = script().map((x: any, n: number) => (n === i ? { ...x, questions: x.questions.filter((_: any, m: number) => m !== qi) } : x)); await C().saveScript(sc); C().render(); },
     async scriptReset() { if (!confirm("Reset the screening conversation to the default script?")) return; await C().saveScript(JSON.parse(JSON.stringify(C().screening.SCREENING_SCRIPT))); C().logAudit("screening.config", "Settings", null, "reset to default"); C().toast("Reset to the default script"); C().render(); },
-    scrStartVoice() { if (!scr) return; scr.voice = true; scr.started = true; scr.startedAt = Date.now(); C().render(); },
-    scrStartTyped() { if (!scr) return; scr.voice = false; scr.started = true; scr.startedAt = Date.now(); C().render(); },
+    scrStartVoice() {
+      if (!scr) return; const st = scr; const p = C().person(st.personId)!;
+      st.naturalVoice = (document.querySelector<HTMLInputElement>('input[name=voiceKind]:checked')?.value ?? "natural") === "natural";
+      st.voice = true; st.started = true; st.startedAt = Date.now();
+      for (const line of opening(st.mode === "member" ? C().full(p) : p.firstName, scriptMinutes(), script().length)) say(st, line);
+      C().render();
+    },
+    async scrWantCall() { if (!scr) return; scr.wantsCall = true; heard(scr, "Yes please"); await finishScreening(); },
+    async scrNoCall() { if (!scr) return; scr.wantsCall = false; heard(scr, "No need"); await finishScreening(); },
+    scrStartTyped() { if (!scr) return; const st = scr; const p = C().person(st.personId)!; st.voice = false; st.started = true; st.startedAt = Date.now(); for (const line of opening(st.mode === "member" ? C().full(p) : p.firstName, scriptMinutes(), script().length)) say(st, line); C().render(); },
     scrVoiceToggle() { if (!scr) return; scr.voice = !scr.voice; stopListening(); stopSpeaking(); C().render(); },
     scrMute() { if (!scr) return; scr.muted = !scr.muted; if (scr.muted) stopSpeaking(); C().render(); },
     scrLeave() { stopListening(); stopSpeaking(); const st = scr; C().toast("Saved. Pick up where you left off whenever."); location.hash = st?.mode === "member" ? "#/member" : `#/people/${st?.personId}`; },
@@ -321,11 +390,33 @@ export function memberViews(h: H) {
 
   // ----- forms -----
   const forms: Record<string, (fd: FormData, form: HTMLFormElement) => Promise<void> | void> = {
+    /**
+     * One turn of the conversation: take what they said, say something back that shows it landed,
+     * push once if it was thin, then move on. The next question is spoken by wireVoice on render.
+     */
     async scrNext(fd, form) {
-      if (!scr) return; const qs = allQuestions(); const cur = qs[scr.step]; const a = readAnswer(form);
+      if (!scr) return; const st = scr; const qs = allQuestions(); const cur = qs[st.step]; const a = readAnswer(form);
       if (cur.required && (Array.isArray(a) ? !a.length : !a)) { C().toast("This one matters. Give it a go.", "amber"); return; }
       stopListening(); stopSpeaking();
-    scr.answers[cur.key] = a; if (scr.step >= qs.length - 1) { await finishScreening(); return; } scr.step++; C().render();
+      const p = C().person(st.personId)!; const name = st.mode === "member" ? C().full(p) : "";
+      const spoken = Array.isArray(a) ? a.map((x: any) => (typeof x === "string" ? x : x?.name ?? "")).filter(Boolean).join(", ") : String(a ?? "");
+      heard(st, spoken, cur.key);
+      st.answers[cur.key] = a;
+
+      // One probe per question, and only when there is not enough to be useful.
+      const thin = answerQuality(cur, a) !== "ok";
+      if (thin && !st.probed[cur.key] && !st.probing) {
+        const q = probe(cur, a);
+        if (q) { st.probed[cur.key] = true; st.probing = true; say(st, q, cur.key); C().render(); return; }
+      }
+      st.probing = false;
+      const a1 = ack(cur, a, name); if (a1) say(st, a1, cur.key);
+
+      if (st.step >= qs.length - 1) { st.phase = "offer"; say(st, CALL_OFFER); C().render(); return; }
+      st.step++;
+      const next = qs[st.step];
+      if (next.section !== cur.section) { const b = bridge(next.section, cur.section); if (b) say(st, b); }
+      C().render();
     },
     async refer(fd) {
       const p = memberPerson() ?? S().people.find((x: Person) => x.memberSince)!; const now = C().nowISO();

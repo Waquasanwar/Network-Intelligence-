@@ -15,6 +15,7 @@ import { matchBrief, type BriefPerson } from "@/lib/demand";
 import { toDomain } from "@/server/actions/demand";
 import type { Prisma } from "@prisma/client";
 import type { TrustPerson } from "@/lib/trust-include";
+import { DEFAULT_VOICE, type VoiceSettings } from "@/lib/voice-config";
 
 // ---------- shared helpers (also used by pages) ----------
 
@@ -258,4 +259,40 @@ export async function registerMember(formData: FormData) {
   await prisma.user.create({ data: { tenantId: referrer.tenantId, email, name: `${d.firstName} ${d.lastName}`, role: "MEMBER", personId: person.id, passwordHash: await hash(d.password, 10) } });
   await audit({ tenantId: referrer.tenantId, actorId: null, action: "member.register", entityType: "Person", entityId: person.id, metadata: { referrerId: referrer.id } });
   redirect(`/login?registered=1&callbackUrl=${encodeURIComponent("/member?welcome=1")}`);
+}
+
+/** Which voice the AI interviewer speaks in. The API key itself never leaves the server environment. */
+export async function saveVoiceSettings(formData: FormData) {
+  const user = await requireInternalAction();
+  const d = z.object({
+    provider: z.enum(["device", "elevenlabs"]),
+    voiceId: z.string().trim().max(64).optional(),
+    agentId: z.string().trim().max(64).optional(),
+    modelId: z.string().trim().max(64).optional(),
+    stability: z.coerce.number().min(0).max(1).optional(),
+    similarity: z.coerce.number().min(0).max(1).optional(),
+    style: z.coerce.number().min(0).max(1).optional(),
+    speed: z.coerce.number().min(0.5).max(1.5).optional(),
+    redactBeforeSpeaking: z.coerce.boolean().optional(),
+  }).parse(Object.fromEntries(formData));
+  const settings: VoiceSettings = {
+    ...DEFAULT_VOICE,
+    provider: d.provider,
+    voiceId: d.voiceId ?? "",
+    agentId: d.agentId || null,
+    modelId: d.modelId || DEFAULT_VOICE.modelId,
+    stability: d.stability ?? DEFAULT_VOICE.stability,
+    similarity: d.similarity ?? DEFAULT_VOICE.similarity,
+    style: d.style ?? DEFAULT_VOICE.style,
+    speed: d.speed ?? DEFAULT_VOICE.speed,
+    redactBeforeSpeaking: d.redactBeforeSpeaking ?? false,
+  };
+  await prisma.tenant.update({ where: { id: user.tenantId }, data: { voiceSettings: settings as unknown as Prisma.InputJsonValue } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "screening.config", entityType: "Settings", metadata: { provider: settings.provider, redacted: settings.redactBeforeSpeaking } });
+  revalidatePath("/settings/screening");
+}
+
+export async function loadVoiceSettings(tenantId: string): Promise<{ settings: VoiceSettings; keyConfigured: boolean }> {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { voiceSettings: true } });
+  return { settings: { ...DEFAULT_VOICE, ...((t?.voiceSettings as Partial<VoiceSettings> | null) ?? {}) }, keyConfigured: !!process.env.ELEVENLABS_API_KEY };
 }
