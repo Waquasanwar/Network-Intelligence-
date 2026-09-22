@@ -257,11 +257,23 @@ export type RateCard = {
   introductionFee: number; // flat fee where a % is not appropriate
   workingDaysPerYear: number;
   defaultExpertHours: number;
+  /** Access to the network: search, and anonymised profiles. Billed monthly, per account. */
+  clientSubscription: number;
+  agencySubscription: number;
+  subscriptionCurrency: string;
+  /** What it costs to unlock one expert's full shared profile, where an account pays per unlock. */
+  unlockFee: number;
 };
 
 export const DEFAULT_RATE_CARD: RateCard = {
-  currency: "GBP", permPct: 18, agencyPermPct: 20, agencyReferralSharePct: 35, contractMarginPct: 12, agencyContractSharePct: 40, agencyContractMarginPct: 15, expertHourlyTakePct: 30, sowSharePct: 10, introductionFee: 2500, workingDaysPerYear: 220, defaultExpertHours: 2,
+  currency: "AED", permPct: 18, agencyPermPct: 20, agencyReferralSharePct: 35, contractMarginPct: 12, agencyContractSharePct: 40, agencyContractMarginPct: 15, expertHourlyTakePct: 30, sowSharePct: 10, introductionFee: 9000, workingDaysPerYear: 220, defaultExpertHours: 2,
+  clientSubscription: 4500, agencySubscription: 6000, subscriptionCurrency: "AED", unlockFee: 0,
 };
+
+/** What this kind of account pays a month for access to the network. */
+export function subscriptionFor(kind: AccountKind, card: RateCard): { amount: number; currency: string } {
+  return { amount: kind === "AGENCY" ? card.agencySubscription : kind === "CLIENT" ? card.clientSubscription : 0, currency: card.subscriptionCurrency };
+}
 
 export type FeeModel = "PERM_PCT" | "AGENCY_REFERRAL" | "CONTRACT_MARGIN" | "AGENCY_CONTRACT_SHARE" | "EXPERT_HOURLY" | "SOW_SHARE" | "INTRODUCTION_FEE";
 

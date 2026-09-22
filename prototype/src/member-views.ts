@@ -241,6 +241,29 @@ export function memberViews(h: H) {
   }
 
 
+  /**
+   * Everything the person can switch off, in their own words, plus the two things the law is
+   * really about: a copy of what we hold, and the right to be gone. Withdrawal takes effect the
+   * moment it is saved — there is no "we will review your request".
+   */
+  function privacyCard(p: Person): string {
+    const v = C().privacy.privacyOf(p);
+    const stale = C().privacy.consentStale(p);
+    return card("Privacy and control", `
+      ${v.erasureRequestedAt ? `<div class="note-amber"><small>Deletion requested</small>We are working through it. Your profile is already hidden from everyone outside the network.</div>` : ""}
+      ${stale ? `<div class="note-amber"><small>Worth a look</small>You have not checked these in a while. Nothing has changed — we just would rather ask than assume.</div>` : ""}
+      <form data-action="savePrivacy" data-id="${p.id}" class="stack">
+        <ul class="consents">${C().privacy.CONSENTS.map((c: { key: string; label: string; detail: string; ifOff: string; required?: boolean }) => { const on = (v.consents as Record<string, boolean>)[c.key]; return `<li class="${on ? "on" : ""}"><label class="sw"><input type="checkbox" name="c:${c.key}" ${on ? "checked" : ""} ${c.required ? "" : ""}><i></i></label><div><b>${esc(c.label)}</b><small>${esc(c.detail)}</small><small class="off">Off: ${esc(c.ifOff)}</small></div></li>`; }).join("")}</ul>
+        <small class="lbl">On your anonymised card</small>
+        <div class="checks">${check("hideRateBand", "Hide my rate band", v.hideRateBand)}${check("hideRegion", "Hide my region", v.hideRegion)}</div>
+        ${field("Photo (optional)", input("photoUrl", 'placeholder="A link to a photo, if you want one at all"', p.photoUrl ?? ""), "Most profiles here have none. Initials work perfectly well.")}
+        <div class="row end"><button class="btn primary" type="submit">Save my choices</button></div>
+      </form>
+      <div class="row wrap gap-sm privacy-actions">${btn("Download everything you hold", `data-act="exportMe" data-id="${p.id}"`, "glass sm")}${btn("Ask to be deleted", `data-act="eraseMe" data-id="${p.id}"`, "ghost sm")}</div>
+      <details class="prompts"><summary>What you hold, and for how long</summary><table class="guide">${C().privacy.RETENTION.map((r: any) => `<tr><td><b>${esc(r.label)}</b><small>${esc(r.what)}</small></td><td>${r.months ? `${r.months} months from ${esc(r.trigger)}, then ${r.onExpiry}d` : "only while you consent"}<small>UK: ${esc(r.ukBasis)} · PDPL: ${esc(r.pdplBasis)}</small></td></tr>`).join("")}</table><p class="dim">Your rights: ${C().privacy.RIGHTS.map((r: any) => esc(r.label)).join(" · ")}. Complain to us, then to the ICO in the UK or the UAE Data Office.</p></details>`,
+      { desc: esc(C().privacy.privacySummary(p)) });
+  }
+
   // ----- member portal -----
   function member(q: URLSearchParams): View {
     const p = memberPerson() ?? S().people.find((x) => x.memberSince) ?? S().people[0];
@@ -262,6 +285,11 @@ export function memberViews(h: H) {
       ${fitCard(p, { self: true })}</div>
       <div class="stack">${trustCard(p, { self: true })}
       ${card("How the network sees you", `<ul class="rows anon-list"><li class="anon"><div class="row"><span class="row"><code>${esc(anon.ref)}</code><b>${esc(anon.headlineSummary || p.headline || "Profile")}</b></span></div><div class="chips">${chip(anon.region ?? "region undisclosed")}${chip(`availability: ${anon.availabilityBand}`)}<ni-tag icon="vouch" tone="${t.vouchedBy ? "trust" : "neutral"}" solid>vouched by ${t.vouchedBy}</ni-tag><ni-tag icon="trust" tone="${t.score >= 60 ? "trust" : t.score >= 35 ? "neutral" : "alert"}" solid>${esc(C().trust.TRUST_BAND_LABEL[t.band].toLowerCase())}</ni-tag>${highlights.map(chip).join("")}${C().demand.rateBand(p.rateExpectation ?? p.salaryExpectation) ? chip(C().demand.rateBand(p.rateExpectation ?? p.salaryExpectation)) : ""}</div><small class="dim">${esc(anon.evidenceSummary)}</small></li></ul>`, { desc: "This is the anonymised card a client or agency sees. Your name only after you consent." })}
+      ${card("Up for a catch-up", `<form data-action="saveSocial" data-id="${p.id}" class="stack"><p class="dim">This is a network of people, not profiles. Say what you are up for and we will suggest people near you — never a client, only other members.</p>
+        <div class="chips pick">${C().automation.CATCH_UPS.map((c: any) => { const on = (p.social?.openTo ?? []).includes(c.key); return `<label class="pick-chip ${on ? "on" : ""}"><input type="checkbox" name="openTo" value="${c.key}" ${on ? "checked" : ""}><span>${c.emoji} ${esc(c.label)}</span></label>`; }).join("")}</div>
+        ${field("Anything to add", input("note", 'placeholder="e.g. usually in DIFC on Tuesdays"', p.social?.note ?? ""))}
+        <div class="row end"><button class="btn glass sm" type="submit">Save</button></div></form>`, { desc: "Coffee, brunch, a walk — whatever you would actually say yes to." })}
+      ${privacyCard(p)}
       ${card("Your consent", `<form data-action="consent" data-id="${p.id}" class="stack"><div class="choice compact">${[["yes", "Refer me for opportunities"], ["ask", "Ask me each time"], ["no", "Not for now"]].map(([k, l]) => `<label class="${(p.referralConsent ?? "ask") === k ? "on" : ""}"><input type="radio" name="referralConsent" value="${k}" ${(p.referralConsent ?? "ask") === k ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div><div class="row end"><button class="btn glass sm" type="submit">Save</button></div></form>`, { desc: "You decide whether you are on the radar." })}
       ${card("Your referrals and pitches", `<ul class="rows">${myRefs.slice(0, 4).map((r: Referral) => `<li><span><b class="t">${esc(r.name)}</b><small class="sub">referral</small></span>${`<ni-tag icon="referral" tone="${r.status === "ACCEPTED" ? "trust" : r.status === "DECLINED" ? "neutral" : "alert"}" solid>${esc(REF_STATUS[r.status])}</ni-tag>`}</li>`).join("")}${myPitches.map((x: Pitch) => `<li><span><b class="t">${esc(S().briefs.find((b: StoredBrief) => b.id === x.briefId)?.roles[0] ?? "Requirement")}</b><small class="sub">pitch</small></span>${`<ni-tag icon="person" tone="${x.status === "SHORTLISTED" ? "trust" : x.status === "DECLINED" ? "neutral" : "alert"}" solid>${esc(PITCH_STATUS[x.status])}</ni-tag>`}</li>`).join("")}${!myRefs.length && !myPitches.length ? '<li class="dim">None yet. Refer someone or pitch for an opportunity.</li>' : ""}</ul>`, { action: `<a class="btn ghost sm" href="#/member?tab=refer">Refer</a>` })}</div></div>`;
     const html = `<div class="member-hero"><div class="who">${avatar(p, "xl", true)}<div><div class="eyebrow">Network member${p.memberSince ? ` since ${esc(new Date(p.memberSince).toLocaleDateString("en-GB", { month: "short", year: "numeric" }))}` : ""}</div><h1>${esc(C().full(p))}</h1><p>${esc(p.headline ?? "Add a headline in your screening")}</p><div class="meta">${screenLabel(p)}${availBadge(p)}${p.referralConsent === "yes" ? badge("on the radar", "teal", true) : p.referralConsent === "no" ? badge("not being referred", "neutral", true) : badge("asked each time", "amber", true)}</div></div></div><div class="hero-stats"><ni-stat ghost label="Trust" value="${t.score}" note="${esc(C().trust.TRUST_BAND_LABEL[t.band])}"></ni-stat><ni-stat ghost label="Vouched by" value="${t.vouchedBy}" note="people who stand behind you"></ni-stat><ni-stat ghost label="Referrals" value="${myRefs.length}" note="${myRefs.filter((r: Referral) => r.status === "ACCEPTED").length} accepted"></ni-stat><ni-stat ghost label="Open to you" value="${open.length}" note="opportunities" href="#/member?tab=opportunities"></ni-stat></div></div>
@@ -319,8 +347,41 @@ export function memberViews(h: H) {
     return { title: "Join the network", crumbs: [["Join the network"]], html: raw(html) };
   }
 
+  /** Dictate free text anywhere in the app. Recognition happens on the device; we keep the words. */
+  function dictate(onText: (text: string) => void, onEnd: () => void): boolean {
+    if (!speechSupported()) return false;
+    let base = "";
+    return listen({
+      onText: (finalText, interim) => { base = finalText; onText([finalText, interim].filter(Boolean).join(" ")); },
+      onEnd: () => { onText(base); onEnd(); },
+    }, 4000);
+  }
+  const stopDictation = () => stopListening();
+
   // ----- actions -----
   const actions: Record<string, (el: HTMLElement) => Promise<void> | void> = {
+    /** A copy of everything, in a file they can keep. Portability, without a support ticket. */
+    exportMe(el) {
+      const p = C().person(el.dataset.id!)!;
+      const data = {
+        exportedAt: C().nowISO(), you: p,
+        relationships: C().relsOf(p.id), evidence: C().evOf(p.id), conversations: C().convOf(p.id),
+        vouches: C().vouchesOf(p.id), referralsYouMade: S().referrals.filter((r: Referral) => r.referrerPersonId === p.id),
+        proposedTo: S().shortlist.filter((s: ShortlistItem) => s.personId === p.id).map((s: ShortlistItem) => ({ requirement: S().briefs.find((b: StoredBrief) => b.id === s.briefId)?.title, decision: s.decision, when: s.updatedAt })),
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `network-intelligence-${p.firstName}-${p.lastName}.json`.toLowerCase(); a.click(); URL.revokeObjectURL(a.href);
+      C().logAudit("data.deletion_request", "Person", p.id, "data export downloaded");
+      C().toast("Downloaded. That is everything we hold about you.");
+    },
+    async eraseMe(el) {
+      const p = C().person(el.dataset.id!)!;
+      if (!confirm(`Ask us to delete ${p.firstName}'s profile?\n\nYou disappear from every client and agency view immediately. We delete your profile and your conversation within 30 days; fee and audit records we are legally required to keep are anonymised instead, and we will tell you which.`)) return;
+      const now = C().nowISO();
+      await C().commit("people", { ...p, privacy: { ...(p.privacy ?? {}), erasureRequestedAt: now }, updatedAt: now }, { action: "data.deletion_request", entityType: "Person", entityId: p.id, detail: `${C().full(p)} asked to be deleted` });
+      C().toast("Asked. You are already hidden from everyone outside the network."); C().render();
+    },
+
     vouch(el) {
       const p = C().person(el.dataset.id!)!; const others = S().people.filter((x: Person) => x.id !== p.id);
       C().openDrawer(`Vouch for ${C().full(p)}`, "Putting your name behind someone. Say what you have seen, and rate how they work if you have observed it.", raw(`${field("Who is vouching", select("voucher", `<optgroup label="Network owners">${S().users.map((u: any) => `<option value="USER:${u.id}" ${u.id === S().me.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</optgroup><optgroup label="Network members">${others.map((x: Person) => `<option value="PERSON:${x.id}">${esc(C().full(x))}</option>`).join("")}</optgroup><optgroup label="External"><option value="EXTERNAL:">LinkedIn recommendation or reference (paste below)</option></optgroup>`), undefined, true)}${field("External name and source", input("voucherName", 'placeholder="e.g. Former CIO, Tier-1 bank · LinkedIn recommendation"'), "Only for external recommendations")}${field("Context", input("context", 'required placeholder="Where you saw them work"'), undefined, true)}${field("What you saw", textarea("statement", 'rows="3" placeholder="In a sentence or two. Specifics beat adjectives."'))}${check("wouldRecommend", "I would recommend them", true)}<div class="field"><span>How they work (only what you observed)</span><div class="attr-grid">${C().fit.ATTRIBUTES.map((a: any) => `<label class="attr"><span>${esc(a.label)}</span><select name="attr:${a.key}"><option value="">not observed</option>${[1, 2, 3, 4, 5].map((i) => `<option value="${i}">${i} · ${i <= 2 ? esc(a.low) : i >= 4 ? esc(a.high) : "in between"}</option>`).join("")}</select></label>`).join("")}</div></div>`), async (fd: FormData) => {
@@ -390,6 +451,22 @@ export function memberViews(h: H) {
 
   // ----- forms -----
   const forms: Record<string, (fd: FormData, form: HTMLFormElement) => Promise<void> | void> = {
+    async saveSocial(fd, form) {
+      const p = C().person(form.dataset.id!)!;
+      await C().commit("people", { ...p, social: { openTo: fd.getAll("openTo").map(String), note: String(fd.get("note") || "") || null }, updatedAt: C().nowISO() });
+      C().toast("Saved — we will suggest people near you"); C().render();
+    },
+    async savePrivacy(fd, form) {
+      const p = C().person(form.dataset.id!)!; const now = C().nowISO();
+      const consents: Record<string, boolean> = {};
+      for (const c of C().privacy.CONSENTS as any[]) consents[c.key] = fd.get(`c:${c.key}`) === "on";
+      const photoUrl = String(fd.get("photoUrl") || "").trim() || null;
+      const privacy = { ...(p.privacy ?? {}), consents, hideRateBand: fd.get("hideRateBand") === "on", hideRegion: fd.get("hideRegion") === "on", reviewedAt: now };
+      // Switching the photo off deletes it rather than hiding it.
+      await C().commit("people", { ...p, photoUrl: consents.showPhoto ? photoUrl : null, persona: consents.personalNotes ? p.persona : null, privacy, updatedAt: now }, { action: "consent.update", entityType: "Person", entityId: p.id, detail: Object.entries(consents).filter(([, v]) => !v).map(([k]) => `${k} off`).join(", ") || "all permissions on" });
+      C().toast(consents.listed ? "Saved. It takes effect straight away." : "Saved. You are no longer listed — we will remove your data within 30 days."); C().render();
+    },
+
     /**
      * One turn of the conversation: take what they said, say something back that shows it landed,
      * push once if it was thin, then move on. The next question is spoken by wireVoice on render.
@@ -437,5 +514,5 @@ export function memberViews(h: H) {
     },
   };
 
-  return { screening, member, referrals, join, scriptEditor, trustCard, fitCard, vouchList, trustMini, chainOf, screenLabel, actions, forms };
+  return { screening, member, referrals, join, scriptEditor, trustCard, fitCard, vouchList, trustMini, chainOf, screenLabel, dictate, stopDictation, actions, forms };
 }

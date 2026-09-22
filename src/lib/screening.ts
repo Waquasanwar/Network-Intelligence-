@@ -21,12 +21,12 @@ const SENIORITY: [string, string][] = [["ASSOCIATE", "Associate"], ["MANAGER", "
 
 /** The script. Six sections, about 27 minutes. Every answer maps to a profile field or a follow-up. */
 export const SCREENING_SCRIPT: ScreeningSection[] = [
-  { key: "story", title: "Your story", minutes: 5, intent: "What they are known for, in their own words.", questions: [
+  { key: "story", title: "Your story", minutes: 4, intent: "What they are known for, in their own words.", questions: [
     { key: "headline", prompt: "In one line, what are you known for?", help: "The sentence a client would repeat about you.", kind: "text", required: true, placeholder: "e.g. Programme director who stabilises troubled transformations" },
     { key: "currentRole", prompt: "What are you doing right now, and where?", kind: "text", placeholder: "e.g. Programme Director at a UK bank, London" },
     { key: "proudest", prompt: "Tell me about a piece of work you are proudest of. What was the situation, what did you do, what happened?", help: "This becomes observable evidence once someone in the network confirms it.", kind: "long" },
   ] },
-  { key: "expertise", title: "Expertise", minutes: 5, intent: "Capabilities and sectors, specific enough to match on.", questions: [
+  { key: "expertise", title: "Expertise", minutes: 4, intent: "Capabilities and sectors, specific enough to match on.", questions: [
     { key: "capabilities", prompt: "What are you genuinely strong at? List the capabilities you would want to be found for.", kind: "chips", required: true, placeholder: "Programme director, SAP, Cyber GRC…" },
     { key: "sectors", prompt: "Which industries do you know from the inside?", kind: "chips", placeholder: "Banking, Government, Energy…" },
     { key: "seniority", prompt: "What level do you operate at?", kind: "select", options: SENIORITY },
@@ -50,12 +50,23 @@ export const SCREENING_SCRIPT: ScreeningSection[] = [
   // Working style is read out of stories, not out of self-ratings: nobody describes their own
   // assertiveness usefully. src/lib/interview.ts scores the attributes from these answers, and a
   // vouch from someone who worked with them carries more weight than either.
-  { key: "fit", title: "How you work", minutes: 6, intent: "Four stories that show how they operate. The attributes are read from these, never asked for as a score.", questions: [
+  { key: "fit", title: "How you work", minutes: 5, intent: "Four stories that show how they operate. The attributes are read from these, never asked for as a score.", questions: [
     { key: "pushback", prompt: "Tell me about a time you had to push back on a senior stakeholder. What did you do, and how did it land?", help: "Assertiveness, conflict and influence all come out of this one.", kind: "long" },
     { key: "politics", prompt: "On your last piece of work, how did you work out who really decided — and what they needed to hear?", help: "Political awareness, in their own words.", kind: "long" },
     { key: "commercialCall", prompt: "What commercial trade-off have you had to make? Cost against scope, margin against goodwill, that sort of thing.", help: "Commercial awareness, and whether they think past delivery.", kind: "long" },
     { key: "ambiguity", prompt: "Tell me about starting something where nobody could tell you what good looked like. What did you do first?", help: "Comfort with ambiguity, and pace.", kind: "long" },
     { key: "workingStyle", prompt: "What kind of team, client or culture brings out your best, and what wears you down?", kind: "long" },
+  ] },
+  // The part that makes someone a person rather than a CV. Interests, motivation and how they like
+  // to be worked with — never protected characteristics, never anything a client is entitled to.
+  // It stays inside the network: it is here so we know who we are putting forward, not to be sold.
+  { key: "person", title: "You, not the CV", minutes: 3, intent: "Who they are away from the work, and what it is like to have them on a team. Internal only — a client never sees this.", questions: [
+    { key: "outsideWork", prompt: "What do you get up to when you are not working?", help: "Genuinely optional. It is how we remember you as a person.", kind: "long", placeholder: "e.g. Coach my daughter's football team, restore old motorbikes, run half marathons badly" },
+    { key: "interests", prompt: "Anything you are into, or learning at the moment?", kind: "chips", placeholder: "Football, chess, Arabic, woodworking…" },
+    { key: "motivation", prompt: "What actually gets you out of bed for a piece of work?", help: "Money, mess, mission, the team — there is no wrong answer.", kind: "long" },
+    { key: "howToWorkWith", prompt: "If someone is about to work with you, what should they know? Best way to reach you, how you like feedback, anything that winds you up.", kind: "long" },
+    { key: "languages", prompt: "Which languages do you work in?", kind: "chips", placeholder: "English, Arabic, Urdu…" },
+    { key: "surprising", prompt: "Tell me something people are surprised to learn about you.", kind: "text" },
   ] },
   { key: "network", title: "Your network", minutes: 4, intent: "Who they know and would vouch for. This is what makes the network compound.", questions: [
     { key: "knows", prompt: "Who do you know that you would genuinely put your name behind? Anyone already in our network, or someone we should meet.", help: "Name, what you have seen them do, and how you know them. We only contact them with your say-so.", kind: "people" },
@@ -67,6 +78,23 @@ export const SCREENING_SCRIPT: ScreeningSection[] = [
 export const SCREENING_MINUTES = SCREENING_SCRIPT.reduce((a, s) => a + s.minutes, 0);
 
 export type ReferredPerson = { name: string; context: string; email?: string };
+
+/**
+ * The human side of someone: what they do away from work, what drives them, how to work with them.
+ * Internal to the network — it is how we remember a person, not something a client is shown.
+ * Never holds a protected characteristic; the questions are written to avoid asking for one.
+ */
+export type Persona = {
+  outsideWork: string | null;
+  interests: string[];
+  motivation: string | null;
+  howToWorkWith: string | null;
+  languages: string[];
+  surprising: string | null;
+};
+export const EMPTY_PERSONA: Persona = { outsideWork: null, interests: [], motivation: null, howToWorkWith: null, languages: [], surprising: null };
+/** True when the conversation actually got somewhere human. */
+export const personaSaid = (p: Persona | null | undefined): boolean => !!p && !!(p.outsideWork || p.interests.length || p.motivation || p.howToWorkWith || p.languages.length || p.surprising);
 export type ScreeningAnswers = Record<string, string | string[] | ReferredPerson[] | undefined>;
 
 export type ScreeningResult = {
@@ -76,6 +104,7 @@ export type ScreeningResult = {
     primaryCity: string | null; primaryCountry: string | null; targetLocations: string[]; workRights: string[]; rateExpectation: string | null; salaryExpectation: string | null; constraints: string | null; workingStyle: string | null; relocationInterest: boolean; referralConsent: "yes" | "ask" | "no" | null;
   };
   referrals: ReferredPerson[];
+  persona: Persona; // who they are, not what they do. Never leaves the network.
   attributes: FitScores; // self-assessed, 1–5
   attitudeStory: string | null; // the push-back story, tested with vouchers
   evidenceCandidate: string | null;
@@ -101,6 +130,10 @@ export function screeningToResult(a: ScreeningAnswers, now = new Date()): Screen
     primaryCity: city ?? null, primaryCountry: country ?? null, targetLocations: list(a.targetLocations), workRights: list(a.workRights), rateExpectation: rate && !isSalary ? rate : null, salaryExpectation: rate && isSalary ? rate : null,
     constraints: list(a.constraints).join("; ") || null, workingStyle: str(a.workingStyle), relocationInterest: list(a.targetLocations).length > 0 || /yes|family|would/i.test(str(a.relocation) ?? ""), referralConsent: consent,
   };
+  const persona: Persona = {
+    outsideWork: str(a.outsideWork), interests: list(a.interests), motivation: str(a.motivation),
+    howToWorkWith: str(a.howToWorkWith), languages: list(a.languages), surprising: str(a.surprising),
+  };
   const attributes: FitScores = {};
   for (const at of ATTRIBUTES) { const v = Number(str(a[`attr:${at.key}`])); if (v >= 1 && v <= 5) attributes[at.key] = v; }
   const required = ["headline", "capabilities", "status", "location", "referralConsent"]; const important = ["currentRole", "proudest", "sectors", "routes", "workRights", "rate", "knows", "contactPreference", "pushback", "politics", "commercialCall"];
@@ -113,7 +146,7 @@ export function screeningToResult(a: ScreeningAnswers, now = new Date()): Screen
     workingCharacteristics: [profile.workingStyle, ...ATTRIBUTES.filter((at) => (attributes[at.key] ?? 0) >= 4).map((at) => `${at.label}: ${at.high.toLowerCase()} (${attributes[at.key]}/5, read from the conversation)`)].filter((x): x is string => !!x), constraints: list(a.constraints), strengths: profile.capabilities.slice(0, 5), avoid: list(a.avoid),
     followUpDate: str(a.contactPreference) ?? undefined, unresolvedQuestions: missing.map((k) => `Screening did not cover: ${labelFor(k)}`), summary: buildSummary(a, profile, referrals.length),
   };
-  return { summary, profile, referrals, attributes, attitudeStory: str(a.pushback), evidenceCandidate: str(a.proudest), completeness, missing: missing.map(labelFor) };
+  return { summary, profile, referrals, persona, attributes, attitudeStory: str(a.pushback), evidenceCandidate: str(a.proudest), completeness, missing: missing.map(labelFor) };
 }
 
 function labelFor(key: string): string {

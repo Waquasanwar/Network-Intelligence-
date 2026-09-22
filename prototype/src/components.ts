@@ -18,7 +18,7 @@ const BASE = `
     --rule: var(--c-rule, rgba(19,23,20,0.12)); --paper: var(--c-paper, #fff); --sunk: var(--c-sunk, #f3f4f1);
     --trust: var(--c-trust, #186b4e); --trust-b: var(--c-trust-b, #2f9e6f); --alert: var(--c-alert, #9a6212); --alert-b: var(--c-alert-b, #d08a1f); --stop: var(--c-stop, #a3352b);
     --accent: var(--c-accent, #186b4e); --accent-b: var(--c-accent-b, #2f9e6f);
-    --mono: "Geist Mono", ui-monospace, monospace; --sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif; --serif: var(--sans);
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; --sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif; --serif: var(--sans);
     display: inline-block; }
   * { box-sizing: border-box; }
 `;
@@ -323,7 +323,7 @@ class Stat extends HTMLElement {
  * inside only where the text genuinely fits.
  */
 class Bar extends HTMLElement {
-  static observedAttributes = ["segments", "unit", "height"];
+  static observedAttributes = ["segments", "unit", "height", "hidevalues"];
   #root = this.attachShadow({ mode: "open" });
   connectedCallback() { this.#render(); }
   attributeChangedCallback() { this.#render(); }
@@ -345,7 +345,7 @@ class Bar extends HTMLElement {
     `)];
     const unit = this.getAttribute("unit") ?? "";
     this.#root.innerHTML = `<div class="track">${segs.map((x) => `<div class="seg" style="flex: ${Math.max(x.value, 0.001)} 1 0; background: ${col(x.tone)}"></div>`).join("")}</div>
-      <div class="keys">${segs.map((x) => `<span class="key"><i style="background: ${col(x.tone)}"></i>${x.label} <b>${x.value}${unit}</b></span>`).join("")}</div>`;
+      <div class="keys">${segs.map((x) => `<span class="key"><i style="background: ${col(x.tone)}"></i>${x.label}${this.hasAttribute("hidevalues") ? "" : ` <b>${x.value}${unit}</b>`}</span>`).join("")}</div>`;
   }
 }
 

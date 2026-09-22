@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { answerQuality, probe, ack, askLine, inferAttributes, attributeNarrative, opening, closing, bridge } from "./interview";
 import { SCREENING_SCRIPT } from "./screening";
 import { redactForSpeech } from "./voice-config";
+import { credibility, credibilityForPartner } from "./credibility";
+import { suitability } from "./suitability";
 
 const q = (key: string) => {
   for (const s of SCREENING_SCRIPT) for (const x of s.questions) if (x.key === key) return x;
@@ -111,5 +113,62 @@ describe("what the speech vendor is allowed to hear", () => {
 
   it("leaves a question intact", () => {
     expect(redactForSpeech("Where are you based?", ["Sarah"])).toBe("Where are you based?");
+  });
+});
+
+describe("credibility, and whose contact this is", () => {
+  it("names the colleague whose contact it is, and marks it as the team's", () => {
+    const b = credibility({ relationships: [{ ownerName: "Richard Cole", ownerKind: "colleague", sourceLabel: "Client of ours", workedTogether: false }], usedByUs: false, onBench: false, vouchCount: 0, screened: false, evidenceCount: 0 });
+    expect(b[0].label).toBe("Richard Cole's contact");
+    expect(b[0].note).toMatch(/Amana Network team/);
+  });
+
+  it("says it is yours when it is yours", () => {
+    const b = credibility({ relationships: [{ ownerName: "Waqas Anwar", ownerKind: "me", workedTogether: true, wouldWorkTogetherAgain: true, workedTogetherContext: "Core banking, 2021–22", yearsKnown: 6 }], usedByUs: true, engagements: 2, onBench: true, vouchCount: 4, screened: true, evidenceCount: 3 });
+    expect(b[0].label).toBe("Your own contact");
+    expect(b.map((x) => x.key)).toEqual(["whose", "worked", "used", "vouched", "evidence", "screened"]);
+    expect(b.find((x) => x.key === "worked")!.note).toMatch(/would work together again/);
+    expect(b.find((x) => x.key === "used")!.note).toMatch(/2 engagements/);
+  });
+
+  it("says the same things to a client without naming a soul", () => {
+    const input = { relationships: [{ ownerName: "Waqas Anwar", ownerKind: "me" as const, workedTogether: true, wouldWorkTogetherAgain: true, workedTogetherContext: "Core banking at Northwind" }], usedByUs: true, engagements: 2, onBench: true, vouchCount: 4, screened: true, evidenceCount: 3 };
+    const partner = credibilityForPartner(input);
+    const text = partner.map((x) => `${x.label} ${x.note}`).join(" ");
+    expect(text).not.toMatch(/Waqas|Northwind/);
+    expect(text).toMatch(/Worked with directly/);
+    expect(text).toMatch(/used them ourselves/);
+  });
+
+  it("is honest when nobody here has worked with them", () => {
+    expect(credibility({ relationships: [], usedByUs: false, onBench: false, vouchCount: 0, screened: false, evidenceCount: 0 })[0].label).toBe("New to us");
+  });
+});
+
+describe("suitability, the one signal", () => {
+  const base = { capabilityScore: 80, trustScore: 70, checks: [], fit: [], evidenceCount: 2, workedWith: true, usedByUs: false, availability: 1 };
+
+  it("reads strong when capability and trust are both there", () => {
+    const s = suitability(base);
+    expect(s.band).toBe("strong");
+    expect(s.parts.map((p) => p.key)).toEqual(["capability", "trust", "practical", "fit"]);
+    expect(s.line).toMatch(/Strong match/);
+  });
+
+  it("caps the score when a hard requirement is genuinely unmet", () => {
+    const s = suitability({ ...base, checks: [{ label: "Work rights", state: "unmet", note: "Sponsorship would be needed." }] });
+    expect(s.score).toBeLessThanOrEqual(44);
+    expect(s.watchOut).toMatch(/Sponsorship/);
+  });
+
+  it("says what is still to confirm rather than guessing", () => {
+    const s = suitability({ ...base, checks: [{ label: "In Dubai", state: "unknown", note: "Based in Abu Dhabi, same country." }] });
+    expect(s.band).not.toBe("no");
+    expect(s.watchOut).toMatch(/Abu Dhabi/);
+  });
+
+  it("points at the missing vouch when nobody has worked with them", () => {
+    const s = suitability({ ...base, trustScore: 20, workedWith: false, evidenceCount: 0 });
+    expect(s.watchOut).toMatch(/vouch/i);
   });
 });

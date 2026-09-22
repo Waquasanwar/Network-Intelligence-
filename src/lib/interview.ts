@@ -79,6 +79,12 @@ const SPOKEN: Record<string, string[]> = {
   commercialCall: ["What commercial trade-off have you had to make? Cost against scope, margin against goodwill.", "Tell me about a call you made where the money mattered."],
   ambiguity: ["Tell me about starting something where nobody could tell you what good looked like. What did you do first?", "When did you last walk into a mess with no brief? What was your first move?"],
   workingStyle: ["What kind of team or client brings out your best — and what wears you down?", "Where do you do your best work, and what drains you?"],
+  outsideWork: ["Away from work — what are you into?", "What do you get up to when you are not working?"],
+  interests: ["Anything you are learning at the moment, or obsessed with?", "What are you into outside the job?"],
+  motivation: ["What actually gets you out of bed for a piece of work? Money, mess, mission, the team — no wrong answer.", "What makes a job worth doing, for you?"],
+  howToWorkWith: ["If someone is about to work with you, what should they know? How you like feedback, what winds you up.", "What is the user manual for working with you?"],
+  languages: ["Which languages do you work in?", "What languages can you work in?"],
+  surprising: ["Tell me something people are surprised to learn about you.", "What do people not expect about you?"],
   knows: ["Who do you know that you would genuinely put your name behind? Anyone already with us, or someone we should meet.", "Who would you vouch for? Names, and what you have seen them do."],
   referralConsent: ["Are you happy for us to refer you for work, anonymously until you say yes?", "Can we put you forward for things, without your name until you agree?"],
   contactPreference: ["How do you prefer to be contacted, and when should I check back in?", "Best way to reach you, and when should we next speak?"],
@@ -101,6 +107,7 @@ export function bridge(next: ScreeningSection, previous?: ScreeningSection): str
     location: ["Two quick ones about where you can work."],
     commercials: ["Money and boundaries, so nobody wastes anybody's time.", "Let's do the numbers."],
     fit: ["Now the part clients ask me about most: how you work.", "This next bit is about how you operate, not what you know."],
+    person: ["Right — enough about the work. Tell me about you.", "Let's do the human part. None of this goes to a client."],
     network: ["Last part, and it is the one that makes this network worth being in."],
   };
   const l = lines[next.key];
@@ -139,8 +146,11 @@ export function answerQuality(q: ScreeningQuestion, said: unknown): Quality {
 const MIN_WORDS: Record<string, number> = { headline: 4, currentRole: 3, relocation: 3, constraints: 2, contactPreference: 2 };
 
 /** One probe, when the answer is too thin to be useful. Never more than one per question. */
+const OPTIONAL = new Set(["outsideWork", "interests", "surprising", "languages"]);
+
 export function probe(q: ScreeningQuestion, said: unknown): string | null {
   if (answerQuality(q, said) === "ok") return null;
+  if (OPTIONAL.has(q.key)) return null; // the human questions are a gift, never an interrogation
   const specific: Record<string, string> = {
     proudest: "Give me the detail — what was actually going wrong when you arrived, and what was different by the time you left?",
     pushback: "What did you say, and what happened next? That is the part clients ask me about.",
@@ -153,6 +163,8 @@ export function probe(q: ScreeningQuestion, said: unknown): string | null {
     knows: "Even one name helps. Who have you worked with that you would put your name behind?",
     rate: "A range is fine. I would rather write down a range than nothing.",
     workRights: "Just the visas or rights you hold — for example right to work in the UK, or a UAE residence visa.",
+    motivation: "Even roughly. Is it the problem, the people, the money, or the chance to build something?",
+    howToWorkWith: "Anything at all — how you like to be given feedback, or the thing that winds you up fastest.",
   };
   if (specific[q.key]) return specific[q.key];
   if (q.kind === "long") return "Can you give me a bit more? The specifics are what make this worth reading.";
@@ -178,6 +190,11 @@ export function ack(q: ScreeningQuestion, said: unknown, name = ""): string | nu
     return null;
   }
   if (q.key === "rate") return text ? "Noted — and it stays a band to clients, never your exact number." : null;
+  if (q.key === "outsideWork") return text.trim() ? "I like that. It is the kind of thing that makes a person memorable, and it never goes to a client." : null;
+  if (q.key === "motivation") return text.trim() ? "Useful — that tells me which work to bring you and which to leave alone." : null;
+  if (q.key === "howToWorkWith") return text.trim() ? "Noted. I will pass that on to anyone you end up working with." : null;
+  if (q.key === "languages") return text.trim() ? "Good to know — it comes up more often than you would think." : null;
+  if (q.key === "surprising") return text.trim() ? "Ha — I will remember that one." : null;
   if (q.key === "knows") return "Thank you. I will not contact anyone without asking you first.";
   if (q.key === "proudest") return answerQuality(q, said) === "ok" ? "That is the kind of thing a client actually wants to hear." : null;
   if (q.key === "pushback") return answerQuality(q, said) === "ok" ? "Useful. That is the story I would test with someone who has worked with you." : null;

@@ -9,7 +9,12 @@ import { parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv
 import { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } from "@/lib/labels";
 import { redactForPartner } from "@/lib/authz";
 import * as series from "@/lib/series";
-import { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt as fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS } from "@/lib/demand";
+import * as credibility from "@/lib/credibility";
+import * as privacy from "@/lib/privacy";
+import * as traits from "@/lib/traits";
+import * as automation from "@/lib/automation";
+import * as suitability from "@/lib/suitability";
+import { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, subscriptionFor, DEFAULT_RATE_CARD, fmt as fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS } from "@/lib/demand";
 import { trustScore, TRUST_BAND_LABEL } from "@/lib/trust";
 import { SCREENING_SCRIPT, SCREENING_MINUTES, screeningToResult } from "@/lib/screening";
 import { ATTRIBUTES, fitProfile, fitChecks, fitHighlights, parseFitTraits } from "@/lib/fit";
@@ -136,6 +141,7 @@ function closePalette() { document.getElementById("palette")!.hidden = true; }
 
 /** One place to start anything. Same items wherever you are, so nothing is buried in a page. */
 const NEW_ITEMS: { act: string; label: string; hint: string; icon: string }[] = [
+  { act: "captureAny", label: "Capture a conversation", hint: "A coffee, a call, a corridor chat", icon: "conversation" },
   { act: "addPerson", label: "Add a person", hint: "Someone you know", icon: "person" },
   { act: "setupClient", label: "Add a client", hint: "Hires directly, pays on success", icon: "brief" },
   { act: "setupAgency", label: "Add an agency", hint: "Places our people, shares the fee", icon: "money" },
@@ -209,7 +215,17 @@ export function render() {
   window.scrollTo(0, 0);
   document.getElementById("crumbs")!.innerHTML = v.crumbs.map(([l, href], i) => (href && i < v.crumbs.length - 1 ? `<a href="${href}">${esc(l)}</a>` : `<b>${esc(l)}</b>`)).join('<span class="sep">/</span>');
   const path = location.hash.split("?")[0].replace(/^#/, "") || "/overview";
-  document.querySelectorAll<HTMLAnchorElement>("#rail a[data-nav]").forEach((a) => a.classList.toggle("active", path === a.dataset.nav || (path.startsWith(a.dataset.nav + "/")) || (a.dataset.nav === "/network" && path.startsWith("/people/"))));
+  const view = document.documentElement.dataset.view ?? "";
+  document.querySelectorAll<HTMLAnchorElement>("#rail a[data-nav]").forEach((a) => {
+    const nav = a.dataset.nav ?? ""; const [navPath, navQs] = nav.split("?");
+    const navAccount = new URLSearchParams(navQs ?? "").get("account");
+    // Two rail entries point at /portal — one for clients, one for agencies. The active one is
+    // whichever matches the portal you are actually looking at.
+    const active = navPath === "/portal" && path === "/portal"
+      ? (navAccount ? new URLSearchParams(location.hash.split("?")[1] ?? "").get("account") === navAccount || (view === "agency") === (S.accounts.find((x) => x.id === navAccount)?.kind === "AGENCY") : true)
+      : path === navPath || path.startsWith(navPath + "/") || (navPath === "/network" && path.startsWith("/people/"));
+    a.classList.toggle("active", active);
+  });
   countUp(main); v.after?.();
   const bell = document.getElementById("bell-count"); if (bell) { const n = S.viewAs.role === "OWNER" ? alerts().length : 0; bell.textContent = String(n); bell.hidden = n === 0; }
 }
@@ -256,8 +272,8 @@ export function constellation(canvas: HTMLCanvasElement | null) {
     nodes.forEach((n, i) => pos.set(n.id, [n.x * w + (reduce ? 0 : Math.sin(t * 0.35 + i) * 6), n.y * hgt + (reduce ? 0 : Math.cos(t * 0.3 + i * 1.7) * 5)]));
     pos.set("you", [0.7 * w, 0.42 * hgt]);
     for (const e of edges) { const a = pos.get(e.a), b = pos.get(e.b); if (!a || !b) continue; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.strokeStyle = e.worked ? "rgba(45,212,191,0.55)" : "rgba(255,255,255,0.14)"; ctx.lineWidth = e.worked ? 1.2 : 1; ctx.setLineDash(e.worked ? [] : [2, 5]); ctx.stroke(); ctx.setLineDash([]); }
-    for (const n of nodes) { const [x, y] = pos.get(n.id)!; const hot = hover === n; ctx.beginPath(); ctx.arc(x, y, n.r + (hot ? 10 : 6), 0, Math.PI * 2); ctx.fillStyle = col(n.tone, hot ? 0.28 : n.ring ? 0.16 : 0.08); ctx.fill(); ctx.beginPath(); ctx.arc(x, y, n.r + (hot ? 1.5 : 0), 0, Math.PI * 2); ctx.fillStyle = col(n.tone, 0.95); ctx.fill(); if (hot || n.ring) { ctx.fillStyle = hot ? "#fff" : "rgba(255,255,255,0.62)"; ctx.font = `${hot ? 600 : 500} 11px Geist, system-ui, sans-serif`; ctx.fillText(n.label, x + n.r + 7, y + 4); } }
-    const [yx, yy] = pos.get("you")!; ctx.beginPath(); ctx.arc(yx, yy, 16, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.fill(); ctx.beginPath(); ctx.arc(yx, yy, 6, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.font = "600 11px Geist, system-ui, sans-serif"; ctx.fillText("You", yx + 14, yy + 4);
+    for (const n of nodes) { const [x, y] = pos.get(n.id)!; const hot = hover === n; ctx.beginPath(); ctx.arc(x, y, n.r + (hot ? 10 : 6), 0, Math.PI * 2); ctx.fillStyle = col(n.tone, hot ? 0.28 : n.ring ? 0.16 : 0.08); ctx.fill(); ctx.beginPath(); ctx.arc(x, y, n.r + (hot ? 1.5 : 0), 0, Math.PI * 2); ctx.fillStyle = col(n.tone, 0.95); ctx.fill(); if (hot || n.ring) { ctx.fillStyle = hot ? "#fff" : "rgba(255,255,255,0.62)"; ctx.font = `${hot ? 600 : 500} 11px "Inter Tight", system-ui, sans-serif`; ctx.fillText(n.label, x + n.r + 7, y + 4); } }
+    const [yx, yy] = pos.get("you")!; ctx.beginPath(); ctx.arc(yx, yy, 16, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.fill(); ctx.beginPath(); ctx.arc(yx, yy, 6, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.font = '600 11px "Inter Tight", system-ui, sans-serif'; ctx.fillText("You", yx + 14, yy + 4);
     if (!reduce) raf = requestAnimationFrame(draw);
   };
   raf = requestAnimationFrame(draw);
@@ -286,6 +302,8 @@ async function boot() {
     partners: '<path d="M8 12l3 3 5-5"/><circle cx="12" cy="12" r="9"/>',
     relocation: '<path d="M3 12h13"/><path d="M12 6l6 6-6 6"/><path d="M19 4v16"/>',
     import: '<path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/>',
+    intelligence: '<path d="M12 3a5 5 0 0 1 5 5c0 1.8-.9 3-1.8 4S14 14 14 15.5h-4c0-1.5-.3-2.5-1.2-3.5S7 9.8 7 8a5 5 0 0 1 5-5z"/><path d="M10 19h4M10.5 21.5h3"/>',
+    agency: '<path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-5h6v5"/><path d="M9.5 11h1M13.5 11h1"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
   };
   const ico = (k: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICO[k]}</svg>`;
@@ -293,8 +311,8 @@ async function boot() {
     const role = S.viewAs.role;
     const link = ([p, l, i]: string[]) => `<a data-nav="${p}" href="#${p}"><i>${ico(i)}</i>${l}</a>`;
     if (role === "MEMBER") return `<nav>${[["/member", "My expert profile", "member"], ["/member?tab=opportunities", "Work open to me", "opportunities"], ["/member?tab=refer", "Refer someone", "referrals"]].map(link).join("")}</nav>`;
-    if (role !== "OWNER") return `<nav>${[["/portal", "My requirements", "requirements"], ["/portal?tab=people", "People proposed", "portal"]].map(link).join("")}</nav>`;
-    return `<nav>${[["/overview", "Overview", "overview"], ["/network", "Experts", "network"], ["/requirements", "Requirements", "requirements"], ["/referrals", "Referrals & pitches", "referrals"], ["/conversations", "Conversations", "conversations"]].map(link).join("")}<div class="group">Views</div>${[["/amana", "Amana Expert Network", "amana"], ["/portal", "Client & agency view", "portal"], ["/member", "Expert view", "member"]].map(link).join("")}<div class="group">Setup</div>${[["/import", "Import contacts", "import"], ["/join", "Join link", "join"], ["/relocation", "Relocation", "relocation"], ["/partners", "Partners", "partners"], ["/settings", "Settings", "settings"]].map(link).join("")}</nav>`;
+    if (role !== "OWNER") return `<nav>${[["/portal", "My requirements", "requirements"], ["/portal?tab=people", "Experts proposed", "portal"]].map(link).join("")}</nav>`;
+    return `<nav>${[["/overview", "Overview", "overview"], ["/network", "Experts", "network"], ["/requirements", "Requirements", "requirements"], ["/intelligence", "Intelligence", "intelligence"], ["/referrals", "Referrals & pitches", "referrals"], ["/conversations", "Conversations", "conversations"]].map(link).join("")}<div class="group">Views</div>${[["/amana", "Amana Expert Network", "amana"], [`/portal?account=${S.accounts.find((a) => a.kind === "CLIENT" && a.portalEnabled)?.id ?? ""}`, "Client view", "portal"], [`/portal?account=${S.accounts.find((a) => a.kind === "AGENCY" && a.portalEnabled)?.id ?? ""}`, "Agency view", "agency"], ["/member", "Expert view", "member"]].map(link).join("")}<div class="group">Setup</div>${[["/import", "Import contacts", "import"], ["/join", "Join link", "join"], ["/relocation", "Relocation", "relocation"], ["/partners", "Partners", "partners"], ["/settings", "Settings", "settings"]].map(link).join("")}</nav>`;
   };
   const whoAmI = () => { const va = S.viewAs; if (va.role === "MEMBER") { const p = S.people.find((x) => x.id === va.personId); return { name: p ? full(p) : "Expert", sub: "Expert", ini: p ? `${p.firstName[0]}${p.lastName[0]}` : "E" }; } if (va.role === "AGENCY" || va.role === "CLIENT") { const a = S.accounts.find((x) => x.id === va.accountId); return { name: a?.name ?? "Account", sub: va.role === "AGENCY" ? "Agency" : "Client", ini: (a?.name ?? "A").slice(0, 2).toUpperCase() }; } return { name: S.me.name, sub: "Owner", ini }; };
   const roleOptions = () => { const va = S.viewAs; const sel = (k: string) => (k === `${va.role}:${va.accountId ?? va.personId ?? ""}` ? "selected" : ""); return `<optgroup label="Amana Network"><option value="OWNER:" ${sel("OWNER:")}>${esc(S.me.name)} · owner</option></optgroup><optgroup label="Client view">${S.accounts.filter((a) => a.portalEnabled && a.kind === "CLIENT").map((a) => `<option value="CLIENT:${a.id}" ${sel(`CLIENT:${a.id}`)}>${esc(a.name)}</option>`).join("")}</optgroup><optgroup label="Agency view">${S.accounts.filter((a) => a.portalEnabled && a.kind === "AGENCY").map((a) => `<option value="AGENCY:${a.id}" ${sel(`AGENCY:${a.id}`)}>${esc(a.name)}</option>`).join("")}</optgroup><optgroup label="Expert view">${S.people.filter((p) => p.memberSince).slice(0, 10).map((p) => `<option value="MEMBER:${p.id}" ${sel(`MEMBER:${p.id}`)}>${esc(full(p))}</option>`).join("")}</optgroup>`; };
@@ -315,7 +333,7 @@ async function boot() {
   try { const t = localStorage.getItem("ni-theme"); if (t) document.documentElement.dataset.theme = t; } catch { /* no storage */ }
   persist = await createPersist();
   try { const loaded = await persist.loadAll([...COLLECTIONS, "audit", "settings"]); overlay(loaded); const rc = loaded.settings?.find((d) => d.id === "rateCard"); if (rc) S.rateCard = { ...S.rateCard, ...rc }; const sc = loaded.settings?.find((d) => d.id === "screeningScript") as { sections?: typeof S.screeningScript } | undefined; if (sc?.sections?.length) S.screeningScript = sc.sections; try { const va = localStorage.getItem("ni-viewas"); if (va) S.viewAs = JSON.parse(va); } catch { /* default owner */ } if (loaded.settings?.find((d) => d.id === "prefs")?.hideDemo) { const demoIds = new Set(seed().people.map((p) => p.id)); S.people = S.people.filter((p) => !demoIds.has(p.id)); } } catch { /* start from seed */ }
-  const ctx: Ctx = { S: () => S, ai, esc, raw, h: null as any, uid, nowISO, full, list, person, userName, relsOf, evOf, convOf, fresh, depth, toMatchPerson, commit, removeDoc, logAudit, toast, openDrawer, setDrawerStep, setStepBack, closeDrawer, render, constellation, series, retrieveMatches, capabilityCoverage, suggestNextCheck, ACTIVE_STATUSES, redactForPartner, parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv, seed, persistMode: () => persist.mode, savePref: (k, v) => persist.save("settings", "prefs", { [k]: v }).catch(() => {}), saveRateCard: (card) => { S.rateCard = card; return persist.save("settings", "rateCard", card).catch(() => {}); }, saveScript: (sections) => { S.screeningScript = sections; return persist.save("settings", "screeningScript", { sections }).catch(() => {}); }, toBriefPerson, trustOf, fitOf, vouchesOf, alerts, setViewAs: (v) => { S.viewAs = v; try { localStorage.setItem("ni-viewas", JSON.stringify(v)); } catch { /* no storage */ } renderShell(); }, trust: { TRUST_BAND_LABEL }, screening: { SCREENING_SCRIPT, SCREENING_MINUTES, screeningToResult, script: () => S.screeningScript }, fit: { ATTRIBUTES, fitProfile, fitChecks, fitHighlights, parseFitTraits }, demand: { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt: fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS }, labels: { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } };
+  const ctx: Ctx = { S: () => S, ai, esc, raw, h: null as any, uid, nowISO, full, list, person, userName, relsOf, evOf, convOf, fresh, depth, toMatchPerson, commit, removeDoc, logAudit, toast, openDrawer, setDrawerStep, setStepBack, closeDrawer, render, constellation, series, credibility, privacy, traits, automation, suitability, retrieveMatches, capabilityCoverage, suggestNextCheck, ACTIVE_STATUSES, redactForPartner, parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, templateCsv, seed, persistMode: () => persist.mode, savePref: (k, v) => persist.save("settings", "prefs", { [k]: v }).catch(() => {}), saveRateCard: (card) => { S.rateCard = card; return persist.save("settings", "rateCard", card).catch(() => {}); }, saveScript: (sections) => { S.screeningScript = sections; return persist.save("settings", "screeningScript", { sections }).catch(() => {}); }, toBriefPerson, trustOf, fitOf, vouchesOf, alerts, setViewAs: (v) => { S.viewAs = v; try { localStorage.setItem("ni-viewas", JSON.stringify(v)); } catch { /* no storage */ } renderShell(); }, trust: { TRUST_BAND_LABEL }, screening: { SCREENING_SCRIPT, SCREENING_MINUTES, screeningToResult, script: () => S.screeningScript }, fit: { ATTRIBUTES, fitProfile, fitChecks, fitHighlights, parseFitTraits }, demand: { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, subscriptionFor, DEFAULT_RATE_CARD, fmt: fmtMoney, rateBand, FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS }, labels: { AVAILABILITY_LABELS, AVAILABILITY_TONE, ROUTE_LABELS, SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, OPPORTUNITY_STATUS_LABELS, KANBAN_STAGES, DECISION_LABELS, DECISION_TONE, INTRO_STATUS_LABELS, ADVISORY_LABELS, REQUIREMENT_STATUS_LABELS, CONVERSATION_PROMPTS } };
   setContext(ctx);
   renderShellInner();
   document.addEventListener("click", (e) => {
@@ -345,6 +363,7 @@ async function boot() {
   document.addEventListener("change", (e) => {
     const t = e.target as HTMLInputElement;
     if (!(t instanceof HTMLInputElement) || (t.type !== "radio" && t.type !== "checkbox")) return;
+    const pick = t.closest(".pick-chip"); if (pick) { pick.classList.toggle("on", t.checked); return; }
     const group = t.closest(".choice"); if (!group) return;
     if (t.type === "radio") group.querySelectorAll("label").forEach((l) => l.classList.toggle("on", !!l.querySelector<HTMLInputElement>("input")?.checked));
     else t.closest("label")?.classList.toggle("on", t.checked);
@@ -352,6 +371,14 @@ async function boot() {
   document.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); if (document.getElementById("palette")!.hidden) openPalette(); else closePalette(); return; }
     if (e.key === "Escape") { closePalette(); if (!document.getElementById("drawer")!.hidden) closeDrawer(); }
+    // The decision deck: left is "not for this", right is "propose". Only when nothing else has focus.
+    const deck = document.querySelector<HTMLElement>(".deck-card");
+    if (deck && !document.getElementById("drawer")!.hidden === false && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      const t = e.target as HTMLElement;
+      if (t && /input|textarea|select/i.test(t.tagName)) return;
+      e.preventDefault();
+      deck.querySelector<HTMLElement>(`[data-act="${e.key === "ArrowRight" ? "deckPropose" : "deckPass"}"]`)?.click();
+    }
     const pal = document.getElementById("palette")!;
     if (!pal.hidden) { const inp = pal.querySelector("input") as HTMLInputElement; const items = paletteItems(inp.value); if (e.key === "ArrowDown") { paletteIdx = Math.min(items.length - 1, paletteIdx + 1); renderPalette(inp.value); e.preventDefault(); } if (e.key === "ArrowUp") { paletteIdx = Math.max(0, paletteIdx - 1); renderPalette(inp.value); e.preventDefault(); } if (e.key === "Enter" && items[paletteIdx]) { closePalette(); location.hash = items[paletteIdx].href; } }
   });

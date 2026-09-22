@@ -1,5 +1,5 @@
 /* Views, drawers, actions and forms for the live prototype. */
-import type { State, Person, Conversation, Opportunity, Match, Introduction, Relocation, Relationship, Evidence, Scheduled, TeamMember, Partner } from "./types";
+import type { State, Person, Conversation, Opportunity, Match, Introduction, Relocation, Relationship, Evidence, Scheduled, TeamMember, Partner, Vouch } from "./types";
 import type { View, Raw as RawT } from "./app";
 import { readXlsx } from "./xlsx";
 import { demandViews } from "./demand-views";
@@ -12,6 +12,11 @@ export type Ctx = {
   toast: (m: string, tone?: string) => void; openDrawer: (t: string, d: string, body: RawT, onSubmit: any, opts?: { wide?: boolean; submitLabel?: string }) => void; setDrawerStep: (t: string, d: string, body: RawT, onSubmit: any, opts?: { submitLabel?: string; back?: boolean; step?: [number, number] }) => void; setStepBack: (fn: (() => void) | null) => void; closeDrawer: () => void; render: () => void; constellation: (c: HTMLCanvasElement | null) => void;
   retrieveMatches: any; capabilityCoverage: any; suggestNextCheck: any; ACTIVE_STATUSES: string[]; redactForPartner: any; parseCsv: any; mapHeaders: any; SOURCE_ALIASES: Record<string, string>; RELATIONSHIP_ALIASES: Record<string, string>; templateCsv: () => string; seed: () => State; persistMode: () => string; savePref: (k: string, v: unknown) => void;
   series: typeof import("@/lib/series");
+  credibility: typeof import("@/lib/credibility");
+  privacy: typeof import("@/lib/privacy");
+  traits: typeof import("@/lib/traits");
+  automation: typeof import("@/lib/automation");
+  suitability: typeof import("@/lib/suitability");
   saveRateCard: (card: any) => Promise<void>; saveScript: (sections: any[]) => Promise<void>; toBriefPerson: (p: Person) => any; demand: any;
   trustOf: (p: Person) => any; fitOf: (p: Person) => any; vouchesOf: (id: string) => any[]; alerts: () => any[]; setViewAs: (v: any) => void; trust: any; screening: any; fit: any;
   labels: Record<string, any>;
@@ -30,7 +35,10 @@ const hueOf = (p: { firstName: string; lastName: string }) => { let x = 0; for (
 const money = (v?: number | null, cur = "GBP") => (v === null || v === undefined ? "—" : new Intl.NumberFormat("en-GB", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(v));
 const moneyCompact = (v: number, cur = "GBP") => new Intl.NumberFormat("en-GB", { style: "currency", currency: cur, notation: "compact", maximumFractionDigits: 1 }).format(v);
 const opt = (entries: Record<string, string>, current?: string | null, blank?: string) => (blank !== undefined ? `<option value="">${esc(blank)}</option>` : "") + Object.entries(entries).map(([k, v]) => `<option value="${k}" ${k === current ? "selected" : ""}>${esc(v)}</option>`).join("");
-const avatar = (p: { firstName: string; lastName: string }, size = "md", ring = false) => `<span class="avatar hue-${hueOf(p)} ${size} ${ring ? "ring" : ""}"><span>${esc(initials(p))}</span></span>`;
+const avatar = (p: { firstName: string; lastName: string; photoUrl?: string | null; privacy?: any }, size = "md", ring = false) => {
+  const photo = C.privacy.canShowPhoto(p as any, "internal");
+  return `<span class="avatar hue-${hueOf(p)} ${size} ${ring ? "ring" : ""} ${photo ? "has-photo" : ""}">${photo ? `<img src="${esc(p.photoUrl)}" alt="" loading="lazy">` : `<span>${esc(initials(p))}</span>`}</span>`;
+};
 const badge = (label: string, tone = "neutral", filled = false) => `<span class="badge ${filled ? "filled" : ""} tone-${tone}"><i></i>${esc(label)}</span>`;
 const chip = (t: string) => `<span class="chip">${esc(t)}</span>`;
 function availBadge(p: Person) { const f = C.fresh(p); const tone = f === "stale" || f === "unknown" ? "amber" : L().AVAILABILITY_TONE[p.availabilityStatus]; return `${badge(L().AVAILABILITY_LABELS[p.availabilityStatus], tone)}${f === "stale" && p.availabilityStatus !== "NEEDS_REFRESH" ? '<span class="stale">stale</span>' : f === "aging" ? '<span class="aging">aging</span>' : ""}`; }
@@ -129,6 +137,13 @@ function overview(): View {
   const setupCard = doneN === steps.length ? "" : card("Getting set up", `<div class="setup-bar"><div style="width:${Math.round((doneN / steps.length) * 100)}%"></div></div>
     <ul class="checklist">${steps.map((x) => `<li class="${x.done ? "done" : ""}"><span class="tick"><ni-icon name="check" size="13"></ni-icon></span><span><b>${esc(x.label)}</b><small>${esc(x.hint)}</small></span>${x.done ? "" : x.act ? btn("Do it", `data-act="${x.act}"`, "glass sm") : `<a class="btn glass sm" href="${x.href}">Do it</a>`}</li>`).join("")}</ul>`, { desc: `${doneN} of ${steps.length} done. Nothing here is compulsory — it is just the shortest path to a fee.` });
 
+  const fees = { forecast: feeSum(["FORECAST"]), agreed: feeSum(["AGREED"]), invoiced: feeSum(["INVOICED"]), paid: feeSum(["PAID"]) };
+  const subs = S.accounts.filter((a) => a.portalEnabled && a.status === "ACTIVE").reduce((sum, a) => sum + (a.monthlyFee ?? C.demand.subscriptionFor(a.kind, S.rateCard).amount), 0);
+  const catchUps = C.automation.catchUpSuggestions(
+    S.people.filter((p) => C.relsOf(p.id).length).map((p) => ({ id: p.id, name: C.full(p), city: p.primaryCity, workedTogether: C.relsOf(p.id).some((r) => r.workedTogether), lastContactAt: C.relsOf(p.id).map((r) => r.lastContactDate).filter(Boolean).sort().reverse()[0] ?? null, openTo: (p.social?.openTo ?? []) as any[], interests: p.persona?.interests ?? [] })),
+    S.people.find((p) => C.full(p) === me.name)?.primaryCity ?? "Dubai", new Date(), 3);
+  const deciding = S.shortlist.filter((x) => x.decision === "CANDIDATE").length;
+
   const html = `
     <section class="masthead">
       <div class="mh-eyebrow"><ni-icon name="vouch" size="13" tone="trust"></ni-icon> ${hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening"}, ${esc(me.name.split(" ")[0])} — what the network says today</div>
@@ -136,9 +151,19 @@ function overview(): View {
       <div class="mh-chain"><ni-chain people="${esc(fc.names)}" count="${fc.count}" score="${C.trustOf(featureOf).score}"></ni-chain><span>${fc.count} ${fc.count === 1 ? "person stands" : "people stand"} behind ${esc(featureOf.firstName)}</span></div>` : `<div class="mh-quote"><ni-quote size="xl">Who do we genuinely know who could solve this problem?</ni-quote></div>`}
       <div class="mh-actions">${btn("＋ Add a person", 'data-act="addPerson"')}<a class="btn glass" href="#/requirements">Take a requirement</a><a class="btn ghost" href="#/import">Import contacts</a></div>
     </section>
+    <section class="board-row">
+      <div class="board-tile money"><div class="bt-top"><span><ni-icon name="money" size="15"></ni-icon> Money in play</span><a href="#/requirements">Fees →</a></div>
+        <b>${esc(moneyCompact(pipeline, feeCur))}</b><span class="bt-sub">${esc(moneyCompact(subs, S.rateCard.subscriptionCurrency))} a month in subscriptions${otherCur.length ? ` · plus ${esc(otherCur.join(", "))}` : ""}</span>
+        <ni-bar hidevalues segments="${esc(`Forecast ${moneyCompact(fees.forecast, feeCur)}`)}:${Math.round(fees.forecast) || 1}:mute|${esc(`Agreed ${moneyCompact(fees.agreed, feeCur)}`)}:${Math.round(fees.agreed) || 1}:accent|${esc(`Invoiced ${moneyCompact(fees.invoiced, feeCur)}`)}:${Math.round(fees.invoiced) || 1}:alert|${esc(`Paid ${moneyCompact(fees.paid, feeCur)}`)}:${Math.round(fees.paid) || 1}:trust" height="8"></ni-bar></div>
+      <div class="board-tile bt-todo"><div class="bt-top"><span><ni-icon name="brief" size="15"></ni-icon> To decide</span><a href="#/requirements">The deck →</a></div>
+        <b>${deciding}</b><span class="bt-sub">${deciding === 1 ? "expert to decide on" : "experts to decide on"} · ${S.briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length} open requirements</span>
+        <div class="bt-people">${S.shortlist.filter((x) => x.decision === "CANDIDATE").slice(0, 6).map((x) => { const pp = C.person(x.personId); return pp ? avatar(pp, "sm") : ""; }).join("")}</div></div>
+      <div class="board-tile see"><div class="bt-top"><span><ni-icon name="person" size="15"></ni-icon> Go and see</span><a href="#/intelligence">Radar →</a></div>
+        ${catchUps.length ? `<ul class="bt-list">${catchUps.map((c) => { const pp = C.person(c.personId)!; return `<li>${avatar(pp, "sm")}<span><b>${esc(c.name)}</b><small>${esc(c.reason)}</small></span><button type="button" class="cu-btn sm" data-act="bookCatchUp" data-id="${c.personId}" data-kind="${c.kind}"><span>${C.automation.CATCH_UPS.find((k) => k.key === c.kind)?.emoji ?? "☕"}</span></button></li>`; }).join("")}</ul>` : '<span class="bt-sub">Everyone has been seen recently.</span>'}</div>
+    </section>
     <section class="widgets">
       ${([
-        ["People in the network", String(total), `${worked} you have worked with`, "", spark.people, chg.people, ""],
+        ["Experts in the network", String(total), `${worked} you have worked with`, "", spark.people, chg.people, ""],
         ["Screened experts", String(screened), `${joining} in the queue`, "trust", spark.screened, chg.screened, ""],
         ["Trusted", String(trusted), `average score ${avgTrust}`, "trust", spark.vouches, null, ""],
         ["Vouches given", String(S.vouches.length), `across ${vouchedPeople} people`, "", spark.vouches, chg.vouches, ""],
@@ -149,7 +174,7 @@ function overview(): View {
     <section class="widgets sub">
       ${([
         ["Open requirements", String(S.briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length), `${S.briefs.filter((b) => b.submittedVia === "PORTAL").length} came from clients`, "#/requirements", spark.briefs, "up"],
-        ["People proposed", String(S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)).length), "anonymised, never named", "#/requirements", spark.proposed, "up"],
+        ["Experts proposed", String(S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)).length), "anonymised, never named", "#/requirements", spark.proposed, "up"],
         ["Referrals", String(S.referrals.length), `${S.referrals.filter((r) => r.status === "ACCEPTED").length} joined the network`, "#/referrals", spark.referrals, "up"],
         ["Pitches waiting", String(S.pitches.filter((x) => x.status === "SUBMITTED").length), "experts who put themselves forward", "#/referrals?tab=pitches", spark.pitches, "up"],
         ["Needs a check", String(total - freshN), "status has gone stale", "#/network?freshness=stale", spark.stale, "down"],
@@ -176,6 +201,59 @@ function overview(): View {
   return { title: "Overview", crumbs: [["Overview"]], html: raw(html) };
 }
 
+/**
+ * Intelligence: what the machine does, and who you should go and see.
+ *
+ * Everything on this page is either something the platform worked out by itself, a rule that runs
+ * without being asked, or a nudge to sit down with a person — which is the only reason any of the
+ * rest of it works.
+ */
+function intelligence(): View {
+  const S = C.S(); const now = Date.now();
+  const A = C.automation;
+  const on = (k: string) => (S.automations ?? A.DEFAULT_AUTOMATIONS)[k as keyof typeof A.DEFAULT_AUTOMATIONS] ?? false;
+
+  // What the AI has actually done here, counted from the record rather than claimed.
+  const screenings = S.conversations.filter((c) => c.type === "SCREENING" || !!c.screening);
+  const structured = S.conversations.filter((c) => c.aiSummary || c.approvedSummary).length;
+  const parsed = S.briefs.length;
+  const matched = S.shortlist.length;
+  const attributed = S.people.filter((p) => p.attributes && Object.keys(p.attributes).length).length;
+  const did: [string, string, string, string][] = [
+    ["Conversations structured", String(structured), `${screenings.length} run by the AI interviewer`, "screening"],
+    ["Requirements read", String(parsed), "plain words turned into a structured brief", "brief"],
+    ["Experts retrieved", String(matched), "matched to a brief, hard checks done", "person"],
+    ["Working styles read", String(attributed), "attributes taken from what people actually said", "trust"],
+  ];
+
+  // Who to go and see. City first, because that is the week it is actually possible.
+  const me = S.me;
+  const myCity = S.people.find((p) => C.full(p) === me.name)?.primaryCity ?? "London";
+  const suggestions = A.catchUpSuggestions(
+    S.people.filter((p) => p.memberSince || C.relsOf(p.id).length).map((p) => ({
+      id: p.id, name: C.full(p), city: p.primaryCity, workedTogether: C.relsOf(p.id).some((r) => r.workedTogether),
+      lastContactAt: C.relsOf(p.id).map((r) => r.lastContactDate).filter(Boolean).sort().reverse()[0] ?? null,
+      openTo: (p.social?.openTo ?? []) as any[], interests: p.persona?.interests ?? [],
+    })), myCity, new Date(), 5);
+
+  const upcoming = S.scheduled.filter((s) => s.status === "SCHEDULED" && new Date(s.startAt).getTime() > now - 3600e3).sort((a, b) => a.startAt.localeCompare(b.startAt)).slice(0, 4);
+  const openToAnything = S.people.filter((p) => (p.social?.openTo ?? []).length);
+
+  const html = `<div class="page-head"><div><div class="eyebrow">Intelligence</div><h1>What the platform does, and who to go and see</h1><p>The machine reads, matches and remembers. It does not decide, and it never meets anyone for you — that part is still yours.</p></div><div class="actions">${btn("Ask the co-pilot", 'data-act="newRequirement"', "primary")}</div></div>
+    <section class="widgets">${did.map(([l, v, n, icon]) => `<ni-stat label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" tone="trust"></ni-stat>`).join("")}</section>
+    <div class="grid-3"><div class="col-2 stack">
+      ${card("Who to see", suggestions.length ? `<ul class="catchups">${suggestions.map((s) => { const p = C.person(s.personId)!; const kind = A.CATCH_UPS.find((c) => c.key === s.kind)!; return `<li><span class="cu-face">${avatar(p, "md")}</span><div class="cu-main"><b>${esc(s.name)}</b><small>${esc(s.reason)}</small><small class="opener">“${esc(A.catchUpOpener(s, p.persona?.interests ?? []))}”</small></div><div class="cu-actions">${A.CATCH_UPS.slice(0, 3).map((c) => `<button type="button" class="cu-btn ${c.key === s.kind ? "on" : ""}" data-act="bookCatchUp" data-id="${s.personId}" data-kind="${c.key}" title="${esc(c.label)}"><span>${c.emoji}</span>${esc(c.label)}</button>`).join("")}<button type="button" class="cu-btn" data-act="captureAny" data-id="${s.personId}" title="Already seen them? Write it down."><span>✎</span>Capture</button></div></li>`; }).join("")}</ul>` : empty("Nobody is overdue", "Everyone you know has been seen recently. Rare, and worth enjoying."),
+        { desc: `In ${esc(myCity)} first, then by how long it has been. A coffee beats a status update.` })}
+      ${card("What runs on its own", `<ul class="autos">${A.AUTOMATIONS.map((a) => `<li class="${on(a.key) ? "on" : ""}"><label class="sw"><input type="checkbox" data-act="toggleAuto" data-key="${a.key}" ${on(a.key) ? "checked" : ""}><i></i></label><div><b>${esc(a.label)}</b><small>${esc(a.does)}</small><small class="why">${esc(a.why)}</small></div><span class="cadence">${esc(a.cadence)}</span></li>`).join("")}</ul>`,
+        { desc: "Each one is a sentence, and each one can be switched off." })}
+    </div><div class="stack">
+      ${card("In the diary", upcoming.length ? `<ul class="rows">${upcoming.map((u) => { const p = C.person(u.personId); const kind = A.CATCH_UPS.find((c) => c.key === u.meetingType.toLowerCase()); const past = new Date(u.startAt).getTime() < Date.now(); return `<li><span class="row gap-sm">${kind ? `<span class="cu-emoji">${kind.emoji}</span>` : ""}${p ? personLink(p, u.meetingType.replace(/_/g, " ").toLowerCase()) : esc(u.meetingType)}</span>${past && p ? btn("Capture", `data-act="captureAny" data-id="${p.id}"`, "ghost sm") : `<small class="when">${esc(rel(u.startAt))}</small>`}</li>`; }).join("")}</ul>` : '<span class="dim">Nothing booked. The radar above is the cure.</span>', { desc: "Coffees, brunches and calls, in one list." })}
+      ${card("Up for a coffee", openToAnything.length ? `<ul class="rows">${openToAnything.slice(0, 6).map((p) => `<li>${personLink(p, (p.social?.openTo ?? []).map((k) => A.CATCH_UPS.find((c) => c.key === k)?.label ?? k).join(" · "))}<span class="chips">${(p.social?.openTo ?? []).slice(0, 3).map((k) => `<span class="cu-emoji">${A.CATCH_UPS.find((c) => c.key === k)?.emoji ?? "☕"}</span>`).join("")}</span></li>`).join("")}</ul>` : '<span class="dim">Members say what they are up for on their own profile. Nobody has yet.</span>', { desc: "People who said they would like to meet someone from the network." })}
+      ${card("What the AI will not do", `<ul class="wont"><li><b>Decide.</b> It ranks and explains; you choose.</li><li><b>Contact anyone as you.</b> Every message is written by a person.</li><li><b>Share a name.</b> Not without that person agreeing to that specific introduction.</li><li><b>Invent evidence.</b> If nobody saw it, it says so.</li></ul>`, { desc: "The boundaries are the product." })}
+    </div></div>`;
+  return { title: "Intelligence", crumbs: [["Intelligence"]], html: raw(html) };
+}
+
 function network(q: URLSearchParams): View {
   const S = C.S(); const text = q.get("q") ?? "";
   const f = { status: q.get("status") ?? "", route: q.get("route") ?? "", location: q.get("location") ?? "", workedWith: q.get("workedWith"), freshness: q.get("freshness"), amanaBench: q.get("amanaBench"), source: q.get("source") };
@@ -200,6 +278,56 @@ function network(q: URLSearchParams): View {
   return { title: "Network", crumbs: [["Network"]], html: raw(html) };
 }
 
+/** What we can actually say about this person, strongest first. Names are fine in here. */
+function credInput(p: Person) {
+  const S = C.S();
+  const rels = C.relsOf(p.id).map((r) => ({
+    ownerName: C.userName(r.networkOwnerId),
+    ownerKind: (r.networkOwnerId === S.me.id ? "me" : S.users.some((u) => u.id === r.networkOwnerId) ? "colleague" : "external") as "me" | "colleague" | "external",
+    sourceLabel: L().SOURCE_LABELS[r.sourceType] ?? null,
+    introducedByName: r.introducedById && C.person(r.introducedById) ? C.full(C.person(r.introducedById)!) : null,
+    workedTogether: r.workedTogether, workedTogetherContext: r.workedTogetherContext, yearsKnown: r.yearsKnown, wouldWorkTogetherAgain: r.wouldWorkTogetherAgain,
+  }));
+  const vs = C.vouchesOf(p.id);
+  const metRel = C.relsOf(p.id).find((r) => r.metInPerson);
+  const metVouch = vs.find((v) => v.metInPerson);
+  const met = metRel || metVouch ? { by: C.userName(metRel?.networkOwnerId ?? metVouch!.voucherId), when: fmtDate(metRel?.metAt ?? metVouch?.createdAt) } : null;
+  return {
+    relationships: rels,
+    metInPerson: met,
+    personallyReferredBy: vs.filter((v) => v.voucherKind === "USER" && v.wouldRecommend).map((v) => C.userName(v.voucherId)), usedByUs: p.usedByAmana, engagements: S.team.filter((t) => t.personId === p.id).length || undefined, onBench: p.amanaBench,
+    vouchCount: vs.length, wouldRecommendCount: vs.filter((v) => v.wouldRecommend).length,
+    screened: p.screeningStatus === "APPROVED" || !!p.screenedAt, evidenceCount: C.evOf(p.id).length,
+    conversationCount: C.convOf(p.id).filter((c) => c.approvalStatus === "APPROVED").length,
+  };
+}
+
+/** The credibility strip: the badges people actually trust, with an icon each. */
+function credStrip(p: Person, opts: { compact?: boolean } = {}): string {
+  const badges = C.credibility.credibility(credInput(p));
+  return `<div class="cred ${opts.compact ? "compact" : ""}">${badges.map((b) => `<span class="cred-b s-${b.strength}" title="${esc(b.note)}"><ni-icon name="${b.icon}" size="13" tone="${b.strength === "strong" ? "trust" : "mute"}"></ni-icon><b>${esc(b.label)}</b>${opts.compact ? "" : `<small>${esc(b.note)}</small>`}</span>`).join("")}</div>`;
+}
+
+/** Who they are away from the work. Internal only, and only if they agreed to us keeping it. */
+function personaCard(p: Person, self = false): string {
+  const priv = C.privacy.privacyOf(p);
+  const persona = p.persona ?? null;
+  const tags = p.personTags ?? [];
+  if (!C.screening.personaSaid?.(persona) && !tags.length) {
+    return card(self ? "You, not the CV" : "The person, not the CV", `<p class="dim">${self ? "The conversation asks a few human questions at the end — what you are into, what gets you out of bed. Nothing here ever reaches a client." : "Nothing captured yet. The screening asks, or add what you learned when you met them."}</p>`, { desc: "Internal only. A client never sees this.", action: self ? undefined : btn("I have met them", `data-act="metThem" data-id="${p.id}"`, "glass sm") });
+  }
+  if (!priv.consents.personalNotes && !self) return card("The person, not the CV", '<p class="dim">They asked us not to keep personal notes. Respected — nothing is stored.</p>', { desc: "Consent withdrawn" });
+  const rows: string[] = [];
+  if (persona?.outsideWork) rows.push(`<div class="pr"><small class="lbl">Away from work</small><p>${esc(persona.outsideWork)}</p></div>`);
+  if (persona?.motivation) rows.push(`<div class="pr"><small class="lbl">What gets them going</small><ni-quote size="sm">${esc(persona.motivation)}</ni-quote></div>`);
+  if (persona?.howToWorkWith) rows.push(`<div class="pr"><small class="lbl">How to work with them</small><p>${esc(persona.howToWorkWith)}</p></div>`);
+  if (persona?.surprising) rows.push(`<div class="pr"><small class="lbl">Surprising</small><p>${esc(persona.surprising)}</p></div>`);
+  const chips = [...(persona?.interests ?? []), ...tags].map(chip).join("");
+  const langs = (persona?.languages ?? []).map((x) => chip(x)).join("");
+  return card(self ? "You, not the CV" : "The person, not the CV", `${rows.join("")}${chips ? `<div class="pr"><small class="lbl">Into</small><div class="chips">${chips}</div></div>` : ""}${langs ? `<div class="pr"><small class="lbl">Works in</small><div class="chips">${langs}</div></div>` : ""}`,
+    { desc: self ? "Only the network sees this. Switch it off in your privacy settings whenever you like." : "Internal only. A client never sees this.", action: self ? undefined : btn("I have met them", `data-act="metThem" data-id="${p.id}"`, "glass sm") });
+}
+
 function personView(id: string, q: URLSearchParams): View {
   const S = C.S(); const p = C.person(id);
   if (!p) return { title: "Not found", crumbs: [["Network", "#/network"], ["Not found"]], html: raw(empty("Person not found")) };
@@ -214,7 +342,7 @@ function personView(id: string, q: URLSearchParams): View {
       ${card("What we know", latest ? `<div class="kv-grid"><div><small>Summary</small><p>${esc(latest.summary)}</p></div><div><small>Current status</small><p>${esc(latest.currentStatus || "—")}</p><small>Rates / salary</small><p>${esc(latest.ratesOrSalary || "—")}</p></div><div><small>Strengths</small>${listOr(latest.strengths)}</div><div><small>Does not want</small>${listOr(latest.avoid)}</div><div><small>Working characteristics</small>${listOr(latest.workingCharacteristics)}</div><div><small>Constraints</small>${listOr(latest.constraints)}</div>${latest.unresolvedQuestions.length ? `<div class="span2 note-amber"><small>Still to find out</small>${listOr(latest.unresolvedQuestions)}</div>` : ""}</div>` : empty("Not yet in conversation", "Book a conversation, capture notes, and approve the structured summary.", btn("Capture conversation", `data-act="capture" data-id="${id}"`, "glass")), { desc: latest ? `From the approved conversation on ${fmtDate(approved[0].date)}` : "No approved conversation yet" })}
       <div class="grid-2">${card("Expertise", `<div class="chips">${p.capabilities.map(chip).join("") || '<span class="dim">None recorded</span>'}</div><small class="lbl">Sectors</small><div class="chips">${p.sectors.map(chip).join("") || '<span class="dim">—</span>'}</div><dl class="kv"><dt>Seniority</dt><dd>${esc(p.seniority ? L().SENIORITY_LABELS[p.seniority] : "—")}</dd><dt>Rate</dt><dd>${esc(p.rateExpectation ?? "—")}</dd><dt>Salary</dt><dd>${esc(p.salaryExpectation ?? "—")}</dd><dt>Target locations</dt><dd>${esc(p.targetLocations.join(", ") || "—")}</dd><dt>Work rights</dt><dd>${esc((p.workRights ?? []).join(", ") || "not recorded")}</dd></dl>`)}
       ${card("Availability", `<dl class="kv"><dt>Status</dt><dd>${availBadge(p)}</dd><dt>Screening</dt><dd>${mv.screenLabel(p)} ${p.screeningStatus === "SUBMITTED" ? '<a href="#/conversations?tab=review">review</a>' : p.screeningStatus !== "APPROVED" && !p.screenedAt ? `<a href="#/screening/${id}?restart=1">run</a>` : ""}</dd><dt>Last confirmed</dt><dd>${esc(rel(p.availabilityConfirmedAt))}</dd><dt>Source</dt><dd>${esc(p.availabilitySource ?? "—")}</dd><dt>Confidence</dt><dd>${p.availabilityConfidence}%</dd><dt>Next check</dt><dd>${esc(rel(p.nextCheckDate))}</dd></dl>${p.nextAction ? `<div class="next-box"><small>Next action</small>${esc(p.nextAction)} <span class="dim">${esc(rel(p.nextActionDate))}</span></div>` : ""}`, { action: btn("Update", `data-act="availability" data-id="${id}"`, "glass sm") })}</div>${mv.fitCard(p)}</div>
-      <div class="stack">${mv.trustCard(p, { canVouch: true })}${dv.referredCard(p)}${mv.vouchList(p)}${card("Knowledge depth", `<div class="depth">${gauge(C.depth(p), "of 100")}<div><p>How well the network knows ${esc(p.firstName)}: provenance, observed evidence, approved conversations and a fresh status. Never a judgement of the person.</p><ul class="ticks"><li class="${rels.some((r) => r.workedTogether) ? "on" : ""}">Worked with directly</li><li class="${evs.length ? "on" : ""}">${evs.length} piece${evs.length === 1 ? "" : "s"} of evidence</li><li class="${approved.length ? "on" : ""}">${approved.length} approved conversation${approved.length === 1 ? "" : "s"}</li><li class="${C.fresh(p) === "fresh" ? "on" : ""}">Status is fresh</li></ul></div></div>`)}
+      <div class="stack">${mv.trustCard(p, { canVouch: true })}${card("Credibility", credStrip(p), { desc: "Why anyone should believe us about them." })}${personaCard(p)}${dv.referredCard(p)}${mv.vouchList(p)}${card("Knowledge depth", `<div class="depth">${gauge(C.depth(p), "of 100")}<div><p>How well the network knows ${esc(p.firstName)}: provenance, observed evidence, approved conversations and a fresh status. Never a judgement of the person.</p><ul class="ticks"><li class="${rels.some((r) => r.workedTogether) ? "on" : ""}">Worked with directly</li><li class="${evs.length ? "on" : ""}">${evs.length} piece${evs.length === 1 ? "" : "s"} of evidence</li><li class="${approved.length ? "on" : ""}">${approved.length} approved conversation${approved.length === 1 ? "" : "s"}</li><li class="${C.fresh(p) === "fresh" ? "on" : ""}">Status is fresh</li></ul></div></div>`)}
       ${card("Provenance", rels.length ? `<ul class="prov">${rels.map((r) => `<li><b>${esc(C.userName(r.networkOwnerId))} · ${esc(L().RELATIONSHIP_LABELS[r.relationshipType])}</b><small>${esc(L().SOURCE_LABELS[r.sourceType])}${r.introducedById && C.person(r.introducedById) ? ` · via <a href="#/people/${r.introducedById}">${esc(C.full(C.person(r.introducedById)!))}</a>` : ""}${r.yearsKnown ? ` · ${r.yearsKnown}y` : ""}</small>${r.wouldWorkTogetherAgain === true ? '<em class="ok">Would work together again</em>' : r.wouldWorkTogetherAgain === false ? '<em class="bad">Would not work together again</em>' : ""}</li>`).join("")}</ul>` : '<span class="dim">Missing.</span>', { desc: "Who knows them and how" })}
       ${card("Upcoming", S.scheduled.filter((s) => s.personId === id && s.status === "SCHEDULED").map((s) => `<div class="row"><span>${esc(s.meetingType.replace(/_/g, " ").toLowerCase())} · ${s.provider === "MANUAL" ? "manual" : s.provider === "CALENDLY" ? "Calendly" : "Outlook"}</span><small>${esc(rel(s.startAt))}</small></div>`).join("") || '<span class="dim">Nothing booked.</span>')}
       ${card("Contact", `<dl class="kv"><dt>Email</dt><dd>${esc(p.email ?? "—")}</dd><dt>Phone</dt><dd>${esc(p.phone ?? "—")}</dd><dt>LinkedIn</dt><dd>${p.linkedinUrl ? `<a href="${esc(p.linkedinUrl)}" target="_blank" rel="noreferrer">profile</a>` : "—"}</dd></dl>`)}</div></div>`;
@@ -224,7 +352,7 @@ function personView(id: string, q: URLSearchParams): View {
   else if (tab === "opportunities") body = card("Opportunities", matches.length ? `<div class="scroll"><table class="data"><thead><tr><th>Opportunity</th><th>Route</th><th>Stage</th><th class="num">Fit</th><th>Human decision</th><th>Notes</th></tr></thead><tbody>${matches.map((m) => { const o = S.opportunities.find((x) => x.id === m.opportunityId)!; return `<tr><td><a href="#/opportunities/${o.id}"><b>${esc(o.title)}</b></a><small class="sub">${esc(o.clientName ?? "")}</small></td><td>${badge(L().ROUTE_LABELS[o.engagementRoute], "navy")}</td><td>${badge(L().OPPORTUNITY_STATUS_LABELS[o.status], "navy")}</td><td class="num">${m.fitScore}</td><td>${badge(L().DECISION_LABELS[m.humanDecision], L().DECISION_TONE[m.humanDecision])}</td><td class="dim wrap">${esc(m.humanNotes ?? "—")}</td></tr>`; }).join("")}</tbody></table></div>` : empty("Not yet considered for an opportunity"), { desc: "Scores are per-opportunity, never a global rank.", flush: true });
   else if (tab === "relocation") body = card("Relocation", reloc ? `<dl class="kv four"><div><dt>From</dt><dd>${esc(reloc.currentLocation ?? "—")}</dd></div><div><dt>To</dt><dd>${esc(reloc.targetLocation ?? "—")}</dd></div><div><dt>Window</dt><dd>${esc(reloc.targetMoveWindow ?? "—")}</dd></div><div><dt>Advisory</dt><dd>${badge(L().ADVISORY_LABELS[reloc.advisoryStatus], reloc.advisoryStatus === "ACTIVE" ? "teal" : "navy")}</dd></div></dl><div class="chips">${[reloc.familyMove && "family move", reloc.schoolGuidanceInterest && "schools", reloc.housingGuidanceInterest && "housing", reloc.relocationAdvisoryInterest && "wants advisory", reloc.employerSponsored ? "employer funded" : "individually funded"].filter(Boolean).map((c) => chip(c as string)).join("")}</div>${reloc.notes ? `<p>${esc(reloc.notes)}</p>` : ""}` : empty("No relocation profile", "Capture interest if it comes up in conversation."), { desc: "Advisory is a separate, optional paid service.", action: btn(reloc ? "Edit" : "Capture interest", `data-act="relocation" data-id="${id}"`, "glass sm") });
   else body = card("Activity", `<ul class="log">${S.audit.filter((a) => a.entityId === id || (a.detail ?? "").includes(C.full(p))).map((a) => `<li><span>${esc(C.userName(a.actorId))} · <code>${esc(a.action)}</code> ${a.detail ? `<span class="dim">${esc(a.detail)}</span>` : ""}</span><small>${esc(rel(a.createdAt))}</small></li>`).join("") || '<li class="dim">No activity recorded.</li>'}</ul>`, { desc: "Audit trail of sensitive actions on this record." });
-  const html = `<div class="person-hero"><div class="who">${avatar(p, "xl", true)}<div><h1>${esc(C.full(p))}</h1><p>${esc(p.headline ?? "—")}</p><small>${esc([p.currentRole, p.currentCompany].filter(Boolean).join(" · "))}${p.primaryCity ? ` · ${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", "))}` : ""}</small><div class="meta">${thread(p, false)}</div><div class="meta">${availBadge(p)}${p.engagementPreferences.map((r) => badge(L().ROUTE_LABELS[r], "navy")).join("")}${p.amanaBench ? badge("Amana bench", "teal", true) : ""}${p.relocationInterest ? badge("Relocation", "neutral", true) : ""}${p.memberSince ? badge("network member", "teal", true) : ""}</div></div></div><div class="actions">${btn("Refer to a client or agency", `data-act="referToAccount" data-id="${id}"`, "primary")}${btn("Screening call", `data-act="startScreening" data-id="${id}"`, "glass")}${btn("Book conversation", `data-act="book" data-id="${id}"`)}${btn("Capture conversation", `data-act="capture" data-id="${id}"`, "glass")}${btn("Edit profile", `data-act="editPerson" data-id="${id}"`, "glass")}</div></div>
+  const html = `<div class="person-hero"><div class="who">${avatar(p, "xl", true)}<div><h1>${esc(C.full(p))}</h1><p>${esc(p.headline ?? "—")}</p><small>${esc([p.currentRole, p.currentCompany].filter(Boolean).join(" · "))}${p.primaryCity ? ` · ${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", "))}` : ""}</small><div class="meta">${thread(p, false)}</div>${credStrip(p, { compact: true })}<div class="meta">${availBadge(p)}${p.engagementPreferences.map((r) => badge(L().ROUTE_LABELS[r], "navy")).join("")}${p.amanaBench ? badge("Amana bench", "teal", true) : ""}${p.relocationInterest ? badge("Relocation", "neutral", true) : ""}${p.memberSince ? badge("network member", "teal", true) : ""}</div></div></div><div class="actions">${btn("Refer to a client or agency", `data-act="referToAccount" data-id="${id}"`, "primary")}${btn("I have met them", `data-act="metThem" data-id="${id}"`, "glass")}${btn("Screening call", `data-act="startScreening" data-id="${id}"`, "glass")}${btn("Book conversation", `data-act="book" data-id="${id}"`)}${btn("Capture conversation", `data-act="capture" data-id="${id}"`, "glass")}${btn("Edit profile", `data-act="editPerson" data-id="${id}"`, "glass")}</div></div>
     <nav class="tabs">${tabs.map(([k, l, n]) => `<a href="#/people/${id}${k === "overview" ? "" : `?tab=${k}`}" class="${tab === k ? "active" : ""}">${esc(l)}${typeof n === "number" ? `<i>${n}</i>` : ""}</a>`).join("")}</nav>${body}`;
   return { title: C.full(p), crumbs: [["Network", "#/network"], [C.full(p)]], html: raw(html) };
 }
@@ -271,6 +399,24 @@ function opportunity(id: string): View {
   return { title: o.title, crumbs: [["Opportunities", "#/opportunities"], [o.title]], html: raw(html) };
 }
 
+/** Who is in the Amana team, whose contacts they are, and how well each of us knows people. */
+function teamCard(): string {
+  const S = C.S();
+  const row = (u: { id: string; name: string; role: string }) => {
+    const owned = S.relationships.filter((r) => r.networkOwnerId === u.id);
+    const people = [...new Set(owned.map((r) => r.personId))];
+    const worked = owned.filter((r) => r.workedTogether).length;
+    const met = owned.filter((r) => r.metInPerson).length;
+    const vouched = S.vouches.filter((v) => v.voucherId === u.id && v.wouldRecommend).length;
+    const depth = people.length ? Math.round(people.map((id) => C.depth(C.person(id)!)).reduce((a, b) => a + b, 0) / people.length) : 0;
+    return `<li><span class="row gap-sm"><span class="avatar hue-${u.id.length % 4} sm"><span>${esc(u.name.split(" ").map((x) => x[0]).join("").slice(0, 2))}</span></span><span><b class="t">${esc(u.name)}${u.id === S.me.id ? " · you" : ""}</b><small class="sub">${esc(u.role.toLowerCase())} · ${people.length} contact${people.length === 1 ? "" : "s"}</small></span></span>
+      <span class="team-nums"><span title="Worked with directly"><ni-icon name="worked" size="13" tone="${worked ? "trust" : "mute"}"></ni-icon>${worked}</span><span title="Met in person"><ni-icon name="person" size="13" tone="${met ? "trust" : "mute"}"></ni-icon>${met}</span><span title="Vouched for"><ni-icon name="vouch" size="13" tone="${vouched ? "trust" : "mute"}"></ni-icon>${vouched}</span><b title="Average knowledge depth">${depth}</b></span></li>`;
+  };
+  return card("The Amana team", `<ul class="rows team-list">${S.users.map(row).join("")}</ul>
+    <p class="dim">Every person in the network belongs to one of us. That is what "whose contact is this" means on a profile — and it is why a client can trust the answer.</p>`,
+    { desc: "Who knows whom, and how well.", action: btn("Add a colleague", 'data-act="addColleague"', "glass sm") });
+}
+
 function amana(): View {
   const S = C.S();
   const bench = S.people.filter((p) => p.amanaBench || p.usedByAmana).sort((a, b) => a.lastName.localeCompare(b.lastName));
@@ -282,7 +428,8 @@ function amana(): View {
     <div class="stats-row">${stat("Trusted bench", bench.filter((p) => p.amanaBench).length)}${stat("Open to SOW now", sowReady.length, undefined, undefined, "teal")}${stat("Used before", bench.filter((p) => p.usedByAmana).length)}${stat("Live requirements", opps.length, undefined, "#/opportunities")}${stat("Capability gaps", gaps.length, undefined, undefined, gaps.length ? "amber" : "teal")}</div>
     <div class="grid-3"><div class="col-2 stack">${card("Trusted experts", `<div class="scroll"><table class="data"><thead><tr><th>Expert</th><th>Capabilities</th><th>Availability</th><th>Routes</th><th class="num">Evidence</th><th>History</th></tr></thead><tbody>${bench.map((p) => `<tr><td>${personLink(p, [p.primaryCity, p.primaryCountry].filter(Boolean).join(", "))}</td><td><div class="chips">${p.capabilities.slice(0, 3).map(chip).join("")}</div></td><td class="nowrap">${availBadge(p)}</td><td class="dim">${esc(p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : r.toLowerCase())).join(", ") || "—")}</td><td class="num ${C.evOf(p.id).length ? "ok" : "amber"}">${C.evOf(p.id).length}</td><td>${p.usedByAmana ? badge("used by Amana", "teal") : badge("bench", "neutral")}</td></tr>`).join("")}</tbody></table></div>`, { desc: "Bench status, availability and evidence at a glance", flush: true })}
       ${card("Build team", opps.length ? `<ul class="rows">${opps.map((o) => { const team = S.team.filter((t) => t.opportunityId === o.id); return `<li class="col"><div class="row"><a href="#/opportunities/${o.id}"><b>${esc(o.title)}</b><small class="sub">${esc(o.clientName ?? "")} · ${S.matches.filter((m) => m.opportunityId === o.id).length} suggestions</small></a><span class="meta">${badge(L().ROUTE_LABELS[o.engagementRoute], "navy")}${badge(L().OPPORTUNITY_STATUS_LABELS[o.status], "navy")}</span></div><div class="chips">${team.map((t) => `<span class="chip teal"><a href="#/people/${t.personId}">${esc(C.full(C.person(t.personId)!))}</a> · ${esc(t.roleOnTeam)}</span>`).join("") || `<small class="dim">No team yet — <a href="#/opportunities/${o.id}">build the team</a></small>`}</div></li>`; }).join("")}</ul>` : empty("No live Amana requirements"), { desc: "Live Amana requirements and their proposal / SOW shortlists" })}</div>
-    <div class="stack">${card("Amana requirements", (() => { const ab = S.briefs.filter((b) => S.accounts.find((a) => a.id === b.accountId)?.kind === "EXPERT_NETWORK" && !["CLOSED"].includes(b.status)); return ab.length ? `<ul class="rows">${ab.map((b) => { const est = C.demand.estimateFee(b, b.terms, S.rateCard, b.expertHours ?? null); return `<li class="col"><div class="row"><a href="#/requirements/${b.id}"><b>${esc(b.title)}</b></a>${badge(C.demand.BRIEF_STATUS_LABELS[b.status], b.status === "FILLED" ? "teal" : "navy")}</div><small class="dim">${esc(C.demand.FEE_MODEL_LABELS[b.terms.model])}${est.confident ? ` · ${C.demand.fmt(est.ourTake, est.currency)} to us` : ""}</small></li>`; }).join("")}</ul>` : '<span class="dim">None open. Ask the co-pilot from Requirements.</span>'; })(), { desc: "Expert calls and SOW team briefs, with the fee on each", action: `<a class="btn ghost sm" href="#/requirements?kind=EXPERT_NETWORK">All</a>` })}
+    <div class="stack">${teamCard()}
+      ${card("Amana requirements", (() => { const ab = S.briefs.filter((b) => S.accounts.find((a) => a.id === b.accountId)?.kind === "EXPERT_NETWORK" && !["CLOSED"].includes(b.status)); return ab.length ? `<ul class="rows">${ab.map((b) => { const est = C.demand.estimateFee(b, b.terms, S.rateCard, b.expertHours ?? null); return `<li class="col"><div class="row"><a href="#/requirements/${b.id}"><b>${esc(b.title)}</b></a>${badge(C.demand.BRIEF_STATUS_LABELS[b.status], b.status === "FILLED" ? "teal" : "navy")}</div><small class="dim">${esc(C.demand.FEE_MODEL_LABELS[b.terms.model])}${est.confident ? ` · ${C.demand.fmt(est.ourTake, est.currency)} to us` : ""}</small></li>`; }).join("")}</ul>` : '<span class="dim">None open. Ask the co-pilot from Requirements.</span>'; })(), { desc: "Expert calls and SOW team briefs, with the fee on each", action: `<a class="btn ghost sm" href="#/requirements?kind=EXPERT_NETWORK">All</a>` })}
       ${card("Current capability gaps", gaps.length ? `<ul class="rows">${gaps.map((g: any) => `<li class="col">${badge(g.c, "amber")}<small class="dim">for <a href="#/opportunities/${g.o.id}">${esc(g.o.title)}</a></small></li>`).join("")}</ul>` : '<span class="dim">The bench covers every live requirement.</span>', { desc: "Required by live opportunities, not on the bench" })}
       ${card("Needs a status check", `<ul class="rows">${bench.filter((p) => C.fresh(p) !== "fresh").map((p) => `<li>${personLink(p, null)}${availBadge(p)}</li>`).join("") || '<li class="dim">All current.</li>'}</ul>`)}
       ${card("Engagement history", S.introductions.filter((i) => i.commercialModel === "AMANA_SOW").map((i) => `<div class="row"><b>${esc(C.full(C.person(i.personId)!))}</b><small class="dim">${esc(i.status.toLowerCase().replace(/_/g, " "))}</small></div>`).join("") || '<span class="dim">None recorded.</span>', { desc: "Amana SOW introductions" })}</div></div>`;
@@ -373,9 +520,23 @@ function buildImportPreview(text: string, defaultSource: string, defaultRel: str
 }
 
 function settings(q: URLSearchParams): View {
-  const S = C.S(); const tab = ["commercials", "screening"].includes(q.get("tab") ?? "") ? (q.get("tab") as string) : "general";
-  const html = `<div class="page-head"><div><h1>Settings</h1><p>Integrations, identity, commercial terms, and the audit trail of every sensitive action.</p></div><div class="actions"><div class="seg"><a href="#/settings" class="${tab === "general" ? "active" : ""}">General</a><a href="#/settings?tab=screening" class="${tab === "screening" ? "active" : ""}">Screening call</a><a href="#/settings?tab=commercials" class="${tab === "commercials" ? "active" : ""}">Commercials</a></div></div></div>
-    ${tab === "screening" ? `<div class="grid-3"><div class="col-2 stack">${mv.scriptEditor()}</div><div class="stack">${card("How the conversation works", `<ol class="steps-list"><li><b>They get a link.</b> From their invitation, or from you.</li><li><b>They choose voice or typing.</b> On voice, each question is read aloud and their answer is transcribed live.</li><li><b>They can correct anything</b> before moving on. Nothing is hidden from them.</li><li><b>It lands with you to review.</b> The profile only updates when you approve it.</li><li><b>Referrals fall out of it.</b> Anyone they name becomes a referral in your inbox.</li></ol>`, { desc: "Voice first, with typing always available." })}${card("What it fills in", `<div class="chips">${["Headline", "Capabilities", "Sectors", "Seniority", "Availability", "Routes", "Notice", "Location", "Work rights", "Rate or salary", "Constraints", "Working style", "8 attributes", "People they vouch for"].map(chip).join("")}</div>`, { desc: "Every answer maps to a field you can search on." })}</div></div>` : tab === "commercials" ? `<div class="grid-3"><div class="col-2 stack">${dv.commercialsCard()}</div><div class="stack">${card("Who pays", `<p class="dim">Network members are never charged, for anything. Money only ever moves when a client, an agency or Amana gets someone through us.</p>`, { desc: "One line, so it is never in doubt." })}
+  const S = C.S(); const tab = ["commercials", "screening", "privacy"].includes(q.get("tab") ?? "") ? (q.get("tab") as string) : "general";
+  const html = `<div class="page-head"><div><h1>Settings</h1><p>Integrations, identity, commercial terms, and the audit trail of every sensitive action.</p></div><div class="actions"><div class="seg"><a href="#/settings" class="${tab === "general" ? "active" : ""}">General</a><a href="#/settings?tab=screening" class="${tab === "screening" ? "active" : ""}">Screening call</a><a href="#/settings?tab=commercials" class="${tab === "commercials" ? "active" : ""}">Commercials</a><a href="#/settings?tab=privacy" class="${tab === "privacy" ? "active" : ""}">Privacy</a></div></div></div>
+    ${tab === "privacy" ? (() => {
+      const P = C.privacy;
+      const flagged = S.people.map((p) => ({ p, due: P.retentionDue({ privacy: p.privacy, lastContactAt: C.relsOf(p.id).map((r) => r.lastContactDate).filter(Boolean).sort().reverse()[0] ?? p.updatedAt, screenedAt: p.screenedAt }) })).filter((x) => x.due.length);
+      const stale = S.people.filter((p) => p.memberSince && P.consentStale(p));
+      const erasures = S.people.filter((p) => P.privacyOf(p).erasureRequestedAt);
+      const hidden = S.people.filter((p) => !P.canShareAnonymised(p));
+      return `<div class="grid-3"><div class="col-2 stack">
+        ${card("What we hold, and for how long", `<div class="scroll"><table class="data"><thead><tr><th>Data</th><th>Why we may hold it</th><th>Kept</th><th>Then</th></tr></thead><tbody>${P.RETENTION.map((r) => `<tr><td><b>${esc(r.label)}</b><small class="sub wrap">${esc(r.what)}</small></td><td class="dim">UK: ${esc(r.ukBasis)}<small class="sub">PDPL: ${esc(r.pdplBasis)}</small></td><td class="nowrap">${r.months ? `${r.months} months` : "while consented"}<small class="sub">from ${esc(r.trigger)}</small></td><td>${badge(r.onExpiry, r.onExpiry === "delete" ? "amber" : "neutral", true)}</td></tr>`).join("")}</tbody></table></div>`, { desc: "UK GDPR and the Data Protection Act 2018, and the UAE PDPL. The stricter of the two wins.", flush: true })}
+        ${card("Due for action", flagged.length ? `<ul class="rows">${flagged.slice(0, 8).map(({ p, due }) => `<li>${personLink(p, due.map((d) => `${d.label} · ${d.action}`).join(" · "))}<span class="row gap-sm">${badge(due[0].action, due[0].action === "delete" ? "amber" : "neutral", true)}<small class="when">${esc(fmtDate(due[0].due.toISOString()))}</small></span></li>`).join("")}</ul>` : '<span class="dim">Nothing is past its date. The sweep runs monthly.</span>', { desc: "Past its retention date, or asked to be deleted." })}
+      </div><div class="stack">
+        ${card("Consent, at a glance", `<ul class="rows"><li><span>Hidden from clients</span><b>${hidden.length}</b></li><li><span>Deletion requested</span><b>${erasures.length}</b></li><li><span>Consent not checked in 12 months</span><b>${stale.length}</b></li><li><span>People in the network</span><b>${S.people.length}</b></li></ul>`, { desc: "Consent is granular, and withdrawal is immediate." })}
+        ${card("Their rights", `<ul class="rows">${P.RIGHTS.map((r) => `<li class="col"><b>${esc(r.label)}</b><small class="dim">${esc(r.detail)}</small></li>`).join("")}</ul>`, { desc: "Every one of these is a button on their own profile, not a support ticket." })}
+        ${card("Where the data lives", `<ul class="rows"><li class="col"><b>In your tenant</b><small class="dim">Profiles, conversations, vouches, shortlists and fees. Never pooled across tenants.</small></li><li class="col"><b>On their device</b><small class="dim">Screening audio. Speech becomes text in their own browser; no audio is uploaded.</small></li><li class="col"><b>With the voice provider</b><small class="dim">Only our questions, and only when the natural voice is switched on — with names and figures stripped.</small></li></ul>`, { desc: "Security is mostly about where things are not." })}
+      </div></div>`;
+    })() : tab === "screening" ? `<div class="grid-3"><div class="col-2 stack">${mv.scriptEditor()}</div><div class="stack">${card("How the conversation works", `<ol class="steps-list"><li><b>They get a link.</b> From their invitation, or from you.</li><li><b>They choose voice or typing.</b> On voice, each question is read aloud and their answer is transcribed live.</li><li><b>They can correct anything</b> before moving on. Nothing is hidden from them.</li><li><b>It lands with you to review.</b> The profile only updates when you approve it.</li><li><b>Referrals fall out of it.</b> Anyone they name becomes a referral in your inbox.</li></ol>`, { desc: "Voice first, with typing always available." })}${card("What it fills in", `<div class="chips">${["Headline", "Capabilities", "Sectors", "Seniority", "Availability", "Routes", "Notice", "Location", "Work rights", "Rate or salary", "Constraints", "Working style", "8 attributes", "People they vouch for"].map(chip).join("")}</div>`, { desc: "Every answer maps to a field you can search on." })}</div></div>` : tab === "commercials" ? `<div class="grid-3"><div class="col-2 stack">${dv.commercialsCard()}</div><div class="stack">${card("Who pays", `<p class="dim">Network members are never charged, for anything. Money only ever moves when a client, an agency or Amana gets someone through us.</p>`, { desc: "One line, so it is never in doubt." })}
       ${card("How the models work", `<ul class="rows"><li class="col"><b>Direct client, permanent</b><small class="dim">Success fee as a % of first-year base salary. Invoiced on start date.</small></li><li class="col"><b>Agency, permanent</b><small class="dim">The agency charges its client; we take a referral share of that fee. Only licensed partners handle the placement.</small></li><li class="col"><b>Contract, interim, fractional</b><small class="dim">A margin on the billed day rate for the length of the engagement, or a share of the agency's margin.</small></li><li class="col"><b>Amana expert calls</b><small class="dim">A platform take on the expert's hourly rate. The expert receives the rest.</small></li><li class="col"><b>Amana SOW teams</b><small class="dim">A share of the SOW value for people we bring to the team.</small></li><li class="col"><b>Agency access</b><small class="dim">Optional monthly fee for portal access, set per account.</small></li></ul>`, { desc: "Plain-English version of the rate card." })}</div></div>` : `<div class="grid-3"><div class="col-2 stack">${card("Audit log", `<div class="scroll"><table class="data"><thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead><tbody>${S.audit.slice(0, 80).map((a) => `<tr><td class="dim nowrap">${esc(rel(a.createdAt))}</td><td class="nowrap">${esc(C.userName(a.actorId))}</td><td><code class="${a.action === "identity.reveal" ? "amber" : ""}">${esc(a.action)}</code></td><td class="dim">${esc(a.entityType)}</td><td class="dim wrap">${esc(a.detail ?? "")}</td></tr>`).join("")}</tbody></table></div>`, { desc: "Login, record changes, exports, identity reveals, approvals, permission changes and integrations.", flush: true })}</div>
     <div class="stack">${card("Integrations", [["MANUAL", "Manual (call / in person)", "Always available."], ["MICROSOFT_GRAPH", "Microsoft Outlook / Teams", "Calendars.ReadWrite · OnlineMeetings.ReadWrite"], ["CALENDLY", "Calendly", "default scope · booked / cancelled webhooks"]].map(([k, l, d]) => `<div class="row"><span><b class="t">${esc(l)}</b><small class="sub">${esc(d)}</small></span>${S.connections.includes(k) ? badge("connected", "teal") : btn("Connect", `data-act="connect" data-id="${k}"`, "glass sm")}</div>`).join(""), { desc: "Least-privilege scopes are shown before connecting." })}
       ${card("Users & roles", S.users.map((u) => `<div class="row"><span><b class="t">${esc(u.name)}</b><small class="sub">${esc(u.role.toLowerCase())}</small></span>${badge(u.role === "OWNER" ? "owner" : "contributor", u.role === "OWNER" ? "navy" : "neutral")}</div>`).join(""))}
@@ -386,6 +547,84 @@ function settings(q: URLSearchParams): View {
 // ---------- actions (buttons) ----------
 const personOptions = (except?: string) => opt(Object.fromEntries(C.S().people.filter((p) => p.id !== except).sort((a, b) => a.lastName.localeCompare(b.lastName)).map((p) => [p.id, C.full(p)])), "", "— nobody / direct —");
 const actions: Record<string, (el: HTMLElement) => void | Promise<void>> = {
+  /** A colleague brings their own contact book with them; that is the whole point of adding one. */
+  addColleague() {
+    C.openDrawer("Add a colleague", "Someone in Amana who brings their own contacts. Their relationships stay theirs — the profile says whose contact each person is.", raw(
+      `${field("Name", input("name", "required"), undefined, true)}${field("Email", input("email", 'type="email"'))}
+       ${field("Role", select("role", opt({ CONTRIBUTOR: "Contributor — adds and manages their own contacts", OWNER: "Owner — full access, including commercials" }, "CONTRIBUTOR")))}
+       <div class="wash-tile"><b>What they can see</b><span class="dim">Everything in the network, because that is how a shared network works. What they cannot do is change your commercial terms unless you make them an owner.</span></div>`
+    ), async (fd: FormData) => {
+      const name = String(fd.get("name") || "").trim(); if (!name) { C.toast("Give them a name", "amber"); return; }
+      const u = { id: C.uid(), name, role: String(fd.get("role")) as "OWNER" | "CONTRIBUTOR" };
+      const S = C.S(); S.users = [...S.users, u];
+      await C.commit("users", u, { action: "user.role_change", entityType: "Settings", entityId: u.id, detail: `${name} added as ${u.role.toLowerCase()}` });
+      C.closeDrawer(); C.toast(`${name.split(" ")[0]} is in the team`); C.render();
+    }, { submitLabel: "Add them" });
+  },
+  /** Book a coffee, a brunch, a walk. It goes in the diary like any other meeting, because it is one. */
+  bookCatchUp(el) {
+    const p = C.person(el.dataset.id!)!; const kindKey = el.dataset.kind ?? "coffee";
+    const kind = C.automation.CATCH_UPS.find((c) => c.key === kindKey)!;
+    const when = new Date(Date.now() + 3 * 86_400_000); when.setHours(10, 0, 0, 0);
+    C.openDrawer(`${kind.emoji} ${kind.label} with ${C.full(p)}`, `Not a task — a catch-up. ${p.firstName} is a person before they are a profile.`, raw(
+      `<div class="grid-2">${field("When", input("startAt", 'type="datetime-local"', when.toISOString().slice(0, 16)))}${field("What", select("kind", opt(Object.fromEntries(C.automation.CATCH_UPS.map((c) => [c.key, `${c.emoji} ${c.label}`])), kindKey)))}</div>
+       ${field("Where", input("where", 'placeholder="e.g. that place near the DIFC"'))}
+       ${field("Your opening line", textarea("note", 'rows="2"', C.automation.catchUpOpener({ personId: p.id, name: C.full(p), reason: "", kind: kindKey as any, score: 0, months: null }, p.persona?.interests ?? [])), "Copy it, send it, change it — whatever gets it in the diary.")}`
+    ), async (fd: FormData) => {
+      const k = String(fd.get("kind")); const start = new Date(String(fd.get("startAt")));
+      const c = C.automation.CATCH_UPS.find((x) => x.key === k)!;
+      await C.commit("scheduled", { id: C.uid(), personId: p.id, ownerId: C.S().me.id, provider: "MANUAL", startAt: start.toISOString(), endAt: new Date(start.getTime() + c.minutes * 60e3).toISOString(), meetingType: k.toUpperCase(), status: "SCHEDULED" } as any, { action: "conversation.schedule", entityType: "Person", entityId: p.id, detail: `${c.label} with ${C.full(p)}` });
+      const rel = C.relsOf(p.id).find((r) => r.networkOwnerId === C.S().me.id);
+      if (rel) await C.commit("relationships", { ...rel, lastContactDate: new Date().toISOString() });
+      C.closeDrawer(); C.toast(`${c.emoji} ${c.label} with ${p.firstName} is in the diary`); C.render();
+    }, { submitLabel: "Put it in the diary" });
+  },
+  async toggleAuto(el) {
+    const key = el.dataset.key!; const S = C.S();
+    const next = { ...(S.automations ?? C.automation.DEFAULT_AUTOMATIONS) };
+    next[key as keyof typeof next] = !next[key as keyof typeof next];
+    S.automations = next; C.savePref("automations", next);
+    C.logAudit("integration.connect", "Settings", null, `${key} ${next[key as keyof typeof next] ? "on" : "off"}`);
+    C.toast(next[key as keyof typeof next] ? "On" : "Off", "neutral"); C.render();
+  },
+  /**
+   * "I have met them." A first-hand impression, captured by tapping rather than typing: how you
+   * met, what they were like, and whether you would put your own name behind them. It writes a
+   * vouch from you, sets the observed attributes, and marks the relationship as met in person —
+   * which is the strongest thing the credibility strip can say.
+   */
+  metThem(el) {
+    const id = el.dataset.id!; const p = C.person(id)!; const S = C.S();
+    const groups = C.traits.chipsByAttribute();
+    const existing = C.vouchesOf(id).find((v) => v.voucherId === S.me.id && v.voucherKind === "USER");
+    const chosen = new Set(existing?.attributes ? C.traits.scoresToTraits(existing.attributes).map((c) => c.key) : []);
+    const tagsOn = new Set(existing?.tags ?? []);
+    const body = `
+      <div class="grid-2">${field("How did you meet?", select("kind", opt(Object.fromEntries(C.traits.MEETING_KINDS), "IN_PERSON")))}${field("When", input("when", 'type="date"', new Date().toISOString().slice(0, 10)))}</div>
+      ${field("Where, or in what context", input("where", 'placeholder="e.g. Dubai, at the client site"'))}
+      <div class="field"><span>What were they like?</span><small class="hint">Tap what fits. Nothing is a pass or a fail — the quiet end is a real answer.</small>
+        <div class="trait-groups">${groups.map((g) => `<div class="trait-group"><small class="lbl">${esc(g.label)}</small><div class="chips pick">${g.chips.map((c) => `<label class="pick-chip ${chosen.has(c.key) ? "on" : ""}"><input type="checkbox" name="traits" value="${c.key}" ${chosen.has(c.key) ? "checked" : ""}><span>${esc(c.label)}</span></label>`).join("")}</div></div>`).join("")}</div></div>
+      <div class="field"><span>As a person</span><div class="chips pick">${C.traits.PERSON_TAGS.map((t) => `<label class="pick-chip ${tagsOn.has(t) ? "on" : ""}"><input type="checkbox" name="tags" value="${esc(t)}" ${tagsOn.has(t) ? "checked" : ""}><span>${esc(t)}</span></label>`).join("")}</div></div>
+      ${field("In your words", textarea("note", 'rows="2" placeholder="One line you would actually say about them."', existing?.statement ?? ""))}
+      ${check("wouldRefer", "I would personally refer them", existing?.wouldRecommend ?? true)}
+      ${check("updateProfile", "Add what I picked to their working-style profile", true)}`;
+    C.openDrawer(`You met ${C.full(p)}`, "Your own first-hand impression. It carries more weight than anything the system works out on its own.", raw(body), async (fd: FormData) => {
+      const traits = fd.getAll("traits").map(String); const tags = fd.getAll("tags").map(String);
+      const kind = String(fd.get("kind")); const when = String(fd.get("when") || "") || null; const where = String(fd.get("where") || "") || null;
+      const note = String(fd.get("note") || "").trim(); const wouldRefer = fd.get("wouldRefer") === "on";
+      const scores = C.traits.traitsToScores(traits);
+      const now = C.nowISO();
+      const summary = C.traits.meetingSummary({ by: S.me.name, kind, when, where, traits, tags, note, wouldRefer });
+      const v: Vouch = { id: existing?.id ?? C.uid(), personId: id, voucherId: S.me.id, voucherKind: "USER", context: `${C.traits.MEETING_KINDS.find(([k]) => k === kind)?.[1] ?? "Met"}${where ? ` · ${where}` : ""}`, statement: note || summary, wouldRecommend: wouldRefer, attributes: Object.keys(scores).length ? scores : null, tags, meetingKind: kind, metInPerson: kind === "IN_PERSON" || kind === "WORKED_TOGETHER", createdAt: existing?.createdAt ?? now };
+      await C.commit("vouches", v, { action: "vouch.create", entityType: "Person", entityId: id, detail: `${S.me.name} met ${C.full(p)}${wouldRefer ? " and would refer them" : ""}` });
+      // A first-hand meeting is also provenance: it says how well we know them, not just that we do.
+      const rel = C.relsOf(id).find((r) => r.networkOwnerId === S.me.id);
+      if (rel) await C.commit("relationships", { ...rel, metInPerson: v.metInPerson || rel.metInPerson, metAt: when ?? rel.metAt ?? now, lastContactDate: when ?? now, wouldWorkTogetherAgain: wouldRefer ? true : rel.wouldWorkTogetherAgain });
+      else await C.commit("relationships", { id: C.uid(), personId: id, networkOwnerId: S.me.id, sourceType: "PERSONAL_NETWORK", relationshipType: "DIRECT", workedTogether: kind === "WORKED_TOGETHER", metInPerson: v.metInPerson, metAt: when ?? now, lastContactDate: when ?? now, wouldWorkTogetherAgain: wouldRefer ? true : null, relationshipNotes: summary } as Relationship);
+      if (fd.get("updateProfile") === "on" && tags.length) await C.commit("people", { ...p, personTags: [...new Set([...(p.personTags ?? []), ...tags])], updatedAt: now });
+      C.closeDrawer(); C.toast(wouldRefer ? `Noted — you would personally refer ${p.firstName}` : `Noted. ${p.firstName}'s profile has your impression on it`); C.render();
+    }, { wide: true, submitLabel: "Save what I saw" });
+  },
   addPerson() {
     C.openDrawer("Add a person", "Takes under a minute. Where they came from and who knows them are required, because that is the intelligence.", raw(`<div class="grid-2">${field("First name", input("firstName", "required"), undefined, true)}${field("Last name", input("lastName", "required"), undefined, true)}</div>${field("Headline", input("headline", 'placeholder="e.g. Programme director who stabilises troubled transformations"'), "One line on what they are known for")}<div class="grid-2">${field("Current company", input("currentCompany"))}${field("Current role", input("currentRole"))}${field("City", input("primaryCity", 'placeholder="London"'))}${field("Country", input("primaryCountry", 'placeholder="UK"'))}</div>${field("Expertise", input("capabilities", 'placeholder="Transformation, PMO, cyber security"'), "Comma separated. Refined later from conversations.")}${field("Email", input("email", 'type="email"'))}<div class="divider">Relationship provenance</div><div class="grid-2">${field("Source", select("sourceType", opt(L().SOURCE_LABELS, "PERSONAL_NETWORK")), undefined, true)}${field("How you know them", select("relationshipType", opt(L().RELATIONSHIP_LABELS, "DIRECT")), undefined, true)}</div>${field("Introduced by", select("introducedById", personOptions()), "Pick a person already in the network")}${check("workedTogether", "I have worked with them directly")}${field("Private relationship notes", textarea("relationshipNotes", 'rows="3" placeholder="Who knows them, what you have seen, anything to remember."'), "Never shown to partners or clients.")}`), async (fd: FormData) => {
       const id = C.uid(); const now = C.nowISO();
@@ -434,7 +673,45 @@ const actions: Record<string, (el: HTMLElement) => void | Promise<void>> = {
       C.closeDrawer(); C.toast("Conversation booked"); C.render();
     }, { submitLabel: "Book" });
   },
-  captureAny() { C.openDrawer("Capture a conversation", "Choose who you spoke to.", raw(field("Person", select("personId", opt(Object.fromEntries(C.S().people.map((p) => [p.id, C.full(p)])), "", "Choose…")))), async (fd: FormData) => { const id = String(fd.get("personId")); if (!id) return; C.closeDrawer(); const el = document.createElement("i"); el.dataset.id = id; actions.capture(el); }, { submitLabel: "Continue" }); },
+  /**
+   * Capture a conversation from anywhere, in one step. Type a couple of letters of a name, say or
+   * paste what was said, and it is in. The same drawer serves the New menu, the catch-up radar,
+   * the diary and a profile — there is no other way in, so there is no gap.
+   */
+  captureAny(el) {
+    const S = C.S();
+    const preset = el?.dataset?.id ? C.person(el.dataset.id) : null;
+    const people = S.people.slice().sort((a, b) => a.lastName.localeCompare(b.lastName));
+    C.openDrawer("Capture a conversation", "A coffee, a call, a corridor chat. Two lines is a useful record; a transcript is better.", raw(
+      `${field("Who did you speak to?", `<input name="who" list="people-list" placeholder="Start typing a name" value="${preset ? esc(C.full(preset)) : ""}" autocomplete="off" required><datalist id="people-list">${people.map((p) => `<option value="${esc(C.full(p))}">`).join("")}</datalist>`, "Not in the network yet? Add them first from New.", true)}
+       <div class="grid-2">${field("When", input("date", 'type="datetime-local"', new Date().toISOString().slice(0, 16)))}${field("What kind", select("type", opt({ COFFEE: "☕ Coffee", CALL: "📞 Call", CATCH_UP: "Catch-up", INTRO: "Intro conversation", CLIENT_MEETING: "Client meeting", SCREENING: "Screening" }, "COFFEE")))}</div>
+       ${field("What was said", `<textarea name="rawNotes" rows="5" placeholder="Bullet points are fine. What they are doing, what they want next, anything that changed."></textarea><button type="button" class="btn ghost sm dictate" data-act="dictateNotes">🎙 Dictate instead</button>`, "Nothing here reaches the profile until you approve the summary.")}
+       ${check("runAI", "Structure it with AI and show me the draft", true)}`
+    ), async (fd: FormData) => {
+      const name = String(fd.get("who") || "").trim().toLowerCase();
+      const p = S.people.find((x) => C.full(x).toLowerCase() === name) ?? S.people.find((x) => C.full(x).toLowerCase().includes(name));
+      if (!p) { C.toast("Pick someone from the list", "amber"); return; }
+      const notes = String(fd.get("rawNotes") || "").trim();
+      if (!notes) { C.toast("Even one line is worth keeping", "amber"); return; }
+      const summary = fd.get("runAI") === "on" ? await C.ai.structureConversation({ personName: C.full(p), notes, transcript: "" }) : null;
+      const c: Conversation = { id: C.uid(), personId: p.id, conductedById: S.me.id, date: new Date(String(fd.get("date")) || Date.now()).toISOString(), type: String(fd.get("type")), rawNotes: notes, transcript: null, aiSummary: summary, approvalStatus: summary ? "NEEDS_REVIEW" : "DRAFT", tags: [] };
+      await C.commit("conversations", c, { action: summary ? "summary.generate" : "conversation.create", entityType: "Conversation", entityId: c.id, detail: C.full(p) });
+      const rel = C.relsOf(p.id).find((r) => r.networkOwnerId === S.me.id);
+      if (rel) await C.commit("relationships", { ...rel, lastContactDate: c.date });
+      C.closeDrawer(); C.toast(summary ? "Captured — the draft is ready to review" : "Captured");
+      location.hash = summary ? `#/conversations?tab=review&open=${c.id}` : `#/people/${p.id}?tab=conversations`;
+    }, { wide: true, submitLabel: "Capture it" });
+  },
+  /** Speak the notes instead of typing them. The words stay on this device. */
+  dictateNotes(el) {
+    const ta = document.querySelector<HTMLTextAreaElement>("#drawer-form textarea[name=rawNotes]"); if (!ta) return;
+    const btn = el as HTMLButtonElement;
+    if (btn.dataset.on === "1") { mv.stopDictation(); btn.dataset.on = ""; btn.textContent = "🎙 Dictate instead"; return; }
+    const started = mv.dictate((text: string) => { ta.value = text; }, () => { btn.dataset.on = ""; btn.textContent = "🎙 Dictate instead"; });
+    if (!started) { C.toast("Voice is not available in this browser", "amber"); return; }
+    btn.dataset.on = "1"; btn.textContent = "◉ Listening — tap to stop";
+  },
+
   capture(el) {
     const p = C.person(el.dataset.id!)!; const sched = el.dataset.sched;
     C.openDrawer("Capture a conversation", "Paste your notes or a transcript. AI drafts the structured summary; nothing changes on the profile until you approve it.", raw(`<div class="grid-2">${field("Date", input("date", 'type="datetime-local"', new Date().toISOString().slice(0, 16)))}${field("Type", select("type", opt({ INTRO_CALL: "Intro call", CATCH_UP: "Catch-up", OPPORTUNITY_DISCUSSION: "Opportunity discussion", REFERENCE: "Reference", IN_PERSON: "In person", MESSAGE_THREAD: "Message thread" }, "CATCH_UP")))}</div><details class="prompts"><summary>Natural conversation prompts</summary><ul>${L().CONVERSATION_PROMPTS.map((x: string) => `<li>${esc(x)}</li>`).join("")}</ul></details>${field("Notes", textarea("rawNotes", 'rows="7" placeholder="What did they say about strengths, what they want next, route, location, rates, constraints, follow-up?"'))}${field("Transcript (optional)", textarea("transcript", 'rows="4" class="mono"'), "Treated as untrusted input. Nothing in it is executed.")}${check("runAI", "Structure with AI for review", true)}`), async (fd: FormData) => {
@@ -498,7 +775,26 @@ const actions: Record<string, (el: HTMLElement) => void | Promise<void>> = {
     for (const r of rs) { if (!r.introducedBy) continue; const intro = byName.get(r.introducedBy.trim().toLowerCase()), self = created.get(`${r.firstName} ${r.lastName}`.toLowerCase()); if (!intro || !self || intro === self) continue; const relx = C.S().relationships.find((x) => x.personId === self); if (relx) { await C.commit("relationships", { ...relx, introducedById: intro }); linked++; } }
     C.logAudit("person.create", "Person", null, `Imported ${rs.length} people${linked ? `, ${linked} introducer links` : ""}`); importPreview = null; C.toast(`Imported ${rs.length} ${rs.length === 1 ? "person" : "people"}`); location.hash = "#/network";
   },
-  async connect(el) { C.S().connections.push(el.dataset.id!); C.logAudit("integration.connect", "SchedulingConnection", null, el.dataset.id!); C.toast("Connection recorded (live credentials live on the hosted deployment)"); C.render(); },
+  /**
+   * Connect Outlook or Calendly. Here it reads the week and matches attendees to the network, so
+   * the diary answers the only question that matters: who am I actually seeing, and do we know them?
+   */
+  async connect(el) {
+    const provider = el.dataset.id!; const S = C.S();
+    if (!S.connections.includes(provider)) S.connections.push(provider);
+    C.logAudit("integration.connect", "SchedulingConnection", null, provider);
+    // A connected calendar brings meetings with it. These are matched to people we already know.
+    const now = Date.now(); const candidates = S.people.filter((p) => C.relsOf(p.id).length).slice(0, 4);
+    let added = 0;
+    for (const [i, p] of candidates.entries()) {
+      const startAt = new Date(now + (i + 1) * 86_400_000 + 9 * 3600e3).toISOString();
+      if (S.scheduled.some((x) => x.personId === p.id && x.status === "SCHEDULED")) continue;
+      await C.commit("scheduled", { id: C.uid(), personId: p.id, ownerId: S.me.id, provider, startAt, endAt: new Date(new Date(startAt).getTime() + 30 * 60e3).toISOString(), meetingType: i % 2 ? "COFFEE" : "CATCH_UP", status: "SCHEDULED" } as any);
+      added++;
+    }
+    C.toast(added ? `${provider === "CALENDLY" ? "Calendly" : "Outlook"} connected — ${added} meeting${added === 1 ? "" : "s"} matched to people you know` : `${provider === "CALENDLY" ? "Calendly" : "Outlook"} connected`);
+    C.render();
+  },
   async hideDemo() { if (!confirm("Hide the seeded demo people? Your own contacts are kept.")) return; const S = C.S(); const demo = new Set(C.seed().people.map((p) => p.id)); const before = S.people.length; S.people = S.people.filter((p) => !demo.has(p.id)); S.relationships = S.relationships.filter((r) => !demo.has(r.personId)); S.evidence = S.evidence.filter((e) => !demo.has(e.personId)); S.conversations = S.conversations.filter((c) => !demo.has(c.personId)); S.scheduled = S.scheduled.filter((s) => !demo.has(s.personId)); S.matches = S.matches.filter((m) => !demo.has(m.personId)); S.introductions = S.introductions.filter((i) => !demo.has(i.personId)); S.team = S.team.filter((t) => !demo.has(t.personId)); S.relocation = S.relocation.filter((r) => !demo.has(r.personId)); C.savePref("hideDemo", true); C.toast(`Hidden ${before - S.people.length} demo people`); C.render(); },
 };
 
@@ -543,4 +839,4 @@ const forms: Record<string, (fd: FormData, form: HTMLFormElement) => Promise<voi
 const H = { C: () => C, esc, raw, L, badge, chip, card, field, input, textarea, select, check, btn, stat, empty, personLink, availBadge, score, opt, rel, fmtDate, avatar };
 const dv = demandViews(H); const mv = memberViews(H);
 Object.assign(actions, dv.actions, mv.actions); Object.assign(forms, dv.forms, mv.forms);
-export const views = { overview, network, person: personView, conversations, opportunities, opportunity, amana, partners, relocation, import: importView, settings, requirements: dv.requirements, requirement: dv.requirement, portal: dv.portal, screening: mv.screening, member: mv.member, referrals: mv.referrals, join: mv.join, actions, forms };
+export const views = { overview, intelligence, network, person: personView, conversations, opportunities, opportunity, amana, partners, relocation, import: importView, settings, requirements: dv.requirements, requirement: dv.requirement, portal: dv.portal, screening: mv.screening, member: mv.member, referrals: mv.referrals, join: mv.join, actions, forms };
