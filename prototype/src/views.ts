@@ -11,6 +11,7 @@ export type Ctx = {
   commit: (c: string, doc: any, audit?: { action: string; entityType: string; entityId?: string | null; detail?: string | null }) => Promise<void>; removeDoc: (c: string, id: string) => Promise<void>; logAudit: (a: string, t: string, id: string | null, d: string | null) => void;
   toast: (m: string, tone?: string) => void; openDrawer: (t: string, d: string, body: RawT, onSubmit: any, opts?: { wide?: boolean; submitLabel?: string }) => void; setDrawerStep: (t: string, d: string, body: RawT, onSubmit: any, opts?: { submitLabel?: string; back?: boolean; step?: [number, number] }) => void; setStepBack: (fn: (() => void) | null) => void; closeDrawer: () => void; render: () => void; constellation: (c: HTMLCanvasElement | null) => void;
   retrieveMatches: any; capabilityCoverage: any; suggestNextCheck: any; ACTIVE_STATUSES: string[]; redactForPartner: any; parseCsv: any; mapHeaders: any; SOURCE_ALIASES: Record<string, string>; RELATIONSHIP_ALIASES: Record<string, string>; templateCsv: () => string; seed: () => State; persistMode: () => string; savePref: (k: string, v: unknown) => void;
+  series: typeof import("@/lib/series");
   saveRateCard: (card: any) => Promise<void>; saveScript: (sections: any[]) => Promise<void>; toBriefPerson: (p: Person) => any; demand: any;
   trustOf: (p: Person) => any; fitOf: (p: Person) => any; vouchesOf: (id: string) => any[]; alerts: () => any[]; setViewAs: (v: any) => void; trust: any; screening: any; fit: any;
   labels: Record<string, any>;
@@ -96,6 +97,24 @@ function overview(): View {
   const voucherName = (v: any) => (v.voucherKind === "EXTERNAL" ? v.voucherName ?? "External reference" : C.userName(v.voucherId));
   const chainData = (id: string) => { const vs = S.vouches.filter((v) => v.personId === id && v.wouldRecommend); return { names: vs.map(voucherName).join("|"), count: vs.length }; };
   const fc = featureOf ? chainData(featureOf.id) : { names: "", count: 0 };
+  // Every sparkline is twelve real months of this network, not decoration.
+  const pts = (p: { value: number }[]) => p.map((x) => x.value).join(",");
+  const peoplePts = C.series.cumulative(S.people.map((p) => p.createdAt));
+  const screenedPts = C.series.cumulative(S.people.map((p) => p.screenedAt ?? undefined));
+  const vouchPts = C.series.cumulative(S.vouches.map((v) => v.createdAt));
+  const convPts = C.series.cumulative(S.conversations.filter((c) => c.approvalStatus === "APPROVED").map((c) => c.date));
+  const feePts = C.series.monthlySum(S.fees.filter((f) => f.currency === feeCur).map((f) => ({ date: f.updatedAt, value: f.ourTake })));
+  const spark = {
+    people: pts(peoplePts), screened: pts(screenedPts), vouches: pts(vouchPts), convs: pts(convPts), fees: pts(feePts),
+    briefs: pts(C.series.cumulative(S.briefs.map((b) => b.createdAt))),
+    proposed: pts(C.series.cumulative(S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)).map((x) => x.updatedAt))),
+    referrals: pts(C.series.cumulative(S.referrals.map((r) => r.createdAt))),
+    pitches: pts(C.series.cumulative(S.pitches.map((x) => x.createdAt))),
+    stale: pts(C.series.monthly(S.people.filter((p) => C.fresh(p) !== "fresh").map((p) => p.updatedAt))),
+    bench: pts(C.series.cumulative(S.people.filter((p) => p.amanaBench).map((p) => p.createdAt))),
+  };
+  const chg = { people: C.series.lastChange(peoplePts), screened: C.series.lastChange(screenedPts), vouches: C.series.lastChange(vouchPts), convs: C.series.lastChange(convPts) };
+
   // Setup, as a thread rather than a scavenger hunt. Each step is one click from here, and the
   // card disappears the moment the network can actually earn.
   const steps: { done: boolean; label: string; hint: string; act?: string; href?: string }[] = [
@@ -117,11 +136,25 @@ function overview(): View {
       <div class="mh-chain"><ni-chain people="${esc(fc.names)}" count="${fc.count}" score="${C.trustOf(featureOf).score}"></ni-chain><span>${fc.count} ${fc.count === 1 ? "person stands" : "people stand"} behind ${esc(featureOf.firstName)}</span></div>` : `<div class="mh-quote"><ni-quote size="xl">Who do we genuinely know who could solve this problem?</ni-quote></div>`}
       <div class="mh-actions">${btn("＋ Add a person", 'data-act="addPerson"')}<a class="btn glass" href="#/requirements">Take a requirement</a><a class="btn ghost" href="#/import">Import contacts</a></div>
     </section>
-    <section class="ledger">
-      ${([["People in the network", String(total), `${worked} you have worked with`, ""], ["Screened experts", String(screened), `${joining} in the queue`, "trust"], ["Trusted", String(trusted), `average score ${avgTrust}`, "trust"], ["Vouches given", String(S.vouches.length), `across ${vouchedPeople} people`, ""], ["Conversations", String(convs), `${freshPct}% of statuses fresh`, freshPct < 50 ? "alert" : ""], ["Fees in play", moneyCompact(pipeline, feeCur), `${moneyCompact(feeSum(["AGREED", "INVOICED"]), feeCur)} agreed`, ""]] as [string, string, string, string][]).map(([l, v, n, t]) => `<ni-figure label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" ${t ? `tone="${t}"` : ""}></ni-figure>`).join("")}
+    <section class="widgets">
+      ${([
+        ["People in the network", String(total), `${worked} you have worked with`, "", spark.people, chg.people, ""],
+        ["Screened experts", String(screened), `${joining} in the queue`, "trust", spark.screened, chg.screened, ""],
+        ["Trusted", String(trusted), `average score ${avgTrust}`, "trust", spark.vouches, null, ""],
+        ["Vouches given", String(S.vouches.length), `across ${vouchedPeople} people`, "", spark.vouches, chg.vouches, ""],
+        ["Conversations", String(convs), `${freshPct}% of statuses fresh`, freshPct < 50 ? "alert" : "", spark.convs, chg.convs, ""],
+        ["Fees in play", moneyCompact(pipeline, feeCur), `${moneyCompact(feeSum(["AGREED", "INVOICED"]), feeCur)} agreed`, "", spark.fees, null, "#/requirements?tab=fees"],
+      ] as [string, string, string, string, string, { delta: number; label: string } | null, string][]).map(([l, v, n, t, sp, d, href]) => `<ni-stat label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" ${t ? `tone="${t}"` : ""} spark="${sp}" ${d ? `delta="${d.delta}" delta-label="${esc(d.label)}"` : ""} ${href ? `href="${href}"` : ""}></ni-stat>`).join("")}
     </section>
-    <section class="ledger sub">
-      ${([["Open requirements", String(S.briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length), `${S.briefs.filter((b) => b.submittedVia === "PORTAL").length} came from clients`, "#/requirements"], ["People proposed", String(S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)).length), "anonymised", "#/requirements"], ["Referrals", String(S.referrals.length), `${S.referrals.filter((r) => r.status === "ACCEPTED").length} joined`, "#/referrals"], ["Pitches waiting", String(S.pitches.filter((x) => x.status === "SUBMITTED").length), "from experts", "#/referrals?tab=pitches"], ["Needs a check", String(total - freshN), "status has gone stale", "#/network?freshness=stale"], ["Amana bench", String(S.people.filter((p) => p.amanaBench).length), "trusted for SOW work", "#/amana"]] as [string, string, string, string][]).map(([l, v, n, href]) => `<a href="${href}"><ni-figure label="${esc(l)}" value="${esc(v)}" note="${esc(n)}"></ni-figure></a>`).join("")}
+    <section class="widgets sub">
+      ${([
+        ["Open requirements", String(S.briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length), `${S.briefs.filter((b) => b.submittedVia === "PORTAL").length} came from clients`, "#/requirements", spark.briefs, "up"],
+        ["People proposed", String(S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)).length), "anonymised, never named", "#/requirements", spark.proposed, "up"],
+        ["Referrals", String(S.referrals.length), `${S.referrals.filter((r) => r.status === "ACCEPTED").length} joined the network`, "#/referrals", spark.referrals, "up"],
+        ["Pitches waiting", String(S.pitches.filter((x) => x.status === "SUBMITTED").length), "experts who put themselves forward", "#/referrals?tab=pitches", spark.pitches, "up"],
+        ["Needs a check", String(total - freshN), "status has gone stale", "#/network?freshness=stale", spark.stale, "down"],
+        ["Amana bench", String(S.people.filter((p) => p.amanaBench).length), "trusted for SOW work", "#/amana", spark.bench, "up"],
+      ] as [string, string, string, string, string, string][]).map(([l, v, n, href, sp, good]) => `<ni-stat label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" href="${href}" spark="${sp}" good="${good}"></ni-stat>`).join("")}
     </section>
     <div class="grid-3"><div class="col-2 stack">
       ${setupCard}

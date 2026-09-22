@@ -2,8 +2,9 @@
  * Web components for Network Intelligence.
  *
  * The design thesis: a person's words carry the judgement, the system carries the structure.
- * So anything a human said is set in the serif voice, and anything the system computed is set
- * in the mono voice. These custom elements are the vocabulary for that.
+ * One sans does the talking, at different weights and sizes; the mono voice is kept for the small
+ * uppercase labels and reference codes the system produces. Figures are the sans with tabular
+ * numerals — a display face on a number reads as decoration rather than data.
  *
  * All are native Custom Elements with shadow DOM, so their styling cannot leak or be leaked
  * into, and they work anywhere in the app without a framework.
@@ -16,7 +17,8 @@ const BASE = `
   :host { --ink: var(--c-ink, #131714); --ink-2: var(--c-ink-2, #5c635c); --ink-3: var(--c-ink-3, #8e948d);
     --rule: var(--c-rule, rgba(19,23,20,0.12)); --paper: var(--c-paper, #fff); --sunk: var(--c-sunk, #f3f4f1);
     --trust: var(--c-trust, #186b4e); --trust-b: var(--c-trust-b, #2f9e6f); --alert: var(--c-alert, #9a6212); --alert-b: var(--c-alert-b, #d08a1f); --stop: var(--c-stop, #a3352b);
-    --mono: "Geist Mono", ui-monospace, monospace; --sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif; --serif: "Instrument Serif", Georgia, serif;
+    --accent: var(--c-accent, #186b4e); --accent-b: var(--c-accent-b, #2f9e6f);
+    --mono: "Geist Mono", ui-monospace, monospace; --sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif; --serif: var(--sans);
     display: inline-block; }
   * { box-sizing: border-box; }
 `;
@@ -75,11 +77,12 @@ class Trust extends HTMLElement {
     this.#root.adoptedStyleSheets = [sheet(`${BASE}
       .d { position: relative; width: ${size}px; height: ${size}px; }
       svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-      .t { fill: none; stroke: var(--rule); stroke-width: 3; }
-      .v { fill: none; stroke: ${tone}; stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 700ms cubic-bezier(0.2,0.8,0.2,1); }
+      /* The track is a lighter step of the same colour, so the dial reads as one object. */
+      .t { fill: none; stroke: color-mix(in srgb, ${tone} 16%, transparent); stroke-width: 4.5; }
+      .v { fill: none; stroke: ${tone}; stroke-width: 4.5; stroke-linecap: round; transition: stroke-dasharray 760ms cubic-bezier(0.22,1,0.36,1); }
       .f { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1; }
-      b { font: 500 ${Math.round(size * 0.32)}px/1 var(--mono); letter-spacing: -0.03em; color: var(--ink); }
-      small { display: block; margin-top: 3px; font: 500 ${Math.max(8.5, size * 0.11)}px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+      b { font: 600 ${Math.round(size * 0.34)}px/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--ink); }
+      small { display: block; margin-top: 4px; font: 500 ${Math.max(8.5, size * 0.105)}px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
       @media (prefers-reduced-motion: reduce) { .v { transition: none; } }
     `)];
     this.#root.innerHTML = `<div class="d"><svg viewBox="0 0 40 40"><circle class="t" cx="20" cy="20" r="18"/><circle class="v" cx="20" cy="20" r="18" pathLength="100" stroke-dasharray="${score} 100"/></svg><div class="f"><b>${score}</b>${band ? `<small>${band}</small>` : ""}</div></div>`;
@@ -94,10 +97,10 @@ class Quote extends HTMLElement {
   attributeChangedCallback() { this.#render(); }
   #render() {
     const size = this.getAttribute("size") ?? "md";
-    const px = size === "xl" ? 46 : size === "lg" ? 26 : size === "sm" ? 16 : 19;
+    const px = size === "xl" ? 40 : size === "lg" ? 23 : size === "sm" ? 14.5 : 17;
     this.#root.adoptedStyleSheets = [sheet(`${BASE}
       :host { display: block; }
-      blockquote { margin: 0; font: italic 400 ${px}px/${size === "xl" ? 1.1 : 1.4} var(--serif); letter-spacing: ${size === "xl" ? "-0.02em" : "-0.005em"}; color: var(--ink); text-wrap: pretty; }
+      blockquote { margin: 0; font: ${size === "xl" ? 600 : 450} ${px}px/${size === "xl" ? 1.12 : 1.45} var(--sans); letter-spacing: ${size === "xl" ? "-0.035em" : "-0.011em"}; color: var(--ink); text-wrap: pretty; }
       .a { margin-top: ${size === "xl" ? 20 : 10}px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
         font: 500 ${size === "xl" ? 12 : 11}px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); }
       .a b { color: var(--ink-2); font-weight: 600; }
@@ -105,24 +108,6 @@ class Quote extends HTMLElement {
     `)];
     const by = this.getAttribute("by"); const ctx = this.getAttribute("context"); const when = this.getAttribute("when");
     this.#root.innerHTML = `<blockquote><slot></slot></blockquote>${by || ctx ? `<div class="a">${by ? `<b>${by}</b>` : ""}${ctx ? `<span class="ctx">${ctx}</span>` : ""}${when ? `<span>${when}</span>` : ""}</div>` : ""}`;
-  }
-}
-
-// ---------- <ni-figure>: a number in the ledger ----------
-class Figure extends HTMLElement {
-  static observedAttributes = ["label", "value", "note", "tone"];
-  #root = this.attachShadow({ mode: "open" });
-  connectedCallback() { this.#render(); }
-  attributeChangedCallback() { this.#render(); }
-  #render() {
-    const tone = this.getAttribute("tone");
-    this.#root.adoptedStyleSheets = [sheet(`${BASE}
-      :host { display: block; }
-      .l { font: 500 10.5px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3); }
-      .v { margin-top: 9px; font: 400 30px/1 var(--mono); letter-spacing: -0.035em; color: ${tone === "trust" ? "var(--trust)" : tone === "alert" ? "var(--alert)" : "var(--ink)"}; font-variant-numeric: tabular-nums; }
-      .n { margin-top: 6px; font: 400 12px/1.4 var(--sans); color: var(--ink-3); }
-    `)];
-    this.#root.innerHTML = `<div class="l">${this.getAttribute("label") ?? ""}</div><div class="v">${this.getAttribute("value") ?? ""}</div>${this.getAttribute("note") ? `<div class="n">${this.getAttribute("note")}</div>` : ""}`;
   }
 }
 
@@ -267,15 +252,113 @@ class Icon extends HTMLElement {
   }
 }
 
+// ---------- <ni-stat>: the dashboard widget. Label, figure, movement, and the shape of it. ----------
+/**
+ * A stat tile the way a stat tile should be: the label in the small mono voice, the figure large
+ * in the sans with tabular numerals, an optional signed delta against a named period, and a
+ * twelve-point sparkline built from real dates. The sparkline is de-emphasised; only the last
+ * point wears the accent, because that is the value the figure is showing.
+ */
+class Stat extends HTMLElement {
+  static observedAttributes = ["label", "value", "note", "delta", "delta-label", "tone", "spark", "href", "good", "ghost"];
+  #root = this.attachShadow({ mode: "open" });
+  connectedCallback() { this.#render(); }
+  attributeChangedCallback() { this.#render(); }
+  #render() {
+    const tone = this.getAttribute("tone") ?? "";
+    const c = tone === "trust" ? "var(--trust-b)" : tone === "alert" ? "var(--alert-b)" : tone === "stop" ? "var(--stop)" : "var(--accent-b)";
+    const delta = Number(this.getAttribute("delta") ?? "");
+    const hasDelta = Number.isFinite(delta) && delta !== 0;
+    // Up is good unless the tile says otherwise: "needs a check" going up is not a win.
+    const upIsGood = (this.getAttribute("good") ?? "up") === "up";
+    const good = hasDelta ? (delta > 0) === upIsGood : true;
+    const points = (this.getAttribute("spark") ?? "").split(",").map(Number).filter((n) => Number.isFinite(n));
+    const W = 96, H = 26, PAD = 3;
+    const min = points.length ? Math.min(...points) : 0, max = points.length ? Math.max(...points) : 0, span = max - min;
+    const px = (i: number) => (points.length < 2 ? W / 2 : PAD + (i * (W - PAD * 2)) / (points.length - 1));
+    const py = (v: number) => (span === 0 ? H / 2 : H - PAD - ((v - min) / span) * (H - PAD * 2));
+    const d = points.map((v, i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(1)} ${py(v).toFixed(1)}`).join(" ");
+    const area = points.length > 1 ? `${d} L${px(points.length - 1).toFixed(1)} ${H} L${px(0).toFixed(1)} ${H} Z` : "";
+    this.#root.adoptedStyleSheets = [sheet(`${BASE}
+      :host { display: block; }
+      .w { display: grid; gap: 7px; align-content: start; padding: 13px 14px 12px; border-radius: 16px; background: var(--paper); border: 1px solid var(--rule); transition: transform 180ms cubic-bezier(0.34,1.4,0.64,1), border-color 180ms, box-shadow 180ms; height: 100%; }
+      /* On a gradient the tile is glass, and its own text turns white — the page's ink tokens are for paper. */
+      :host([ghost]) .w { background: rgba(6,10,9,0.26); border-color: rgba(255,255,255,0.2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+      :host([ghost]) .v { color: #fff; } :host([ghost]) .l { color: rgba(255,255,255,0.72); } :host([ghost]) .n { color: rgba(255,255,255,0.6); }
+      :host([ghost]) .dot-ring { fill: rgba(255,255,255,0.25); }
+      :host([ghost]) .d { color: #fff; background: rgba(255,255,255,0.16); }
+      :host([href]) .w { cursor: pointer; }
+      :host([href]) .w:hover { transform: translateY(-2px); border-color: color-mix(in srgb, ${c} 45%, var(--rule)); box-shadow: 0 10px 24px -16px ${c}; }
+      .l { font: 500 10px/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .v { font: 600 25px/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--ink); }
+      .n { font: 400 11.5px/1.35 var(--sans); color: var(--ink-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .spark { width: 100%; height: 24px; }
+      .d { display: inline-flex; align-items: center; gap: 3px; font: 500 11px/1 var(--mono); padding: 4px 8px; flex: none; border-radius: 999px; white-space: nowrap;
+        color: ${good ? "var(--trust)" : "var(--alert)"}; background: color-mix(in srgb, ${good ? "var(--trust-b)" : "var(--alert-b)"} 13%, transparent); }
+      svg { display: block; overflow: visible; }
+      :host([ghost]) .line { stroke: rgba(255,255,255,0.75); } :host([ghost]) .fill { fill: #fff; } :host([ghost]) .dot { fill: #fff; }
+      .line { fill: none; stroke: ${c}; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; }
+      .fill { fill: ${c}; opacity: 0.09; }
+      .dot { fill: ${c}; }
+      .dot-ring { fill: var(--paper); }
+    `)];
+    const spark = points.length > 1
+      ? `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="fill" d="${area}"/><path class="line" d="${d}"/></svg>`
+      : "";
+    const note = this.getAttribute("note");
+    const inner = `<div class="l">${this.getAttribute("label") ?? ""}</div>
+      <div class="row"><span class="v">${this.getAttribute("value") ?? ""}</span>${hasDelta ? `<span class="d" title="${this.getAttribute("delta-label") ?? ""}">${delta > 0 ? "+" : "−"}${Math.abs(delta)}</span>` : ""}</div>
+      ${spark}
+      ${note ? `<div class="n">${note}</div>` : ""}`;
+    const href = this.getAttribute("href");
+    this.#root.innerHTML = href ? `<a class="w" href="${href}" style="text-decoration:none">${inner}</a>` : `<div class="w">${inner}</div>`;
+  }
+}
+
+// ---------- <ni-bar>: a proportion, as touching segments with the surface doing the separating ----------
+/**
+ * Segments given as "label:value:tone|label:value:tone". Each segment is a share of the whole,
+ * separated by a 2px gap in the surface colour rather than a stroke, and labelled underneath —
+ * inside only where the text genuinely fits.
+ */
+class Bar extends HTMLElement {
+  static observedAttributes = ["segments", "unit", "height"];
+  #root = this.attachShadow({ mode: "open" });
+  connectedCallback() { this.#render(); }
+  attributeChangedCallback() { this.#render(); }
+  #render() {
+    const segs = (this.getAttribute("segments") ?? "").split("|").filter(Boolean).map((s) => { const [label, value, tone] = s.split(":"); return { label, value: Number(value) || 0, tone: tone ?? "" }; });
+    const total = segs.reduce((a, b) => a + b.value, 0) || 1;
+    const col = (t: string) => (t === "trust" ? "var(--trust-b)" : t === "alert" ? "var(--alert-b)" : t === "stop" ? "var(--stop)" : t === "mute" ? "var(--ink-3)" : "var(--accent-b)");
+    const h = Number(this.getAttribute("height") ?? 10);
+    this.#root.adoptedStyleSheets = [sheet(`${BASE}
+      :host { display: block; }
+      .track { display: flex; gap: 2px; height: ${h}px; }
+      .seg { border-radius: 3px; min-width: 3px; transition: flex-grow 420ms cubic-bezier(0.22,1,0.36,1); }
+      .seg:first-child { border-top-left-radius: ${h / 2}px; border-bottom-left-radius: ${h / 2}px; }
+      .seg:last-child { border-top-right-radius: ${h / 2}px; border-bottom-right-radius: ${h / 2}px; }
+      .keys { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; }
+      .key { display: inline-flex; align-items: center; gap: 6px; font: 400 11.5px/1.3 var(--sans); color: var(--ink-2); }
+      .key i { width: 7px; height: 7px; border-radius: 2px; flex: none; }
+      .key b { font: 500 11.5px/1.3 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+    `)];
+    const unit = this.getAttribute("unit") ?? "";
+    this.#root.innerHTML = `<div class="track">${segs.map((x) => `<div class="seg" style="flex: ${Math.max(x.value, 0.001)} 1 0; background: ${col(x.tone)}"></div>`).join("")}</div>
+      <div class="keys">${segs.map((x) => `<span class="key"><i style="background: ${col(x.tone)}"></i>${x.label} <b>${x.value}${unit}</b></span>`).join("")}</div>`;
+  }
+}
+
 export function defineComponents() {
   if (customElements.get("ni-chain")) return;
   customElements.define("ni-chain", Chain);
   customElements.define("ni-trust", Trust);
   customElements.define("ni-quote", Quote);
-  customElements.define("ni-figure", Figure);
   customElements.define("ni-tag", Tag);
   customElements.define("ni-meter", Meter);
   customElements.define("ni-orb", Orb);
   customElements.define("ni-rule", Rule);
   customElements.define("ni-icon", Icon);
+  customElements.define("ni-stat", Stat);
+  customElements.define("ni-bar", Bar);
 }
