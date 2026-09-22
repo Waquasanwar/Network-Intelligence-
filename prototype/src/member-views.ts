@@ -361,7 +361,12 @@ export function memberViews(h: H) {
   // ----- actions -----
   const actions: Record<string, (el: HTMLElement) => Promise<void> | void> = {
     /** A copy of everything, in a file they can keep. Portability, without a support ticket. */
-    exportMe(el) {
+    /**
+     * A copy of everything, in a file they can keep. Portability without a support ticket.
+     * Inside the artifact viewer a page cannot write a file itself, so the save goes through the
+     * host's downloads capability when it is there, and falls back to a plain link when it is not.
+     */
+    async exportMe(el) {
       const p = C().person(el.dataset.id!)!;
       const data = {
         exportedAt: C().nowISO(), you: p,
@@ -369,9 +374,25 @@ export function memberViews(h: H) {
         vouches: C().vouchesOf(p.id), referralsYouMade: S().referrals.filter((r: Referral) => r.referrerPersonId === p.id),
         proposedTo: S().shortlist.filter((s: ShortlistItem) => s.personId === p.id).map((s: ShortlistItem) => ({ requirement: S().briefs.find((b: StoredBrief) => b.id === s.briefId)?.title, decision: s.decision, when: s.updatedAt })),
       };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `network-intelligence-${p.firstName}-${p.lastName}.json`.toLowerCase(); a.click(); URL.revokeObjectURL(a.href);
-      C().logAudit("data.deletion_request", "Person", p.id, "data export downloaded");
+      const json = JSON.stringify(data, null, 2);
+      const filename = `network-intelligence-${p.firstName}-${p.lastName}.json`.toLowerCase().replace(/\s+/g, "-");
+      C().logAudit("data.deletion_request", "Person", p.id, "data export requested");
+      const host = (window as any).claude;
+      if (host?.use) {
+        try {
+          const downloads = await host.use("downloads");
+          if (downloads) {
+            await downloads.save({ filename, data: json });
+            C().toast("Downloaded. That is everything we hold about you.");
+            return;
+          }
+        } catch (err: any) {
+          if (err?.code === "declined") return;
+          // anything else: fall through to the ordinary link
+        }
+      }
+      const a = document.createElement("a"); const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+      a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
       C().toast("Downloaded. That is everything we hold about you.");
     },
     async eraseMe(el) {
