@@ -1078,6 +1078,46 @@ table.data tbody tr:hover { background: var(--wash-soft); }
   .fee-lines li { padding-inline: 16px; }
   .clauses li { padding: 14px 16px 14px 44px; } .clauses li::before { left: 16px; }
 }
+
+/* ==========================================================================
+   The case for the network
+   Four figures and one comparison, because the whole proposition is that
+   starting from somebody you know beats starting from a search — and that is
+   either true in the record or it is marketing.
+   ========================================================================== */
+.case {
+  margin-bottom: 26px; padding: 22px 24px 24px; border-radius: 20px;
+  background: var(--wash-soft), var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent-b) 22%, var(--line));
+  box-shadow: 0 1px 2px rgba(15,23,42,0.05), 0 20px 46px -34px rgba(15,23,42,0.5);
+}
+.case-head .eyebrow { display: flex; align-items: center; gap: 7px; margin: 0 0 8px; color: var(--accent); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.12em; }
+.case-head p { font-size: 15px; line-height: 1.55; font-weight: 500; max-width: 78ch; }
+
+.case-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; margin-top: 20px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.bignum { background: var(--surface); padding: 16px 18px 15px; min-width: 0; }
+.bignum b { display: block; font-size: clamp(28px, 3.2vw, 38px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.06; font-variant-numeric: tabular-nums; }
+.bignum small { display: block; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+.bignum span { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-3); line-height: 1.45; }
+
+/* the comparison: two bars on one scale, both labelled, both carrying their sample size */
+.case-split { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 11px; }
+.cs-row { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) auto auto; gap: 8px 14px; align-items: center; }
+.cs-l { font-size: 13px; font-weight: 600; min-width: 0; }
+.cs-bar { height: 12px; border-radius: 4px; background: var(--surface-2); overflow: hidden; min-width: 0; }
+.cs-fill { display: block; height: 100%; border-radius: 4px; transition: width 640ms var(--out); }
+.cs-fill.known { background: var(--ch-4, #146a4c); }
+.cs-fill.fresh { background: var(--ch-1, #9fd9c0); }
+.cs-row b { font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cs-row small { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+.cs-note { font-size: 12px; color: var(--ink-3); line-height: 1.5; max-width: 74ch; }
+
+@media (max-width: 640px) {
+  .case { padding: 18px 16px 20px; }
+  .cs-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .cs-bar { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { .cs-fill { transition: none; } }
 </style>
 <div id="app"></div>
 <script>/*APP*/</script>

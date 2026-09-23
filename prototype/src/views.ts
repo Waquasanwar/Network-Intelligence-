@@ -16,6 +16,7 @@ export type Ctx = {
   privacy: typeof import("@/lib/privacy");
   security: typeof import("@/lib/security");
   agreement: typeof import("@/lib/agreement");
+  velocity: typeof import("@/lib/velocity");
   traits: typeof import("@/lib/traits");
   automation: typeof import("@/lib/automation");
   suitability: typeof import("@/lib/suitability");
@@ -415,9 +416,39 @@ function performance(): View {
   const accepted = S.referrals.filter((r) => r.status === "ACCEPTED");
   const shortlistedPitches = S.pitches.filter((p) => p.status === "SHORTLISTED");
 
+  // The case the network has to make for itself: how big it is, how much has been asked of it,
+  // how much of that it actually delivered, and how fast — all derived from the record.
+  const V = C.velocity;
+  const rch = V.reach({ people, referrals: S.referrals, relationships: S.people.flatMap((p) => C.relsOf(p.id)) });
+  const vel = V.velocity({
+    briefs: S.briefs,
+    shortlist: S.shortlist,
+    workedWith: new Set(people.filter((p) => C.relsOf(p.id).some((r) => r.workedTogether)).map((p) => p.id)),
+  });
+  const adv = V.advantage(vel);
+  const dem = V.demandTotals(S.briefs, S.opportunities);
+  const big = (v: string | number, label: string, note: string) =>
+    `<div class="bignum"><b>${esc(String(v))}</b><small>${esc(label)}</small><span>${esc(note)}</span></div>`;
+
   const html = `
     <div class="page-head"><div><h1>Performance</h1><p>Every number the network is judged on, derived from the record rather than typed in. A placement is the only outcome that pays, so it leads.</p></div>
       <div class="actions"><a class="btn glass" href="#/requirements?tab=fees">Fee ledger</a><a class="btn glass" href="#/intelligence">Intelligence</a></div></div>
+
+    <section class="case">
+      <div class="case-head"><span class="eyebrow"><ni-icon name="spark" size="13"></ni-icon> The case for the network</span>
+        <p>${esc(adv.line)}${vel.thin && vel.count ? ` On ${vel.count} placement${vel.count === 1 ? "" : "s"} — too few to call a trend yet.` : ""}</p></div>
+      <div class="case-nums">
+        ${big(rch.inNetwork, "people in the network", `${rch.reachable} reachable, counting ${rch.namedNotYetJoined} named to us but not joined`)}
+        ${big(dem.taken, "requirements and opportunities taken", `${dem.open} open now · ${dem.headcount} people asked for`)}
+        ${big(placements, "started work", `${dem.fillRatePct}% of everything we saw through to a conclusion`)}
+        ${big(vel.daysToStart === null ? "—" : `${vel.daysToStart}d`, "median, request to first day", vel.fastest === null ? "no placements yet" : `fastest was ${vel.fastest} days · first name out in ${vel.daysToProposed ?? "—"}d`)}
+      </div>
+      ${adv.daysSaved !== null || adv.known.placements ? `<div class="case-split">
+        <div class="cs-row"><span class="cs-l">Somebody we had worked with</span><span class="cs-bar"><span class="cs-fill known" style="width:${adv.known.medianDays !== null && adv.newToUs.medianDays !== null ? Math.round((adv.known.medianDays / Math.max(adv.known.medianDays, adv.newToUs.medianDays)) * 100) : 100}%"></span></span><b>${adv.known.medianDays === null ? "—" : `${adv.known.medianDays} days`}</b><small>${adv.known.placements} placement${adv.known.placements === 1 ? "" : "s"}</small></div>
+        <div class="cs-row"><span class="cs-l">New to us</span><span class="cs-bar"><span class="cs-fill fresh" style="width:${adv.newToUs.medianDays !== null && adv.known.medianDays !== null ? Math.round((adv.newToUs.medianDays / Math.max(adv.known.medianDays, adv.newToUs.medianDays)) * 100) : adv.newToUs.medianDays !== null ? 100 : 0}%"></span></span><b>${adv.newToUs.medianDays === null ? "—" : `${adv.newToUs.medianDays} days`}</b><small>${adv.newToUs.placements} placement${adv.newToUs.placements === 1 ? "" : "s"}</small></div>
+        <p class="cs-note">Median days from taking the requirement to their first day. ${adv.sharePct}% of everyone placed was already somebody in this network.</p>
+      </div>` : ""}
+    </section>
 
     <section class="widgets">
       ${kpi("Members on the platform", String(members.length), `of ${people.length} people we hold`, joinSeries, "#/network", "up")}
