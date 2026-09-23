@@ -221,7 +221,7 @@ a.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); bor
 .empty { border: 1px dashed var(--line-strong); border-radius: 14px; padding: 28px 20px; text-align: center; color: var(--ink-2); } .empty b { display: block; color: var(--ink); font-size: 13.5px; } .empty p { font-size: 12.5px; margin-top: 4px; } .empty .btn { margin-top: 12px; } .empty.tall { padding: 80px 20px; }
 .page-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 16px 24px; margin-bottom: 22px; }
 .page-head > :last-child:not(:first-child) { justify-self: end; }
-.page-head h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; } .page-head p { color: var(--ink-2); margin-top: 4px; max-width: 70ch; } .page-head .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.page-head h1 { font-size: clamp(23px, 5.4vw, 28px); font-weight: 600; letter-spacing: -0.03em; overflow-wrap: anywhere; } .page-head p { color: var(--ink-2); margin-top: 4px; max-width: 70ch; overflow-wrap: anywhere; } .page-head .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .actions { display: flex; gap: 8px; align-items: center; flex: none; flex-wrap: wrap; justify-content: flex-end; max-width: 560px; }
 
 .sect-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 8px 0 4px; } .sect-head h2 { font-size: 15px; font-weight: 600; } .sect-head p { font-size: 12.5px; color: var(--ink-2); max-width: 70ch; }
@@ -251,8 +251,14 @@ a.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); bor
 .pill:hover { border-color: var(--line-strong); color: var(--ink); } .pill.active { background: var(--primary-bg); color: var(--primary-ink); border-color: transparent; box-shadow: var(--btn-shadow); }
 .clear { font-size: 12px; color: var(--ink-3); margin-left: 6px; } .clear:hover { color: var(--ink); }
 .understood { font-size: 12px; color: var(--ink-2); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: -6px 0 14px; }
-.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); } .seg a { padding: 0 14px; height: 28px; display: inline-flex; align-items: center; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--ink-2); } .seg a.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(15,23,42,0.15), 0 0 0 1px var(--line); }
-.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 20px; overflow-x: auto; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); max-width: 100%; overflow-x: auto; scrollbar-width: none; } .seg::-webkit-scrollbar { display: none; } .seg a { flex: none; } .seg a { padding: 0 14px; height: 28px; display: inline-flex; align-items: center; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--ink-2); } .seg a.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(15,23,42,0.15), 0 0 0 1px var(--line); }
+/* The tab row scrolls on a phone, so it says so: the trailing edge fades instead of
+   the last tab simply being cut off with no hint there is more. */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+.tabs::-webkit-scrollbar { display: none; }
+@media (min-width: 1100px) { .tabs { -webkit-mask-image: none; mask-image: none; } }
 .tabs a { padding: 10px 14px; font-size: 13px; color: var(--ink-2); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; border-radius: 8px 8px 0 0; } .tabs a:hover { color: var(--ink); background: var(--surface-2); } .tabs a.active { color: var(--ink); font-weight: 600; border-color: var(--accent-b); }
 .tabs a i { font-style: normal; font-size: 11px; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--code-bg); color: var(--ink-2); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid transparent; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: transform 120ms, box-shadow 120ms, background 120ms, border-color 120ms, filter 120ms; user-select: none; }
@@ -284,7 +290,17 @@ td .gauge { gap: 0; } td .gauge div { position: absolute; } td .gauge { position
 /* The profile header is the page's one hero, so it sits on a surface of its own
    and the six actions line up in a tidy block instead of ragging down the edge. */
 .person-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 22px 32px; margin-bottom: 22px; padding: 24px 26px; border-radius: 22px; background: var(--wash-soft), var(--surface); border: 1px solid color-mix(in srgb, var(--accent-b) 18%, var(--line)); box-shadow: 0 1px 2px rgba(15,23,42,0.05), 0 18px 44px -32px rgba(15,23,42,0.5); }
-.person-hero .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 360px; max-width: 100%; }
+.person-hero .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; max-width: 100%; }
+/* The right of the header used to be six buttons and then 200px of air. It now carries the three
+   things you open a profile to find out, above the actions. */
+.hero-side { display: grid; gap: 14px; width: 340px; max-width: 100%; }
+.glance { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid color-mix(in srgb, var(--accent-b) 20%, var(--line)); box-shadow: var(--shadow); }
+.glance-trust { display: grid; justify-items: center; gap: 3px; }
+.glance-trust small { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.glance dl { margin: 0; display: grid; gap: 7px; min-width: 0; }
+.glance dl div { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.glance dt { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.glance dd { margin: 0; font-size: 12.5px; font-weight: 500; overflow-wrap: anywhere; }
 .person-hero .actions .btn { width: 100%; justify-content: center; }
 .person-hero .actions .btn.primary { grid-column: 1 / -1; }
 @media (max-width: 900px) { .person-hero .actions { width: 100%; } } .person-hero .who { display: flex; gap: 18px; align-items: flex-start; min-width: 0; }
@@ -352,7 +368,7 @@ details summary { cursor: pointer; font-size: 12px; color: var(--ink-3); margin-
 .copilot-in { position: relative; display: flex; gap: 10px; align-items: stretch; } .copilot-in .spark { position: absolute; left: 14px; top: 12px; color: var(--navy-b); font-size: 15px; pointer-events: none; }
 .copilot-in textarea { flex: 1; padding-left: 36px; font-size: 14.5px; line-height: 1.5; resize: vertical; min-height: 64px; border-radius: 16px; }
 .copilot-in .btn { align-self: flex-end; height: 42px; white-space: nowrap; }
-.examples { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; } .examples small { color: var(--ink-3); font-size: 11.5px; margin-right: 4px; } .examples .pill { height: 26px; font-size: 11.5px; padding: 0 10px; cursor: pointer; }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; } .examples small { color: var(--ink-3); font-size: 11.5px; margin-right: 4px; } .examples .pill { height: 30px; font-size: 11.5px; padding: 0 12px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .copilot-result { scroll-margin-top: 84px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); animation: pop 240ms cubic-bezier(0.2,0.8,0.2,1) backwards; }
 .how-read { border-radius: 16px; background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; } .how-read .lbl { margin-top: 0; }
 .chips.read .chip { background: var(--navy-bg); color: var(--navy); border-color: transparent; font-weight: 500; max-width: none; }
@@ -629,7 +645,7 @@ details summary { cursor: pointer; font-size: 12px; color: var(--ink-3); margin-
 
 /* screening: lobby and call */
 .lobby { display: grid; place-items: center; min-height: calc(100vh - 200px); }
-.lobby-card { max-width: 660px; width: 100%; border-radius: 20px; padding: 44px; color: #fff; background: var(--hero-a); box-shadow: var(--shadow-pop); }
+.lobby-card { max-width: 660px; width: 100%; border-radius: 20px; padding: clamp(22px, 6vw, 44px); color: #fff; background: var(--hero-a); box-shadow: var(--shadow-pop); min-width: 0; }
 .lobby-card .eyebrow { color: rgba(255,255,255,0.5); }
 .lobby-card h1 { font-size: 34px; line-height: 1.1; letter-spacing: -0.035em; margin-top: 6px; text-wrap: balance; }
 .lobby-card > p { color: rgba(255,255,255,0.7); font-size: 14.5px; line-height: 1.6; margin-top: 14px; max-width: 54ch; }
@@ -756,7 +772,26 @@ ni-quote { display: block; }
 .quote-sm { font-size: 14.5px; line-height: 1.5; letter-spacing: -0.01em; }
 
 @media (max-width: 1100px) { .hero-stats { grid-template-columns: repeat(3, 1fr); } .board { grid-template-columns: repeat(3, 1fr); } .dims { grid-template-columns: repeat(3, 1fr); } .grid-import { grid-template-columns: 1fr; } .review, .review-grid { grid-template-columns: 1fr; } }
-@media (max-width: 900px) { #rail { display: none; } .grid-3, .grid-2, .grid-side, .grid-3f { grid-template-columns: 1fr; } .hero-inner { grid-template-columns: 1fr; padding: 24px; } .hero-text h1 { font-size: 28px; } main { padding: 16px 16px 60px; } #top { padding: 0 16px; } .searchbtn { width: auto; } .page-head { flex-direction: column; align-items: flex-start; } .person-hero { flex-direction: column; } .decide { grid-template-columns: 1fr; } .board { grid-template-columns: 1fr 1fr; } .hero-stats { grid-template-columns: 1fr 1fr; } }
+/* On a phone the top bar had a 320px search box, a labelled New button, the bell and the
+   breadcrumb all competing for 390px. The two controls collapse to their icons instead. */
+@media (max-width: 700px) {
+  /* The filter row is four fixed-width controls; below this it wraps instead of forcing the
+     page sideways, and the two narrow ones share a line. */
+  .searchbar { flex-wrap: wrap; }
+  .searchbar .search { flex: 1 1 100%; }
+  .searchbar select { width: auto; flex: 1 1 140px; min-width: 0; }
+  .searchbar .w-loc { flex: 1 1 110px; width: auto; min-width: 0; }
+  .searchbar .btn { flex: 1 1 100%; }
+  .page-head .actions { max-width: 100%; }
+  #top { gap: 10px; padding: 0 16px; }
+  .searchbtn { width: 38px; max-width: 38px; padding: 0; justify-content: center; flex: none; }
+  .searchbtn span, .searchbtn kbd { display: none; }
+  .newbtn { width: 38px; padding: 0; justify-content: center; flex: none; overflow: hidden; }
+  .newbtn { font-size: 0; }
+  .newbtn svg { width: 17px; height: 17px; }
+  #crumbs { flex: 1; min-width: 0; }
+}
+@media (max-width: 900px) { #rail { display: none; } .grid-3, .grid-2, .grid-side, .grid-3f { grid-template-columns: 1fr; } .hero-inner { grid-template-columns: 1fr; padding: 24px; } .hero-text h1 { font-size: 28px; } main { padding: 16px 16px 60px; } #top { padding: 0 16px; } .searchbtn { width: auto; } .page-head { grid-template-columns: minmax(0, 1fr); align-items: start; } .page-head .actions { justify-content: flex-start; } .person-hero { grid-template-columns: minmax(0, 1fr); padding: 18px; } .person-hero .who { gap: 14px; } .person-hero h1 { font-size: 24px; } .person-hero .avatar.xl { width: 52px; height: 52px; font-size: 17px; } .hero-side { width: 100%; } .person-hero .actions { grid-template-columns: 1fr; } .decide { grid-template-columns: 1fr; } .board { grid-template-columns: 1fr 1fr; } .hero-stats { grid-template-columns: 1fr 1fr; } }
 
 /* ==========================================================================
    Design layer
@@ -836,7 +871,7 @@ a.stat:hover { border-color: color-mix(in srgb, var(--accent-b) 34%, var(--line)
    The list of experts is the product. A table row cannot say "we have worked
    with this person and would again" — that is the whole proposition, so it is
    the card's headline, sitting beside a dial that reads trust at a glance. */
-.expert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+.expert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr)); gap: 14px; }
 .xc {
   position: relative; display: grid; gap: 12px; padding: 18px 18px 16px; min-width: 0;
   border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: inherit;

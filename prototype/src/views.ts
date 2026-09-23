@@ -528,8 +528,11 @@ function credInput(p: Person) {
 }
 
 /** The credibility strip: the badges people actually trust, with an icon each. */
-function credStrip(p: Person, opts: { compact?: boolean } = {}): string {
-  const badges = C.credibility.credibility(credInput(p));
+function credStrip(p: Person, opts: { compact?: boolean; max?: number } = {}): string {
+  let badges = C.credibility.credibility(credInput(p));
+  // The hero shows only the signals that decide anything; the full list lives in the Credibility
+  // card, and repeating all seven in both places is what made the header unreadable.
+  if (opts.max) badges = badges.slice(0, opts.max);
   return `<div class="cred ${opts.compact ? "compact" : ""}">${badges.map((b) => `<span class="cred-b s-${b.strength}" title="${esc(b.note)}"><ni-icon name="${b.icon}" size="13" tone="${b.strength === "strong" ? "trust" : "mute"}"></ni-icon><b>${esc(b.label)}</b>${opts.compact ? "" : `<small>${esc(b.note)}</small>`}</span>`).join("")}</div>`;
 }
 
@@ -577,7 +580,26 @@ function personView(id: string, q: URLSearchParams): View {
   else if (tab === "opportunities") body = card("Opportunities", matches.length ? `<div class="scroll"><table class="data"><thead><tr><th>Opportunity</th><th>Route</th><th>Stage</th><th class="num">Fit</th><th>Human decision</th><th>Notes</th></tr></thead><tbody>${matches.map((m) => { const o = S.opportunities.find((x) => x.id === m.opportunityId)!; return `<tr><td><a href="#/opportunities/${o.id}"><b>${esc(o.title)}</b></a><small class="sub">${esc(o.clientName ?? "")}</small></td><td>${badge(L().ROUTE_LABELS[o.engagementRoute], "navy")}</td><td>${badge(L().OPPORTUNITY_STATUS_LABELS[o.status], "navy")}</td><td class="num">${m.fitScore}</td><td>${badge(L().DECISION_LABELS[m.humanDecision], L().DECISION_TONE[m.humanDecision])}</td><td class="dim wrap">${esc(m.humanNotes ?? "—")}</td></tr>`; }).join("")}</tbody></table></div>` : empty("Not yet considered for an opportunity"), { desc: "Scores are per-opportunity, never a global rank.", flush: true });
   else if (tab === "relocation") body = card("Relocation", reloc ? `<dl class="kv four"><div><dt>From</dt><dd>${esc(reloc.currentLocation ?? "—")}</dd></div><div><dt>To</dt><dd>${esc(reloc.targetLocation ?? "—")}</dd></div><div><dt>Window</dt><dd>${esc(reloc.targetMoveWindow ?? "—")}</dd></div><div><dt>Advisory</dt><dd>${badge(L().ADVISORY_LABELS[reloc.advisoryStatus], reloc.advisoryStatus === "ACTIVE" ? "teal" : "navy")}</dd></div></dl><div class="chips">${[reloc.familyMove && "family move", reloc.schoolGuidanceInterest && "schools", reloc.housingGuidanceInterest && "housing", reloc.relocationAdvisoryInterest && "wants advisory", reloc.employerSponsored ? "employer funded" : "individually funded"].filter(Boolean).map((c) => chip(c as string)).join("")}</div>${reloc.notes ? `<p>${esc(reloc.notes)}</p>` : ""}` : empty("No relocation profile", "Capture interest if it comes up in conversation."), { desc: "Advisory is a separate, optional paid service.", action: btn(reloc ? "Edit" : "Capture interest", `data-act="relocation" data-id="${id}"`, "glass sm") });
   else body = card("Activity", `<ul class="log">${S.audit.filter((a) => a.entityId === id || (a.detail ?? "").includes(C.full(p))).map((a) => `<li><span>${esc(C.userName(a.actorId))} · <code>${esc(a.action)}</code> ${a.detail ? `<span class="dim">${esc(a.detail)}</span>` : ""}</span><small>${esc(rel(a.createdAt))}</small></li>`).join("") || '<li class="dim">No activity recorded.</li>'}</ul>`, { desc: "Audit trail of sensitive actions on this record." });
-  const html = `<div class="person-hero"><div class="who">${avatar(p, "xl", true)}<div><h1>${esc(C.full(p))}</h1><p>${esc(p.headline ?? "—")}</p><small>${esc([p.currentRole, p.currentCompany].filter(Boolean).join(" · "))}${p.primaryCity ? ` · ${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", "))}` : ""}</small><div class="meta">${thread(p, false)}</div>${credStrip(p, { compact: true })}<div class="meta">${availBadge(p)}${p.engagementPreferences.map((r) => badge(L().ROUTE_LABELS[r], "navy")).join("")}${p.amanaBench ? badge("Amana bench", "teal", true) : ""}${p.relocationInterest ? badge("Relocation", "neutral", true) : ""}${p.memberSince ? badge("network member", "teal", true) : ""}</div></div></div><div class="actions">${btn("Refer to a client or agency", `data-act="referToAccount" data-id="${id}"`, "primary")}${btn("I have met them", `data-act="metThem" data-id="${id}"`, "glass")}${btn("Screening call", `data-act="startScreening" data-id="${id}"`, "glass")}${btn("Book conversation", `data-act="book" data-id="${id}"`, "glass")}${btn("Capture conversation", `data-act="capture" data-id="${id}"`, "glass")}${btn("Edit profile", `data-act="editPerson" data-id="${id}"`, "glass")}</div></div>
+  const glance: [string, string][] = [
+    ["Rate", p.rateExpectation ?? p.salaryExpectation ?? "Not stated"],
+    ["Available", L().AVAILABILITY_LABELS[p.availabilityStatus]],
+    ["Next", p.nextAction ? `${p.nextAction}${p.nextActionDate ? ` · ${rel(p.nextActionDate)}` : ""}` : "Nothing booked"],
+  ];
+  const html = `<div class="person-hero">
+    <div class="who">${avatar(p, "xl", true)}<div>
+      <h1>${esc(C.full(p))}</h1><p>${esc(p.headline ?? "—")}</p>
+      <small>${esc([p.currentRole, p.currentCompany].filter(Boolean).join(" · "))}${p.primaryCity ? ` · ${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", "))}` : ""}</small>
+      <div class="meta">${thread(p, false)}</div>
+      ${credStrip(p, { compact: true, max: 2 })}
+      <div class="meta">${availBadge(p)}${p.engagementPreferences.map((r) => badge(L().ROUTE_LABELS[r], "navy")).join("")}${p.amanaBench ? badge("Amana bench", "teal", true) : ""}${p.relocationInterest ? badge("Relocation", "neutral", true) : ""}${p.memberSince ? badge("network member", "teal", true) : ""}</div>
+    </div></div>
+    <div class="hero-side">
+      <div class="glance">
+        <div class="glance-trust"><ni-trust score="${C.trustOf(p).score}" size="56"></ni-trust><small>trust</small></div>
+        <dl>${glance.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+      </div>
+      <div class="actions">${btn("Refer to a client or agency", `data-act="referToAccount" data-id="${id}"`, "primary")}${btn("Book conversation", `data-act="book" data-id="${id}"`, "glass")}${btn("Capture conversation", `data-act="capture" data-id="${id}"`, "glass")}${btn("Screening call", `data-act="startScreening" data-id="${id}"`, "glass")}${btn("Edit profile", `data-act="editPerson" data-id="${id}"`, "glass")}</div>
+    </div></div>
     <nav class="tabs">${tabs.map(([k, l, n]) => `<a href="#/people/${id}${k === "overview" ? "" : `?tab=${k}`}" class="${tab === k ? "active" : ""}">${esc(l)}${typeof n === "number" ? `<i>${n}</i>` : ""}</a>`).join("")}</nav>${body}`;
   return { title: C.full(p), crumbs: [["Experts", "#/network"], [C.full(p)]], html: raw(html) };
 }
