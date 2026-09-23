@@ -1047,6 +1047,37 @@ table.data tbody tr:hover { background: var(--wash-soft); }
 .edit-bar b { font-weight: 650; }
 
 @media (max-width: 700px) { .props li, .script-read > li { padding-inline: 16px; } }
+
+/* ==========================================================================
+   The agreement — membership, fees and contract as one document
+   ========================================================================== */
+.ag-sum { margin: 14px 0 4px; font-size: 13.5px; line-height: 1.55; color: var(--ink); font-weight: 500; }
+
+.fee-lines { list-style: none; margin: 0; padding: 0; }
+.fee-lines li { padding: 15px 22px; border-top: 1px solid var(--line); }
+.fee-lines li:first-child { border-top: 0; }
+.fl-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.fl-head b { font-size: 14px; font-weight: 650; }
+.fl-val { font-size: 19px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* a rate adjusted for this account says so, with the standard one beside it */
+.fl-val.adj { color: var(--accent); }
+.fl-val small { display: block; font-size: 10.5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); text-align: right; margin-top: 2px; }
+.fee-lines p { margin-top: 5px; font-size: 13px; line-height: 1.5; color: var(--ink-2); max-width: 72ch; }
+
+.clauses { list-style: none; margin: 0; padding: 0; counter-reset: cl; }
+.clauses li { position: relative; padding: 15px 22px 15px 56px; border-top: 1px solid var(--line); counter-increment: cl; }
+.clauses li:first-child { border-top: 0; }
+.clauses li::before {
+  content: counter(cl, decimal-leading-zero); position: absolute; left: 22px; top: 16px;
+  font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 500;
+}
+.clauses b { font-size: 13.5px; font-weight: 650; }
+.clauses p { margin-top: 4px; font-size: 13px; line-height: 1.58; color: var(--ink-2); max-width: 74ch; }
+
+@media (max-width: 700px) {
+  .fee-lines li { padding-inline: 16px; }
+  .clauses li { padding: 14px 16px 14px 44px; } .clauses li::before { left: 16px; }
+}
 </style>
 <div id="app"></div>
 <script>/*APP*/</script>

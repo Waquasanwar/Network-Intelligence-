@@ -15,6 +15,7 @@ export type Ctx = {
   credibility: typeof import("@/lib/credibility");
   privacy: typeof import("@/lib/privacy");
   security: typeof import("@/lib/security");
+  agreement: typeof import("@/lib/agreement");
   traits: typeof import("@/lib/traits");
   automation: typeof import("@/lib/automation");
   suitability: typeof import("@/lib/suitability");
