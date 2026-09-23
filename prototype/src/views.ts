@@ -14,6 +14,7 @@ export type Ctx = {
   series: typeof import("@/lib/series");
   credibility: typeof import("@/lib/credibility");
   privacy: typeof import("@/lib/privacy");
+  security: typeof import("@/lib/security");
   traits: typeof import("@/lib/traits");
   automation: typeof import("@/lib/automation");
   suitability: typeof import("@/lib/suitability");
@@ -767,8 +768,15 @@ function buildImportPreview(text: string, defaultSource: string, defaultRel: str
 }
 
 function settings(q: URLSearchParams): View {
-  const S = C.S(); const tab = ["commercials", "screening", "privacy"].includes(q.get("tab") ?? "") ? (q.get("tab") as string) : "general";
-  const html = `<div class="page-head"><div><h1>Settings</h1><p>Integrations, identity, commercial terms, and the audit trail of every sensitive action.</p></div><div class="actions"><div class="seg"><a href="#/settings" class="${tab === "general" ? "active" : ""}">General</a><a href="#/settings?tab=screening" class="${tab === "screening" ? "active" : ""}">Screening call</a><a href="#/settings?tab=commercials" class="${tab === "commercials" ? "active" : ""}">Commercials</a><a href="#/settings?tab=privacy" class="${tab === "privacy" ? "active" : ""}">Privacy</a></div></div></div>
+  const S = C.S(); const tab = ["commercials", "screening", "privacy", "security", "audit"].includes(q.get("tab") ?? "") ? (q.get("tab") as string) : "general";
+  const SEC = C.security;
+  const sec = SEC.securityOf(S.security as any);
+  const post = SEC.posture(S.security as any);
+  /** One switch: a label, what it does, and — only when it is off — what that costs. */
+  const swi = (name: string, label: string, does: string, on: boolean, ifOff?: string, warn = false) =>
+    `<li class="${!on && warn ? "sw-warn" : ""}"><label class="sw"><input type="checkbox" name="${esc(name)}" ${on ? "checked" : ""}><i></i></label>
+      <div><b>${esc(label)}</b><small>${esc(does)}</small>${ifOff ? `<small class="sw-cost">${on ? "" : `Off: ${esc(ifOff)}`}</small>` : ""}</div></li>`;
+  const html = `<div class="page-head"><div><h1>Settings</h1><p>Everything here is a switch with its consequence written next to it. The defaults are the safe settings — you only have to come here to relax one.</p></div><div class="actions"><div class="seg"><a href="#/settings" class="${tab === "general" ? "active" : ""}">General</a><a href="#/settings?tab=security" class="${tab === "security" ? "active" : ""}">Security</a><a href="#/settings?tab=privacy" class="${tab === "privacy" ? "active" : ""}">Privacy</a><a href="#/settings?tab=screening" class="${tab === "screening" ? "active" : ""}">Screening call</a><a href="#/settings?tab=commercials" class="${tab === "commercials" ? "active" : ""}">Commercials</a><a href="#/settings?tab=audit" class="${tab === "audit" ? "active" : ""}">Audit log</a></div></div></div>
     ${tab === "privacy" ? (() => {
       const P = C.privacy;
       const flagged = S.people.map((p) => ({ p, due: P.retentionDue({ privacy: p.privacy, lastContactAt: C.relsOf(p.id).map((r) => r.lastContactDate).filter(Boolean).sort().reverse()[0] ?? p.updatedAt, screenedAt: p.screenedAt }) })).filter((x) => x.due.length);
@@ -783,10 +791,53 @@ function settings(q: URLSearchParams): View {
         ${card("Their rights", `<ul class="rows">${P.RIGHTS.map((r) => `<li class="col"><b>${esc(r.label)}</b><small class="dim">${esc(r.detail)}</small></li>`).join("")}</ul>`, { desc: "Every one of these is a button on their own profile, not a support ticket." })}
         ${card("Where the data lives", `<ul class="rows"><li class="col"><b>In your tenant</b><small class="dim">Profiles, conversations, vouches, shortlists and fees. Never pooled across tenants.</small></li><li class="col"><b>On their device</b><small class="dim">Screening audio. Speech becomes text in their own browser; no audio is uploaded.</small></li><li class="col"><b>With the voice provider</b><small class="dim">Only our questions, and only when the natural voice is switched on — with names and figures stripped.</small></li></ul>`, { desc: "Security is mostly about where things are not." })}
       </div></div>`;
-    })() : tab === "screening" ? `<div class="grid-3"><div class="col-2 stack">${mv.scriptEditor()}</div><div class="stack">${card("How the conversation works", `<ol class="steps-list"><li><b>They get a link.</b> From their invitation, or from you.</li><li><b>They choose voice or typing.</b> On voice, each question is read aloud and their answer is transcribed live.</li><li><b>They can correct anything</b> before moving on. Nothing is hidden from them.</li><li><b>It lands with you to review.</b> The profile only updates when you approve it.</li><li><b>Referrals fall out of it.</b> Anyone they name becomes a referral in your inbox.</li></ol>`, { desc: "Voice first, with typing always available." })}${card("What it fills in", `<div class="chips">${["Headline", "Capabilities", "Sectors", "Seniority", "Availability", "Routes", "Notice", "Location", "Work rights", "Rate or salary", "Constraints", "Working style", "8 attributes", "People they vouch for"].map(chip).join("")}</div>`, { desc: "Every answer maps to a field you can search on." })}</div></div>` : tab === "commercials" ? `<div class="grid-3"><div class="col-2 stack">${dv.commercialsCard()}</div><div class="stack">${card("Who pays", `<p class="dim">Network members are never charged, for anything. Money only ever moves when a client, an agency or Amana gets someone through us.</p>`, { desc: "One line, so it is never in doubt." })}
-      ${card("How the models work", `<ul class="rows"><li class="col"><b>Direct client, permanent</b><small class="dim">Success fee as a % of first-year base salary. Invoiced on start date.</small></li><li class="col"><b>Agency, permanent</b><small class="dim">The agency charges its client; we take a referral share of that fee. Only licensed partners handle the placement.</small></li><li class="col"><b>Contract, interim, fractional</b><small class="dim">A margin on the billed day rate for the length of the engagement, or a share of the agency's margin.</small></li><li class="col"><b>Amana expert calls</b><small class="dim">A platform take on the expert's hourly rate. The expert receives the rest.</small></li><li class="col"><b>Amana SOW teams</b><small class="dim">A share of the SOW value for people we bring to the team.</small></li><li class="col"><b>Agency access</b><small class="dim">Optional monthly fee for portal access, set per account.</small></li></ul>`, { desc: "Plain-English version of the rate card." })}</div></div>` : `<div class="grid-3"><div class="col-2 stack">${card("Audit log", `<div class="scroll"><table class="data"><thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead><tbody>${S.audit.slice(0, 80).map((a) => `<tr><td class="dim nowrap">${esc(rel(a.createdAt))}</td><td class="nowrap">${esc(C.userName(a.actorId))}</td><td><code class="${a.action === "identity.reveal" ? "amber" : ""}">${esc(a.action)}</code></td><td class="dim">${esc(a.entityType)}</td><td class="dim wrap">${esc(a.detail ?? "")}</td></tr>`).join("")}</tbody></table></div>`, { desc: "Login, record changes, exports, identity reveals, approvals, permission changes and integrations.", flush: true })}</div>
-    <div class="stack">${card("Integrations", [["MANUAL", "Manual (call / in person)", "Always available."], ["MICROSOFT_GRAPH", "Microsoft Outlook / Teams", "Calendars.ReadWrite · OnlineMeetings.ReadWrite"], ["CALENDLY", "Calendly", "default scope · booked / cancelled webhooks"]].map(([k, l, d]) => `<div class="row"><span><b class="t">${esc(l)}</b><small class="sub">${esc(d)}</small></span>${S.connections.includes(k) ? badge("connected", "teal") : btn("Connect", `data-act="connect" data-id="${k}"`, "glass sm")}</div>`).join(""), { desc: "Least-privilege scopes are shown before connecting." })}
-      ${card("Users & roles", S.users.map((u) => `<div class="row"><span><b class="t">${esc(u.name)}</b><small class="sub">${esc(u.role.toLowerCase())}</small></span>${badge(u.role === "OWNER" ? "owner" : "contributor", u.role === "OWNER" ? "navy" : "neutral")}</div>`).join(""))}
+    })() : tab === "screening" ? (() => {
+      // The script editor is thirty open form rows. Nobody arrives at Settings wanting that, so the
+      // tab opens on the script as it reads and the editor is one deliberate click away.
+      const editing = q.get("edit") === "1";
+      const script = S.screeningScript;
+      const mins = script.reduce((a: number, x: any) => a + x.minutes, 0);
+      const qs = script.reduce((a: number, x: any) => a + x.questions.length, 0);
+      const read = `${card("The screening conversation", `<ol class="script-read">${script.map((sec: any) => `<li>
+          <div class="sr-head"><b>${esc(sec.title)}</b><span class="m-ref">${sec.minutes} min · ${sec.questions.length} question${sec.questions.length === 1 ? "" : "s"}</span></div>
+          <p>${esc(sec.intent)}</p>
+          <ul>${sec.questions.map((x: any) => `<li>${esc(x.prompt)}${x.required ? ' <em class="req">required</em>' : ""}</li>`).join("")}</ul>
+        </li>`).join("")}</ol>`, {
+          desc: `${script.length} sections · ${qs} questions · about ${mins} minutes. Voice first, with typing always available.`,
+          action: `<a class="btn glass sm" href="#/settings?tab=screening&edit=1">Edit the script</a>`, flush: true })}`;
+      return `<div class="grid-3"><div class="col-2 stack">${editing ? `<div class="edit-bar"><span><b>Editing the script.</b> Changes apply to the next conversation, never to one already finished.</span><a class="btn glass sm" href="#/settings?tab=screening">Done</a></div>${mv.scriptEditor()}` : read}</div><div class="stack">${card("How the conversation works", `<ol class="steps-list"><li><b>They get a link.</b> From their invitation, or from you.</li><li><b>They choose voice or typing.</b> On voice, each question is read aloud and their answer is transcribed live.</li><li><b>They can correct anything</b> before moving on. Nothing is hidden from them.</li><li><b>It lands with you to review.</b> The profile only updates when you approve it.</li><li><b>Referrals fall out of it.</b> Anyone they name becomes a referral in your inbox.</li></ol>`, { desc: "Voice first, with typing always available." })}${card("What it fills in", `<div class="chips">${["Headline", "Capabilities", "Sectors", "Seniority", "Availability", "Routes", "Notice", "Location", "Work rights", "Rate or salary", "Constraints", "Working style", "8 attributes", "People they vouch for"].map(chip).join("")}</div>`, { desc: "Every answer maps to a field you can search on." })}</div></div>`;
+    })() : tab === "commercials" ? `<div class="grid-3"><div class="col-2 stack">${dv.commercialsCard()}</div><div class="stack">${card("Who pays", `<p class="dim">Network members are never charged, for anything. Money only ever moves when a client, an agency or Amana gets someone through us.</p>`, { desc: "One line, so it is never in doubt." })}
+      ${card("How the models work", `<ul class="rows"><li class="col"><b>Direct client, permanent</b><small class="dim">Success fee as a % of first-year base salary. Invoiced on start date.</small></li><li class="col"><b>Agency, permanent</b><small class="dim">The agency charges its client; we take a referral share of that fee. Only licensed partners handle the placement.</small></li><li class="col"><b>Contract, interim, fractional</b><small class="dim">A margin on the billed day rate for the length of the engagement, or a share of the agency's margin.</small></li><li class="col"><b>Amana expert calls</b><small class="dim">A platform take on the expert's hourly rate. The expert receives the rest.</small></li><li class="col"><b>Amana SOW teams</b><small class="dim">A share of the SOW value for people we bring to the team.</small></li><li class="col"><b>Agency access</b><small class="dim">Optional monthly fee for portal access, set per account.</small></li></ul>`, { desc: "Plain-English version of the rate card." })}</div></div>` : tab === "audit" ? `<div class="stack">${card("Audit log", `<div class="scroll"><table class="data"><thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead><tbody>${S.audit.slice(0, 80).map((a) => `<tr><td class="dim nowrap">${esc(rel(a.createdAt))}</td><td class="nowrap">${esc(C.userName(a.actorId))}</td><td><code class="${a.action === "identity.reveal" ? "amber" : ""}">${esc(a.action)}</code></td><td class="dim">${esc(a.entityType)}</td><td class="dim wrap">${esc(a.detail ?? "")}</td></tr>`).join("")}</tbody></table></div>`, { desc: "Written on the server when the action succeeds. Nothing here can be edited from the interface.", flush: true })}
+      ${card("What is always recorded", `<ul class="rows">${SEC.SENSITIVE_ACTIONS.map((a: any) => `<li><code>${esc(a.action)}</code><small class="dim">${esc(a.what)}</small></li>`).join("")}</ul>`, { desc: "These are logged whatever else is switched off." })}</div>`
+
+    : tab === "security" ? (() => {
+      const groups = SEC.CONTROL_GROUPS.map((g: any) => ({ g, items: SEC.SECURITY_CONTROLS.filter((c: any) => c.group === g.key) }));
+      return `<div class="grid-3"><div class="col-2 stack">
+        <section class="card ${post.weakened.length ? "caution" : "accent"}"><div class="body posture">
+          <div class="posture-top"><span class="eyebrow"><ni-icon name="trust" size="13"></ni-icon> ${esc(post.band)}</span><b>${post.on} of ${post.total} protections on</b></div>
+          <p>${esc(post.line)}</p>
+          ${post.weakened.length ? `<ul class="posture-list">${post.weakened.map((w: any) => `<li><ni-icon name="caution" size="13" tone="alert"></ni-icon><span><b>${esc(w.label)}</b><small>${esc(w.ifOff)}</small></span></li>`).join("")}</ul>` : ""}
+        </div></section>
+
+        <form data-action="saveSecurity" class="stack">
+          ${groups.map(({ g, items }: any) => card(g.label, `<ul class="consents">${items.map((c: any) => swi(`s:${c.key}`, c.label, c.does, (sec as any)[c.key], c.ifOff, c.weakensIfOff)).join("")}</ul>`, { desc: g.note })).join("")}
+          <div class="row end"><span class="dim">Changes apply the moment you save.</span><button class="btn primary" type="submit">Save security settings</button></div>
+        </form>
+
+        ${card("Built in, and not switchable", `<ul class="props">${SEC.SECURITY_PROPERTIES.map((x: any) => `<li><div class="prop-head"><b>${esc(x.label)}</b><span class="m-ref">${esc(x.article)}</span></div><p>${esc(x.principle)}</p><small><b>How:</b> ${esc(x.how)}</small><small class="where"><code>${esc(x.where)}</code></small></li>`).join("")}</ul>`, { desc: "Properties of how the platform is built. Nobody can switch these off from here — they are listed so your security reviewer can check them.", flush: true })}
+      </div><div class="stack">
+        ${card("Users and what they can do", `<ul class="rows">${S.users.map((u) => `<li><span><b class="t">${esc(u.name)}</b><small class="sub">${u.role === "OWNER" ? "Can do everything, including releasing a name and exporting." : "Can add people, take requirements and propose experts. Cannot release a name or export."}</small></span>${badge(u.role === "OWNER" ? "owner" : "contributor", u.role === "OWNER" ? "navy" : "neutral")}</li>`).join("")}</ul>`, { desc: "Checked on the server, not in the interface." })}
+        ${card("Where the data lives", `<ul class="rows"><li class="col"><b>In your tenant</b><small class="dim">Profiles, conversations, vouches, shortlists and fees. Never pooled with another organisation's network.</small></li><li class="col"><b>On their device</b><small class="dim">Speech during a screening. It becomes text locally; no audio is uploaded or stored.</small></li><li class="col"><b>With a vendor</b><small class="dim">Only the interviewer's own questions, with names and exact figures removed first.</small></li></ul>`)}
+        ${card("If something goes wrong", `<ul class="rows"><li class="col"><b>Tell us</b><small class="dim">A suspected breach is assessed the same day. We notify the ICO or the UAE Data Office within 72 hours where the law requires it, and the people affected without undue delay.</small></li><li class="col"><b>Revoke access</b><small class="dim">Removing a user ends their sessions immediately; the change is in the audit log.</small></li></ul>`, { desc: "Written down before it is needed." })}
+      </div></div>`;
+    })()
+
+    : `<div class="grid-3"><div class="col-2 stack">
+      ${card("Getting set up", `<ul class="consents">${[["MANUAL", "Book by hand", "Log a call or a coffee yourself. Always available, nothing to connect."], ["MICROSOFT_GRAPH", "Outlook and Teams", "See your week and put conversations in your diary."], ["CALENDLY", "Calendly", "Let people book you from a link, and see it here when they do."]].map(([k, l, d]) => { const on = S.connections.includes(k as string); return `<li><label class="sw ${k === "MANUAL" ? "locked" : ""}"><input type="checkbox" ${on ? "checked" : ""} ${k === "MANUAL" ? "disabled" : ""} data-act="connect" data-id="${k}"><i></i></label><div><b>${esc(l)}</b><small>${esc(d)}</small>${on && k !== "MANUAL" ? '<small class="sw-cost ok">Connected. We only ask for the calendar, never your mail.</small>' : ""}</div></li>`; }).join("")}</ul>`, { desc: "Turn on what you use. We ask for the narrowest access that works." })}
+      ${card("What runs on its own", `<ul class="consents">${C.automation.AUTOMATIONS.map((a: any) => { const on = ((S.automations ?? C.automation.DEFAULT_AUTOMATIONS) as Record<string, boolean>)[a.key]; return `<li><label class="sw"><input type="checkbox" ${on ? "checked" : ""} data-act="toggleAuto" data-key="${a.key}"><i></i></label><div><b>${esc(a.label)}</b><small>${esc(a.does)}</small><small class="sw-meta">${esc(a.cadence)}</small></div></li>`; }).join("")}</ul>`, { desc: "Nine quiet rules. Each one is a sentence, and each one is switchable." })}
+    </div>
+    <div class="stack">
+    <div class="stack">${card("Users & roles", S.users.map((u) => `<div class="row"><span><b class="t">${esc(u.name)}</b><small class="sub">${esc(u.role.toLowerCase())}</small></span>${badge(u.role === "OWNER" ? "owner" : "contributor", u.role === "OWNER" ? "navy" : "neutral")}</div>`).join(""))}
       ${card("Data", `<p class="dim">Storage: <b>${C.persistMode() === "db" ? "shared artifact store" : "this browser only"}</b>. Every change you make here is kept. Seeded demo people can be hidden once you have your own.</p>${btn("Hide demo people", 'data-act="hideDemo"', "ghost sm")}`)}</div></div>`}`;
   return { title: "Settings", crumbs: [["Settings"]], html: raw(html) };
 }
@@ -1047,6 +1098,25 @@ const actions: Record<string, (el: HTMLElement) => void | Promise<void>> = {
 
 // ---------- forms (inline) ----------
 const forms: Record<string, (fd: FormData, form: HTMLFormElement) => Promise<void> | void> = {
+  /**
+   * Security controls. Saved as a whole set rather than one switch at a time, so the audit entry
+   * records what actually changed and the owner sees the consequence before it takes effect.
+   */
+  async saveSecurity(fd) {
+    const S = C.S(); const SEC = C.security;
+    const before = SEC.securityOf(S.security as any);
+    const next: Record<string, boolean> = {};
+    for (const c of SEC.SECURITY_CONTROLS) next[c.key] = fd.get(`s:${c.key}`) === "on";
+    const turnedOff = SEC.SECURITY_CONTROLS.filter((c) => (before as any)[c.key] && !next[c.key]);
+    const turnedOn = SEC.SECURITY_CONTROLS.filter((c) => !(before as any)[c.key] && next[c.key]);
+    S.security = next; C.savePref("security", next);
+    if (turnedOff.length || turnedOn.length) {
+      C.logAudit("settings.security", "Settings", null, `${turnedOn.map((c) => `+${c.key}`).concat(turnedOff.map((c) => `-${c.key}`)).join(" ")}`);
+    }
+    const weakened = turnedOff.filter((c) => c.weakensIfOff);
+    C.toast(weakened.length ? `Saved. ${weakened[0].ifOff}` : "Security settings saved", weakened.length ? "amber" : undefined);
+    C.render();
+  },
   async approve(fd, form) {
     const S = C.S(); const c = S.conversations.find((x) => x.id === form.dataset.id)!; const p = C.person(c.personId)!;
     const lines = (k: string) => String(fd.get(k) || "").split(/\n/).map((s) => s.trim()).filter(Boolean);

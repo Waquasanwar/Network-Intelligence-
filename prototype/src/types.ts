@@ -46,4 +46,5 @@ export type State = {
   vouches: Vouch[]; referrals: Referral[]; pitches: Pitch[]; viewAs: ViewAs; screeningScript: ScreeningSection[];
   connections: string[];
   automations?: Record<string, boolean>;
+  security?: Record<string, boolean>;
 };
