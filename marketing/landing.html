@@ -1,749 +1,526 @@
 <title>Who You Already Know</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..600;1,8..60,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..600&family=Martian+Mono:wdth,wght@75..112.5,300..700&display=swap">
 <style>
 /* ===========================================================================
    Who You Already Know — Network Intelligence, by Amana Network
-   A referral network sells one thing: a person somebody here has actually
-   worked with. So the page is built as a chain — the line that runs from you,
-   through someone you trust, to the expert — and the one loud moment is the
-   anonymised card resolving into a name, because that is the product.
+
+   Not a landing page with a hero and three feature cards. The page IS the
+   artefact the business produces: the file of one real introduction, start to
+   finish, with the claims annotated in the margin in red pen the way somebody
+   marks up a document they are checking.
+
+   The world it borrows from is carbon-copy correspondence — blue-black
+   typewriter ink on pale grey flimsy, a red rubber stamp where something was
+   decided. Every claim on the page sits beside the entry that proves it.
    =========================================================================== */
 
 :root {
   color-scheme: light;
 
-  /* the neutral is biased toward the jade, so it reads as chosen, not inherited */
-  --paper:      #edefec;
-  --paper-2:    #e4e8e3;
-  --card:       #f7f8f6;
-  --ink:        #08120f;
-  --slate:      #57655e;
-  --slate-2:    #7c8a83;
-  --rule:       rgba(8, 18, 15, 0.13);
-  --rule-soft:  rgba(8, 18, 15, 0.07);
+  /* carbon-copy flimsy: a cool blue-grey, deliberately not cream and not white */
+  --flimsy:   #dfe3e3;
+  --sheet:    #f0f2f1;
+  --sheet-2:  #e7eaea;
+  --ink:      #14202a;          /* typewriter blue-black */
+  --carbon:   #465b68;          /* the faded second copy */
+  --carbon-2: #77888f;
+  --rule:     #c3cbcb;
+  --rule-2:   #d5dbdb;
 
-  --night:      #0a1d18;
-  --night-2:    #0f2a22;
-  --on-night:   #e8efea;
-  --on-night-2: rgba(232, 239, 234, 0.62);
-  --on-night-3: rgba(232, 239, 234, 0.34);
+  --stamp:    #a93529;          /* red pen and rubber stamp. Used sparingly. */
+  --stamp-bg: rgba(169, 53, 41, 0.08);
+  --seal:     #1d6a55;          /* the one green: consent given */
+  --seal-bg:  rgba(29, 106, 85, 0.1);
 
-  --jade:       #12805b;
-  --jade-lift:  #1aa274;
-  --jade-wash:  rgba(18, 128, 91, 0.09);
-  --brass:      #a8762c;
-  --brass-lift: #c99a3f;
-  --brass-wash: rgba(168, 118, 44, 0.11);
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --mono:  "Martian Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  --display: "Bricolage Grotesque", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --body:    "Source Serif 4", Georgia, "Times New Roman", serif;
-  --mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-
-  --gutter: 24px;
-  --measure: 62ch;
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --gutter: 20px;
+  --ease: cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper:      #0b1512;
-    --paper-2:    #101c18;
-    --card:       #132320;
-    --ink:        #e9efeb;
-    --slate:      #97a79f;
-    --slate-2:    #71827a;
-    --rule:       rgba(233, 239, 235, 0.15);
-    --rule-soft:  rgba(233, 239, 235, 0.08);
-    --night:      #05100d;
-    --night-2:    #0a1b16;
-    --jade:       #35b584;
-    --jade-lift:  #4ecb9a;
-    --jade-wash:  rgba(53, 181, 132, 0.13);
-    --brass:      #d6a552;
-    --brass-lift: #e6bd75;
-    --brass-wash: rgba(214, 165, 82, 0.14);
+    --flimsy:   #10181d;
+    --sheet:    #17222a;
+    --sheet-2:  #1b2831;
+    --ink:      #dfe6e6;
+    --carbon:   #9fb0b6;
+    --carbon-2: #74868d;
+    --rule:     #2c3b44;
+    --rule-2:   #243139;
+    --stamp:    #e2685a;
+    --stamp-bg: rgba(226, 104, 90, 0.13);
+    --seal:     #49b795;
+    --seal-bg:  rgba(73, 183, 149, 0.13);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper:      #0b1512;
-  --paper-2:    #101c18;
-  --card:       #132320;
-  --ink:        #e9efeb;
-  --slate:      #97a79f;
-  --slate-2:    #71827a;
-  --rule:       rgba(233, 239, 235, 0.15);
-  --rule-soft:  rgba(233, 239, 235, 0.08);
-  --night:      #05100d;
-  --night-2:    #0a1b16;
-  --jade:       #35b584;
-  --jade-lift:  #4ecb9a;
-  --jade-wash:  rgba(53, 181, 132, 0.13);
-  --brass:      #d6a552;
-  --brass-lift: #e6bd75;
-  --brass-wash: rgba(214, 165, 82, 0.14);
+  --flimsy:   #10181d;
+  --sheet:    #17222a;
+  --sheet-2:  #1b2831;
+  --ink:      #dfe6e6;
+  --carbon:   #9fb0b6;
+  --carbon-2: #74868d;
+  --rule:     #2c3b44;
+  --rule-2:   #243139;
+  --stamp:    #e2685a;
+  --stamp-bg: rgba(226, 104, 90, 0.13);
+  --seal:     #49b795;
+  --seal-bg:  rgba(73, 183, 149, 0.13);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--flimsy);
   color: var(--ink);
-  font: 400 17px/1.62 var(--body);
+  font: 300 18px/1.6 var(--serif);
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.04;
+p { margin: 0; }
+h1, h2, h3 { margin: 0; font-weight: 400; line-height: 1.12; letter-spacing: -0.012em; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--stamp); outline-offset: 3px; }
+
+/* every mono thing on the page: file metadata, labels, figures */
+.m {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  font-stretch: 87%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--carbon-2);
+}
+
+.wrap { max-width: 1140px; margin-inline: auto; padding-inline: var(--gutter); }
+
+/* --- masthead: small, because the file is the point ----------------------- */
+.mast { border-bottom: 1px solid var(--rule); }
+.mast-in {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px;
+  padding-block: 18px 16px;
+}
+.mast b { font-family: var(--mono); font-size: 12.5px; font-weight: 600; font-stretch: 87%; letter-spacing: -0.01em; }
+.mast .sep { color: var(--rule); }
+
+/* --- the opening statement ------------------------------------------------ */
+.open { padding-block: clamp(38px, 6vw, 66px) clamp(30px, 4vw, 44px); border-bottom: 1px solid var(--rule); }
+.open h1 {
+  font-size: clamp(30px, 4.4vw, 50px);
+  font-weight: 300;
+  max-width: 21ch;
   text-wrap: balance;
 }
-p { margin: 0; }
-a { color: inherit; }
-:focus-visible { outline: 2px solid var(--jade-lift); outline-offset: 3px; border-radius: 4px; }
+.open h1 em { font-style: italic; font-weight: 400; }
+.open .sub { margin-top: 22px; max-width: 58ch; color: var(--carbon); font-size: clamp(17px, 1.7vw, 19px); }
+.open .filed { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 
-/* --- the spine -------------------------------------------------------------
-   Every band shares one grid: a narrow mono rail that names the section, and
-   the column that carries it. The rail is where the chain motif lives. */
-.band { padding-block: clamp(56px, 8vw, 104px); padding-inline: var(--gutter); }
-.spine {
-  max-width: 1180px; margin-inline: auto;
-  display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 0 44px; align-items: start;
+/* --- the file -------------------------------------------------------------
+   Two columns: the entry, and the margin where the claim it proves is written
+   in red. On a phone the margin note follows its entry instead. */
+.file { padding-block: clamp(30px, 4vw, 44px) 0; }
+.entry {
+  display: grid;
+  /* The body column is capped rather than 1fr: a note that floats 270px away from the
+     entry it annotates is not a margin note, it is a second column. */
+  grid-template-columns: minmax(0, 620px) minmax(0, 258px);
+  justify-content: start;
+  gap: 8px 52px;
+  padding-block: clamp(26px, 3.4vw, 38px);
+  border-top: 1px solid var(--rule-2);
+  align-items: start;
 }
-.rail {
-  font-family: var(--mono); font-size: 11px; font-weight: 500;
-  letter-spacing: 0.13em; text-transform: uppercase; color: var(--slate-2);
-  padding-top: 10px; position: relative;
-}
-.rail::after {
-  content: ""; position: absolute; left: 0; top: 34px; width: 34px; height: 1px;
-  background: var(--jade); opacity: 0.55;
-}
-.col { min-width: 0; }
-@media (max-width: 860px) {
-  .spine { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .rail { padding-top: 0; } .rail::after { display: none; }
-}
+.entry:first-child { border-top: 0; }
+.entry-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 14px; }
+.entry-meta .when { color: var(--ink); font-weight: 500; }
+.entry-body { min-width: 0; }
+.entry-body h2 { font-size: clamp(21px, 2.4vw, 27px); font-weight: 400; max-width: 30ch; text-wrap: balance; }
+.entry-body > p { margin-top: 12px; max-width: 58ch; color: var(--carbon); }
+.entry-body > p strong { font-weight: 600; color: var(--ink); }
 
-.lede { font-size: clamp(18px, 2.2vw, 21px); color: var(--slate); max-width: var(--measure); margin-top: 20px; }
-.prose { max-width: var(--measure); color: var(--slate); }
-.prose + .prose { margin-top: 16px; }
-em.said { font-style: italic; color: var(--ink); }
+/* what somebody actually wrote, as a quoted sheet rather than a styled callout */
+.said {
+  margin-top: 16px; max-width: 58ch;
+  background: var(--sheet); border: 1px solid var(--rule-2);
+  border-left: 2px solid var(--carbon-2);
+  padding: 16px 18px;
+  font-size: 17px; line-height: 1.56;
+}
+.said .who { display: block; margin-bottom: 8px; }
 
-/* --- hero ------------------------------------------------------------------ */
-.hero {
-  background: var(--night); color: var(--on-night);
-  padding-block: clamp(40px, 6vw, 68px) clamp(56px, 8vw, 92px);
-  padding-inline: var(--gutter);
-  position: relative; overflow: hidden;
+/* the margin note: the marketing claim, demoted to an annotation */
+.note {
+  min-width: 0; color: var(--stamp);
+  font-size: 15px; line-height: 1.5;
+  border-left: 2px solid var(--stamp); padding-left: 14px;
 }
-.hero::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background:
-    radial-gradient(900px 460px at 78% -12%, rgba(26, 162, 116, 0.22), transparent 66%),
-    radial-gradient(620px 380px at 6% 108%, rgba(168, 118, 44, 0.16), transparent 62%);
-}
-.hero-in { position: relative; z-index: 1; max-width: 1180px; margin-inline: auto; }
+.note b { display: block; font-family: var(--mono); font-size: 9.5px; font-weight: 600; font-stretch: 87%; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
 
-.wordmark { display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap; }
-.wordmark b {
-  font-family: var(--display); font-weight: 800; font-size: 15.5px;
-  letter-spacing: -0.02em; color: var(--on-night);
+/* a rubber stamp: where something was decided */
+.stamp {
+  display: inline-block; margin-top: 18px;
+  font-family: var(--mono); font-size: 11px; font-weight: 700; font-stretch: 87%;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--stamp); border: 2px solid var(--stamp); border-radius: 3px;
+  padding: 7px 13px 6px; transform: rotate(-1.8deg); opacity: 0.88;
 }
-.wordmark span {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.15em;
-  text-transform: uppercase; color: var(--on-night-3);
-}
+.stamp.green { color: var(--seal); border-color: var(--seal); transform: rotate(1.4deg); }
 
-.hero h1 {
-  margin-top: clamp(34px, 4.6vw, 56px);
-  font-size: clamp(42px, 6.6vw, 84px);
-  font-weight: 800;
-  font-stretch: 94%;           /* Bricolage's width axis, narrowed a touch so the line holds together */
-  letter-spacing: -0.042em;
-  max-width: 15ch;
-  color: #fff;
-}
-.hero h1 i { font-style: normal; color: var(--jade-lift); }
-.hero .lede { color: var(--on-night-2); max-width: 54ch; }
+/* the chain of people a request travelled through */
+.chain { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.chain span { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; font-stretch: 87%; letter-spacing: 0.02em; color: var(--ink); }
+.chain i { width: 7px; height: 7px; border-radius: 50%; background: var(--carbon-2); flex: none; }
+.chain span.end i { background: var(--seal); }
+.chain .arm { width: 26px; height: 1px; background: var(--rule); flex: none; }
 
-.cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.btn {
-  display: inline-flex; align-items: center; gap: 9px;
-  height: 50px; padding-inline: 24px; border-radius: 999px;
-  font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
-  text-decoration: none; border: 1px solid transparent; cursor: pointer;
-  transition: transform 180ms var(--ease), background 180ms, border-color 180ms, color 180ms;
-}
-.btn:active { transform: scale(0.975); }
-.btn-jade { background: var(--jade-lift); color: #04150f; }
-.btn-jade:hover { background: #2fbd8b; }
-.btn-line { border-color: var(--on-night-3); color: var(--on-night); }
-.btn-line:hover { border-color: var(--on-night-2); background: rgba(255,255,255,0.06); }
-.btn-ink { background: var(--ink); color: var(--paper); }
-.btn-ink:hover { background: var(--jade); color: #fff; }
+/* a list of what we checked, set as a real checklist rather than ticks */
+.checked { list-style: none; margin: 16px 0 0; padding: 0; max-width: 58ch; }
+.checked li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 18px; padding: 9px 0; border-top: 1px dotted var(--rule); font-size: 16px; }
+.checked li:first-child { border-top: 0; }
+.checked dt, .checked .k { color: var(--carbon-2); font-family: var(--mono); font-size: 10px; font-stretch: 87%; letter-spacing: 0.08em; text-transform: uppercase; padding-top: 4px; }
+.checked .v { color: var(--ink); }
 
-/* the chain: the page's one recurring device */
-.chain { margin-top: clamp(44px, 6vw, 72px); }
-.chain svg { display: block; width: 100%; height: auto; max-width: 720px; overflow: visible; }
-.chain .wire { fill: none; stroke: var(--on-night-3); stroke-width: 1.25; }
-.chain .wire.lit { stroke: var(--jade-lift); stroke-dasharray: 520; stroke-dashoffset: 520; animation: draw 1500ms var(--ease) 260ms forwards; }
-.chain .dot { fill: var(--night); stroke: var(--on-night-3); stroke-width: 1.25; }
-.chain .dot.lit { fill: var(--jade-lift); stroke: var(--jade-lift); opacity: 0; animation: bloom 420ms var(--ease) forwards; }
-.chain .dot.lit.d2 { animation-delay: 880ms; }
-.chain .dot.lit.d3 { animation-delay: 1420ms; }
-.chain text {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em;
-  fill: var(--on-night-2);
+/* --- the card: the one interactive thing --------------------------------- */
+.card {
+  margin-top: 18px; max-width: 460px;
+  background: var(--sheet); border: 1px solid var(--rule);
+  border-radius: 3px; padding: 20px 20px 18px;
+  box-shadow: 3px 3px 0 var(--sheet-2);
 }
-.chain text.end { fill: var(--jade-lift); }
-@keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes bloom { to { opacity: 1; } }
+.card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--rule-2); padding-bottom: 12px; }
+.card-name {
+  font-size: 23px; font-weight: 500; letter-spacing: -0.02em;
+  transition: filter 420ms var(--ease), color 420ms var(--ease);
+  overflow-wrap: anywhere;
+}
+.card[data-state="locked"] .card-name { filter: blur(7px); color: var(--carbon-2); user-select: none; }
+.card-ref { font-family: var(--mono); font-size: 10px; font-stretch: 87%; letter-spacing: 0.1em; color: var(--carbon-2); white-space: nowrap; }
+.card dl { margin: 0; }
+.card dl div { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 6px 14px; padding: 9px 0; border-bottom: 1px dotted var(--rule); }
+.card dt { font-family: var(--mono); font-size: 9.5px; font-stretch: 87%; letter-spacing: 0.08em; text-transform: uppercase; color: var(--carbon-2); padding-top: 3px; }
+.card dd { margin: 0; font-size: 16px; line-height: 1.45; overflow-wrap: anywhere; }
+.card-foot { padding-top: 14px; }
+.card-status { font-size: 15px; line-height: 1.5; color: var(--carbon); min-height: 3lh; }
+.card-status b { color: var(--seal); font-weight: 600; }
+.ask {
+  margin-top: 12px; width: 100%; height: 44px; cursor: pointer;
+  background: var(--ink); color: var(--flimsy); border: 0; border-radius: 3px;
+  font-family: var(--mono); font-size: 11px; font-weight: 600; font-stretch: 87%;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  transition: background 200ms, opacity 200ms;
+}
+.ask:hover { background: var(--stamp); }
+.ask[disabled] { opacity: 0.5; cursor: default; background: var(--ink); }
 
-.figures {
-  margin-top: clamp(40px, 5vw, 60px);
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1px; background: var(--on-night-3);
-  border: 1px solid var(--on-night-3);
-}
-.figures div { background: var(--night); padding: 20px 20px 18px; }
-.figures b {
-  display: block; font-family: var(--display); font-weight: 700;
-  font-size: 34px; letter-spacing: -0.04em; color: #fff;
-  font-variant-numeric: tabular-nums;
-}
-.figures small {
-  display: block; margin-top: 5px; font-family: var(--mono); font-size: 10.5px;
-  letter-spacing: 0.1em; text-transform: uppercase; color: var(--on-night-3);
-  line-height: 1.5;
-}
-.figures-note {
-  margin-top: 12px; font-family: var(--mono); font-size: 11px;
-  color: var(--on-night-3); letter-spacing: 0.02em;
-}
+/* --- plain sections after the file ---------------------------------------- */
+.plain { border-top: 2px solid var(--ink); padding-block: clamp(36px, 5vw, 56px); }
+.plain h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 400; max-width: 26ch; text-wrap: balance; }
+.plain > .wrap > p, .plain .lead { margin-top: 14px; max-width: 58ch; color: var(--carbon); }
 
-/* --- the contrast ---------------------------------------------------------- */
-.contrast { font-family: var(--display); letter-spacing: -0.035em; line-height: 1.12; }
-.contrast .no {
-  display: block; font-size: clamp(26px, 4.4vw, 46px); font-weight: 500;
-  color: var(--slate-2); text-decoration: line-through;
-  text-decoration-thickness: 2px; text-decoration-color: var(--brass);
-}
-.contrast .yes {
-  display: block; margin-top: 14px; font-size: clamp(30px, 5.4vw, 58px);
-  font-weight: 800; color: var(--ink);
-}
-.contrast .yes u { text-decoration: none; color: var(--jade); }
+/* terms, as a plain table — a referral network quotes terms, it does not sell plans */
+.terms { width: 100%; border-collapse: collapse; margin-top: 26px; font-size: 17px; }
+.terms caption { text-align: left; padding-bottom: 10px; }
+.terms th, .terms td { text-align: left; padding: 15px 16px 15px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.terms thead th { border-bottom: 1px solid var(--ink); padding-bottom: 8px; }
+.terms tbody th { font-weight: 500; width: 40%; }
+.terms tbody th small { display: block; margin-top: 4px; color: var(--carbon); font-weight: 300; font-size: 15px; line-height: 1.45; }
+.terms td { font-family: var(--mono); font-size: 13px; font-stretch: 87%; letter-spacing: -0.01em; white-space: nowrap; }
+.terms td.wide { font-family: var(--serif); font-size: 16px; letter-spacing: 0; white-space: normal; color: var(--carbon); }
+.t-scroll { overflow-x: auto; }
 
-/* --- how an introduction happens (a real sequence, so it is numbered) ------- */
-.steps { list-style: none; margin: 0; padding: 0; position: relative; }
-.steps::before {
-  content: ""; position: absolute; left: 15px; top: 16px; bottom: 34px;
-  width: 1px; background: linear-gradient(180deg, var(--jade), var(--rule));
-}
-.steps li {
-  position: relative; padding-left: 58px;
-  padding-block: 0 clamp(28px, 4vw, 40px);
-}
-.steps li:last-child { padding-bottom: 0; }
-.steps .node {
-  position: absolute; left: 0; top: 2px;
-  width: 31px; height: 31px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: var(--paper); border: 1px solid var(--jade);
-  font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--jade);
-  font-variant-numeric: tabular-nums;
-}
-.steps h3 { font-size: clamp(20px, 2.6vw, 25px); font-weight: 700; }
-.steps p { margin-top: 9px; color: var(--slate); max-width: var(--measure); }
-.steps .aside {
-  margin-top: 11px; font-family: var(--mono); font-size: 11.5px; line-height: 1.6;
-  color: var(--jade); letter-spacing: 0.01em;
-}
+/* what we will not do — refusals, numbered because a list of promises is not a sequence */
+.nots { list-style: none; margin: 26px 0 0; padding: 0; display: grid; gap: 0; }
+.nots li:first-child { border-top: 1px solid var(--ink); }
+.nots li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 16px; padding: 15px 0; border-top: 1px solid var(--rule); align-items: start; max-width: 80ch; }
+.nots li:first-child { border-top: 1px solid var(--ink); }
+.nots .x { color: var(--stamp); font-family: var(--mono); font-size: 15px; line-height: 1.3; }
+.nots b { font-weight: 500; }
+.nots p { margin-top: 4px; color: var(--carbon); font-size: 16px; max-width: 72ch; }
 
-/* --- the unlock: the page's one loud moment -------------------------------- */
-.demo-band { background: var(--paper-2); }
-.demo-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); gap: clamp(24px, 4vw, 48px); align-items: start; }
-@media (max-width: 860px) { .demo-wrap { grid-template-columns: minmax(0, 1fr); } }
+.sign { border-top: 2px solid var(--ink); padding-block: clamp(36px, 5vw, 54px) clamp(44px, 6vw, 70px); }
+.sign h2 { font-size: clamp(26px, 3.6vw, 40px); font-weight: 300; max-width: 18ch; }
+.sign h2 em { font-style: italic; }
+.sign p { margin-top: 16px; max-width: 54ch; color: var(--carbon); }
+.contact { margin-top: 26px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.contact .addr { font-family: var(--mono); font-size: 14px; font-stretch: 87%; letter-spacing: -0.01em; color: var(--ink); overflow-wrap: anywhere; }
+.copy {
+  background: none; border: 1px solid var(--rule); color: var(--carbon);
+  font-family: var(--mono); font-size: 10px; font-weight: 600; font-stretch: 87%;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  height: 32px; padding-inline: 13px; border-radius: 3px; cursor: pointer;
+  transition: border-color 160ms, color 160ms;
+}
+.copy:hover { border-color: var(--ink); color: var(--ink); }
 
-.xcard {
-  background: var(--card); border: 1px solid var(--rule);
-  border-radius: 18px; padding: 22px 22px 20px;
-  box-shadow: 0 1px 2px rgba(8,18,15,0.05), 0 28px 56px -38px rgba(8,18,15,0.55);
-  position: relative; overflow: hidden;
-}
-.xcard::before {
-  content: ""; position: absolute; inset: 0 0 auto; height: 3px;
-  background: linear-gradient(90deg, var(--jade), var(--jade-lift), transparent 76%);
-}
-.xc-head { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 13px; align-items: center; }
-.xc-face {
-  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--jade), #0d6047); color: #fff;
-  font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: -0.02em;
-  transition: filter 500ms var(--ease);
-}
-.xcard[data-state="locked"] .xc-face { filter: blur(6px) saturate(0.4); }
-.xc-name {
-  font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -0.025em;
-  transition: filter 500ms var(--ease), color 500ms var(--ease);
-  min-width: 0; overflow-wrap: anywhere;
-}
-.xcard[data-state="locked"] .xc-name { filter: blur(7px); color: var(--slate-2); user-select: none; }
-.xc-role { font-family: var(--mono); font-size: 11.5px; color: var(--slate); margin-top: 3px; }
-.xc-trust {
-  width: 46px; height: 46px; position: relative; display: grid; place-items: center; flex: none;
-}
-.xc-trust svg { position: absolute; inset: 0; transform: rotate(-90deg); }
-.xc-trust circle { fill: none; stroke-width: 4; stroke-linecap: round; }
-.xc-trust .t { stroke: var(--rule); }
-.xc-trust .v { stroke: var(--jade); }
-.xc-trust b { font-family: var(--display); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.foot { border-top: 1px solid var(--rule); padding-block: 20px 30px; display: flex; flex-wrap: wrap; gap: 6px 26px; justify-content: space-between; }
 
-.xc-cred {
-  margin-top: 15px; display: flex; align-items: center; gap: 8px;
-  background: var(--jade-wash); color: var(--jade); border-radius: 10px;
-  padding: 9px 12px; font-family: var(--display); font-weight: 600; font-size: 13.5px;
+@media (max-width: 880px) {
+  .entry { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .note { margin-top: 20px; }
+  .checked li { grid-template-columns: minmax(0, 1fr); }
+  .checked dt, .checked .k { padding-top: 0; }
+  .card dl div { grid-template-columns: minmax(0, 1fr); }
+  .card dt { padding-top: 0; }
+  .terms tbody th { width: auto; }
 }
-.xc-cred svg { flex: none; }
-.xc-rows { list-style: none; margin: 15px 0 0; padding: 0; }
-.xc-rows li {
-  display: grid; grid-template-columns: 84px minmax(0,1fr); gap: 10px;
-  padding: 8px 0; border-top: 1px solid var(--rule-soft);
-  font-family: var(--mono); font-size: 11.5px; line-height: 1.55;
-}
-.xc-rows li:first-child { border-top: 0; }
-.xc-rows dt, .xc-rows span.k { color: var(--slate-2); letter-spacing: 0.06em; text-transform: uppercase; font-size: 10.5px; padding-top: 2px; }
-.xc-rows span.v { color: var(--ink); overflow-wrap: anywhere; }
-.xc-foot { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--rule); }
-.xc-status {
-  font-family: var(--mono); font-size: 11.5px; line-height: 1.6; color: var(--slate);
-  min-height: 2lh;
-}
-.xc-status b { color: var(--jade); font-weight: 500; }
-.xc-btn {
-  margin-top: 11px; width: 100%; height: 42px; border-radius: 999px; border: 0; cursor: pointer;
-  background: var(--ink); color: var(--paper);
-  font-family: var(--display); font-weight: 600; font-size: 14px;
-  transition: background 200ms, color 200ms, opacity 200ms;
-}
-.xc-btn:hover { background: var(--jade); color: #fff; }
-.xc-btn[disabled] { opacity: 0.45; cursor: default; background: var(--ink); }
-.demo-tag {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--slate-2); margin-bottom: 12px;
-}
-
-/* --- the four parts of a match --------------------------------------------- */
-.parts { list-style: none; margin: 26px 0 0; padding: 0; max-width: 620px; }
-.parts li { padding-block: 13px; border-top: 1px solid var(--rule-soft); }
-.parts li:first-child { border-top: 0; }
-.parts .top { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
-.parts .who { font-family: var(--display); font-weight: 600; font-size: 16px; }
-.parts .pct { font-family: var(--mono); font-size: 12.5px; color: var(--slate); font-variant-numeric: tabular-nums; }
-.parts .track { height: 6px; border-radius: 999px; background: var(--rule-soft); margin-top: 9px; overflow: hidden; }
-.parts .fill { height: 100%; border-radius: 999px; background: var(--jade); }
-.parts .fill.warm { background: var(--brass); }
-.parts .note { margin-top: 7px; font-size: 14.5px; color: var(--slate); }
-.caveat {
-  margin-top: 26px; border-left: 2px solid var(--brass); padding: 4px 0 4px 18px;
-  max-width: var(--measure); color: var(--slate);
-}
-.caveat b { font-family: var(--display); color: var(--ink); font-weight: 600; }
-
-/* --- consent --------------------------------------------------------------- */
-.consents { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
-.consents li { background: var(--paper); padding: 16px 18px; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 14px; align-items: start; }
-.consents .mark { width: 22px; height: 22px; border-radius: 6px; background: var(--jade-wash); color: var(--jade); display: grid; place-items: center; margin-top: 2px; }
-.consents b { display: block; font-family: var(--display); font-weight: 600; font-size: 15.5px; }
-.consents p { margin-top: 4px; font-size: 15px; color: var(--slate); }
-.law {
-  margin-top: 20px; font-family: var(--mono); font-size: 11.5px; line-height: 1.75;
-  color: var(--slate-2); letter-spacing: 0.02em; max-width: 60ch;
-}
-
-/* --- membership ------------------------------------------------------------ */
-.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-@media (max-width: 720px) { .plans { grid-template-columns: minmax(0, 1fr); } }
-.plan { border: 1px solid var(--rule); border-radius: 18px; padding: 26px 24px 24px; background: var(--card); }
-.plan.agency { background: var(--brass-wash); border-color: color-mix(in srgb, var(--brass) 34%, transparent); }
-.plan .kind {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--jade);
-}
-.plan.agency .kind { color: var(--brass); }
-.plan .price {
-  display: flex; align-items: baseline; gap: 8px; margin-top: 14px; flex-wrap: wrap;
-}
-.plan .price b {
-  font-family: var(--display); font-weight: 800; font-size: clamp(32px, 4.4vw, 44px);
-  letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
-}
-.plan .price span { font-family: var(--mono); font-size: 12px; color: var(--slate); }
-.plan > p { margin-top: 10px; color: var(--slate); font-size: 15.5px; }
-.plan ul { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
-.plan li { display: grid; grid-template-columns: 15px minmax(0,1fr); gap: 11px; font-size: 15px; line-height: 1.5; }
-.plan li i { font-style: normal; color: var(--jade); margin-top: 1px; }
-.plan.agency li i { color: var(--brass); }
-.plan .btn { margin-top: 22px; width: 100%; justify-content: center; }
-
-.fee-strip {
-  margin-top: 16px; border: 1px dashed var(--rule); border-radius: 18px;
-  padding: 20px 24px; display: grid; grid-template-columns: minmax(0,1fr) auto;
-  gap: 12px 24px; align-items: center;
-}
-@media (max-width: 620px) { .fee-strip { grid-template-columns: minmax(0,1fr); } }
-.fee-strip b { font-family: var(--display); font-weight: 600; font-size: 16px; }
-.fee-strip p { margin-top: 4px; color: var(--slate); font-size: 15px; max-width: 54ch; }
-.fee-strip .amt { font-family: var(--mono); font-size: 12.5px; color: var(--slate); text-align: right; }
-@media (max-width: 620px) { .fee-strip .amt { text-align: left; } }
-
-/* --- close ----------------------------------------------------------------- */
-.close { background: var(--night); color: var(--on-night); }
-.close .rail { color: var(--on-night-3); }
-.close .rail::after { background: var(--jade-lift); }
-.close h2 { font-size: clamp(32px, 5.6vw, 62px); font-weight: 800; letter-spacing: -0.04em; color: #fff; max-width: 17ch; }
-.close .prose { color: var(--on-night-2); margin-top: 20px; }
-.contact {
-  margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center;
-  font-family: var(--mono); font-size: 13px; color: var(--on-night-2);
-}
-.contact .copy {
-  background: none; border: 1px solid var(--on-night-3); color: var(--on-night);
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-  height: 28px; padding-inline: 11px; border-radius: 999px; cursor: pointer;
-  transition: border-color 160ms, background 160ms;
-}
-.contact .copy:hover { border-color: var(--on-night-2); background: rgba(255,255,255,0.07); }
-
-footer {
-  background: var(--night); color: var(--on-night-3);
-  padding-block: 26px 34px; padding-inline: var(--gutter);
-  border-top: 1px solid rgba(255,255,255,0.09);
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; line-height: 1.8;
-}
-footer > div { max-width: 1180px; margin-inline: auto; display: flex; flex-wrap: wrap; gap: 8px 28px; justify-content: space-between; }
-
-h2.head { font-size: clamp(28px, 4.4vw, 46px); font-weight: 800; letter-spacing: -0.04em; max-width: 19ch; }
-
-@media (prefers-reduced-motion: reduce) {
-  .chain .wire.lit { animation: none; stroke-dashoffset: 0; }
-  .chain .dot.lit { animation: none; opacity: 1; }
-  .btn:active { transform: none; }
-  * { transition-duration: 1ms !important; }
-}
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 1ms !important; } .stamp { transform: none; } }
 </style>
 
-<header class="hero">
-  <div class="hero-in">
-    <div class="wordmark">
-      <b>Network Intelligence</b>
-      <span>by Amana Network · Dubai</span>
-    </div>
-
-    <h1>You already know<br>someone who <i>can do this.</i></h1>
-
-    <p class="lede">We keep the network you have not got round to writing down — the people you have worked with, the ones your colleagues would vouch for — and we put the right one in front of you, with their consent.</p>
-
-    <div class="cta-row">
-      <a class="btn btn-jade" href="#role">Bring us a role</a>
-      <a class="btn btn-line" href="#how">See how an introduction happens</a>
-    </div>
-
-    <!-- The chain. It is the whole proposition in one line: a request travels
-         through people who know each other, never through a database. -->
-    <div class="chain" aria-hidden="true">
-      <svg viewBox="0 0 720 64" role="presentation">
-        <line class="wire" x1="34" y1="32" x2="686" y2="32"></line>
-        <line class="wire lit" x1="34" y1="32" x2="554" y2="32"></line>
-        <circle class="dot lit" cx="34" cy="32" r="6"></circle>
-        <circle class="dot lit d2" cx="294" cy="32" r="6"></circle>
-        <circle class="dot lit d3" cx="554" cy="32" r="6"></circle>
-        <circle class="dot" cx="686" cy="32" r="5"></circle>
-        <text x="34" y="58" text-anchor="middle">you</text>
-        <text x="294" y="58" text-anchor="middle">Richard</text>
-        <text class="end" x="554" y="58" text-anchor="middle">Fatima</text>
-      </svg>
-    </div>
-
-    <div class="figures">
-      <div><b>22</b><small>experts in the network</small></div>
-      <div><b>9</b><small>we have worked with directly</small></div>
-      <div><b>6</b><small>screened in conversation</small></div>
-      <div><b>11</b><small>vouches given by name</small></div>
-    </div>
-    <p class="figures-note">The Amana network today. Small on purpose — every name is one of ours.</p>
+<header class="mast">
+  <div class="wrap mast-in">
+    <b>Network Intelligence</b>
+    <span class="m">Amana Network · Dubai</span>
+    <span class="m sep">/</span>
+    <span class="m">A referral network, not a job board</span>
   </div>
 </header>
 
-<section class="band">
-  <div class="spine">
-    <div class="rail">The difference</div>
-    <div class="col">
-      <p class="contrast">
-        <span class="no">A database of 40,000 CVs you have never met.</span>
-        <span class="yes">Eleven people who will <u>put their name</u> to someone.</span>
-      </p>
-      <p class="prose" style="margin-top:26px">Recruitment starts with a search. A referral network starts with a question somebody can actually answer: <em class="said">who do we genuinely know who could solve this?</em></p>
-      <p class="prose">So we do not sell you a shortlist. We tell you who in our network has worked with this person, what they saw them do, and whether they would work with them again — and then we ask the person before we tell you their name.</p>
+<section class="open">
+  <div class="wrap">
+    <h1>Somebody you trust already knows the person you are looking for. <em>We keep track of that.</em></h1>
+    <p class="sub">Below is one introduction, start to finish — the actual file. The request as it arrived, what we sent back, the moment she agreed to be named, and what it cost. Read it instead of a pitch.</p>
+    <div class="filed">
+      <span class="m">File 2026/08–14</span>
+      <span class="m">Client A · a Dubai retail bank</span>
+      <span class="m">Closed 02 Sept</span>
     </div>
   </div>
 </section>
 
-<section class="band" id="how" style="background: var(--paper-2)">
-  <div class="spine">
-    <div class="rail">The sequence</div>
-    <div class="col">
-      <h2 class="head">How an introduction actually happens</h2>
-      <ol class="steps" style="margin-top:36px">
-        <li>
-          <span class="node">01</span>
-          <h3>You tell us the role in plain words</h3>
-          <p>“Programme director for a core banking recovery, Dubai, starting January, needs to already have the right to work here.” No job spec, no competency matrix. We read it back to you before anything moves.</p>
-          <p class="aside">We confirm what we assumed, so nothing is invented.</p>
-        </li>
-        <li>
-          <span class="node">02</span>
-          <h3>We look in the network, not on the internet</h3>
-          <p>We check who we have worked with, who is on the Amana bench, who somebody here has vouched for by name, and who is genuinely available right now — not who updated a profile eighteen months ago.</p>
-          <p class="aside">Hard requirements are checked first: location, right to work, route, rate.</p>
-        </li>
-        <li>
-          <span class="node">03</span>
-          <h3>You see an anonymised card</h3>
-          <p>Capability, region, availability, rate band, right-to-work status and how well we know them. Never a name, never an employer, never a contact detail — because they have not agreed to this role yet.</p>
-          <p class="aside">This is the card below. It is the real thing.</p>
-        </li>
-        <li>
-          <span class="node">04</span>
-          <h3>We ask them, and only then do you get a name</h3>
-          <p>We go back to the person, describe your role, and ask. If they say yes, the card unlocks: name, history, the evidence behind the trust score, and a conversation in the diary. If they say no, you never learn who they were.</p>
-          <p class="aside">A fee is due only when someone actually starts.</p>
-        </li>
-      </ol>
-    </div>
-  </div>
-</section>
+<div class="wrap file">
 
-<section class="band demo-band">
-  <div class="spine">
-    <div class="rail">The card</div>
-    <div class="col">
-      <div class="demo-wrap">
-        <div>
-          <h2 class="head">This is what a client sees before anyone is named</h2>
-          <p class="prose" style="margin-top:20px">Everything you need to decide whether to spend an hour — and nothing that identifies a person who has not yet said yes. Press the button and watch what an unlock does.</p>
-          <p class="prose">The trust score is not an opinion about the person. It counts what the network can evidence: who has worked with them, what was observed, how recently we confirmed their availability.</p>
-          <p class="prose" style="margin-top:22px"><a class="btn btn-ink" href="#role">Bring us a role</a></p>
-        </div>
-
-        <div>
-          <p class="demo-tag">Demo · real card, example person</p>
-          <article class="xcard" id="xcard" data-state="locked">
-            <div class="xc-head">
-              <span class="xc-face" id="xcFace" aria-hidden="true">SO</span>
-              <div>
-                <div class="xc-name" id="xcName">Sarah Okonkwo</div>
-                <div class="xc-role">Programme director · recovery</div>
-              </div>
-              <span class="xc-trust">
-                <svg viewBox="0 0 46 46" aria-hidden="true">
-                  <circle class="t" cx="23" cy="23" r="19"></circle>
-                  <circle class="v" cx="23" cy="23" r="19" pathLength="100" stroke-dasharray="80 100"></circle>
-                </svg>
-                <b>80</b>
-              </span>
-            </div>
-
-            <div class="xc-cred">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg>
-              Worked with directly — would work together again
-            </div>
-
-            <ul class="xc-rows">
-              <li><span class="k">Based</span><span class="v">London · open to Dubai, Riyadh</span></li>
-              <li><span class="k">Right to work</span><span class="v">UK; UAE visa sponsorship not required</span></li>
-              <li><span class="k">Available</span><span class="v">Finishing an engagement, free from January</span></li>
-              <li><span class="k">Day rate</span><span class="v">AED 2,300 – 2,600 · flexible on a 12-month SOW</span></li>
-              <li><span class="k">Evidence</span><span class="v">2 observed deliveries · 4 people vouch by name</span></li>
-            </ul>
-
-            <div class="xc-foot">
-              <p class="xc-status" id="xcStatus">Name, employer and contact details are withheld until they agree to this specific role.</p>
-              <button class="xc-btn" id="xcBtn" type="button">Ask for the name</button>
-            </div>
-          </article>
-        </div>
+  <article class="entry">
+    <div class="entry-meta"><span class="m when">11 Aug, 09:14</span><span class="m">From the client</span></div>
+    <div class="entry-body">
+      <h2>The request arrives in plain words</h2>
+      <div class="said">
+        <span class="m who">Hamad Al Mazrouei · Head of Transformation</span>
+        “Our core banking programme is in trouble and the PD is leaving in November. I need somebody who has pulled one of these back before. They have to already have the right to work here — I cannot wait on a visa. January start.”
       </div>
+      <p>No job specification, no competency matrix, no portal login. Four sentences on a Tuesday morning.</p>
     </div>
-  </div>
-</section>
+    <aside class="note">
+      <b>Why this matters</b>
+      A brief written by the person who actually has the problem is worth more than one written to be advertised. We take it as it comes.
+    </aside>
+  </article>
 
-<section class="band">
-  <div class="spine">
-    <div class="rail">The score</div>
-    <div class="col">
-      <h2 class="head">Trust is measured, not claimed</h2>
-      <p class="prose" style="margin-top:20px">A single number hides what it is made of, so we show the four parts separately. A match built on capability alone means something quite different from one built on trust.</p>
-
-      <ul class="parts">
-        <li>
-          <div class="top"><span class="who">Capability</span><span class="pct">80 / 100</span></div>
-          <div class="track"><div class="fill" style="width:80%"></div></div>
-          <p class="note">Does this kind of work, in this sector, at this level.</p>
-        </li>
-        <li>
-          <div class="top"><span class="who">Trust</span><span class="pct">88 / 100</span></div>
-          <div class="track"><div class="fill" style="width:88%"></div></div>
-          <p class="note">We have used them ourselves, and four people here vouch by name.</p>
-        </li>
-        <li>
-          <div class="top"><span class="who">Practical</span><span class="pct">74 / 100</span></div>
-          <div class="track"><div class="fill" style="width:74%"></div></div>
-          <p class="note">Right to work is met; start date still to confirm.</p>
-        </li>
-        <li>
-          <div class="top"><span class="who">Style</span><span class="pct">62 / 100</span></div>
-          <div class="track"><div class="fill warm" style="width:62%"></div></div>
-          <p class="note">Direct with stakeholders — a strength in a recovery, a risk in a consensus culture.</p>
-        </li>
+  <article class="entry">
+    <div class="entry-meta"><span class="m when">11 Aug, 10:02</span><span class="m">Our reply</span></div>
+    <div class="entry-body">
+      <h2>We read it back before we move</h2>
+      <ul class="checked">
+        <li><span class="k">Role</span><span class="v">Programme director, core banking recovery</span></li>
+        <li><span class="k">Where</span><span class="v">Dubai, on site</span></li>
+        <li><span class="k">Hard requirement</span><span class="v">Right to work in the UAE already held — no sponsorship</span></li>
+        <li><span class="k">Starts</span><span class="v">January 2027</span></li>
+        <li><span class="k">Assumed</span><span class="v">Interim or contract, not permanent. Confirmed by return.</span></li>
       </ul>
-
-      <p class="caveat"><b>And the honest part.</b> A requirement that is genuinely unmet caps the score at 44, however brilliant the person. No amount of capability fixes a visa, and we would rather tell you that on day one than on the day they cannot start.</p>
     </div>
-  </div>
-</section>
+    <aside class="note">
+      <b>The assumption is stated</b>
+      Everything we inferred is written down and confirmed. Nothing is invented on your behalf, and nothing gets searched until you have said yes to this.
+    </aside>
+  </article>
 
-<section class="band" style="background: var(--paper-2)">
-  <div class="spine">
-    <div class="rail">Consent</div>
-    <div class="col">
-      <h2 class="head">Nobody is in here without knowing</h2>
-      <p class="prose" style="margin-top:20px">We hold things people told us in confidence. So the permissions are granular, withdrawal is immediate, and every class of data has a date on which it is deleted or anonymised.</p>
-
-      <ul class="consents">
-        <li>
-          <span class="mark" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9 17.5 20 6.5"/></svg></span>
-          <div><b>Shown anonymously, or not at all</b><p>One switch. Turn it off and they disappear from every client and agency view immediately — including cards already on a shortlist.</p></div>
-        </li>
-        <li>
-          <span class="mark" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9 17.5 20 6.5"/></svg></span>
-          <div><b>The name is released per role, never in general</b><p>We ask about your role specifically. Consent to one introduction is not consent to the next one.</p></div>
-        </li>
-        <li>
-          <span class="mark" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9 17.5 20 6.5"/></svg></span>
-          <div><b>Photos are optional, and off by default</b><p>Most profiles here have no photo at all. Initials, everywhere, unless someone chooses otherwise.</p></div>
-        </li>
-        <li>
-          <span class="mark" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9 17.5 20 6.5"/></svg></span>
-          <div><b>Your answers are never sent to a speech vendor</b><p>The interviewer can speak our questions aloud. What you say becomes text on your own device; no audio is uploaded or stored.</p></div>
-        </li>
+  <article class="entry">
+    <div class="entry-meta"><span class="m when">11 Aug, 16:40</span><span class="m">The search</span></div>
+    <div class="entry-body">
+      <h2>We look in the network, not on the internet</h2>
+      <ul class="checked">
+        <li><span class="k">In the network</span><span class="v">22 people</span></li>
+        <li><span class="k">Do this work</span><span class="v">4</span></li>
+        <li><span class="k">Free in January</span><span class="v">2</span></li>
+        <li><span class="k">Right to work held</span><span class="v">1</span></li>
+        <li><span class="k">Worked with us</span><span class="v">1 — and we would use her again</span></li>
       </ul>
+      <div class="chain">
+        <span><i></i>Waqas</span><span class="arm"></span><span class="end"><i></i>Sarah</span>
+        <span class="m">direct · core banking, 2021–22</span>
+      </div>
+    </div>
+    <aside class="note">
+      <b>Small on purpose</b>
+      Twenty-two, not forty thousand. A referral network is only worth what the last person in it is worth, so it grows one vouch at a time.
+    </aside>
+  </article>
 
-      <p class="law">Built to the stricter reading of both regimes that cover this network — UK GDPR and the Data Protection Act 2018, and UAE Federal Decree-Law No. 45 of 2021, the PDPL, which is consent-first and requires withdrawal to be as easy as consent was to give. Profile and conversation data: 24 months from last contact. Fee and audit records: kept as long as the law requires, then anonymised.</p>
+  <article class="entry">
+    <div class="entry-meta"><span class="m when">12 Aug, 11:20</span><span class="m">Sent to the client</span></div>
+    <div class="entry-body">
+      <h2>One anonymised card. No name.</h2>
+      <p>Everything needed to decide whether to spend an hour, and nothing that identifies somebody who has not yet agreed to this role. This is the card exactly as it was sent — <strong>press the button to see what happens next.</strong></p>
+
+      <article class="card" id="card" data-state="locked">
+        <div class="card-top">
+          <span class="card-name" id="cardName">Sarah Okonkwo</span>
+          <span class="card-ref">Ref 2026/08–14·A</span>
+        </div>
+        <dl>
+          <div><dt>Does</dt><dd>Programme director — takes red programmes back to amber</dd></div>
+          <div><dt>Based</dt><dd>London · open to Dubai and Riyadh</dd></div>
+          <div><dt>Right to work</dt><dd>UAE residence visa held. No sponsorship needed.</dd></div>
+          <div><dt>Free from</dt><dd>January — finishing a programme in December</dd></div>
+          <div><dt>Day rate</dt><dd>AED 2,300–2,600, flexible on a 12-month SOW</dd></div>
+          <div><dt>How we know</dt><dd>Worked with directly. Would work together again.</dd></div>
+          <div><dt>Evidence</dt><dd>2 observed deliveries · 4 people vouch by name · trust 80/100</dd></div>
+        </dl>
+        <div class="card-foot">
+          <p class="card-status" id="cardStatus">Her name, employer and contact details are withheld. We have not asked her about this role yet, so there is nothing to release.</p>
+          <button class="ask" id="ask" type="button">Ask her about this role</button>
+        </div>
+      </article>
+    </div>
+    <aside class="note">
+      <b>Anonymous by default</b>
+      Not a teaser. She is genuinely not identifiable from this card, and she stays that way unless she personally says otherwise.
+    </aside>
+  </article>
+
+  <article class="entry">
+    <div class="entry-meta"><span class="m when">14 Aug, 08:05</span><span class="m">Consent</span></div>
+    <div class="entry-body">
+      <h2>We asked her, and she said yes</h2>
+      <p>We described the bank, the programme, the rate and the start date. She had two questions about the steering committee and then agreed. The record of that consent is kept, and it covers <strong>this role only</strong>.</p>
+      <span class="stamp green">Consent given · 14 Aug 2026</span>
+    </div>
+    <aside class="note">
+      <b>Per role, never in general</b>
+      Saying yes to this bank is not saying yes to the next one. If she had said no, the client would never have learned who she was.
+    </aside>
+  </article>
+
+  <article class="entry">
+    <div class="entry-meta"><span class="m when">15 Aug, 12:30</span><span class="m">The introduction</span></div>
+    <div class="entry-body">
+      <h2>Named, and in the diary</h2>
+      <p>One email, both sides copied, with what each needed to know about the other. We stayed in it long enough to be useful and then got out of the way.</p>
+      <div class="said">
+        <span class="m who">Hamad Al Mazrouei · 20 Aug</span>
+        “That was the most useful hour I have spent on this. How did you find her?”
+      </div>
+      <p>We did not find her. We already knew her.</p>
+    </div>
+    <aside class="note">
+      <b>Not a CV in an inbox</b>
+      An introduction from somebody who has worked with both sides is a different object from an application, and it is treated as one.
+    </aside>
+  </article>
+
+  <article class="entry">
+    <div class="entry-meta"><span class="m when">02 Sept</span><span class="m">Outcome</span></div>
+    <div class="entry-body">
+      <h2>She started. That is when we invoiced.</h2>
+      <ul class="checked">
+        <li><span class="k">Engagement</span><span class="v">Interim, 12 months, Dubai</span></li>
+        <li><span class="k">Elapsed</span><span class="v">22 days, request to start date agreed</span></li>
+        <li><span class="k">Our fee</span><span class="v">A share of the day rate, agreed in writing before the introduction</span></li>
+        <li><span class="k">Payable</span><span class="v">On her first day. Not on the shortlist, not on the interview.</span></li>
+      </ul>
+      <span class="stamp">Placed · 02 Sept 2026</span>
+    </div>
+    <aside class="note">
+      <b>Nothing is due until somebody starts</b>
+      No retainer, no search fee, no charge for a conversation that went nowhere. If she had not taken it, this file would have closed at zero.
+    </aside>
+  </article>
+
+</div>
+
+<section class="plain">
+  <div class="wrap">
+    <h2>What it costs to have this available</h2>
+    <p class="lead">Two things, kept separate: a monthly subscription for access to the network, and a fee only when somebody starts. Commission is agreed per account before anybody is proposed.</p>
+    <div class="t-scroll">
+      <table class="terms">
+        <thead>
+          <tr><th class="m">Who</th><th class="m">Monthly</th><th class="m">What it opens</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Client<small>Organisations hiring into their own teams, permanent or contract.</small></th>
+            <td>AED 4,500</td>
+            <td class="wide">Search every expert who has agreed to be found, read anonymised profiles, and ask us to unlock anyone who interests you.</td>
+          </tr>
+          <tr>
+            <th>Agency<small>Agencies and consultancies placing people into their own clients.</small></th>
+            <td>AED 6,000</td>
+            <td class="wide">Everything above, plus proposing our experts into your own requirements and referring people you know into the network.</td>
+          </tr>
+          <tr>
+            <th>On a placement<small>The fee in the file above.</small></th>
+            <td>Agreed per account</td>
+            <td class="wide">Set in writing before the introduction, adjusted case by case, and due on the start date — never before it.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
 
-<section class="band" id="role">
-  <div class="spine">
-    <div class="rail">Membership</div>
-    <div class="col">
-      <h2 class="head">A subscription buys access to people we know</h2>
-      <p class="prose" style="margin-top:20px">Not a licence to a database. Search the network, read anonymised profiles, ask us to unlock anyone who interests you.</p>
+<section class="plain">
+  <div class="wrap">
+    <h2>What we will not do</h2>
+    <p class="lead">Worth stating plainly, because most of the industry does all of it.</p>
+    <ul class="nots">
+      <li><span class="x">✕</span><div><b>Send you a name without asking the person first</b><p>Consent is per role and it is recorded. Withdraw it and the profile disappears from every client view immediately, including cards already on a shortlist.</p></div></li>
+      <li><span class="x">✕</span><div><b>Scrape anyone into the network</b><p>Everybody here had a conversation with us and chose to stay. Photos are optional and off by default — most profiles have none at all.</p></div></li>
+      <li><span class="x">✕</span><div><b>Keep data forever</b><p>Profiles and conversations are deleted 24 months after last contact. Fee and audit records we are legally required to keep are anonymised instead, and we say which.</p></div></li>
+      <li><span class="x">✕</span><div><b>Send your words to a speech vendor</b><p>Our interviewer can speak its questions aloud. What you say becomes text on your own device. No audio is uploaded or stored.</p></div></li>
+      <li><span class="x">✕</span><div><b>Ask you for a nationality</b><p>We record the right to work, which is the thing that affects whether somebody can take the job. Never the thing that does not.</p></div></li>
+      <li><span class="x">✕</span><div><b>Charge you for a search</b><p>No retainers, no exclusivity, no fee for a shortlist. If nobody starts, you pay nothing beyond the subscription.</p></div></li>
+    </ul>
+    <p class="lead" style="margin-top:26px">Built to the stricter reading of both regimes that cover this network: UK GDPR and the Data Protection Act 2018, and UAE Federal Decree-Law No. 45 of 2021 — the PDPL — which is consent-first and requires withdrawal to be as easy as consent was to give.</p>
+  </div>
+</section>
 
-      <div class="plans" style="margin-top:30px">
-        <div class="plan">
-          <div class="kind">Client</div>
-          <div class="price"><b>AED 4,500</b><span>per month</span></div>
-          <p>For organisations hiring into their own teams, permanent or contract.</p>
-          <ul>
-            <li><i>—</i><span>Search every expert who has agreed to be found</span></li>
-            <li><i>—</i><span>Anonymised profiles: capability, region, availability, right to work, trust</span></li>
-            <li><i>—</i><span>Unlock a profile — we ask them, then share everything they agreed to</span></li>
-            <li><i>—</i><span>Bring us roles in plain words; we read them back before we search</span></li>
-          </ul>
-          <a class="btn btn-ink" href="#talk">Start a conversation</a>
-        </div>
-
-        <div class="plan agency">
-          <div class="kind">Agency</div>
-          <div class="price"><b>AED 6,000</b><span>per month</span></div>
-          <p>For agencies and consultancies placing people into their own clients.</p>
-          <ul>
-            <li><i>—</i><span>Everything in the client membership</span></li>
-            <li><i>—</i><span>Propose our experts into your own requirements, anonymised</span></li>
-            <li><i>—</i><span>Commission agreed per account, adjusted case by case</span></li>
-            <li><i>—</i><span>Refer people you know into the network and earn on them</span></li>
-          </ul>
-          <a class="btn btn-ink" href="#talk">Start a conversation</a>
-        </div>
-      </div>
-
-      <div class="fee-strip">
-        <div>
-          <b>And a fee when someone actually starts</b>
-          <p>Agreed before the introduction, in writing, per account. Nothing is due for a shortlist, a conversation, or a candidate who does not take the role.</p>
-        </div>
-        <div class="amt">placement fee<br>agreed per account</div>
-      </div>
+<section class="sign">
+  <div class="wrap">
+    <h2>So — <em>who do you already know?</em></h2>
+    <p>Tell us the role you are struggling with, in the four sentences it really takes. If we do not know the right person, we will say so, and we will tell you who might.</p>
+    <div class="contact">
+      <span class="addr" id="addr">waqas.anwar@amana.network</span>
+      <button class="copy" id="copyBtn" type="button">Copy</button>
+      <span class="m">Amana Network · Dubai, UAE</span>
     </div>
   </div>
 </section>
 
-<section class="band close" id="talk">
-  <div class="spine">
-    <div class="rail">Talk to us</div>
-    <div class="col">
-      <h2>So — who do you already know?</h2>
-      <p class="prose">Tell us the role you are struggling with. If we do not know the right person, we will say so, and we will tell you who might.</p>
-      <div class="contact">
-        <span id="addr">waqas.anwar@amana.network</span>
-        <button class="copy" id="copyBtn" type="button">Copy address</button>
-        <span>Amana Network · Dubai, UAE</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div>
-    <span>Network Intelligence — a referral network, not a job board.</span>
-    <span>Consent-first · UK GDPR &amp; UAE PDPL</span>
-  </div>
+<footer class="wrap foot">
+  <span class="m">Network Intelligence — Amana Network</span>
+  <span class="m">Consent-first · UK GDPR &amp; UAE PDPL</span>
 </footer>
 
 <script>
 (function () {
   "use strict";
 
-  /* The unlock. Two beats, because asking somebody takes a moment and
-     pretending otherwise would misrepresent what the product does. */
-  var card = document.getElementById("xcard");
-  var btn = document.getElementById("xcBtn");
-  var status = document.getElementById("xcStatus");
-  var name = document.getElementById("xcName");
-  var face = document.getElementById("xcFace");
+  /* The unlock, in two beats, because asking somebody genuinely takes a day and
+     collapsing it to an instant would misrepresent what happens. */
+  var card = document.getElementById("card");
+  var btn = document.getElementById("ask");
+  var status = document.getElementById("cardStatus");
 
-  var LOCKED = "Name, employer and contact details are withheld until they agree to this specific role.";
-  var ASKING = "Asking her about your role…";
-  var OPEN = "<b>She said yes.</b> Sarah agreed to this introduction, so her name, history and the evidence behind the 80 are yours.";
+  var LOCKED = "Her name, employer and contact details are withheld. We have not asked her about this role yet, so there is nothing to release.";
+  var ASKING = "Asking her — the bank, the programme, the rate, the start date…";
+  var OPEN = "<b>She said yes.</b> Sarah Okonkwo, and with her the history, the evidence behind the 80, and an hour in the diary. Consent recorded 14 Aug, for this role only.";
 
-  if (card && btn && status && name && face) {
+  if (card && btn && status) {
     btn.addEventListener("click", function () {
       if (card.dataset.state === "asking") return;
 
       if (card.dataset.state === "open") {
         card.dataset.state = "locked";
         status.innerHTML = LOCKED;
-        btn.textContent = "Ask for the name";
+        btn.textContent = "Ask her about this role";
         return;
       }
 
@@ -756,13 +533,13 @@ h2.head { font-size: clamp(28px, 4.4vw, 46px); font-weight: 800; letter-spacing:
         card.dataset.state = "open";
         status.innerHTML = OPEN;
         btn.disabled = false;
-        btn.textContent = "Lock it again";
-      }, 1100);
+        btn.textContent = "Put it back";
+      }, 1200);
     });
   }
 
-  /* Copy the address. mailto: is unreliable inside an artifact, so the
-     address is selectable text and this is only a convenience. */
+  /* mailto: is unreliable inside an artifact, so the address is selectable text
+     and this button is only a convenience. */
   var copyBtn = document.getElementById("copyBtn");
   var addr = document.getElementById("addr");
   if (copyBtn && addr) {
@@ -770,7 +547,7 @@ h2.head { font-size: clamp(28px, 4.4vw, 46px); font-weight: 800; letter-spacing:
       var text = addr.textContent.trim();
       var done = function () {
         copyBtn.textContent = "Copied";
-        window.setTimeout(function () { copyBtn.textContent = "Copy address"; }, 1800);
+        window.setTimeout(function () { copyBtn.textContent = "Copy"; }, 1800);
       };
       var fallback = function () {
         try {
@@ -779,8 +556,8 @@ h2.head { font-size: clamp(28px, 4.4vw, 46px); font-weight: 800; letter-spacing:
           var sel = window.getSelection();
           sel.removeAllRanges();
           sel.addRange(r);
-          copyBtn.textContent = "Selected — copy it";
-          window.setTimeout(function () { copyBtn.textContent = "Copy address"; }, 2400);
+          copyBtn.textContent = "Selected";
+          window.setTimeout(function () { copyBtn.textContent = "Copy"; }, 2200);
         } catch (e) { /* nothing useful left to do */ }
       };
       try {
