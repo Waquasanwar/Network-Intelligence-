@@ -146,6 +146,10 @@ function overview(): View {
     S.people.filter((p) => C.relsOf(p.id).length).map((p) => ({ id: p.id, name: C.full(p), city: p.primaryCity, workedTogether: C.relsOf(p.id).some((r) => r.workedTogether), lastContactAt: C.relsOf(p.id).map((r) => r.lastContactDate).filter(Boolean).sort().reverse()[0] ?? null, openTo: (p.social?.openTo ?? []) as any[], interests: p.persona?.interests ?? [] })),
     S.people.find((p) => C.full(p) === me.name)?.primaryCity ?? "Dubai", new Date(), 3);
   const deciding = S.shortlist.filter((x) => x.decision === "CANDIDATE").length;
+  // The two figures the overview was missing: who is actually on the platform, and how many of
+  // them ended up working. Everything else here is activity; these two are outcomes.
+  const memberCount = S.people.filter((p) => p.memberSince).length;
+  const placedCount = S.shortlist.filter((x) => x.decision === "PLACED").length + S.introductions.filter((i) => i.status === "ENGAGED").length;
 
   const html = `
     <section class="masthead">
@@ -176,8 +180,8 @@ function overview(): View {
       ${([
         ["Experts in the network", String(total), `${worked} you have worked with`, "", spark.people, chg.people, ""],
         ["Screened experts", String(screened), `${joining} in the queue`, "trust", spark.screened, chg.screened, ""],
-        ["Trusted", String(trusted), `average score ${avgTrust}`, "trust", spark.vouches, null, ""],
-        ["Vouches given", String(S.vouches.length), `across ${vouchedPeople} people`, "", spark.vouches, chg.vouches, ""],
+        ["Members on the platform", String(memberCount), `${trusted} trusted · avg score ${avgTrust}`, "trust", spark.screened, null, "#/performance"],
+        ["Placements", String(placedCount), `${S.briefs.filter((b) => b.status === "FILLED").length} requirements filled`, "trust", spark.proposed, null, "#/performance"],
         ["Conversations", String(convs), `${freshPct}% of statuses fresh`, freshPct < 50 ? "alert" : "", spark.convs, chg.convs, ""],
         ["Fees in play", moneyCompact(pipeline, feeCur), `${moneyCompact(feeSum(["AGREED", "INVOICED"]), feeCur)} agreed`, "", spark.fees, null, "#/requirements?tab=fees"],
       ] as [string, string, string, string, string, { delta: number; label: string } | null, string][]).map(([l, v, n, t, sp, d, href]) => `<ni-stat label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" ${t ? `tone="${t}"` : ""} spark="${sp}" ${d ? `delta="${d.delta}" delta-label="${esc(d.label)}"` : ""} ${href ? `href="${href}"` : ""}></ni-stat>`).join("")}
@@ -296,6 +300,178 @@ function expertCard(p: Person): string {
     </div>
     <div class="xc-foot">${thread(p, true, false)}<span class="nowrap dim">${esc(p.engagementPreferences.slice(0, 2).map((r: string) => (r === "SOW" ? "SOW" : L().ROUTE_LABELS[r])).join(" · ") || "Routes TBC")}</span></div>
   </a>`;
+}
+
+/**
+ * Performance — the numbers this business is actually judged on.
+ *
+ * The overview answers "what should I do today". This page answers "how are we doing", which is a
+ * different question and deserves its own screen: how many people are on the platform, how much
+ * demand is open, how many of those introductions ended in somebody starting work, and what any of
+ * it earned. A placement is the only outcome that pays, so it leads.
+ *
+ * Every figure is derived from state, never stored, so nothing here can drift from the record.
+ */
+function performance(): View {
+  const S = C.S(); const sr = C.series;
+  const money = (v: number, cur: string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(v);
+  const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
+  const feeCur = S.rateCard.currency ?? "AED";
+
+  // --- the counts ---------------------------------------------------------
+  const people = S.people;
+  const members = people.filter((p) => p.memberSince);
+  const screened = people.filter((p) => p.screenedAt);
+  const workedWith = people.filter((p) => C.relsOf(p.id).some((r) => r.workedTogether));
+
+  const openBriefs = S.briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status));
+  const openOpps = S.opportunities.filter((o) => !["CLOSED_WON", "CLOSED_LOST"].includes(o.status));
+
+  // A placement is somebody who actually started: the shortlist says PLACED, or an introduction
+  // reached ENGAGED. Counted per person-per-requirement, never twice.
+  const placedItems = S.shortlist.filter((x) => x.decision === "PLACED");
+  const engagedIntros = S.introductions.filter((i) => i.status === "ENGAGED");
+  const placements = placedItems.length + engagedIntros.length;
+  const filledBriefs = S.briefs.filter((b) => b.status === "FILLED");
+
+  const proposed = S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision));
+  const interested = S.shortlist.filter((x) => ["CLIENT_INTERESTED", "INTRODUCED", "PLACED"].includes(x.decision));
+  const introduced = S.shortlist.filter((x) => ["INTRODUCED", "PLACED"].includes(x.decision));
+
+  // Fees are raised in the currency of the account, so they are never added together. The headline
+  // is the tenant's own currency and anything else is named beside it — a single mixed total would
+  // be a made-up number.
+  const feeBy = (st: string[]): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const f of S.fees) if (st.includes(f.status)) out[f.currency] = (out[f.currency] ?? 0) + f.ourTake;
+    return out;
+  };
+  const realisedBy = feeBy(["PAID", "INVOICED"]);
+  const pipelineBy = feeBy(["FORECAST", "AGREED", "INVOICED", "PAID"]);
+  const feeSum = (st: string[]) => feeBy(st)[feeCur] ?? 0;
+  const realised = realisedBy[feeCur] ?? 0;
+  const pipeline = pipelineBy[feeCur] ?? 0;
+  /** "AED 77K" plus "· £51.8K" for anything raised in another currency. */
+  const alsoIn = (by: Record<string, number>) => Object.entries(by).filter(([c, v]) => c !== feeCur && v > 0).map(([c, v]) => moneyCompact(v, c)).join(" · ");
+
+  const activeAccounts = S.accounts.filter((a) => a.portalEnabled && a.status === "ACTIVE");
+  const mrrOf = (kind: string) => activeAccounts.filter((a) => a.kind === kind).reduce((sum, a) => sum + (a.monthlyFee ?? C.demand.subscriptionFor(a.kind, S.rateCard).amount), 0);
+  const clientMrr = mrrOf("CLIENT"); const agencyMrr = mrrOf("AGENCY"); const mrr = clientMrr + agencyMrr;
+  const subCur = S.rateCard.subscriptionCurrency ?? "AED";
+
+  // --- the trends ---------------------------------------------------------
+  const joinSeries = sr.monthly(members.map((p) => p.memberSince), 6);
+  const placeSeries = sr.monthly([...placedItems.map((x) => x.updatedAt), ...engagedIntros.map((i) => i.createdAt)], 6);
+  const briefSeries = sr.monthly(S.briefs.map((b) => b.createdAt), 6);
+  const joinChange = sr.lastChange(joinSeries);
+
+  const kpi = (label: string, value: string, note: string, points: any[], href: string, good?: string) => {
+    const d = sr.lastChange(points);
+    return `<ni-stat label="${esc(label)}" value="${esc(value)}" note="${esc(note)}" href="${href}" spark="${points.map((x: any) => x.value).join(",")}" ${d ? `delta="${d.delta}" delta-label="${esc(d.label)}"` : ""} ${good ? `good="${good}"` : ""}></ni-stat>`;
+  };
+
+  // --- the funnel ---------------------------------------------------------
+  // One entity moving through stages, so it is a magnitude, not an identity: one hue, light to
+  // dark, with the drop-off stated between rows rather than left to be read off the bar lengths.
+  const stages: { label: string; n: number; note: string }[] = [
+    { label: "In the network", n: people.length, note: "everyone we hold" },
+    { label: "Proposed to an account", n: proposed.length, note: "anonymised, never named" },
+    { label: "Client interested", n: interested.length, note: "they asked to know more" },
+    { label: "Introduced", n: introduced.length, note: "name released, with consent" },
+    { label: "Placed", n: placements, note: "started work — the only outcome that pays" },
+  ];
+  const top = Math.max(1, stages[0].n);
+  const funnel = `<ol class="funnel">${stages.map((st, i) => {
+    const prev = i ? stages[i - 1].n : null;
+    const drop = prev !== null && prev > 0 ? pct(st.n, prev) : null;
+    return `<li>
+      <div class="fn-head"><span class="fn-label">${esc(st.label)}</span><b class="fn-n">${st.n}</b></div>
+      <div class="fn-track"><div class="fn-fill s${i}" style="width:${Math.max(1.5, (st.n / top) * 100)}%"></div></div>
+      <div class="fn-foot"><small>${esc(st.note)}</small>${drop !== null ? `<small class="fn-conv">${drop}% of the step above</small>` : ""}</div>
+    </li>`;
+  }).join("")}</ol>`;
+
+  // --- fee pipeline, as an ordered ramp not four unrelated colours ---------
+  const feeStages: [string, number][] = [["Forecast", feeSum(["FORECAST"])], ["Agreed", feeSum(["AGREED"])], ["Invoiced", feeSum(["INVOICED"])], ["Paid", feeSum(["PAID"])]];
+  const feeTop = Math.max(1, ...feeStages.map(([, v]) => v));
+  const feeChart = `<ul class="hbars">${feeStages.map(([l, v], i) => `<li><span class="hb-l">${esc(l)}</span><span class="hb-track"><span class="hb-fill r${i}" style="width:${Math.max(1, (v / feeTop) * 100)}%"></span></span><b class="hb-v">${esc(money(v, feeCur))}</b></li>`).join("")}</ul>`;
+
+  // --- recurring revenue: two series, so the validated pair, and both labelled
+  const mrrRows: [string, number, string][] = [["Clients", clientMrr, "a"], ["Agencies", agencyMrr, "b"]];
+  const mrrChart = mrr > 0
+    ? `<div class="split"><div class="split-bar">${mrrRows.map(([l, v, k]) => (v > 0 ? `<span class="sp sp-${k}" style="width:${(v / mrr) * 100}%" title="${esc(l)}: ${esc(money(v, subCur))}"></span>` : "")).join("")}</div>
+       <ul class="split-key">${mrrRows.map(([l, v, k]) => `<li><i class="sp-${k}"></i><span>${esc(l)}</span><b>${esc(money(v, subCur))}</b><small>${pct(v, mrr)}%</small></li>`).join("")}</ul></div>`
+    : empty("No subscriptions running yet", "Turn a portal on for a client or an agency and the monthly fee starts counting here.");
+
+  // --- where placements came from ----------------------------------------
+  const routeCount: Record<string, number> = {};
+  for (const x of placedItems) { const b = S.briefs.find((bb) => bb.id === x.briefId); const r = b?.engagementRoute ?? "UNKNOWN"; routeCount[r] = (routeCount[r] ?? 0) + 1; }
+  for (const i of engagedIntros) routeCount[i.route] = (routeCount[i.route] ?? 0) + 1;
+  const routeRows = Object.entries(routeCount).sort((a, b) => b[1] - a[1]);
+  const routeTop = Math.max(1, ...routeRows.map(([, n]) => n));
+
+  const accepted = S.referrals.filter((r) => r.status === "ACCEPTED");
+  const shortlistedPitches = S.pitches.filter((p) => p.status === "SHORTLISTED");
+
+  const html = `
+    <div class="page-head"><div><h1>Performance</h1><p>Every number the network is judged on, derived from the record rather than typed in. A placement is the only outcome that pays, so it leads.</p></div>
+      <div class="actions"><a class="btn glass" href="#/requirements?tab=fees">Fee ledger</a><a class="btn glass" href="#/intelligence">Intelligence</a></div></div>
+
+    <section class="widgets">
+      ${kpi("Members on the platform", String(members.length), `of ${people.length} people we hold`, joinSeries, "#/network", "up")}
+      ${kpi("Successful placements", String(placements), `${filledBriefs.length} requirement${filledBriefs.length === 1 ? "" : "s"} filled`, placeSeries, "#/requirements", "up")}
+      ${kpi("Open demand", String(openBriefs.length + openOpps.length), `${openBriefs.length} requirements · ${openOpps.length} opportunities`, briefSeries, "#/requirements")}
+      ${kpi("Experts screened", String(screened.length), `${pct(screened.length, people.length)}% of the network`, sr.monthly(screened.map((p) => p.screenedAt), 6), "#/conversations", "up")}
+      <ni-stat label="Fees realised" value="${esc(moneyCompact(realised, feeCur))}" note="${esc(money(pipeline, feeCur))} in play${alsoIn(realisedBy) ? ` · plus ${alsoIn(realisedBy)} realised` : ""}" href="#/requirements?tab=fees" tone="trust"></ni-stat>
+      <ni-stat label="Recurring revenue" value="${esc(money(mrr, subCur))}" note="${activeAccounts.length} account${activeAccounts.length === 1 ? "" : "s"} on subscription" href="#/partners" tone="trust"></ni-stat>
+    </section>
+
+    <div class="section-head"><div><span class="eyebrow"><ni-icon name="brief" size="13"></ni-icon> Conversion</span><h2>From the network to somebody starting work</h2><p>Each step is a real gate, and the percentage is of the step above it — not of the network, which would flatter us.</p></div></div>
+    <div class="grid-3"><div class="col-2">${card(null, funnel)}</div>
+      <div class="stack">
+        ${card("The ratios that matter", `<ul class="rows tight">
+          <li><span>Proposed → placed</span><small class="dim">${pct(placements, proposed.length || 1)}% of everyone we put forward started work.</small></li>
+          <li><span>Interested → placed</span><small class="dim">${pct(placements, interested.length || 1)}% of the ones a client asked about.</small></li>
+          <li><span>Requirements filled</span><small class="dim">${pct(filledBriefs.length, S.briefs.length || 1)}% of every requirement we have taken.</small></li>
+          <li><span>Referrals accepted</span><small class="dim">${pct(accepted.length, S.referrals.length || 1)}% of ${S.referrals.length} referral${S.referrals.length === 1 ? "" : "s"} joined the network.</small></li>
+        </ul>`, { desc: "Rounded to whole percentages." })}
+      </div></div>
+
+    <div class="section-head"><div><span class="eyebrow"><ni-icon name="money" size="13"></ni-icon> Money</span><h2>What the network earned</h2><p>Two separate businesses: a monthly subscription for access, and a fee when somebody actually starts.</p></div></div>
+    <div class="grid-2">
+      ${card("Fee pipeline", feeChart, { desc: `Our take in ${feeCur}, not the gross. ${money(realised, feeCur)} of ${money(pipeline, feeCur)} is invoiced or paid.${alsoIn(pipelineBy) ? ` Raised in other currencies: ${alsoIn(pipelineBy)} — never added to the ${feeCur} total.` : ""}` })}
+      ${card("Recurring revenue", mrrChart, { desc: `${money(mrr, subCur)} a month across ${activeAccounts.length} active portal${activeAccounts.length === 1 ? "" : "s"}.` })}
+    </div>
+
+    <div class="section-head"><div><span class="eyebrow"><ni-icon name="worked" size="13"></ni-icon> Outcomes</span><h2>Where the placements came from</h2></div></div>
+    <div class="grid-2">
+      ${card("By engagement route", routeRows.length
+        ? `<ul class="hbars">${routeRows.map(([r, n], i) => `<li><span class="hb-l">${esc(L().ROUTE_LABELS[r] ?? r)}</span><span class="hb-track"><span class="hb-fill r${Math.min(3, i)}" style="width:${(n / routeTop) * 100}%"></span></span><b class="hb-v">${n}</b></li>`).join("")}</ul>`
+        : empty("No placements yet", "The moment a shortlisted expert is marked as placed, or an introduction reaches engaged, it lands here."), { desc: "Counted per person, per requirement." })}
+      ${card("Referrals and pitches", `<ul class="rows">
+        <li><span>Referrals received</span><b>${S.referrals.length}</b></li>
+        <li><span>Joined the network</span><b>${accepted.length}</b></li>
+        <li><span>Experts who pitched themselves</span><b>${S.pitches.length}</b></li>
+        <li><span>Pitches shortlisted</span><b>${shortlistedPitches.length}</b></li>
+        <li><span>Vouches given by name</span><b>${S.vouches.length}</b></li>
+      </ul>`, { desc: "The network growing itself." })}
+    </div>
+
+    <div class="section-head"><div><span class="eyebrow"><ni-icon name="person" size="13"></ni-icon> Accounts</span><h2>Who we are doing this for</h2></div></div>
+    ${card(null, S.accounts.length
+      ? `<div class="scroll"><table class="data"><thead><tr><th>Account</th><th>Kind</th><th>Status</th><th>Requirements</th><th class="num">Proposed</th><th class="num">Placed</th><th class="num">Monthly</th><th class="num">Fees to us</th></tr></thead><tbody>${S.accounts.map((a) => {
+          const bs = S.briefs.filter((b) => b.accountId === a.id);
+          const ids = bs.map((b) => b.id);
+          const prop = S.shortlist.filter((x) => ids.includes(x.briefId) && C.demand.PORTAL_VISIBLE.includes(x.decision)).length;
+          const plc = S.shortlist.filter((x) => ids.includes(x.briefId) && x.decision === "PLACED").length;
+          const fee = S.fees.filter((f) => f.accountId === a.id).reduce((s2, f) => s2 + f.ourTake, 0);
+          const sub = a.portalEnabled && a.status === "ACTIVE" ? (a.monthlyFee ?? C.demand.subscriptionFor(a.kind, S.rateCard).amount) : 0;
+          return `<tr><td><b>${esc(a.name)}</b>${a.contactName ? `<small class="sub">${esc(a.contactName)}</small>` : ""}</td><td>${badge(a.kind === "AGENCY" ? "Agency" : a.kind === "EXPERT_NETWORK" ? "Expert network" : "Client", a.kind === "AGENCY" ? "amber" : a.kind === "EXPERT_NETWORK" ? "teal" : "navy", true)}</td><td>${badge(a.status === "ACTIVE" ? "Active" : a.status === "PAUSED" ? "Paused" : "Prospect", a.status === "ACTIVE" ? "teal" : "neutral")}</td><td class="dim">${bs.length} taken · ${bs.filter((b) => b.status === "FILLED").length} filled</td><td class="num">${prop}</td><td class="num">${plc}</td><td class="num">${sub ? esc(money(sub, a.currency ?? subCur)) : "—"}</td><td class="num">${fee ? esc(money(fee, a.currency ?? feeCur)) : "—"}</td></tr>`;
+        }).join("")}</tbody></table></div>`
+      : empty("No accounts yet", "Add a client or an agency and their numbers appear here."), { flush: true })}
+    <p class="count-note">Figures are live from the network as it stands today. Nothing here is stored or cached.</p>`;
+
+  return { title: "Performance", crumbs: [["Performance"]], html: raw(html) };
 }
 
 function network(q: URLSearchParams): View {
@@ -888,4 +1064,4 @@ const forms: Record<string, (fd: FormData, form: HTMLFormElement) => Promise<voi
 const H = { C: () => C, esc, raw, L, badge, chip, card, field, input, textarea, select, check, btn, stat, empty, personLink, availBadge, score, opt, rel, fmtDate, avatar };
 const dv = demandViews(H); const mv = memberViews(H);
 Object.assign(actions, dv.actions, mv.actions); Object.assign(forms, dv.forms, mv.forms);
-export const views = { overview, intelligence, network, person: personView, conversations, opportunities, opportunity, amana, partners, relocation, import: importView, settings, requirements: dv.requirements, requirement: dv.requirement, portal: dv.portal, screening: mv.screening, member: mv.member, referrals: mv.referrals, join: mv.join, actions, forms };
+export const views = { overview, performance, intelligence, network, person: personView, conversations, opportunities, opportunity, amana, partners, relocation, import: importView, settings, requirements: dv.requirements, requirement: dv.requirement, portal: dv.portal, screening: mv.screening, member: mv.member, referrals: mv.referrals, join: mv.join, actions, forms };

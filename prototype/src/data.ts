@@ -1,6 +1,7 @@
 /* Seed network for the live prototype. Mirrors prisma/seed.ts. */
-import type { State, Person, Relationship, Evidence, Conversation, Opportunity, Introduction, TeamMember, Partner, PartnerRequirement, Relocation, Scheduled, AuditEntry, Account, StoredBrief, FeeLine, Vouch, Referral, Pitch } from "./types";
+import type { State, Person, Relationship, Evidence, Conversation, Opportunity, Introduction, TeamMember, Partner, PartnerRequirement, Relocation, Scheduled, AuditEntry, Account, StoredBrief, ShortlistItem, FeeLine, Vouch, Referral, Pitch } from "./types";
 import { parseBrief, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD } from "@/lib/demand";
+import type { ShortlistDecision } from "@/lib/demand";
 import { SCREENING_SCRIPT } from "@/lib/screening";
 import type { AvailabilityStatus, EngagementRoute, Seniority } from "@prisma/client";
 import { suggestNextCheck } from "@/lib/availability";
@@ -160,8 +161,34 @@ export function seed(): State {
     B("b-2", "ac-clienta", "Client A wants a perm project manager for a digital banking programme in Dubai, AED 480k, senior, start in January", { status: "QUALIFYING" }, 1),
     B("b-3", "ac-amana", "Expert call: 2 hours with someone who has run an SAP S/4 go-live assurance review for a utility, £600/hour, this week", { status: "INTRODUCING", expertHours: 2, termsAccepted: true }, 6),
     B("b-4", "ac-meridian", "Fractional operations lead 2 days a week to build the Dubai operating model, £1,700/day, 9 months, must be willing to spend time in Dubai", { status: "SEARCHING", termsAccepted: true, openToMembers: true, memberSummary: "Fractional operations lead, two days a week for nine months, building a Dubai operating model for an energy company. Needs someone who has built an operation from scratch and will spend time on the ground." }, 12),
+    B("b-0", "ac-meridian", "Interim COO for a 6-month operations turnaround in Aberdeen, £1,400/day, start immediately", { status: "FILLED", termsAccepted: true }, 74),
   ];
+
+  /**
+   * Shortlist history. Without this the funnel on the Performance page is a single bar and four
+   * zeros, which is honest but tells you nothing about what the page does. These are the same
+   * shapes the app writes itself when you work a requirement through.
+   */
+  const SL = (id: string, briefId: string, key: string, decision: ShortlistDecision, fit: number, why: string, ago: number, moved = ago): ShortlistItem => ({
+    id, briefId, personId: pid(key), fitScore: fit, fitExplanation: why,
+    dimensions: [{ name: "Capability", score: fit, note: why }], uncertainty: [], checks: [],
+    tier: fit >= 70 ? "meets" : fit >= 50 ? "conversation" : "stretch",
+    decision, createdAt: daysAgo(ago), updatedAt: daysAgo(moved),
+  });
+  const shortlist: ShortlistItem[] = [
+    SL("sl-1", "b-0", "marcus", "PLACED", 84, "Interim COO who has run exactly this kind of turnaround.", 72, 58),
+    SL("sl-2", "b-0", "grace", "CLIENT_PASSED", 61, "Strong operator, but no energy sector behind her.", 72, 66),
+    SL("sl-3", "b-1", "nadia", "PLACED", 79, "Core banking BA already in Dubai on a residence visa.", 40, 24),
+    SL("sl-4", "b-1", "omar", "CLIENT_INTERESTED", 74, "Retail banking product owner, in Dubai, available now.", 3, 1),
+    SL("sl-5", "b-1", "isha", "PROPOSED", 66, "Payments BA, would need a visa moved across.", 3, 3),
+    SL("sl-6", "b-3", "james", "INTRODUCED", 88, "Ran the S/4 assurance review the brief describes.", 6, 2),
+    SL("sl-7", "b-4", "marcus", "PROPOSED", 71, "Has built a Gulf operating model from nothing before.", 10, 9),
+    SL("sl-8", "b-4", "hannah", "CANDIDATE", 58, "Adjacent — operations, but never fractional.", 10, 10),
+  ];
+
   const fees: FeeLine[] = [
+    { id: "f-0", briefId: "b-0", accountId: "ac-meridian", personId: pid("marcus"), model: "CONTRACT_MARGIN", basis: "12% of £1,400/day \u00d7 130 days", gross: 182000, ourTake: 21840, currency: "GBP", status: "PAID", createdAt: daysAgo(58), updatedAt: daysAgo(20) },
+    { id: "f-5", briefId: "b-1", accountId: "ac-gulf", personId: pid("nadia"), model: "AGENCY_REFERRAL", basis: "35% of the agency\u2019s 20% fee on AED 360,000", gross: 72000, ourTake: 25200, currency: "AED", status: "INVOICED", createdAt: daysAgo(24), updatedAt: daysAgo(6) },
     { id: "f-1", briefId: "b-3", accountId: "ac-amana", personId: pid("james"), model: "EXPERT_HOURLY", basis: "30% of £600/hour × 2 hours", gross: 1200, ourTake: 360, currency: "GBP", status: "AGREED", createdAt: daysAgo(2), updatedAt: daysAgo(2) },
     { id: "f-2", briefId: "b-4", accountId: "ac-meridian", personId: pid("marcus"), model: "CONTRACT_MARGIN", basis: "12% of £1,700/day × 165 days (9 mo)", gross: 280500, ourTake: 33660, currency: "GBP", status: "FORECAST", createdAt: daysAgo(10), updatedAt: daysAgo(10) },
     { id: "f-3", briefId: "b-1", accountId: "ac-gulf", personId: null, model: "AGENCY_REFERRAL", basis: "35% of the agency's 20% fee on AED 360,000 × 2 people", gross: 144000, ourTake: 50400, currency: "AED", status: "FORECAST", createdAt: daysAgo(3), updatedAt: daysAgo(3) },
@@ -193,5 +220,5 @@ export function seed(): State {
     { id: "a-3", actorId: "u-richard", action: "team.add", entityType: "Opportunity", entityId: "o-4", detail: "Fatima Al Rashid", createdAt: daysAgo(1) },
     { id: "a-4", actorId: "u-waqas", action: "integration.connect", entityType: "SchedulingConnection", detail: "MANUAL", createdAt: daysAgo(30) },
   ];
-  return { users: USERS, me: USERS[0], people, relationships, evidence, conversations, scheduled, opportunities, matches: [], introductions, team, partners, requirements, relocation, audit, accounts, briefs, shortlist: [], fees, rateCard: { ...DEFAULT_RATE_CARD }, vouches, referrals, pitches, viewAs: { role: "OWNER" }, screeningScript: JSON.parse(JSON.stringify(SCREENING_SCRIPT)), connections: ["MANUAL"] };
+  return { users: USERS, me: USERS[0], people, relationships, evidence, conversations, scheduled, opportunities, matches: [], introductions, team, partners, requirements, relocation, audit, accounts, briefs, shortlist, fees, rateCard: { ...DEFAULT_RATE_CARD }, vouches, referrals, pitches, viewAs: { role: "OWNER" }, screeningScript: JSON.parse(JSON.stringify(SCREENING_SCRIPT)), connections: ["MANUAL"] };
 }
