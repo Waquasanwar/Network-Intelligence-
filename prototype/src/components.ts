@@ -18,7 +18,7 @@ const BASE = `
     --rule: var(--c-rule, rgba(19,23,20,0.12)); --paper: var(--c-paper, #fff); --sunk: var(--c-sunk, #f3f4f1);
     --trust: var(--c-trust, #186b4e); --trust-b: var(--c-trust-b, #2f9e6f); --alert: var(--c-alert, #9a6212); --alert-b: var(--c-alert-b, #d08a1f); --stop: var(--c-stop, #a3352b);
     --accent: var(--c-accent, #186b4e); --accent-b: var(--c-accent-b, #2f9e6f);
-    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; --sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif; --serif: var(--sans);
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; --sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; --serif: var(--sans);
     display: inline-block; }
   * { box-sizing: border-box; }
 `;
@@ -39,19 +39,20 @@ class Chain extends HTMLElement {
     const extra = count - shown.length;
     const initials = (n: string) => n.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
     this.#root.adoptedStyleSheets = [sheet(`${BASE}
-      :host { vertical-align: middle; }
-      .c { display: inline-flex; align-items: center; gap: 0; }
+      :host { vertical-align: middle; max-width: 100%; }
+      /* A long chain wraps rather than running past its column. */
+      .c { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; max-width: 100%; }
       .n { position: relative; width: ${compact ? 20 : 24}px; height: ${compact ? 20 : 24}px; border-radius: 50%; display: grid; place-items: center;
-        font: 600 ${compact ? 8.5 : 9.5}px/1 var(--mono); letter-spacing: 0.02em; color: var(--paper); background: var(--trust);
+        font: 600 ${compact ? 8.5 : 9.5}px/1 var(--sans); letter-spacing: 0.02em; color: var(--paper); background: var(--trust);
         box-shadow: 0 0 0 2px var(--paper); margin-right: -6px; }
       .n:nth-child(2) { background: color-mix(in srgb, var(--trust) 86%, var(--ink)); }
       .n:nth-child(3) { background: color-mix(in srgb, var(--trust) 72%, var(--ink)); }
       .n:nth-child(4) { background: color-mix(in srgb, var(--trust) 58%, var(--ink)); }
       .n:nth-child(5) { background: color-mix(in srgb, var(--trust) 44%, var(--ink)); }
       .n.anon { background: var(--ink-3); color: var(--paper); font-size: ${compact ? 9 : 10}px; }
-      .more { margin-left: 10px; font: 500 ${compact ? 11 : 11.5}px/1 var(--mono); color: var(--ink-3); }
+      .more { margin-left: 10px; font: 600 ${compact ? 11 : 11.5}px/1 var(--sans); color: var(--ink-3); }
       .score { margin-left: 10px; padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--trust) 12%, transparent);
-        color: var(--trust); font: 600 ${compact ? 11 : 12}px/1.4 var(--mono); }
+        color: var(--trust); font: 600 ${compact ? 11 : 12}px/1.4 var(--sans); }
       .none { font: 400 ${compact ? 11.5 : 12.5}px/1 var(--sans); color: var(--ink-3); font-style: italic; }
     `)];
     if (!count) { this.#root.innerHTML = `<span class="none">nobody yet</span>`; return; }
@@ -82,7 +83,7 @@ class Trust extends HTMLElement {
       .v { fill: none; stroke: ${tone}; stroke-width: 4.5; stroke-linecap: round; transition: stroke-dasharray 760ms cubic-bezier(0.22,1,0.36,1); }
       .f { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1; }
       b { font: 600 ${Math.round(size * 0.34)}px/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--ink); }
-      small { display: block; margin-top: 4px; font: 500 ${Math.max(8.5, size * 0.105)}px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+      small { display: block; margin-top: 4px; font: 600 ${Math.max(8.5, size * 0.105)}px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
       @media (prefers-reduced-motion: reduce) { .v { transition: none; } }
     `)];
     this.#root.innerHTML = `<div class="d"><svg viewBox="0 0 40 40"><circle class="t" cx="20" cy="20" r="18"/><circle class="v" cx="20" cy="20" r="18" pathLength="100" stroke-dasharray="${score} 100"/></svg><div class="f"><b>${score}</b>${band ? `<small>${band}</small>` : ""}</div></div>`;
@@ -102,7 +103,7 @@ class Quote extends HTMLElement {
       :host { display: block; }
       blockquote { margin: 0; font: ${size === "xl" ? 600 : 450} ${px}px/${size === "xl" ? 1.12 : 1.45} var(--sans); letter-spacing: ${size === "xl" ? "-0.035em" : "-0.011em"}; color: var(--ink); text-wrap: pretty; }
       .a { margin-top: ${size === "xl" ? 20 : 10}px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
-        font: 500 ${size === "xl" ? 12 : 11}px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); }
+        font: 600 ${size === "xl" ? 12 : 11}px/1.4 var(--sans); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); }
       .a b { color: var(--ink-2); font-weight: 600; }
       .a .ctx { text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: ${size === "xl" ? 13 : 12}px; color: var(--ink-3); }
     `)];
@@ -125,7 +126,7 @@ class Tag extends HTMLElement {
       :host { vertical-align: middle; }
       span { display: inline-flex; align-items: center; gap: 5px; padding: ${solid ? "3px 8px" : "0"}; border-radius: 999px;
         background: ${solid ? `color-mix(in srgb, ${c} 11%, transparent)` : "transparent"};
-        font: 500 11px/1.5 var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: ${c}; white-space: nowrap; }
+        font: 600 11px/1.5 var(--sans); text-transform: uppercase; letter-spacing: 0.07em; color: ${c}; white-space: nowrap; }
       i { width: 5px; height: 5px; border-radius: 50%; background: ${c}; display: ${solid || this.hasAttribute("icon") ? "none" : "block"}; }
       ni-icon, ::slotted(ni-icon) { color: ${c}; }
     `)];
@@ -150,14 +151,14 @@ class Meter extends HTMLElement {
       .r { display: grid; grid-template-columns: 150px 1fr 66px; gap: 14px; align-items: center; padding: ${wanted ? "7px 9px" : "7px 0"}; border-radius: 9px;
         background: ${wanted ? "color-mix(in srgb, var(--trust) 7%, transparent)" : "transparent"}; margin: ${wanted ? "0 -9px" : "0"}; }
       .lab { font: 450 13px/1.3 var(--sans); color: var(--ink); }
-      .lab em { display: block; font: 500 9.5px/1.4 var(--mono); font-style: normal; text-transform: uppercase; letter-spacing: 0.08em; color: var(--trust); margin-top: 2px; }
+      .lab em { display: block; font: 600 9.5px/1.4 var(--sans); font-style: normal; text-transform: uppercase; letter-spacing: 0.08em; color: var(--trust); margin-top: 2px; }
       .scale { display: grid; grid-template-columns: auto 1fr auto; gap: 9px; align-items: center; }
       .end { font: 400 10.5px/1.3 var(--sans); color: var(--ink-3); max-width: 84px; }
       .track { position: relative; height: 3px; border-radius: 999px; background: var(--rule); }
       .track i { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; transform: translate(-50%, -50%); }
       .track i.s { background: var(--paper); box-shadow: 0 0 0 2px var(--ink-3); }
       .track i.p { background: var(--trust-b); box-shadow: 0 0 0 2px var(--paper); }
-      .out { text-align: right; font: 400 13px/1.2 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+      .out { text-align: right; font: 600 13px/1.2 var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
       .out small { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); margin-top: 2px; }
       @media (max-width: 900px) { .r { grid-template-columns: 1fr; gap: 5px; } .out { text-align: left; } }
     `)];
@@ -205,7 +206,7 @@ class Rule extends HTMLElement {
     this.#root.adoptedStyleSheets = [sheet(`${BASE}
       :host { display: block; }
       .r { display: flex; align-items: baseline; gap: 12px; padding-bottom: 9px; border-bottom: 1px solid var(--rule); }
-      .i { font: 500 10.5px/1 var(--mono); color: var(--ink-3); letter-spacing: 0.06em; }
+      .i { font: 600 10.5px/1 var(--sans); color: var(--ink-3); letter-spacing: 0.06em; }
       b { font: 550 13.5px/1.2 var(--sans); letter-spacing: -0.01em; color: var(--ink); }
       .n { font: 400 12.5px/1.4 var(--sans); color: var(--ink-3); margin-left: auto; text-align: right; max-width: 52ch; }
       ::slotted(*) { margin-left: auto; }
@@ -236,6 +237,11 @@ const ICONS: Record<string, string> = {
   ask: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3M12 17h.01"/>',
   near: '<path d="M4 12h16"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  pin: '<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
+  grid: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
+  rows: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  seal: '<circle cx="12" cy="9.5" r="6.5"/><path d="m9 15-1.5 6L12 19l4.5 2L15 15"/><path d="m9.5 9.5 1.8 1.8 3.2-3.4"/>',
+  spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
 };
 
 class Icon extends HTMLElement {
@@ -289,12 +295,12 @@ class Stat extends HTMLElement {
       :host([ghost]) .d { color: #fff; background: rgba(255,255,255,0.16); }
       :host([href]) .w { cursor: pointer; }
       :host([href]) .w:hover { transform: translateY(-2px); border-color: color-mix(in srgb, ${c} 45%, var(--rule)); box-shadow: 0 10px 24px -16px ${c}; }
-      .l { font: 500 10px/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .l { font: 600 10px/1.2 var(--sans); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
       .v { font: 600 25px/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--ink); }
       .n { font: 400 11.5px/1.35 var(--sans); color: var(--ink-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       .spark { width: 100%; height: 24px; }
-      .d { display: inline-flex; align-items: center; gap: 3px; font: 500 11px/1 var(--mono); padding: 4px 8px; flex: none; border-radius: 999px; white-space: nowrap;
+      .d { display: inline-flex; align-items: center; gap: 3px; font: 600 11px/1 var(--sans); padding: 4px 8px; flex: none; border-radius: 999px; white-space: nowrap;
         color: ${good ? "var(--trust)" : "var(--alert)"}; background: color-mix(in srgb, ${good ? "var(--trust-b)" : "var(--alert-b)"} 13%, transparent); }
       svg { display: block; overflow: visible; }
       :host([ghost]) .line { stroke: rgba(255,255,255,0.75); } :host([ghost]) .fill { fill: #fff; } :host([ghost]) .dot { fill: #fff; }
@@ -341,7 +347,7 @@ class Bar extends HTMLElement {
       .keys { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; }
       .key { display: inline-flex; align-items: center; gap: 6px; font: 400 11.5px/1.3 var(--sans); color: var(--ink-2); }
       .key i { width: 7px; height: 7px; border-radius: 2px; flex: none; }
-      .key b { font: 500 11.5px/1.3 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+      .key b { font: 600 11.5px/1.3 var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
     `)];
     const unit = this.getAttribute("unit") ?? "";
     this.#root.innerHTML = `<div class="track">${segs.map((x) => `<div class="seg" style="flex: ${Math.max(x.value, 0.001)} 1 0; background: ${col(x.tone)}"></div>`).join("")}</div>

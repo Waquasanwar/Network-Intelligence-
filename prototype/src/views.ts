@@ -42,10 +42,13 @@ const avatar = (p: { firstName: string; lastName: string; photoUrl?: string | nu
 const badge = (label: string, tone = "neutral", filled = false) => `<span class="badge ${filled ? "filled" : ""} tone-${tone}"><i></i>${esc(label)}</span>`;
 const chip = (t: string) => `<span class="chip">${esc(t)}</span>`;
 function availBadge(p: Person) { const f = C.fresh(p); const tone = f === "stale" || f === "unknown" ? "amber" : L().AVAILABILITY_TONE[p.availabilityStatus]; return `${badge(L().AVAILABILITY_LABELS[p.availabilityStatus], tone)}${f === "stale" && p.availabilityStatus !== "NEEDS_REFRESH" ? '<span class="stale">stale</span>' : f === "aging" ? '<span class="aging">aging</span>' : ""}`; }
-function thread(p: Person, compact = true) {
+function thread(p: Person, compact = true, linked = true) {
   const r = C.relsOf(p.id)[0]; if (!r) return badge("provenance missing", "amber");
   const intro = r.introducedById ? C.person(r.introducedById) : null; const short = (n: string) => (compact ? n.split(" ")[0] : n);
-  return `<span class="thread" title="${esc(C.userName(r.networkOwnerId))}${intro ? ` via ${esc(C.full(intro))}` : ""}${r.workedTogether ? " · worked together" : ""}"><span class="node self"><i></i>${esc(short(C.userName(r.networkOwnerId)))}</span>${intro ? `<span class="link"></span><span class="node"><i></i><a href="#/people/${intro.id}">${esc(short(C.full(intro)))}</a></span>` : ""}<span class="link ${r.workedTogether ? "worked" : ""}"></span><span class="node ${r.workedTogether ? "trusted" : ""}"><i></i>${esc(short(C.full(p)))}</span></span>`;
+  // `linked` is off wherever the chain sits inside a link of its own: an anchor inside an anchor is
+  // invalid, and the browser silently lifts it out of its parent, which tears the card apart.
+  const mid = intro ? (linked ? `<a href="#/people/${intro.id}">${esc(short(C.full(intro)))}</a>` : esc(short(C.full(intro)))) : "";
+  return `<span class="thread" title="${esc(C.userName(r.networkOwnerId))}${intro ? ` via ${esc(C.full(intro))}` : ""}${r.workedTogether ? " · worked together" : ""}"><span class="node self"><i></i>${esc(short(C.userName(r.networkOwnerId)))}</span>${intro ? `<span class="link"></span><span class="node"><i></i>${mid}</span>` : ""}<span class="link ${r.workedTogether ? "worked" : ""}"></span><span class="node ${r.workedTogether ? "trusted" : ""}"><i></i>${esc(short(C.full(p)))}</span></span>`;
 }
 const personLink = (p: Person, sub?: string | null) => `<a class="plink" href="#/people/${p.id}">${avatar(p, "sm")}<span><b>${esc(C.full(p))}</b>${sub === null ? "" : `<small>${esc(sub ?? p.headline ?? "")}</small>`}</span></a>`;
 const score = (v: number) => `<div class="score"><div class="bar"><div class="fill ${v >= 70 ? "hi" : v >= 45 ? "mid" : "lo"}" style="width:${Math.max(2, Math.min(100, v))}%"></div></div><span>${v}</span></div>`;
@@ -147,8 +150,16 @@ function overview(): View {
   const html = `
     <section class="masthead">
       <div class="mh-eyebrow"><ni-icon name="vouch" size="13" tone="trust"></ni-icon> ${hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening"}, ${esc(me.name.split(" ")[0])} — what the network says today</div>
-      ${feature && featureOf ? `<a class="mh-quote" href="#/people/${featureOf.id}"><ni-quote size="xl" by="${esc(voucherName(feature))}" context="on ${esc(C.full(featureOf))} · ${esc(feature.context)}" when="${esc(rel(feature.createdAt))}">${esc(feature.statement!)}</ni-quote></a>
-      <div class="mh-chain"><ni-chain people="${esc(fc.names)}" count="${fc.count}" score="${C.trustOf(featureOf).score}"></ni-chain><span>${fc.count} ${fc.count === 1 ? "person stands" : "people stand"} behind ${esc(featureOf.firstName)}</span></div>` : `<div class="mh-quote"><ni-quote size="xl">Who do we genuinely know who could solve this problem?</ni-quote></div>`}
+      ${feature && featureOf ? `<a class="mh-quote" href="#/people/${featureOf.id}"><ni-quote size="lg" by="${esc(voucherName(feature))}" context="on ${esc(C.full(featureOf))} · ${esc(feature.context)}" when="${esc(rel(feature.createdAt))}">${esc(feature.statement!)}</ni-quote></a>` : `<div class="mh-quote"><ni-quote size="lg">Who do we genuinely know who could solve this problem?</ni-quote></div>`}
+      <div class="mh-side">
+        ${feature && featureOf ? `<div class="mh-chain"><ni-chain people="${esc(fc.names)}" count="${fc.count}" score="${C.trustOf(featureOf).score}"></ni-chain><span>${fc.count} ${fc.count === 1 ? "person stands" : "people stand"} behind ${esc(featureOf.firstName)}</span></div>` : ""}
+        <div class="pulse">
+          <div class="pulse-head"><span class="eyebrow"><ni-icon name="spark" size="13"></ni-icon> Network pulse</span><small>${esc(new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }))}</small></div>
+          <div class="pulse-ring"><span class="pulse-dial"><ni-trust score="${avgTrust}" size="64"></ni-trust><small>avg trust</small></span>
+            <ul><li><b>${trusted}</b><small>trusted</small></li><li><b>${worked}</b><small>worked with</small></li><li><b>${freshPct}%</b><small>current</small></li></ul></div>
+          <ni-bar segments="Trusted:${trusted || 0.001}:trust|Screened:${Math.max(0, screened - trusted) || 0.001}:accent|Not yet screened:${Math.max(0, total - screened) || 0.001}:mute" height="7"></ni-bar>
+        </div>
+      </div>
       <div class="mh-actions">${btn("＋ Add a person", 'data-act="addPerson"')}<a class="btn glass" href="#/requirements">Take a requirement</a><a class="btn ghost" href="#/import">Import contacts</a></div>
     </section>
     <section class="board-row">
@@ -254,6 +265,39 @@ function intelligence(): View {
   return { title: "Intelligence", crumbs: [["Intelligence"]], html: raw(html) };
 }
 
+/**
+ * One expert, as a card.
+ *
+ * A table row can tell you a name and a city. It cannot tell you the thing this network actually
+ * sells — that somebody here has worked with this person and would do it again — so that line is
+ * the card's headline, above the role, and the trust dial sits beside it at a size you can read
+ * across a room. Everything else (capabilities, where they are, what they are open to, who the
+ * chain of provenance runs through) is arranged underneath in the order a person asks for it.
+ */
+function expertCard(p: Person): string {
+  const t = C.trustOf(p); const scoreV = Math.round(t?.score ?? C.depth(p));
+  const band = scoreV >= 70 ? "hi" : scoreV >= 40 ? "mid" : "lo";
+  const cred = C.credibility.credibility(credInput(p));
+  const lead = cred.find((b: any) => b.key === "worked") ?? cred.find((b: any) => b.key === "used") ?? cred[0];
+  const strong = lead?.strength === "strong";
+  const where = [p.primaryCity, p.primaryCountry].filter(Boolean).join(", ");
+  const live = C.ACTIVE_STATUSES.includes(p.availabilityStatus) && C.fresh(p) === "fresh";
+  const caps = p.capabilities.slice(0, 3);
+  return `<a class="xc" href="#/people/${p.id}">
+    <div class="xc-top">${avatar(p, "md")}
+      <div class="xc-id"><b>${esc(C.full(p))}</b><small>${esc(p.headline ?? [p.currentRole, p.currentCompany].filter(Boolean).join(" · ") ?? "")}</small></div>
+      <div class="xc-dial"><svg viewBox="0 0 46 46"><circle class="track" cx="23" cy="23" r="19"/><circle class="val ${band}" cx="23" cy="23" r="19" pathLength="100" stroke-dasharray="${Math.max(2, Math.min(100, scoreV))} 100"/></svg><i>${scoreV}</i><em>trust</em></div>
+    </div>
+    ${lead ? `<div class="xc-cred ${strong ? "" : "cool"}"><ni-icon name="${lead.icon}" size="13"></ni-icon><span>${esc(lead.label)}</span></div>` : ""}
+    <div class="chips">${caps.map((c) => `<span class="chip cap">${esc(c)}</span>`).join("")}${p.capabilities.length > caps.length ? `<small>+${p.capabilities.length - caps.length}</small>` : ""}</div>
+    <div class="xc-meta">
+      <span class="where"><ni-icon name="pin" size="13"></ni-icon><span>${esc(where || "Location not confirmed")}</span></span>
+      <span class="nowrap">${live ? '<i class="xc-live"></i> ' : ""}${esc(L().AVAILABILITY_LABELS[p.availabilityStatus])}</span>
+    </div>
+    <div class="xc-foot">${thread(p, true, false)}<span class="nowrap dim">${esc(p.engagementPreferences.slice(0, 2).map((r: string) => (r === "SOW" ? "SOW" : L().ROUTE_LABELS[r])).join(" · ") || "Routes TBC")}</span></div>
+  </a>`;
+}
+
 function network(q: URLSearchParams): View {
   const S = C.S(); const text = q.get("q") ?? "";
   const f = { status: q.get("status") ?? "", route: q.get("route") ?? "", location: q.get("location") ?? "", workedWith: q.get("workedWith"), freshness: q.get("freshness"), amanaBench: q.get("amanaBench"), source: q.get("source") };
@@ -270,12 +314,17 @@ function network(q: URLSearchParams): View {
   if (f.freshness === "stale") people = people.filter((p) => C.fresh(p) === "stale" || C.fresh(p) === "unknown");
   if (f.freshness === "fresh") people = people.filter((p) => C.fresh(p) === "fresh");
   const pill = (label: string, key: string, value: string) => { const active = q.get(key) === value; const np = new URLSearchParams(q); if (active) np.delete(key); else np.set(key, value); return `<a class="pill ${active ? "active" : ""}" href="#/network?${np}">${esc(label)}</a>`; };
-  const html = `<div class="page-head"><div><h1>Network</h1><p>Search by relationship, expertise, location and status. Ask in plain language.</p></div><div class="actions"><a class="btn glass" href="#/import">Import</a>${btn("＋ Add person", 'data-act="addPerson"')}</div></div>
+  const layout = q.get("layout") === "list" ? "list" : "grid";
+  const lay = (v: string) => { const np = new URLSearchParams(q); if (v === "grid") np.delete("layout"); else np.set("layout", v); return `#/network${np.toString() ? `?${np}` : ""}`; };
+  const html = `<div class="page-head"><div><h1>Experts</h1><p>Search by relationship, expertise, location and status. Ask in plain language.</p></div><div class="actions"><a class="btn glass" href="#/import">Import</a>${btn("＋ Add person", 'data-act="addPerson"')}</div></div>
     <form class="searchbar" data-search><div class="search"><span>⌕</span><input name="q" value="${esc(text)}" placeholder='e.g. "programme director available soon who we have worked with, open to Dubai"'></div><select name="status">${opt(L().AVAILABILITY_LABELS, f.status, "Any status")}</select><select name="route">${opt(L().ROUTE_LABELS, f.route, "Any route")}</select><input name="location" value="${esc(f.location)}" placeholder="Location" class="w-loc"><button class="btn glass" type="submit">Search</button></form>
     <div class="pills">${pill("Worked with", "workedWith", "1")}${pill("Needs refresh", "freshness", "stale")}${pill("Fresh", "freshness", "fresh")}${pill("Amana bench", "amanaBench", "1")}${pill("Introduced", "source", "INTRODUCTION")}${[...q.keys()].length ? '<a class="clear" href="#/network">Clear</a>' : ""}</div>
     ${it && (it.capabilities.length || it.locations.length || it.routes.length || it.availableSoon || it.workedWithOnly) ? `<div class="understood">Understood as ${[...it.capabilities, ...it.sectors, ...it.locations.map((l) => "📍 " + l), ...it.routes.map((r) => L().ROUTE_LABELS[r]), ...(it.availableSoon ? ["available soon"] : []), ...(it.workedWithOnly ? ["worked with only"] : [])].map(chip).join("")}</div>` : ""}
-    <div class="card table-card">${people.length ? `<div class="scroll"><table class="data"><thead><tr><th>Person</th><th>Provenance</th><th>Expertise</th><th>Location</th><th>Availability · routes</th><th>Stands behind them</th><th class="num">Known</th><th>Next action</th></tr></thead><tbody>${people.map((p) => `<tr><td>${personLink(p, p.currentRole ? `${p.currentRole}${p.currentCompany ? ` · ${p.currentCompany}` : ""}` : p.headline)}</td><td>${thread(p)}<small class="sub">${esc(C.relsOf(p.id)[0] ? L().SOURCE_LABELS[C.relsOf(p.id)[0].sourceType] : "")}</small></td><td><div class="chips">${p.capabilities.slice(0, 2).map(chip).join("")}${p.capabilities.length > 2 ? `<small>+${p.capabilities.length - 2}</small>` : ""}</div></td><td class="nowrap"><span>${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—")}</span>${p.targetLocations.length ? `<small class="sub">→ ${esc(p.targetLocations.join(", "))}</small>` : ""}</td><td class="nowrap">${availBadge(p)}<small class="sub">${esc(p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : L().ROUTE_LABELS[r])).join(", ") || "Routes not confirmed")}</small></td><td>${mv.chainOf(p)}</td><td class="num">${gauge(C.depth(p), "")}</td><td class="next">${esc(p.nextAction ?? "—")}${p.nextActionDate ? `<small class="sub">${esc(rel(p.nextActionDate))}</small>` : ""}</td></tr>`).join("")}</tbody></table></div>` : empty("No one matches", "Try a broader search, or add the person you have in mind.")}</div><div class="count-note">${people.length} people</div>`;
-  return { title: "Network", crumbs: [["Network"]], html: raw(html) };
+    <div class="list-bar"><span class="count">${people.length} expert${people.length === 1 ? "" : "s"}</span><span class="view-toggle"><a class="${layout === "grid" ? "on" : ""}" href="${lay("grid")}"><ni-icon name="grid" size="13"></ni-icon> Cards</a><a class="${layout === "list" ? "on" : ""}" href="${lay("list")}"><ni-icon name="rows" size="13"></ni-icon> Table</a></span></div>
+    ${!people.length ? empty("Nobody matches that", "Widen the search, or add the person you already have in mind.", btn("＋ Add person", 'data-act="addPerson"', "glass sm"))
+      : layout === "grid" ? `<div class="expert-grid">${people.map(expertCard).join("")}</div>`
+      : `<div class="card table-card"><div class="scroll"><table class="data"><thead><tr><th>Person</th><th>Provenance</th><th>Expertise</th><th>Location</th><th>Availability · routes</th><th>Stands behind them</th><th class="num">Trust</th><th>Next action</th></tr></thead><tbody>${people.map((p) => `<tr><td>${personLink(p, p.currentRole ? `${p.currentRole}${p.currentCompany ? ` · ${p.currentCompany}` : ""}` : p.headline)}</td><td>${thread(p)}<small class="sub">${esc(C.relsOf(p.id)[0] ? L().SOURCE_LABELS[C.relsOf(p.id)[0].sourceType] : "")}</small></td><td><div class="chips">${p.capabilities.slice(0, 2).map((c) => `<span class="chip cap">${esc(c)}</span>`).join("")}${p.capabilities.length > 2 ? `<small>+${p.capabilities.length - 2}</small>` : ""}</div></td><td class="nowrap"><span>${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—")}</span>${p.targetLocations.length ? `<small class="sub">→ ${esc(p.targetLocations.join(", "))}</small>` : ""}</td><td class="nowrap">${availBadge(p)}<small class="sub">${esc(p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : L().ROUTE_LABELS[r])).join(", ") || "Routes not confirmed")}</small></td><td>${mv.chainOf(p)}</td><td class="num">${gauge(C.depth(p), "")}</td><td class="next">${esc(p.nextAction ?? "—")}${p.nextActionDate ? `<small class="sub">${esc(rel(p.nextActionDate))}</small>` : ""}</td></tr>`).join("")}</tbody></table></div></div>`}`;
+  return { title: "Experts", crumbs: [["Experts"]], html: raw(html) };
 }
 
 /** What we can actually say about this person, strongest first. Names are fine in here. */
@@ -330,7 +379,7 @@ function personaCard(p: Person, self = false): string {
 
 function personView(id: string, q: URLSearchParams): View {
   const S = C.S(); const p = C.person(id);
-  if (!p) return { title: "Not found", crumbs: [["Network", "#/network"], ["Not found"]], html: raw(empty("Person not found")) };
+  if (!p) return { title: "Not found", crumbs: [["Experts", "#/network"], ["Not found"]], html: raw(empty("Person not found")) };
   const tab = q.get("tab") ?? "overview";
   const rels = C.relsOf(id), evs = C.evOf(id), convs = C.convOf(id);
   const approved = convs.filter((c) => c.approvalStatus === "APPROVED"); const latest = approved[0]?.approvedSummary ?? null;
@@ -352,9 +401,9 @@ function personView(id: string, q: URLSearchParams): View {
   else if (tab === "opportunities") body = card("Opportunities", matches.length ? `<div class="scroll"><table class="data"><thead><tr><th>Opportunity</th><th>Route</th><th>Stage</th><th class="num">Fit</th><th>Human decision</th><th>Notes</th></tr></thead><tbody>${matches.map((m) => { const o = S.opportunities.find((x) => x.id === m.opportunityId)!; return `<tr><td><a href="#/opportunities/${o.id}"><b>${esc(o.title)}</b></a><small class="sub">${esc(o.clientName ?? "")}</small></td><td>${badge(L().ROUTE_LABELS[o.engagementRoute], "navy")}</td><td>${badge(L().OPPORTUNITY_STATUS_LABELS[o.status], "navy")}</td><td class="num">${m.fitScore}</td><td>${badge(L().DECISION_LABELS[m.humanDecision], L().DECISION_TONE[m.humanDecision])}</td><td class="dim wrap">${esc(m.humanNotes ?? "—")}</td></tr>`; }).join("")}</tbody></table></div>` : empty("Not yet considered for an opportunity"), { desc: "Scores are per-opportunity, never a global rank.", flush: true });
   else if (tab === "relocation") body = card("Relocation", reloc ? `<dl class="kv four"><div><dt>From</dt><dd>${esc(reloc.currentLocation ?? "—")}</dd></div><div><dt>To</dt><dd>${esc(reloc.targetLocation ?? "—")}</dd></div><div><dt>Window</dt><dd>${esc(reloc.targetMoveWindow ?? "—")}</dd></div><div><dt>Advisory</dt><dd>${badge(L().ADVISORY_LABELS[reloc.advisoryStatus], reloc.advisoryStatus === "ACTIVE" ? "teal" : "navy")}</dd></div></dl><div class="chips">${[reloc.familyMove && "family move", reloc.schoolGuidanceInterest && "schools", reloc.housingGuidanceInterest && "housing", reloc.relocationAdvisoryInterest && "wants advisory", reloc.employerSponsored ? "employer funded" : "individually funded"].filter(Boolean).map((c) => chip(c as string)).join("")}</div>${reloc.notes ? `<p>${esc(reloc.notes)}</p>` : ""}` : empty("No relocation profile", "Capture interest if it comes up in conversation."), { desc: "Advisory is a separate, optional paid service.", action: btn(reloc ? "Edit" : "Capture interest", `data-act="relocation" data-id="${id}"`, "glass sm") });
   else body = card("Activity", `<ul class="log">${S.audit.filter((a) => a.entityId === id || (a.detail ?? "").includes(C.full(p))).map((a) => `<li><span>${esc(C.userName(a.actorId))} · <code>${esc(a.action)}</code> ${a.detail ? `<span class="dim">${esc(a.detail)}</span>` : ""}</span><small>${esc(rel(a.createdAt))}</small></li>`).join("") || '<li class="dim">No activity recorded.</li>'}</ul>`, { desc: "Audit trail of sensitive actions on this record." });
-  const html = `<div class="person-hero"><div class="who">${avatar(p, "xl", true)}<div><h1>${esc(C.full(p))}</h1><p>${esc(p.headline ?? "—")}</p><small>${esc([p.currentRole, p.currentCompany].filter(Boolean).join(" · "))}${p.primaryCity ? ` · ${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", "))}` : ""}</small><div class="meta">${thread(p, false)}</div>${credStrip(p, { compact: true })}<div class="meta">${availBadge(p)}${p.engagementPreferences.map((r) => badge(L().ROUTE_LABELS[r], "navy")).join("")}${p.amanaBench ? badge("Amana bench", "teal", true) : ""}${p.relocationInterest ? badge("Relocation", "neutral", true) : ""}${p.memberSince ? badge("network member", "teal", true) : ""}</div></div></div><div class="actions">${btn("Refer to a client or agency", `data-act="referToAccount" data-id="${id}"`, "primary")}${btn("I have met them", `data-act="metThem" data-id="${id}"`, "glass")}${btn("Screening call", `data-act="startScreening" data-id="${id}"`, "glass")}${btn("Book conversation", `data-act="book" data-id="${id}"`)}${btn("Capture conversation", `data-act="capture" data-id="${id}"`, "glass")}${btn("Edit profile", `data-act="editPerson" data-id="${id}"`, "glass")}</div></div>
+  const html = `<div class="person-hero"><div class="who">${avatar(p, "xl", true)}<div><h1>${esc(C.full(p))}</h1><p>${esc(p.headline ?? "—")}</p><small>${esc([p.currentRole, p.currentCompany].filter(Boolean).join(" · "))}${p.primaryCity ? ` · ${esc([p.primaryCity, p.primaryCountry].filter(Boolean).join(", "))}` : ""}</small><div class="meta">${thread(p, false)}</div>${credStrip(p, { compact: true })}<div class="meta">${availBadge(p)}${p.engagementPreferences.map((r) => badge(L().ROUTE_LABELS[r], "navy")).join("")}${p.amanaBench ? badge("Amana bench", "teal", true) : ""}${p.relocationInterest ? badge("Relocation", "neutral", true) : ""}${p.memberSince ? badge("network member", "teal", true) : ""}</div></div></div><div class="actions">${btn("Refer to a client or agency", `data-act="referToAccount" data-id="${id}"`, "primary")}${btn("I have met them", `data-act="metThem" data-id="${id}"`, "glass")}${btn("Screening call", `data-act="startScreening" data-id="${id}"`, "glass")}${btn("Book conversation", `data-act="book" data-id="${id}"`, "glass")}${btn("Capture conversation", `data-act="capture" data-id="${id}"`, "glass")}${btn("Edit profile", `data-act="editPerson" data-id="${id}"`, "glass")}</div></div>
     <nav class="tabs">${tabs.map(([k, l, n]) => `<a href="#/people/${id}${k === "overview" ? "" : `?tab=${k}`}" class="${tab === k ? "active" : ""}">${esc(l)}${typeof n === "number" ? `<i>${n}</i>` : ""}</a>`).join("")}</nav>${body}`;
-  return { title: C.full(p), crumbs: [["Network", "#/network"], [C.full(p)]], html: raw(html) };
+  return { title: C.full(p), crumbs: [["Experts", "#/network"], [C.full(p)]], html: raw(html) };
 }
 
 function conversations(q: URLSearchParams): View {
@@ -483,7 +532,7 @@ function importView(): View {
       ${card("What each column means", `<table class="guide">${COLUMN_GUIDE.map(([k, d, ex]) => `<tr><td><code>${esc(k)}</code></td><td>${esc(d)}<small>${esc(ex)}</small></td></tr>`).join("")}</table><p class="dim" style="margin-top:10px">Column names are matched loosely, so "Surname", "Job Title" or "Skills" from an existing spreadsheet work without renaming. Unrecognised columns are ignored and listed in the preview.</p>${btn("Copy blank template to clipboard", 'data-act="copyTemplate"', "glass sm")}`)}
     </div>
     <div id="import-preview">${importPreview ? renderImportPreview() : `<div class="empty tall"><b>The preview appears here</b><p>You will see every row with a status: ready, already in your network, or needs a fix. Rows with problems are shown, never silently dropped.</p><p class="dim" style="margin-top:12px">After import, each person appears in your reconnect queue with you as the relationship owner.</p></div>`}</div></div>`;
-  return { title: "Import contacts", crumbs: [["Network", "#/network"], ["Import contacts"]], html: raw(html), after: () => { const drop = document.getElementById("drop"); if (!drop) return; ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); })); ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); })); drop.addEventListener("drop", (e: DragEvent) => { const f = e.dataTransfer?.files?.[0]; if (!f) return; const inp = drop.querySelector("input") as HTMLInputElement; const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files; document.getElementById("drop-label")!.textContent = f.name; inp.form?.requestSubmit(); }); } };
+  return { title: "Import contacts", crumbs: [["Experts", "#/network"], ["Import contacts"]], html: raw(html), after: () => { const drop = document.getElementById("drop"); if (!drop) return; ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); })); ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); })); drop.addEventListener("drop", (e: DragEvent) => { const f = e.dataTransfer?.files?.[0]; if (!f) return; const inp = drop.querySelector("input") as HTMLInputElement; const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files; document.getElementById("drop-label")!.textContent = f.name; inp.form?.requestSubmit(); }); } };
 }
 function renderImportPreview(): string {
   const pv = importPreview; if (!pv.ok) return `<div class="note-amber"><b>Could not read that.</b> ${esc(pv.error)}</div>`;
