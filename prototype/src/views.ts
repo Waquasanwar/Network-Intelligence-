@@ -17,6 +17,7 @@ export type Ctx = {
   security: typeof import("@/lib/security");
   agreement: typeof import("@/lib/agreement");
   velocity: typeof import("@/lib/velocity");
+  money: typeof import("@/lib/money");
   traits: typeof import("@/lib/traits");
   automation: typeof import("@/lib/automation");
   suitability: typeof import("@/lib/suitability");
@@ -35,8 +36,8 @@ const rel = (d?: string | null) => { if (!d) return "—"; const diff = (new Dat
 const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const initials = (p: { firstName: string; lastName: string }) => `${p.firstName[0] ?? ""}${p.lastName[0] ?? ""}`.toUpperCase();
 const hueOf = (p: { firstName: string; lastName: string }) => { let x = 0; for (const c of C.full(p)) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x % 4; };
-const money = (v?: number | null, cur = "GBP") => (v === null || v === undefined ? "—" : new Intl.NumberFormat("en-GB", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(v));
-const moneyCompact = (v: number, cur = "GBP") => new Intl.NumberFormat("en-GB", { style: "currency", currency: cur, notation: "compact", maximumFractionDigits: 1 }).format(v);
+const money = (v?: number | null, cur = "GBP") => C.money.money(v, cur);
+const moneyCompact = (v: number, cur = "GBP") => C.money.moneyCompact(v, cur);
 const opt = (entries: Record<string, string>, current?: string | null, blank?: string) => (blank !== undefined ? `<option value="">${esc(blank)}</option>` : "") + Object.entries(entries).map(([k, v]) => `<option value="${k}" ${k === current ? "selected" : ""}>${esc(v)}</option>`).join("");
 const avatar = (p: { firstName: string; lastName: string; photoUrl?: string | null; privacy?: any }, size = "md", ring = false) => {
   const photo = C.privacy.canShowPhoto(p as any, "internal");
@@ -184,7 +185,7 @@ function overview(): View {
         ["Experts in the network", String(total), `${worked} you have worked with`, "", spark.people, chg.people, ""],
         ["Screened experts", String(screened), `${joining} in the queue`, "trust", spark.screened, chg.screened, ""],
         ["Members on the platform", String(memberCount), `${trusted} trusted · avg score ${avgTrust}`, "trust", spark.screened, null, "#/performance"],
-        ["Placements", String(placedCount), `${S.briefs.filter((b) => b.status === "FILLED").length} requirements filled`, "trust", spark.proposed, null, "#/performance"],
+        ["Placements", String(placedCount), `${S.briefs.filter((b) => b.status === "FILLED").length} requirement${S.briefs.filter((b) => b.status === "FILLED").length === 1 ? "" : "s"} filled`, "trust", spark.proposed, null, "#/performance"],
         ["Conversations", String(convs), `${freshPct}% of statuses fresh`, freshPct < 50 ? "alert" : "", spark.convs, chg.convs, ""],
         ["Fees in play", moneyCompact(pipeline, feeCur), `${moneyCompact(feeSum(["AGREED", "INVOICED"]), feeCur)} agreed`, "", spark.fees, null, "#/requirements?tab=fees"],
       ] as [string, string, string, string, string, { delta: number; label: string } | null, string][]).map(([l, v, n, t, sp, d, href]) => `<ni-stat label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" ${t ? `tone="${t}"` : ""} spark="${sp}" ${d ? `delta="${d.delta}" delta-label="${esc(d.label)}"` : ""} ${href ? `href="${href}"` : ""}></ni-stat>`).join("")}
@@ -317,7 +318,7 @@ function expertCard(p: Person): string {
  */
 function performance(): View {
   const S = C.S(); const sr = C.series;
-  const money = (v: number, cur: string) => new Intl.NumberFormat("en-GB", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(v);
+  const money = (v: number, cur: string) => C.money.money(v, cur);
   const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
   const feeCur = S.rateCard.currency ?? "AED";
 

@@ -239,6 +239,8 @@ export function matchBrief(brief: Brief, people: BriefPerson[], limit = 12, now 
   return out.sort((a, b) => order[a.tier] - order[b.tier] || b.match.fitScore - a.match.fitScore).slice(0, limit);
 }
 
+import { money } from "./money";
+
 // ---------- Commercials ----------
 
 export type AccountKind = "CLIENT" | "AGENCY" | "EXPERT_NETWORK";
@@ -333,7 +335,7 @@ export function estimateFee(brief: Pick<Brief, "engagementRoute" | "headcount" |
 }
 
 export function fmt(v: number, cur = "GBP"): string {
-  try { return new Intl.NumberFormat("en-GB", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(v).replace(/\u00a0/g, " "); } catch { return `${cur} ${Math.round(v).toLocaleString("en-GB")}`; }
+  return money(v, cur);
 }
 
 // ---------- Portal-safe view of a shortlist entry ----------
