@@ -24,7 +24,7 @@
   --sheet-2:  #e7eaea;
   --ink:      #14202a;          /* typewriter blue-black */
   --carbon:   #465b68;          /* the faded second copy */
-  --carbon-2: #77888f;
+  --carbon-2: #53646c;   /* 4.76:1 on the flimsy — the old value failed AA at 10.5px */
   --rule:     #c3cbcb;
   --rule-2:   #d5dbdb;
 
@@ -121,7 +121,18 @@ a { color: inherit; }
 }
 .open h1 em { font-style: italic; font-weight: 400; }
 .open .sub { margin-top: 22px; max-width: 58ch; color: var(--carbon); font-size: clamp(17px, 1.7vw, 19px); }
-.open .filed { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+/* the file's own header card, which is what balances the opening rather than an
+   ornament placed there to fill the space */
+.open-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 34px 56px; align-items: start; }
+.open-text { min-width: 0; }
+.docket { min-width: 0; border: 1px solid var(--rule); background: var(--sheet); border-radius: 3px; padding: 18px 20px 20px; box-shadow: 3px 3px 0 var(--sheet-2); }
+.docket > b { display: block; color: var(--ink); font-weight: 600; letter-spacing: 0.08em; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.docket dl { margin: 0; }
+.docket dl div { padding: 11px 0; border-bottom: 1px dotted var(--rule); }
+.docket dt { letter-spacing: 0.08em; margin-bottom: 3px; }
+.docket dd { margin: 0; font-size: 15.5px; line-height: 1.42; }
+.docket .stamp { margin-top: 16px; font-size: 10px; padding: 6px 11px 5px; }
+@media (max-width: 880px) { .open-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* --- the file -------------------------------------------------------------
    Two columns: the entry, and the margin where the claim it proves is written
@@ -284,14 +295,21 @@ a { color: inherit; }
 </header>
 
 <section class="open">
-  <div class="wrap">
+  <div class="wrap open-grid">
+    <div class="open-text">
     <h1>Somebody you trust already knows the person you are looking for. <em>We keep track of that.</em></h1>
     <p class="sub">Below is one introduction, start to finish — the actual file. The request as it arrived, what we sent back, the moment she agreed to be named, and what it cost. Read it instead of a pitch.</p>
-    <div class="filed">
-      <span class="m">File 2026/08–14</span>
-      <span class="m">Client A · a Dubai retail bank</span>
-      <span class="m">Closed 02 Sept</span>
     </div>
+    <aside class="docket">
+      <b class="m">File 2026/08–14</b>
+      <dl>
+        <div><dt class="m">Client</dt><dd>Client A — a Dubai retail bank</dd></div>
+        <div><dt class="m">Asked for</dt><dd>Programme director, core banking recovery</dd></div>
+        <div><dt class="m">Opened</dt><dd>11 Aug 2026</dd></div>
+        <div><dt class="m">Elapsed</dt><dd>22 days to a signed start date</dd></div>
+      </dl>
+      <span class="stamp">Placed · 02 Sept</span>
+    </aside>
   </div>
 </section>
 
