@@ -806,9 +806,9 @@ function settings(q: URLSearchParams): View {
   const sec = SEC.securityOf(S.security as any);
   const post = SEC.posture(S.security as any);
   /** One switch: a label, what it does, and — only when it is off — what that costs. */
-  const swi = (name: string, label: string, does: string, on: boolean, ifOff?: string, warn = false) =>
-    `<li class="${!on && warn ? "sw-warn" : ""}"><label class="sw"><input type="checkbox" name="${esc(name)}" ${on ? "checked" : ""}><i></i></label>
-      <div><b>${esc(label)}</b><small>${esc(does)}</small>${ifOff ? `<small class="sw-cost">${on ? "" : `Off: ${esc(ifOff)}`}</small>` : ""}</div></li>`;
+  const swi = (name: string, label: string, does: string, on: boolean, ifOff?: string, warn = false, enforcedBy?: string | null) =>
+    `<li class="${!on && warn ? "sw-warn" : ""} ${enforcedBy === null ? "sw-unenforced" : ""}"><label class="sw"><input type="checkbox" name="${esc(name)}" ${on ? "checked" : ""}><i></i></label>
+      <div><b>${esc(label)}</b><small>${esc(does)}</small>${enforcedBy ? `<small class="sw-by">Enforced by ${esc(enforcedBy)}</small>` : enforcedBy === null && on ? '<small class="sw-cost">Nothing in this build enforces this yet.</small>' : ""}${ifOff ? `<small class="sw-cost">${on ? "" : `Off: ${esc(ifOff)}`}</small>` : ""}</div></li>`;
   const html = `<div class="page-head"><div><h1>Settings</h1><p>Everything here is a switch with its consequence written next to it. The defaults are the safe settings — you only have to come here to relax one.</p></div><div class="actions"><div class="seg"><a href="#/settings" class="${tab === "general" ? "active" : ""}">General</a><a href="#/settings?tab=security" class="${tab === "security" ? "active" : ""}">Security</a><a href="#/settings?tab=privacy" class="${tab === "privacy" ? "active" : ""}">Privacy</a><a href="#/settings?tab=screening" class="${tab === "screening" ? "active" : ""}">Screening call</a><a href="#/settings?tab=commercials" class="${tab === "commercials" ? "active" : ""}">Commercials</a><a href="#/settings?tab=audit" class="${tab === "audit" ? "active" : ""}">Audit log</a></div></div></div>
     ${tab === "privacy" ? (() => {
       const P = C.privacy;
@@ -846,14 +846,15 @@ function settings(q: URLSearchParams): View {
     : tab === "security" ? (() => {
       const groups = SEC.CONTROL_GROUPS.map((g: any) => ({ g, items: SEC.SECURITY_CONTROLS.filter((c: any) => c.group === g.key) }));
       return `<div class="grid-3"><div class="col-2 stack">
-        <section class="card ${post.weakened.length ? "caution" : "accent"}"><div class="body posture">
-          <div class="posture-top"><span class="eyebrow"><ni-icon name="trust" size="13"></ni-icon> ${esc(post.band)}</span><b>${post.on} of ${post.total} protections on</b></div>
+        <section class="card ${post.weakened.length || post.notYetEnforced.length ? "caution" : "accent"}"><div class="body posture">
+          <div class="posture-top"><span class="eyebrow ${post.notYetEnforced.length ? "warn" : ""}"><ni-icon name="${post.notYetEnforced.length ? "caution" : "trust"}" size="13"></ni-icon> ${esc(post.notYetEnforced.length ? "Enforcement gap" : post.band)}</span><b>${post.enforced} of ${post.total} enforced${post.on > post.enforced ? ` · ${post.on - post.enforced} not yet implemented` : ""}</b></div>
           <p>${esc(post.line)}</p>
+          ${post.notYetEnforced.length ? `<ul class="posture-list gap">${post.notYetEnforced.map((n: any) => `<li><ni-icon name="caution" size="13" tone="alert"></ni-icon><span><b>${esc(n.label)}</b><small>Switched on, but nothing in this build implements it yet. Treat it as an intention, not a protection.</small></span></li>`).join("")}</ul>` : ""}
           ${post.weakened.length ? `<ul class="posture-list">${post.weakened.map((w: any) => `<li><ni-icon name="caution" size="13" tone="alert"></ni-icon><span><b>${esc(w.label)}</b><small>${esc(w.ifOff)}</small></span></li>`).join("")}</ul>` : ""}
         </div></section>
 
         <form data-action="saveSecurity" class="stack">
-          ${groups.map(({ g, items }: any) => card(g.label, `<ul class="consents">${items.map((c: any) => swi(`s:${c.key}`, c.label, c.does, (sec as any)[c.key], c.ifOff, c.weakensIfOff)).join("")}</ul>`, { desc: g.note })).join("")}
+          ${groups.map(({ g, items }: any) => card(g.label, `<ul class="consents">${items.map((c: any) => swi(`s:${c.key}`, c.label + (c.enforcedBy ? "" : " — not enforced yet"), c.does, (sec as any)[c.key], c.ifOff, c.weakensIfOff, c.enforcedBy)).join("")}</ul>`, { desc: g.note })).join("")}
           <div class="row end"><span class="dim">Changes apply the moment you save.</span><button class="btn primary" type="submit">Save security settings</button></div>
         </form>
 

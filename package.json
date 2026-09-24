@@ -18,7 +18,10 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
     "postinstall": "prisma generate",
-    "db:clear-demo": "tsx prisma/clear-demo.ts"
+    "db:clear-demo": "tsx prisma/clear-demo.ts",
+    "qa:layout": "node tools/layout-qa.mjs",
+    "qa:design": "node tools/design-audit.mjs",
+    "qa:serve": "cd prototype/dist && python3 -m http.server 8787"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -48,6 +51,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
+    "playwright-core": "^1.48.0",
     "postcss": "^8.5.6",
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.3",

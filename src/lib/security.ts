@@ -154,6 +154,14 @@ export type SecurityControl = {
   /** Turning this off weakens a protection materially, so the interface warns. */
   weakensIfOff: boolean;
   group: "identity" | "disclosure" | "retention";
+  /**
+   * The mechanism that actually enforces this control, or null when nothing does yet.
+   *
+   * A switch in an interface that no code reads is worse than no switch at all: it tells an owner
+   * a protection is on when it is not. So the state is carried in the model and shown on the page,
+   * and an unenforced control is excluded from the count of what is protecting you.
+   */
+  enforcedBy: string | null;
 };
 
 export const SECURITY_CONTROLS: SecurityControl[] = [
@@ -162,48 +170,56 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
     does: "Everybody in your tenant sets up an authenticator before they can open the network again.",
     ifOff: "A leaked password is enough to read every profile you hold.",
     defaultOn: true, weakensIfOff: true,
+    enforcedBy: null,  // the flag is stored on the user but nothing checks it at sign-in yet
   },
   {
-    key: "sessionTimeout", label: "Sign people out after 12 hours idle", group: "identity",
-    does: "A session that has not been used for half a day has to be started again.",
+    key: "sessionTimeout", label: "Sign people out after 8 hours idle", group: "identity",
+    does: "A session that has not been used for eight hours has to be started again.",
     ifOff: "An unlocked laptop stays signed in indefinitely.",
     defaultOn: true, weakensIfOff: false,
+    enforcedBy: "auth.config.ts — JWT sessions expire after 8 hours"
   },
   {
     key: "approveBeforeReveal", label: "An owner approves every identity reveal", group: "disclosure",
     does: "A contributor can propose anybody, but releasing a name to a client waits for you.",
     ifOff: "Any contributor can release a name once the person has consented.",
     defaultOn: true, weakensIfOff: true,
+    enforcedBy: null,  // canRevealIdentity() gates on role, not on this setting
   },
   {
     key: "alertOnReveal", label: "Tell me whenever a name is released", group: "disclosure",
     does: "You get a notification the moment an identity is revealed, with who did it and to whom.",
     ifOff: "Reveals are still recorded in the audit log, but nobody is told at the time.",
     defaultOn: true, weakensIfOff: false,
+    enforcedBy: null,  // reveals are audited, but there is no notification path yet
   },
   {
     key: "restrictExport", label: "Only owners can export", group: "disclosure",
     does: "Bulk export of people or shortlists is limited to owners, and every export is recorded with what was in it.",
     ifOff: "Any contributor can take a copy of the network with them.",
     defaultOn: true, weakensIfOff: true,
+    enforcedBy: null,  // exportPerson() admits any internal user, not only owners
   },
   {
     key: "notesStayInternal", label: "Private notes never leave the tenant", group: "disclosure",
     does: "Relationship notes are stripped from anything shown to a client, an agency or the person themselves.",
     ifOff: "Notes written in confidence could appear on a shared profile.",
     defaultOn: true, weakensIfOff: true,
+    enforcedBy: "redactForPartner() in authz.ts strips relationshipNotes"
   },
   {
     key: "autoRedactSpeech", label: "Redact names and figures before speech", group: "disclosure",
     does: "The interviewer's questions have names and exact money removed before they reach the speech vendor.",
     ifOff: "A name or a day rate could be spoken to a third-party service.",
     defaultOn: true, weakensIfOff: true,
+    enforcedBy: "redactForSpeech() in voice-config.ts, before the vendor call"
   },
   {
     key: "retentionSweep", label: "Delete data when its retention period ends", group: "retention",
     does: "Anything past its stated retention date is deleted or anonymised on a monthly sweep, and you get the list first.",
     ifOff: "Data is kept until somebody deletes it by hand, which is the easiest promise to break.",
     defaultOn: true, weakensIfOff: true,
+    enforcedBy: null,  // retentionDue() computes the queue; no scheduler runs it yet
   },
 ];
 
@@ -237,6 +253,10 @@ export type Posture = {
   /** Controls on, out of the total. Not a score out of 100 — that would invite gaming. */
   on: number;
   total: number;
+  /** Switched on AND backed by something that enforces it. This is the honest number. */
+  enforced: number;
+  /** Switched on but nothing implements it yet — an intention, not a protection. */
+  notYetEnforced: { key: SecurityControlKey; label: string }[];
   /** Switched-off controls that materially weaken a protection. */
   weakened: PostureFinding[];
   /** Switched-off controls that are a matter of preference. */
@@ -255,13 +275,17 @@ export function posture(settings?: Partial<SecuritySettings> | null): Posture {
   const weakened = off.filter((c) => c.weakensIfOff).map((c) => ({ key: c.key, label: c.label, ifOff: c.ifOff, severity: "weakened" as const }));
   const relaxed = off.filter((c) => !c.weakensIfOff).map((c) => ({ key: c.key, label: c.label, ifOff: c.ifOff, severity: "relaxed" as const }));
   const on = SECURITY_CONTROLS.length - off.length;
+  const notYetEnforced = SECURITY_CONTROLS.filter((c) => v[c.key] && !c.enforcedBy).map((c) => ({ key: c.key, label: c.label }));
+  const enforced = SECURITY_CONTROLS.filter((c) => v[c.key] && c.enforcedBy).length;
   const band: Posture["band"] = weakened.length ? "hardened below default" : relaxed.length ? "relaxed" : "secure by default";
-  const line = weakened.length
+  const line = notYetEnforced.length
+    ? `${enforced} of ${SECURITY_CONTROLS.length} protections are switched on and enforced by code. ${notYetEnforced.length} more are switched on but nothing implements them yet — they are an intention, not a protection.`
+    : weakened.length
     ? `${weakened.length} protection${weakened.length === 1 ? " is" : "s are"} switched off below the default. ${weakened[0].ifOff}`
     : relaxed.length
       ? `Every protection that matters is on. ${relaxed.length} convenience setting${relaxed.length === 1 ? " is" : "s are"} off.`
       : "Everything is at its default, and the default is the safe setting. Nothing here needs your attention.";
-  return { on, total: SECURITY_CONTROLS.length, weakened, relaxed, band, line };
+  return { on, total: SECURITY_CONTROLS.length, enforced, notYetEnforced, weakened, relaxed, band, line };
 }
 
 /** Group the controls for display, in the order an owner thinks about them. */
