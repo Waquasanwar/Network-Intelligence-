@@ -6,7 +6,8 @@ import { isInternal } from "@/lib/authz";
 import { Input, Textarea } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { answerScreening, startScreening, resolveMemberPerson } from "@/server/actions/members";
+import { answerScreening, startScreening } from "@/server/actions/members";
+import { resolveMemberPerson } from "@/server/queries";
 import { SCREENING_SCRIPT, SCREENING_MINUTES, type ScreeningAnswers, type ReferredPerson } from "@/lib/screening";
 import { fullName, cn } from "@/lib/utils";
 

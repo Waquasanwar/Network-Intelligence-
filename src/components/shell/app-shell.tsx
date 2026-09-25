@@ -5,7 +5,7 @@ import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
 import { fullName } from "@/lib/utils";
-import { alertsFor } from "@/server/actions/members";
+import { alertsFor } from "@/server/queries";
 
 export async function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
   const pages = [

@@ -3,7 +3,8 @@ import { PageHeader } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Input, Select, Field } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { loadRateCard, saveRateCard } from "@/server/actions/demand";
+import { saveRateCard } from "@/server/actions/demand";
+import { loadRateCard } from "@/server/queries";
 import type { RateCard } from "@/lib/demand";
 
 export const metadata = { title: "Commercials" };

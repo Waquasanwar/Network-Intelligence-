@@ -10,13 +10,10 @@ import { parseList } from "@/lib/utils";
 import { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt, type Brief, type BudgetKind, type BriefPerson, type RateCard, type Terms, type FeeModel, type ShortlistDecision, type BriefStatus, type FeeStatus } from "@/lib/demand";
 import { parseFitTraits } from "@/lib/fit";
 import type { Brief as DbBrief, CommercialAccount, EngagementRoute, Seniority, Prisma } from "@prisma/client";
+import { resolvePortalAccount, loadRateCard } from "@/server/queries";
 
 // ---------- shared helpers (also used by pages) ----------
 
-export async function loadRateCard(tenantId: string): Promise<RateCard> {
-  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { rateCard: true } });
-  return { ...DEFAULT_RATE_CARD, ...((t?.rateCard as Partial<RateCard> | null) ?? {}) };
-}
 
 /** Prisma brief → domain brief + terms. */
 export async function toDomain(b: DbBrief): Promise<Brief & { terms: Terms; expertHours: number | null }> {
@@ -340,15 +337,6 @@ export async function saveRateCard(formData: FormData) {
 // ---------- portal (clients and agencies) ----------
 
 /** The account a portal user acts for. Internal users may preview any account of their tenant. */
-export async function resolvePortalAccount(user: SessionUser, accountId?: string | null) {
-  if (isInternal(user)) {
-    const where = accountId ? { id: accountId } : { tenantId: user.tenantId, portalEnabled: true };
-    const a = await prisma.commercialAccount.findFirst({ where, orderBy: { createdAt: "asc" } });
-    if (a) assertSameTenant(user, a.tenantId);
-    return a;
-  }
-  return prisma.commercialAccount.findUnique({ where: { portalTenantId: user.tenantId } });
-}
 
 export async function portalSubmitBrief(formData: FormData) {
   const user = await requireUser();
@@ -390,8 +378,3 @@ export async function portalAcceptTerms(formData: FormData) {
   revalidatePath("/portal"); revalidatePath(`/requirements/${b.id}`);
 }
 
-export async function feeSummary(tenantId: string) {
-  const fees = await prisma.feeLine.findMany({ where: { tenantId } });
-  const by = (statuses: FeeStatus[]) => { const out: Record<string, number> = {}; for (const f of fees) if (statuses.includes(f.status)) out[f.currency] = (out[f.currency] ?? 0) + Number(f.ourTake); return Object.entries(out).map(([c, v]) => fmt(v, c)).join(" + ") || "—"; };
-  return { forecast: by(["FORECAST"]), agreed: by(["AGREED", "INVOICED"]), paid: by(["PAID"]) };
-}

@@ -13,6 +13,7 @@ import { fitProfile, ATTRIBUTES, type FitScores, type FitProfileRow } from "@/li
 import { SCREENING_SCRIPT, screeningToResult, type ScreeningAnswers, type ScreeningResult } from "@/lib/screening";
 import { matchBrief, type BriefPerson } from "@/lib/demand";
 import { toDomain } from "@/server/actions/demand";
+import { resolveMemberPerson } from "@/server/queries";
 import type { Prisma } from "@prisma/client";
 import type { TrustPerson } from "@/lib/trust-include";
 import { DEFAULT_VOICE, type VoiceSettings } from "@/lib/voice-config";
@@ -35,32 +36,8 @@ export async function fitFor(p: { attributes: Prisma.JsonValue | null; vouches: 
 }
 
 /** The person a member user acts as. Internal users may preview any person of their tenant. */
-export async function resolveMemberPerson(user: SessionUser, personId?: string | null) {
-  if (isInternal(user)) {
-    return prisma.person.findFirst({ where: personId ? { id: personId, tenantId: user.tenantId } : { tenantId: user.tenantId, memberSince: { not: null } }, orderBy: { memberSince: "asc" } });
-  }
-  if (!isMember(user)) return null;
-  const u = await prisma.user.findUnique({ where: { id: user.id }, select: { personId: true } });
-  return u?.personId ? prisma.person.findUnique({ where: { id: u.personId } }) : null;
-}
 
 /** Things that need the owner's attention. */
-export async function alertsFor(tenantId: string) {
-  const [people, referrals, pitches, briefs, interested] = await Promise.all([
-    prisma.person.findMany({ where: { tenantId, screeningStatus: { in: ["REGISTERED", "SUBMITTED"] } }, select: { id: true, firstName: true, lastName: true, screeningStatus: true, updatedAt: true } }),
-    prisma.referral.findMany({ where: { tenantId, status: "NEW" }, include: { referrer: { select: { firstName: true, lastName: true } } } }),
-    prisma.pitch.findMany({ where: { status: "SUBMITTED", brief: { tenantId } }, include: { person: { select: { firstName: true, lastName: true } }, brief: { select: { title: true } } } }),
-    prisma.brief.findMany({ where: { tenantId, status: "NEW", submittedVia: "PORTAL" }, include: { account: { select: { name: true } } } }),
-    prisma.shortlistItem.findMany({ where: { decision: "CLIENT_INTERESTED", brief: { tenantId } }, include: { person: { select: { firstName: true, lastName: true } }, brief: { select: { id: true, account: { select: { name: true } } } } } }),
-  ]);
-  const out: { kind: string; text: string; href: string; when: Date; tone: "teal" | "amber" | "navy" }[] = [];
-  for (const p of people) out.push(p.screeningStatus === "REGISTERED" ? { kind: "New member", text: `${p.firstName} ${p.lastName} registered and needs a screening call`, href: `/network/${p.id}`, when: p.updatedAt, tone: "teal" } : { kind: "Screening", text: `${p.firstName} ${p.lastName} completed the screening. Review the summary.`, href: "/conversations?tab=review", when: p.updatedAt, tone: "amber" });
-  for (const r of referrals) out.push({ kind: "Referral", text: `${r.referrer.firstName} ${r.referrer.lastName} referred ${r.name}`, href: "/referrals", when: r.createdAt, tone: "navy" });
-  for (const x of pitches) out.push({ kind: "Pitch", text: `${x.person.firstName} ${x.person.lastName} pitched for "${x.brief.title}"`, href: "/referrals?tab=pitches", when: x.createdAt, tone: "navy" });
-  for (const b of briefs) out.push({ kind: "Requirement", text: `${b.account.name} sent a new requirement`, href: `/requirements/${b.id}`, when: b.createdAt, tone: "amber" });
-  for (const s of interested) out.push({ kind: "Introduction", text: `${s.brief.account.name} wants an introduction to ${s.person.firstName} ${s.person.lastName}`, href: `/requirements/${s.brief.id}`, when: s.updatedAt, tone: "teal" });
-  return out.sort((a, b) => b.when.getTime() - a.when.getTime());
-}
 
 // ---------- vouches ----------
 
@@ -292,7 +269,3 @@ export async function saveVoiceSettings(formData: FormData) {
   revalidatePath("/settings/screening");
 }
 
-export async function loadVoiceSettings(tenantId: string): Promise<{ settings: VoiceSettings; keyConfigured: boolean }> {
-  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { voiceSettings: true } });
-  return { settings: { ...DEFAULT_VOICE, ...((t?.voiceSettings as Partial<VoiceSettings> | null) ?? {}) }, keyConfigured: !!process.env.ELEVENLABS_API_KEY };
-}
