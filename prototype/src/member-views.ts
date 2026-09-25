@@ -4,7 +4,6 @@ import type { View } from "./app";
 import type { H } from "./demand-views";
 import { speechSupported, speakSupported, speak, speakNatural, stopSpeaking, listen, stopListening, listening, matchChoice, matchScale, splitSpokenList } from "./voice";
 import { opening, closing, CALL_OFFER, askLine, bridge, ack, probe, answerQuality, inferAttributes, attributeNarrative, type Turn } from "@/lib/interview";
-import { PROVIDER_LABELS } from "@/lib/voice-config";
 
 const REF_STATUS: Record<Referral["status"], string> = { NEW: "New", CONTACTED: "Contacted", SCREENING: "Screening booked", ACCEPTED: "In the network", DECLINED: "Not now" };
 const PITCH_STATUS: Record<Pitch["status"], string> = { SUBMITTED: "Submitted", SHORTLISTED: "On the shortlist", DECLINED: "Not this time" };
@@ -136,7 +135,6 @@ export function memberViews(h: H) {
       <h1>${mode === "member" ? `Let's have a ${mins}-minute conversation` : `Run the ${mins}-minute screening`}</h1>
       <p>${mode === "member" ? "It is a proper conversation, not a form. I ask, you talk, and I write it up. You can read and change every word before it goes anywhere, and nothing reaches your profile until a person has reviewed it." : "The script is read aloud so you can run it like a real call, or you can type the answers as you go."}</p>
       <div class="lobby-sections">${script().map((x: any) => `<div><b>${esc(x.title)}</b><small>${x.minutes} min · ${esc(x.intent)}</small></div>`).join("")}</div>
-      <div class="lobby-voice"><small class="lbl">Voice</small><div class="choice compact">${[["natural", PROVIDER_LABELS.elevenlabs], ["device", PROVIDER_LABELS.device]].map(([k, l], i) => `<label class="${i === 0 ? "on" : ""}"><input type="radio" name="voiceKind" value="${k}" ${i === 0 ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div><small class="dim">The natural voice runs through the platform, so the key never reaches this page and the vendor is only ever sent our questions — never your answers, your name or your numbers. If it is not set up, we fall back to this device.</small></div>
       <div class="lobby-actions">${canVoice ? btn("Start the conversation", 'data-act="scrStartVoice"', "primary lg") : ""}${btn(canVoice ? "I would rather type" : "Start", 'data-act="scrStartTyped"', canVoice ? "glass lg" : "primary lg")}</div>
       <small class="dim">${canVoice ? "Your browser will ask for the microphone. What you say is turned into text on your own device; the audio is never uploaded." : "Voice is not available in this browser, so we will do it in writing."}</small>
     </div></div>`;
@@ -443,7 +441,7 @@ export function memberViews(h: H) {
     async scriptReset() { if (!confirm("Reset the screening conversation to the default script?")) return; await C().saveScript(JSON.parse(JSON.stringify(C().screening.SCREENING_SCRIPT))); C().logAudit("screening.config", "Settings", null, "reset to default"); C().toast("Reset to the default script"); C().render(); },
     scrStartVoice() {
       if (!scr) return; const st = scr; const p = C().person(st.personId)!;
-      st.naturalVoice = (document.querySelector<HTMLInputElement>('input[name=voiceKind]:checked')?.value ?? "natural") === "natural";
+      st.naturalVoice = true; // the platform speaks with its natural voice when configured, and the server falls back to this device silently if not — the person never chooses a vendor
       st.voice = true; st.started = true; st.startedAt = Date.now();
       for (const line of opening(st.mode === "member" ? C().full(p) : p.firstName, scriptMinutes(), script().length)) say(st, line);
       C().render();

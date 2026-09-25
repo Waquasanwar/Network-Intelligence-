@@ -59,7 +59,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <g key={i}>
               <circle cx={n.x} cy={n.y} r={n.r + 6} fill={n.teal ? "rgba(94,234,212,0.15)" : "rgba(255,255,255,0.08)"} />
               <circle cx={n.x} cy={n.y} r={n.r} fill={n.strong ? "#ffffff" : n.teal ? "#5eead4" : "rgba(255,255,255,0.75)"} />
-              {n.label ? <text x={n.x + 14} y={n.y + 4} fontSize="12" fill="rgba(255,255,255,0.7)" fontFamily="var(--font-geist-sans)">{n.label}</text> : null}
+              {n.label ? <text x={n.x + 14} y={n.y + 4} fontSize="12" fill="rgba(255,255,255,0.7)" fontFamily="var(--font-sans)">{n.label}</text> : null}
             </g>
           ))}
         </svg>
