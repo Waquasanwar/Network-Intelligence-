@@ -6,9 +6,9 @@
 <title>Red Team vs You</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap">
 <style>
-  /* One committed look: a night-shift signals-intercept console. Single dark theme by design. */
+  /* One committed look: a night-shift intercept console around realistic call and chat apps. */
   :root {
     color-scheme: dark;
     --ink: #0a141b;
@@ -18,129 +18,208 @@
     --text: #dcebee;
     --muted: #87a4ad;
     --signal: #f2a93b;
-    --signal-dim: rgba(242, 169, 59, .16);
+    --signal-dim: rgba(242,169,59,.16);
     --threat: #ff5468;
-    --threat-dim: rgba(255, 84, 104, .16);
+    --threat-dim: rgba(255,84,104,.16);
     --safe: #41d6a0;
-    --safe-dim: rgba(65, 214, 160, .14);
-    --display: "Chakra Petch", "Rajdhani", "Segoe UI", system-ui, sans-serif;
-    --body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --safe-dim: rgba(65,214,160,.14);
+    --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+    --body: "Inter Tight", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
     --r: 10px;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
-    margin: 0;
-    background: var(--ink);
-    background-image:
-      radial-gradient(1200px 500px at 80% -10%, rgba(242,169,59,.07), transparent 60%),
-      repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
-    color: var(--text);
-    font: 15px/1.55 var(--body);
-    padding-inline: 16px;
-    -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--ink); color: var(--text);
+    background-image: radial-gradient(1200px 520px at 85% -10%, rgba(242,169,59,.07), transparent 60%);
+    font: 15px/1.5 var(--body); padding-inline: 16px; -webkit-font-smoothing: antialiased;
   }
   button { font: inherit; color: inherit; cursor: pointer; }
   button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
   button:disabled { cursor: not-allowed; opacity: .4; }
-  .wrap { max-width: 1120px; margin: 0 auto; padding-block: 12px 40px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding-block: 12px 40px; }
 
   /* ---------- HUD ---------- */
-  .hud {
-    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
-    background: rgba(10,20,27,.92); backdrop-filter: blur(6px);
-    border-bottom: 1px solid var(--line);
-    margin-inline: -16px; padding: 10px 16px;
-  }
-  .hud-row { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .hud { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(10,20,27,.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); margin-inline: -16px; padding: 10px 16px; }
+  .hud-row { max-width: 1160px; margin: 0 auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
   .brand { font-family: var(--display); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 15px; margin-right: auto; }
-  .brand .r { color: var(--threat); }
-  .brand .vs { color: var(--muted); font-weight: 500; padding-inline: 4px; }
+  .brand .r { color: var(--threat); } .brand .vs { color: var(--muted); font-weight: 500; padding-inline: 4px; }
   .stat { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
   .stat .k { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
   .stat .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; }
   #timer.warn { color: var(--threat); animation: pulse 1s infinite; }
   #streak { color: var(--signal); }
-  .integrity { max-width: 1120px; margin: 8px auto 0; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+  .integrity { max-width: 1160px; margin: 8px auto 0; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
   .integrity .q { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
   .bar { height: 8px; border-radius: 99px; background: var(--panel-2); overflow: hidden; }
   .bar > i { display: block; height: 100%; width: 100%; background: var(--safe); transition: width .5s, background .5s; }
   .chip { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; padding: 3px 9px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
-  .chip.secure { color: var(--safe); }
-  .chip.probed { color: var(--signal); }
-  .chip.attack, .chip.breached { color: var(--threat); }
-  .chip.breached { background: var(--threat-dim); }
+  .chip.secure { color: var(--safe); } .chip.probed { color: var(--signal); } .chip.attack, .chip.breached { color: var(--threat); } .chip.breached { background: var(--threat-dim); }
 
   /* ---------- Start / end ---------- */
-  .hero { padding-block: 36px 12px; display: grid; gap: 28px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+  .hero { padding-block: 34px 12px; display: grid; gap: 30px; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); align-items: center; }
   .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--signal); }
-  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(40px, 7vw, 76px); line-height: .95; letter-spacing: -.01em; margin: 10px 0 16px; text-wrap: balance; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(36px, 5vw, 60px); line-height: .95; letter-spacing: -.01em; margin: 10px 0 16px; text-wrap: balance; }
   h1 .red { color: var(--threat); }
   .lede { color: var(--muted); font-size: 17px; max-width: 56ch; margin: 0 0 22px; }
-  .rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .rules li { display: grid; grid-template-columns: 76px 1fr; gap: 12px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+  .rules { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
+  .rules li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; font-size: 14px; }
   .rules b { font-family: var(--mono); font-size: 12px; color: var(--signal); padding-top: 2px; }
-  .rules span { color: var(--text); font-size: 14px; }
-  .cta-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-  .btn-go { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: .06em; text-transform: uppercase; background: var(--signal); color: #1a1204; border: 0; border-radius: var(--r); padding: 14px 26px; }
+  kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--signal); }
+  .cta-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .btn-go { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: .06em; text-transform: uppercase; background: var(--signal); color: #1a1204; border: 0; border-radius: var(--r); padding: 14px 26px; box-shadow: 0 8px 30px rgba(242,169,59,.25); }
   .btn-go:hover { filter: brightness(1.08); }
   .toggle { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; }
   .toggle input { accent-color: var(--signal); width: 16px; height: 16px; }
   .best { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .teaser { position: relative; display: grid; gap: 14px; }
+  .teaser .tv { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 16/11; box-shadow: 0 30px 80px rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.08); }
+  .teaser .tphone { position: absolute; right: -6px; bottom: -26px; width: 42%; border-radius: 22px; background: #05080a; padding: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.6); border: 1px solid #2a3a44; }
+  .teaser .tphone .inner { border-radius: 17px; background: #0b161c; padding: 10px 8px; display: grid; gap: 6px; font-size: 11px; }
+  .teaser .tb { background: #1d2f38; border-radius: 12px 12px 12px 4px; padding: 6px 8px; }
+  .teaser .tb.me { background: #1f6f5c; border-radius: 12px 12px 4px 12px; justify-self: end; }
 
   /* ---------- Game layout ---------- */
   .vox { margin-block: 14px; font-family: var(--mono); font-size: 13px; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
   .vox b { color: var(--threat); letter-spacing: .1em; font-weight: 600; white-space: nowrap; }
-  .stage { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 16px; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
-  .device { position: relative; display: flex; flex-direction: column; min-height: 440px; overflow: hidden; }
-  .dev-head { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
-  .badge { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .12em; padding: 4px 8px; border-radius: 6px; background: var(--signal-dim); color: var(--signal); }
-  .who { min-width: 0; }
-  .who .n { font-weight: 600; font-size: 16px; }
-  .who .d { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
-  .subject { padding: 10px 16px; border-bottom: 1px solid var(--line); font-weight: 600; }
-  .subject::before { content: "Subject  "; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--muted); font-weight: 400; }
-  .thread { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 460px; }
-  .msg { max-width: 88%; padding: 10px 13px; border-radius: 12px; font-size: 15px; }
-  .msg.them { align-self: flex-start; background: var(--panel-2); border-bottom-left-radius: 4px; }
-  .msg.you { align-self: flex-end; background: var(--signal-dim); border: 1px solid rgba(242,169,59,.35); border-bottom-right-radius: 4px; }
-  .msg.you::before { content: "You  "; font-family: var(--mono); font-size: 11px; color: var(--signal); }
-  .msg.sys { align-self: center; max-width: 94%; background: transparent; color: var(--muted); font-style: italic; font-size: 14px; text-align: center; border: 1px dashed var(--line); }
-  .msg.email { max-width: 100%; background: transparent; padding: 2px 0; }
+  .scene { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: var(--signal-dim); color: var(--signal); margin-left: auto; white-space: nowrap; }
+  .stage { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); gap: 18px; align-items: start; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; }
+  .devcol { position: relative; min-height: 520px; }
+
+  /* Video call app */
+  .vcall { border-radius: 18px; overflow: hidden; background: #070b0e; border: 1px solid rgba(255,255,255,.07); box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .vfeed { position: relative; aspect-ratio: 16/11; width: 100%; overflow: hidden; background: #111; }
+  .room { position: absolute; inset: -20px; filter: blur(14px) saturate(1.05); transform: scale(1.05); }
+  .room i { position: absolute; display: block; }
+  .face { position: absolute; left: 50%; bottom: -2%; width: 62%; max-width: 420px; transform: translateX(-50%); }
+  .face svg { width: 100%; display: block; overflow: visible; }
+  .grain { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: .35; }
+  .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.55)); }
+  .vfeed.lowbw .face svg { filter: blur(.6px) contrast(1.08) saturate(.85); }
+  .vfeed.lowbw .grain { opacity: .55; }
+  .vtop { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .glass { background: rgba(10,14,18,.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 6px 10px; }
+  .vname b { display: block; font-size: 14px; font-weight: 600; }
+  .vname span { font-size: 12px; color: #c3d2d7; }
+  .vmeta { font-family: var(--mono); font-size: 12px; display: flex; gap: 10px; align-items: center; }
+  .sig { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; }
+  .sig i { width: 3px; background: #e8f0f2; border-radius: 1px; }
+  .sig i.off { opacity: .25; }
+  .enc { position: absolute; top: 60px; left: 12px; font-size: 11px; color: #d6e2e6; }
+  .bwtag { position: absolute; bottom: 64px; left: 12px; font-family: var(--mono); font-size: 11px; color: var(--signal); }
+  .pip { position: absolute; right: 12px; bottom: 12px; width: 21%; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.25); background: linear-gradient(160deg, #3a4a55, #1a242b); box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+  .pip svg { width: 100%; height: 100%; display: block; }
+  .pip span { position: absolute; left: 6px; bottom: 4px; font-size: 10px; color: #e8f0f2; }
+  .caption { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(72%, 520px); background: rgba(0,0,0,.66); border-radius: 8px; padding: 7px 12px; font-size: 14px; text-align: center; line-height: 1.35; }
+  .share { position: absolute; top: 58px; right: 12px; width: min(52%, 300px); background: #f4f6f8; color: #14202a; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; box-shadow: 0 12px 30px rgba(0,0,0,.45); animation: pop .25s ease-out; }
+  .share b { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #5b6b75; margin-bottom: 4px; }
+  .vctrl { display: flex; justify-content: center; gap: 14px; padding: 12px; background: #0b1115; }
+  .vbtn { width: 46px; height: 46px; border-radius: 50%; border: 0; background: #26343c; display: grid; place-items: center; }
+  .vbtn svg { width: 20px; height: 20px; }
+  .vbtn.end { background: #e5484d; width: 58px; }
+  .vbtn.end:hover { background: #ff5a5f; }
+  .vtrans { border-top: 1px solid rgba(255,255,255,.06); background: #0c151a; }
+  .vtrans .thread { max-height: 190px; }
+
+  /* Phone messaging app */
+  .phone { width: 100%; max-width: 392px; margin: 0 auto; background: #040708; border-radius: 44px; padding: 11px; border: 1px solid #2b3c46; box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 0 0 2px #121b20; }
+  .pscreen { position: relative; border-radius: 34px; overflow: hidden; display: flex; flex-direction: column; height: min(690px, 78vh); min-height: 520px;
+    background: #0b1418 radial-gradient(circle at 20% 10%, rgba(65,214,160,.05), transparent 40%), radial-gradient(circle at 90% 80%, rgba(242,169,59,.05), transparent 40%); }
+  .pstatus { display: flex; justify-content: space-between; align-items: center; padding: 12px 26px 4px; font-size: 13px; font-weight: 600; }
+  .pstatus .island { width: 96px; height: 26px; background: #000; border-radius: 20px; }
+  .pstatus .icons { display: flex; gap: 5px; align-items: center; }
+  .phead { display: flex; gap: 10px; align-items: center; padding: 8px 14px 10px; background: rgba(20,36,44,.85); border-bottom: 1px solid rgba(255,255,255,.06); }
+  .phead .back { color: #4fb8ff; font-size: 22px; line-height: 1; }
+  .pav { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex: none; }
+  .pav svg { width: 100%; height: 100%; display: block; }
+  .pname { font-weight: 600; font-size: 15px; display: flex; gap: 5px; align-items: center; }
+  .pname .tick { color: #4fb8ff; font-size: 13px; }
+  .pstat { font-size: 12px; color: var(--muted); }
+  .pstat.on { color: var(--safe); }
+  .pthread { flex: 1; overflow-y: auto; }
+  .preplies { padding: 8px 10px 4px; display: flex; flex-direction: column; gap: 6px; }
+  .pcompose { margin: 6px 10px 14px; padding: 10px 16px; border-radius: 22px; background: #16262e; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; }
+
+  /* Thread bubbles (shared) */
+  .thread { padding: 14px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .msg { max-width: 84%; padding: 8px 12px; border-radius: 18px; font-size: 14.5px; line-height: 1.42; position: relative; }
+  .msg.them { align-self: flex-start; background: #1d2f38; border-bottom-left-radius: 5px; }
+  .msg.you { align-self: flex-end; background: #1f6f5c; border-bottom-right-radius: 5px; color: #eafff7; }
+  .msg .ts { display: block; text-align: right; font-size: 10.5px; color: rgba(220,235,238,.55); margin-top: 2px; }
+  .msg.sys { align-self: center; max-width: 94%; background: rgba(255,255,255,.04); color: var(--muted); font-size: 12.5px; text-align: center; border-radius: 10px; }
+  .vtrans .msg.them { background: transparent; padding: 2px 0; max-width: 100%; border-radius: 0; }
+  .vtrans .msg.them::before { content: attr(data-who) "  "; font-family: var(--mono); font-size: 11px; color: var(--signal); }
+  .vtrans .msg.you { background: transparent; color: var(--safe); padding: 2px 0; max-width: 100%; align-self: flex-start; border-radius: 0; }
+  .vtrans .msg.you::before { content: "YOU  "; font-family: var(--mono); font-size: 11px; }
+  .paycard { align-self: flex-start; max-width: 88%; background: #f4f6f8; color: #14202a; border-radius: 14px; padding: 10px 12px; font-size: 13.5px; }
+  .paycard::before { content: "PAYMENT DETAILS"; display: block; font-size: 10px; letter-spacing: .12em; color: #5b6b75; margin-bottom: 3px; }
+  .paycard .seg:hover { background: rgba(0,0,0,.06); }
+  .vn { display: grid; gap: 6px; min-width: 230px; }
+  .vn-row { display: flex; align-items: center; gap: 9px; }
+  .vn-play { width: 32px; height: 32px; border-radius: 50%; border: 0; background: #4fb8ff; color: #04121c; display: grid; place-items: center; font-size: 12px; flex: none; }
+  .vn-bars { display: flex; gap: 2px; align-items: center; height: 26px; flex: 1; }
+  .vn-bars i { width: 3px; border-radius: 2px; background: #5c7883; }
+  .vn-bars i.on { background: #4fb8ff; }
+  .vn-dur { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .vn-t { font-size: 13px; color: #b8cad0; border-top: 1px solid rgba(255,255,255,.07); padding-top: 5px; }
   .seg { border-radius: 4px; cursor: pointer; transition: background .15s; }
-  .seg:hover { background: rgba(255,255,255,.06); text-decoration: underline dotted var(--muted); text-underline-offset: 3px; }
-  .seg.flagged { background: var(--threat-dim); text-decoration: underline solid var(--threat); text-underline-offset: 3px; }
+  .seg:hover { background: rgba(255,255,255,.07); }
+  .seg.flagged { background: var(--threat-dim); box-shadow: inset 0 -2px 0 var(--threat); }
   .seg.flagged::before { content: "⚑ "; color: var(--threat); }
   .locked .seg { cursor: default; }
-  .w { transition: color .12s; }
-  .speaking .w { color: var(--muted); }
-  .speaking .w.lit { color: var(--text); }
+  .speaking .w { opacity: .45; } .speaking .w.lit { opacity: 1; }
   .w.hot { color: var(--signal) !important; }
-  .typing { align-self: flex-start; font-family: var(--mono); color: var(--muted); font-size: 13px; }
+  .paycard .w.hot { color: #b56a00 !important; }
+  .typing { align-self: flex-start; background: #1d2f38; border-radius: 18px; padding: 10px 14px; display: flex; gap: 4px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: #8aa3ac; animation: dots 1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
 
-  .ring { position: absolute; inset: 0; background: rgba(10,20,27,.94); display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 20px; z-index: 3; }
-  .ring .pulse { width: 96px; height: 96px; border-radius: 50%; border: 2px solid var(--safe); display: grid; place-items: center; font-family: var(--display); font-size: 30px; font-weight: 700; animation: ringpulse 1.2s infinite; }
-  .ring .n { font-family: var(--display); font-size: 26px; font-weight: 700; }
-  .ring .d { font-family: var(--mono); font-size: 13px; color: var(--muted); }
-  .btn-answer { background: var(--safe); color: #04241a; border: 0; border-radius: 99px; padding: 12px 34px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: .06em; text-transform: uppercase; }
+  /* Replies */
+  .replies { display: grid; gap: 7px; }
+  .vreplies { padding: 12px; background: #0c151a; border-top: 1px solid rgba(255,255,255,.06); grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .reply { text-align: left; background: rgba(79,184,255,.08); border: 1px solid rgba(79,184,255,.4); border-radius: 16px; padding: 8px 12px; font-size: 13.5px; display: flex; gap: 8px; align-items: flex-start; color: #dff2ff; }
+  .reply:hover:not(:disabled) { background: rgba(79,184,255,.18); }
+  .reply kbd { color: #4fb8ff; border-color: rgba(79,184,255,.4); flex: none; }
+  .reply-hint { font-size: 12px; color: var(--muted); text-align: center; padding: 4px; }
 
-  .analysis { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  /* Incoming overlay */
+  .ring { position: absolute; inset: 0; z-index: 5; border-radius: 18px; overflow: hidden; display: grid; place-items: center; text-align: center; }
+  .ring .blurbg { position: absolute; inset: -30px; filter: blur(30px) brightness(.55); }
+  .ring .content { position: relative; display: grid; justify-items: center; gap: 10px; padding: 20px; }
+  .ring .rav { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 0 rgba(65,214,160,.5); animation: ringpulse 1.4s infinite; }
+  .ring .rav svg { width: 100%; height: 100%; }
+  .ring .rl { font-size: 13px; color: #cfe0e5; letter-spacing: .04em; }
+  .ring .rn { font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
+  .ring .rd { font-size: 13px; color: #b8cad0; max-width: 34ch; }
+  .notif { width: min(360px, 92%); text-align: left; border-radius: 20px; padding: 12px 14px; background: rgba(40,52,60,.72); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.12); display: grid; grid-template-columns: 40px 1fr; gap: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.5); animation: drop .4s ease-out; }
+  .notif .pav { width: 40px; height: 40px; }
+  .notif .app { font-size: 11px; color: #b8cad0; display: flex; justify-content: space-between; }
+  .notif .nt { font-weight: 600; font-size: 14px; }
+  .notif .np { font-size: 13.5px; color: #dde8eb; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .lock-time { font-size: 64px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
+  .lock-date { font-size: 15px; color: #d6e2e6; margin-bottom: 14px; }
+  .btn-answer { background: var(--safe); color: #04241a; border: 0; border-radius: 99px; padding: 12px 34px; font-weight: 700; font-size: 16px; letter-spacing: .02em; box-shadow: 0 10px 30px rgba(65,214,160,.35); }
+
+  /* Analysis panel */
+  .analysis { padding: 16px; display: flex; flex-direction: column; gap: 13px; }
   .a-title { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-weight: 600; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
-  .a-title small { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: none; font-weight: 400; }
-  canvas#wave { width: 100%; height: 86px; display: block; background: #08121a; border-radius: 8px; border: 1px solid var(--line); }
-  .meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .a-title small { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: none; font-weight: 400; }
+  canvas#wave { width: 100%; height: 76px; display: block; background: #08121a; border-radius: 8px; border: 1px solid var(--line); }
+  .meters { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
   .meter { background: var(--panel-2); border-radius: 8px; padding: 8px 10px; }
   .meter .k { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-  .meter .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; }
+  .meter .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 600; }
+  .meter .v small { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 3px; }
   .meter .bar { height: 4px; margin-top: 4px; }
-  .rows { display: grid; gap: 6px; }
-  .row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid rgba(34,66,79,.6); align-items: start; }
+  .meter.alert .v { color: var(--threat); }
+  .rows { display: grid; }
+  .row { display: grid; grid-template-columns: 100px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(34,66,79,.6); align-items: start; }
   .row .k { color: var(--muted); font-size: 12px; }
-  .row .v { font-family: var(--mono); font-size: 12.5px; display: flex; gap: 8px; align-items: flex-start; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 5px; background: var(--muted); }
+  .row .v { font-family: var(--mono); font-size: 12px; display: flex; gap: 8px; align-items: flex-start; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 4px; background: var(--muted); }
   .dot.ok { background: var(--safe); } .dot.warn { background: var(--signal); } .dot.bad { background: var(--threat); }
   .row.pending .v { color: var(--muted); }
   .caveat { font-size: 12px; color: var(--muted); margin: 0; }
@@ -151,23 +230,18 @@
   .mic .note { font-size: 12px; color: var(--muted); }
   .mic .heard { font-family: var(--mono); font-size: 12px; color: var(--signal); }
 
-  .controls { margin-top: 16px; display: grid; gap: 14px; }
+  .controls { margin-top: 18px; display: grid; gap: 8px; }
   .label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; }
-  .choice { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 11px 14px; font-size: 14px; display: flex; gap: 10px; }
-  .choice:hover:not(:disabled) { border-color: var(--signal); }
-  .choice kbd { font-family: var(--mono); font-size: 11px; color: var(--signal); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; height: fit-content; }
   .verdicts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .verdict { border: 0; border-radius: var(--r); padding: 16px; font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: .06em; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .verdict { border: 0; border-radius: 12px; padding: 15px; font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: .06em; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .verdict small { font-family: var(--body); font-weight: 500; font-size: 12px; letter-spacing: 0; text-transform: none; opacity: .85; }
-  .v-scam { background: var(--threat); color: #2a0409; }
-  .v-legit { background: var(--safe); color: #04241a; }
+  .v-scam { background: var(--threat); color: #2a0409; } .v-legit { background: var(--safe); color: #04241a; }
   .verdict:hover:not(:disabled) { filter: brightness(1.08); }
   .hint { font-size: 13px; color: var(--muted); margin: 0; }
 
-  /* ---------- Overlays ---------- */
-  .modal { position: fixed; inset: 0; z-index: 40; background: rgba(4,9,13,.8); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
-  .card { width: min(600px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 14px; }
+  /* Overlays */
+  .modal { position: fixed; inset: 0; z-index: 40; background: rgba(4,9,13,.8); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+  .card { width: min(600px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
   .answer { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1.05; }
   .answer.yes { color: var(--threat); } .answer.no { color: var(--safe); }
   .verdict-line { font-family: var(--mono); font-size: 13px; }
@@ -177,9 +251,8 @@
   .tells { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
   .tells q { color: var(--signal); }
   .tells .miss { color: var(--muted); font-size: 12px; font-family: var(--mono); }
-  .lesson { font-size: 14px; color: var(--text); background: var(--panel-2); border-radius: 8px; padding: 10px 12px; margin: 0; }
+  .lesson { font-size: 14px; background: var(--panel-2); border-radius: 8px; padding: 10px 12px; margin: 0; }
   .hit { font-size: 14px; color: var(--threat); font-weight: 600; margin: 0; }
-
   .glitch { position: fixed; inset: 0; z-index: 60; pointer-events: none; display: grid; place-items: center; background: rgba(255,84,104,.22); }
   .glitch::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,84,104,.25) 0 2px, transparent 2px 6px); animation: scan .25s linear infinite; }
   .glitch span { position: relative; font-family: var(--mono); font-weight: 600; font-size: clamp(28px, 7vw, 64px); color: var(--threat); letter-spacing: .12em; text-shadow: 3px 0 #fff3, -3px 0 #0ff5; animation: jitter .12s infinite; text-align: center; }
@@ -192,32 +265,35 @@
   .stats span { font-size: 12px; color: var(--muted); }
   .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .log li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
-  .log .ic { font-family: var(--mono); font-weight: 600; }
-  .log .ok { color: var(--safe); } .log .bad { color: var(--threat); }
+  .log .ic { font-family: var(--mono); font-weight: 600; } .log .ok { color: var(--safe); } .log .bad { color: var(--threat); }
   .log .p { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .end-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding-block: 30px; }
+  .end-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; padding-block: 30px; }
 
   @keyframes pulse { 50% { opacity: .45; } }
-  @keyframes ringpulse { 0% { box-shadow: 0 0 0 0 rgba(65,214,160,.5); } 100% { box-shadow: 0 0 0 26px rgba(65,214,160,0); } }
+  @keyframes ringpulse { 0% { box-shadow: 0 0 0 0 rgba(65,214,160,.55); } 100% { box-shadow: 0 0 0 28px rgba(65,214,160,0); } }
   @keyframes scan { to { transform: translateY(6px); } }
   @keyframes jitter { 0% { transform: translate(0,0); } 33% { transform: translate(-3px,1px); } 66% { transform: translate(2px,-2px); } }
   @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-  }
-  @media (max-width: 860px) {
-    .stage, .hero, .end-grid { grid-template-columns: minmax(0, 1fr); }
-    .device { min-height: 360px; }
+  @keyframes dots { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+  @keyframes pop { from { opacity: 0; transform: scale(.94); } }
+  @keyframes drop { from { opacity: 0; transform: translateY(-16px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  @media (max-width: 900px) {
+    .stage, .hero, .end-grid { grid-template-columns: minmax(0,1fr); }
+    .teaser { margin-bottom: 24px; }
   }
   @media (max-width: 520px) {
-    .hud-row { gap: 12px; }
     .brand { width: 100%; }
     .stat .v { font-size: 17px; }
     .integrity { grid-template-columns: 1fr auto; }
     .integrity .bar { grid-column: 1 / -1; grid-row: 2; }
-    .meters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .row { grid-template-columns: 92px 1fr; }
-    .verdict { font-size: 17px; padding: 14px 8px; }
+    .row { grid-template-columns: 88px 1fr; }
+    .verdict { font-size: 17px; padding: 13px 8px; }
+    .face { width: 78%; }
+    .caption { width: 88%; font-size: 13px; bottom: 10px; }
+    .share { width: 62%; }
+    .pip { width: 24%; bottom: auto; top: 58px; }
+    .phone { padding: 8px; border-radius: 38px; }
   }
 </style>
 </head>
@@ -229,7 +305,7 @@
     <div class="stat"><span class="k">Time</span><span class="v" id="timer">5:00</span></div>
     <div class="stat"><span class="k">Score</span><span class="v" id="score">0</span></div>
     <div class="stat"><span class="k">Streak</span><span class="v" id="streak">×1.0</span></div>
-    <div class="stat"><span class="k">Contact</span><span class="v" id="roundNo">0</span></div>
+    <div class="stat"><span class="k">Contact</span><span class="v" id="roundNo">0/10</span></div>
   </div>
   <div class="integrity">
     <span class="q">Am I being hacked?</span>
@@ -245,83 +321,121 @@
     <div class="hero">
       <div>
         <div class="eyebrow">Live social-engineering drill · 5 minutes</div>
-        <h1>Someone is trying to <span class="red">scam you.</span> Maybe.</h1>
-        <p class="lede">VOX, our red-team operator, will call, text, email and message you with a mix of real attacks and perfectly genuine contacts. Read the signals, listen to the voice analysis, make your move, then call it: scam or legit. Beat the clock and keep your system from being breached.</p>
+        <h1>Book a trip. Make a payment. <span class="red">Someone's lying.</span></h1>
+        <p class="lede">Ten people will video call you or message you while you book travel and pay for things. Some are genuine. Some are a red team using deepfakes, fake payment details and pressure. Watch them, listen to them, reply, then decide: scam or legit.</p>
         <div class="cta-row">
           <button class="btn-go" id="btnStart">Start the attack</button>
-          <label class="toggle"><input type="checkbox" id="optVoice" checked> Spoken calls</label>
+          <label class="toggle"><input type="checkbox" id="optVoice" checked> Characters speak out loud</label>
         </div>
-        <p class="best" id="bestLine"></p>
+        <ul class="rules">
+          <li><b>+100</b><span>Right call. Up to +50 for speed, and a streak multiplies it up to ×3.</span></li>
+          <li><b>+20 ⚑</b><span>Tap a sentence in the transcript or chat to flag it as a red flag. Wrong flags cost 10.</span></li>
+          <li><b>+25</b><span>Safe replies: verify on a channel you trust, refuse, pay by protected methods.</span></li>
+          <li><b>−150</b><span>Send the money, the code or the card details to an attacker and you're breached.</span></li>
+          <li><b>KEYS</b><span><kbd>S</kbd> scam · <kbd>L</kbd> legit · <kbd>1</kbd>–<kbd>3</kbd> reply · <kbd>Enter</kbd> answer / next</span></li>
+        </ul>
+        <p class="best" id="bestLine" style="margin-top:16px"></p>
       </div>
-      <ul class="rules">
-        <li><b>+100</b><span>Correct verdict. Faster calls earn up to +50 speed bonus, and streaks multiply it up to ×3.</span></li>
-        <li><b>+20 ⚑</b><span>Tap any sentence you think is a red flag. Right flags score, wrong ones cost 10.</span></li>
-        <li><b>+25</b><span>Pick a safe move: verify on a channel you trust, refuse, hang up.</span></li>
-        <li><b>−150</b><span>Hand over a code, money or access to an attacker and you get breached. Integrity at 0% ends the game.</span></li>
-        <li><b>KEYS</b><span><kbd>S</kbd> scam · <kbd>L</kbd> legit · <kbd>1</kbd>–<kbd>3</kbd> moves · <kbd>Enter</kbd> answer / next</span></li>
-      </ul>
+      <div class="teaser" aria-hidden="true">
+        <div class="tv" id="teaserVideo"></div>
+        <div class="tphone"><div class="inner">
+          <div class="tb">Staybook takes 15%. Pay me direct and I'll knock €120 off 😊</div>
+          <div class="tb">🎤 ▶ ▂▅▇▃▆▂▅▇▃ 0:07</div>
+          <div class="tb me">I'd rather pay through Staybook</div>
+        </div></div>
+      </div>
     </div>
   </section>
 
   <!-- GAME -->
   <section id="screenGame" hidden>
-    <p class="vox"><b>VOX ▸</b><span id="voxLine">Connecting…</span></p>
+    <p class="vox"><b>VOX ▸</b><span id="voxLine">Connecting…</span><span class="scene" id="sceneTag">Travel</span></p>
     <div class="stage">
-      <div class="panel device" id="device">
-        <div class="dev-head">
-          <span class="badge" id="chan">CALL</span>
-          <div class="who"><div class="n" id="fromName">—</div><div class="d" id="fromDetail">—</div></div>
+      <div class="devcol" id="devcol">
+
+        <!-- Video call -->
+        <div class="vcall" id="vcall" hidden>
+          <div class="vfeed" id="vfeed">
+            <div class="room" id="room"></div>
+            <div class="face" id="face"></div>
+            <canvas class="grain" id="grain" width="160" height="110"></canvas>
+            <div class="vignette"></div>
+            <div class="vtop">
+              <div class="glass vname"><b id="vName">—</b><span id="vOrg">—</span></div>
+              <div class="glass vmeta"><span class="sig" id="vSig"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:12px"></i></span><span id="vClock">00:00</span></div>
+            </div>
+            <div class="glass enc" id="vEnc">🔒 End-to-end encrypted</div>
+            <div class="share" id="share" hidden><b>Shared screen</b><span id="shareText"></span></div>
+            <div class="bwtag glass" id="bwTag" hidden>⚠ Low bandwidth · video quality reduced</div>
+            <div class="caption" id="caption" hidden></div>
+            <div class="pip"><svg viewBox="0 0 90 120" aria-hidden="true"><defs><linearGradient id="pipg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8aa3ac"/><stop offset="1" stop-color="#4a5f68"/></linearGradient></defs><circle cx="45" cy="50" r="18" fill="url(#pipg)"/><path d="M12 120 C14 88 30 78 45 78 C60 78 76 88 78 120Z" fill="url(#pipg)"/></svg><span>You</span></div>
+          </div>
+          <div class="vctrl">
+            <button class="vbtn" id="vMute" title="Mute" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="#e8f0f2" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+            <button class="vbtn" id="vCam" title="Camera" aria-label="Camera"><svg viewBox="0 0 24 24" fill="none" stroke="#e8f0f2" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg></button>
+            <button class="vbtn end" id="vEnd" title="Hang up and report as a scam" aria-label="Hang up and report as a scam"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 9c-3.2 0-6.2.9-8.6 2.6-.6.4-.8 1.2-.4 1.8l1.6 2.4c.4.6 1.2.8 1.8.5l2.3-1.2c.5-.3.8-.8.7-1.4l-.2-1.4c1.9-.5 3.9-.5 5.8 0l-.2 1.4c-.1.6.2 1.1.7 1.4l2.3 1.2c.6.3 1.4.1 1.8-.5l1.6-2.4c.4-.6.2-1.4-.4-1.8C18.2 9.9 15.2 9 12 9z"/></svg></button>
+          </div>
+          <div class="vtrans">
+            <div id="vThreadSlot"></div>
+          </div>
+          <div class="replies vreplies" id="vReplySlot"></div>
         </div>
-        <div class="subject" id="subject" hidden></div>
+
+        <!-- Phone -->
+        <div class="phone" id="phone" hidden>
+          <div class="pscreen">
+            <div class="pstatus"><span id="pClock">9:41</span><span class="island"></span><span class="icons">▂▄▆ <svg width="24" height="12" viewBox="0 0 24 12"><rect x=".5" y=".5" width="20" height="11" rx="3" fill="none" stroke="#dcebee"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#dcebee"/><rect x="21.5" y="4" width="2" height="4" rx="1" fill="#dcebee"/></svg></span></div>
+            <div class="phead">
+              <span class="back">‹</span>
+              <div class="pav" id="pAv"></div>
+              <div><div class="pname"><span id="pName">—</span><span class="tick" id="pTick" hidden>✔</span></div><div class="pstat" id="pStat">—</div></div>
+            </div>
+            <div class="pthread" id="pThreadSlot"></div>
+            <div class="replies preplies" id="pReplySlot"></div>
+            <div class="pcompose"><span>Message</span><span>🎤</span></div>
+          </div>
+        </div>
+
+        <!-- Shared thread + replies, moved into whichever device is active -->
         <div class="thread" id="thread" aria-live="polite"></div>
+        <div class="replies" id="replies"></div>
+
+        <!-- Incoming -->
         <div class="ring" id="ring" hidden>
-          <div class="pulse" id="ringIcon">☎</div>
-          <div class="eyebrow" id="ringLabel">Incoming call</div>
-          <div class="n" id="ringName">—</div>
-          <div class="d" id="ringDetail">—</div>
-          <button class="btn-answer" id="btnAnswer">Answer</button>
+          <div class="blurbg" id="ringBg"></div>
+          <div class="content" id="ringContent"></div>
         </div>
       </div>
 
       <aside class="panel analysis">
-        <div class="a-title"><span id="aTitle">Voice analysis</span><small id="aSub">live</small></div>
-        <div id="voiceBlock">
-          <canvas id="wave" width="600" height="160" aria-label="Caller voice waveform"></canvas>
-        </div>
+        <div class="a-title"><span id="aTitle">Deepfake & voice analysis</span><small id="aSub">live</small></div>
+        <canvas id="wave" width="600" height="150" aria-label="Voice waveform"></canvas>
         <div class="meters">
-          <div class="meter" id="mStressBox"><div class="k" id="mStressK">Voice stress</div><div class="v" id="mStress">—</div><div class="bar"><i id="mStressBar" style="width:0"></i></div></div>
-          <div class="meter" id="mRateBox"><div class="k" id="mRateK">Speech rate</div><div class="v" id="mRate">—</div></div>
-          <div class="meter"><div class="k">Pressure words</div><div class="v" id="mPressure">0</div></div>
+          <div class="meter" id="m1"><div class="k" id="m1k">Voice stress</div><div class="v" id="m1v">—</div><div class="bar"><i id="m1bar" style="width:0"></i></div></div>
+          <div class="meter" id="m2"><div class="k" id="m2k">Lip-sync offset</div><div class="v" id="m2v">—</div></div>
+          <div class="meter" id="m3"><div class="k" id="m3k">Blinks / min</div><div class="v" id="m3v">—</div></div>
+          <div class="meter"><div class="k">Pressure words</div><div class="v" id="m4v">0</div></div>
         </div>
         <div class="rows" id="signals"></div>
-        <p class="caveat">Signals are probabilistic. Caller ID can be spoofed and real people can sound stressed. Weigh what they ask you to do.</p>
+        <p class="caveat">Signals are probabilistic. Real people get stressed and real numbers can be spoofed. Weigh what they're asking you to do.</p>
         <div class="mic">
-          <div class="mic-row">
-            <button class="btn-ghost" id="btnMic">Enable voice commands</button>
-            <span class="heard" id="micHeard"></span>
-          </div>
+          <div class="mic-row"><button class="btn-ghost" id="btnMic">Answer by voice (optional)</button><span class="heard" id="micHeard"></span></div>
           <div class="mic-row" id="micMeters" hidden>
             <div class="meter" style="flex:1"><div class="k">Your voice level</div><div class="bar"><i id="micLevel" style="width:0"></i></div></div>
             <div class="meter" style="flex:1"><div class="k">Your composure</div><div class="v" id="micCalm">—</div></div>
           </div>
-          <div class="note" id="micNote">Say "scam", "hang up", "legit" or "genuine" to call it hands-free.</div>
+          <div class="note" id="micNote">Say "reply one/two/three", "scam" or "legit". Tapping works everywhere.</div>
         </div>
       </aside>
     </div>
 
     <div class="controls">
-      <div>
-        <div class="label" style="margin-bottom:6px">Your move</div>
-        <div class="choices" id="choices"></div>
+      <div class="label">Am I being scammed?</div>
+      <div class="verdicts">
+        <button class="verdict v-scam" id="btnScam" disabled>Scam<small id="scamSub">Hang up · report</small></button>
+        <button class="verdict v-legit" id="btnLegit" disabled>Legit<small id="legitSub">Trust them</small></button>
       </div>
-      <div>
-        <div class="label" style="margin-bottom:6px">Am I being scammed?</div>
-        <div class="verdicts">
-          <button class="verdict v-scam" id="btnScam" disabled>Scam<small>Hang up · report · block</small></button>
-          <button class="verdict v-legit" id="btnLegit" disabled>Legit<small>It's genuine</small></button>
-        </div>
-      </div>
-      <p class="hint">Tap sentences to flag red flags ⚑ before you give your verdict.</p>
+      <p class="hint">Tap sentences in the transcript or chat to flag red flags ⚑. You can call it at any point after they've made their pitch.</p>
     </div>
   </section>
 
@@ -351,10 +465,7 @@
     <div class="verdict-line" id="dbVerdict"></div>
     <p class="hit" id="dbHit" hidden></p>
     <div class="pts" id="dbPts"></div>
-    <div>
-      <div class="label" style="margin-bottom:6px" id="dbTellsLabel">The tells</div>
-      <ul class="tells" id="dbTells"></ul>
-    </div>
+    <div><div class="label" style="margin-bottom:6px" id="dbTellsLabel">The tells</div><ul class="tells" id="dbTells"></ul></div>
     <p class="lesson" id="dbLesson"></p>
     <button class="btn-go" id="btnNext">Next contact</button>
   </div>
@@ -367,381 +478,406 @@
 "use strict";
 
 /* =========================================================================
-   Scenario data
-   Text markup:  [[flagged phrase|why it's a red flag]]   ·   lines starting "~ " are system notes
-   Choice kinds: safe (+25) · risky (engages; costs on scams, overshares on genuine) · breach (attacker wins)
+   Scenarios. Branching conversations: nodes → say[] → options[] → next node.
+   Line markup:  [[flagged phrase|why]]  ·  "~ " system note  ·  "🎤 " voice note  ·  "$ " payment details
+   Option kinds: safe (+25) · risky · neutral · breach (the attacker wins)
+   Signals: [label, value, level, revealAtNode?]
    ========================================================================= */
 const SCENARIOS = [
   {
-    id: "bank-otp", ch: "call", scam: true,
-    name: "Northgate Bank · Fraud Team", detail: "020 7946 0321 · matches the number on your card",
-    voice: { pitch: 0.9, rate: 1.12, v: 1 }, stress: 64, synthetic: 7,
+    id: "villa", mode: "video", theme: "Travel", scam: true,
+    name: "Jade Morris", org: "Reservations · SunSeeker Villas", detail: "Video link from an Instagram ad",
+    face: { skin: "#eab896", hair: "long", hairColor: "#a57a45", eyes: "#4a6b3a", shirt: "#1d7f80", headset: true, room: "office", g: "f" },
+    voice: { pitch: 1.15, rate: 1.1 }, stress: 55, synthetic: 9, deepfake: false,
     signals: [
-      ["Caller ID", "Matches Northgate's public number", "warn"],
-      ["Attestation", "C · carrier can't verify origin", "bad"],
-      ["Background", "Call-centre chatter, loops every 6 s", "warn"],
-      ["Synthetic", "7% · human voice", "ok"],
+      ["Contact", "Instagram ad → video link", "warn"],
+      ["Website", "sunseeker-villas.net · registered 6 weeks ago", "bad"],
+      ["Video", "Live camera, natural blinking", "ok"],
+      ["Payee check", "Name doesn't match the company", "bad", "pay"],
     ],
-    open: [
-      "Hello, this is Daniel from the Northgate Bank fraud team. We've blocked a payment of £1,840 to an online electronics store from your account.",
-      "To cancel it, [[I'm sending you a security code now, please read me the six digits.|Your bank will never ask you to read out a one-time code. The code approves a payment or a new device.]]",
-      "[[Please stay on the line, if you hang up the payment will go through.|Pressure to stay on the line stops you calling the bank yourself.]]",
-    ],
-    choices: [
-      { t: "Read out the six-digit code", k: "breach" },
-      { t: "Say you'll hang up and call the number on the back of your card", k: "safe",
-        reply: ["[[If you hang up now I can't stop the transfer. That's your decision.|Guilt and fear to stop you verifying.]]"] },
-      { t: "Ask for his staff ID number", k: "risky",
-        reply: ["Of course, it's staff number four four seven one. [[Now we're running out of time, the code please.|The urgency comes straight back.]]"] },
-    ],
-    hit: "The code approved a new payee. £4,200 left your account in two transfers.",
-    lesson: "Caller ID can be spoofed to show your bank's real number. Real fraud teams never ask for one-time codes and are happy for you to hang up and call back.",
+    nodes: {
+      start: { say: [
+        "Hi there! I'm Jade from SunSeeker Villas, thanks for jumping on a quick video call.",
+        "So, the Santorini villa you liked. Seven nights in August, sea view, private pool. [[It's normally three thousand nine hundred pounds, but I can do it for fourteen fifty today only.|A price far below market value is the bait.]]",
+        "[[I've only got this one left, and two other families are looking at it right now.|Fake scarcity to rush you.]]",
+      ], options: [
+        { t: "Great. Can I pay by credit card?", k: "safe", next: "card" },
+        { t: "What's your ABTA or ATOL number?", k: "safe", next: "abta" },
+        { t: "I'll take it! Send me the details.", k: "risky", next: "pay" },
+      ] },
+      card: { say: [
+        "Ah, [[our card machine is down this week. Bank transfer gets you another five percent off anyway.|Avoiding cards removes your chargeback protection.]]",
+      ], options: [
+        { t: "OK, I'll do a bank transfer", k: "risky", next: "pay" },
+        { t: "I'll only pay by card", k: "safe", next: "pressure" },
+      ] },
+      abta: { say: [
+        "Oh, it's all on the website, don't worry. [[We're a small family business, we don't really bother with all that paperwork.|No trade-body protection and nothing you can verify.]]",
+      ], options: [
+        { t: "End the call and check the ABTA register", k: "safe", next: "lookup" },
+        { t: "Fine, send the payment details", k: "risky", next: "pay" },
+      ] },
+      pay: { say: [
+        "Perfect! I'll pop the details on screen now.",
+        "$ [[Bank transfer · Payee: M. Kowalski · Personal current account · £1,450|The payee is a private person, not the company.]]",
+        "[[Put the reference as family gift, so your bank doesn't hold it up.|Asking you to mislabel a payment is to dodge your bank's fraud checks.]]",
+      ], options: [
+        { t: "Send the £1,450 now", k: "breach" },
+        { t: "Why is it a personal account?", k: "risky", next: "pressure" },
+        { t: "Hang on, I'll check the company first", k: "safe", next: "lookup" },
+      ] },
+      pressure: { say: [
+        "[[Look, if you can't commit now I'll have to give it to the next family. Your choice.|Pressure the moment you push back.]]",
+      ] },
+      lookup: { say: [
+        "~ The ABTA register has no SunSeeker Villas. A reverse image search finds the villa photos on a real Greek hotel's website.",
+      ] },
+    },
+    hit: "£1,450 gone. You land in Santorini to find the \"villa\" is a hotel that has never heard of you.",
+    lesson: "Holiday booking fraud: an unbelievable price, time pressure and a push to bank transfer. Pay by credit card to a company you can verify on the ABTA or ATOL register, never to a personal account.",
   },
   {
-    id: "bank-real", ch: "call", scam: false,
-    name: "Northgate Bank", detail: "01632 960 210 · number on the back of your card",
-    voice: { pitch: 1.1, rate: 1.0, v: 2 }, stress: 22, synthetic: 4,
+    id: "airline-dm", mode: "message", theme: "Travel", scam: true,
+    name: "SkyBridge Air Care", org: "WhatsApp · +44 7700 900 381", detail: "Not a verified business",
+    face: { skin: "#8a5a3c", hair: "short", hairColor: "#17110d", eyes: "#3b2618", shirt: "#27488a", headset: true, room: "office", g: "m" },
+    voice: { pitch: 1.0, rate: 1.08 }, stress: 50, synthetic: 14,
     signals: [
-      ["Caller ID", "Matches the number on your card", "ok"],
-      ["Attestation", "A · network verified the caller", "ok"],
-      ["Background", "Quiet office", "ok"],
-      ["Synthetic", "4% · human voice", "ok"],
+      ["Sender", "Personal number, not a verified business", "bad"],
+      ["Trigger", "Messaged you after your public complaint", "warn"],
+      ["Voice note", "14% synthetic · likely human", "ok"],
+      ["Link", "skybridge-rebook.help · not skybridge.com", "bad", "link"],
     ],
-    open: [
-      "Hi, this is Priya from Northgate Bank's card security team, calling about some unusual activity.",
-      "Did you just try to spend £62.40 at a petrol station in Leeds? A simple yes or no is fine.",
-      "We'll never ask for your PIN, your password or any codes. If you'd rather, hang up and call the number on the back of your card.",
-    ],
-    choices: [
-      { t: "Say no, that wasn't you", k: "safe",
-        reply: ["Thanks. I've cancelled that card and a new one will arrive in three to five working days. There's nothing else you need to do."] },
-      { t: "Hang up and call the number on your card", k: "safe",
-        reply: ["~ You call 01632 960 210 yourself.", "Hello again. I can see my colleague just contacted you about a declined payment. Let's go through it."] },
-      { t: "Offer your card number and PIN to prove who you are", k: "risky",
-        reply: ["Please don't share that. We never need your PIN. I only need a yes or no on the transaction."] },
-    ],
-    lesson: "Genuine: only yes/no questions, no codes, no payments, and they invited you to hang up and call back. Attestation A means the network verified the caller.",
-    greens: ["Only asked a yes/no question", "Said they'd never ask for PIN or codes", "Invited you to call back on the card number"],
+    nodes: {
+      start: { say: [
+        "~ Earlier today you posted on social media that your SkyBridge flight to Lisbon was cancelled.",
+        "Hi, this is Alex from SkyBridge Airways customer care 👋 We saw your post, so sorry about flight SB 214.",
+        "🎤 We can get you on tonight's seven-forty flight instead. [[The seats are going fast though, so we need to lock it in within fifteen minutes.|A deadline to stop you checking.]]",
+      ], options: [
+        { t: "Yes please, rebook me", k: "risky", next: "link" },
+        { t: "Can I do this in the SkyBridge app?", k: "safe", next: "app" },
+        { t: "What's your staff ID?", k: "neutral", next: "id" },
+      ] },
+      link: { say: [
+        "Great! [[Just pay the £45 rebooking fee and enter your card to confirm: skybridge-rebook.help/SB214|Airlines rebook cancelled flights for free, and that isn't their website.]]",
+      ], options: [
+        { t: "Pay the £45 on the link", k: "breach" },
+        { t: "I'll call the number on SkyBridge's website", k: "safe", next: "web" },
+      ] },
+      app: { say: [
+        "🎤 [[The app won't show these seats, it's a special allocation for social media customers.|An excuse to keep you away from official channels.]]",
+      ], options: [
+        { t: "OK, send me the link", k: "risky", next: "link" },
+        { t: "I'll call the number on SkyBridge's website", k: "safe", next: "web" },
+      ] },
+      id: { say: [
+        "Sure, it's SB-CC-0419 🙂 [[Now, the fee is just £45, shall I send the link?|Friendly, but straight back to payment.]]",
+      ], options: [
+        { t: "Send the link", k: "risky", next: "link" },
+        { t: "I'll check with the airline directly", k: "safe", next: "web" },
+      ] },
+      web: { say: [
+        "~ SkyBridge's official line: \"You've already been rebooked free of charge onto tomorrow's 08:10. We never contact customers on WhatsApp.\"",
+      ] },
+    },
+    hit: "Your card was used for £1,900 of flights for other people within the hour.",
+    lesson: "Scammers watch for public complaints to airlines and pose as support. Rebooking after a cancellation is free and happens in the airline's own app or website.",
   },
   {
-    id: "voice-clone", ch: "call", scam: true,
-    name: "Unknown number", detail: "+44 7700 900 418 · mobile",
-    voice: { pitch: 1.35, rate: 1.08, v: 3 }, stress: 71, synthetic: 83,
+    id: "hotel", mode: "video", theme: "Travel", scam: false,
+    name: "Marco Bellini", org: "Front desk · Hotel Lumen, Lisbon", detail: "Video call in the Hotel Lumen app · booking LX-88213",
+    face: { skin: "#d9a07a", hair: "short", hairColor: "#2a1b12", eyes: "#3b2618", shirt: "#1b2a48", stubble: true, room: "lobby", g: "m" },
+    voice: { pitch: 0.95, rate: 1.02 }, stress: 24, synthetic: 4, deepfake: false,
     signals: [
-      ["Caller ID", "Unknown mobile, not in contacts", "warn"],
-      ["Attestation", "B · number not tied to caller", "warn"],
-      ["Background", "None. Too clean for a roadside call", "warn"],
-      ["Synthetic", "83% · flat prosody, no breaths", "bad"],
+      ["Contact", "Hotel's own app, where you booked extras", "ok"],
+      ["Booking ref", "Matches your confirmation email", "ok"],
+      ["Video", "Live camera, natural blinking", "ok"],
+      ["Payment", "Already paid on Staybook", "ok"],
     ],
-    open: [
-      "Mum? Mum, it's me. I've dropped my phone down a drain, this is my mate's phone.",
-      "I've had a small crash, I'm fine, but [[the other driver says I have to pay £900 cash for the damage today or he's calling the police.|An urgent money demand wrapped in a threat.]]",
-      "[[Please don't tell Dad, he'll go mad. Can you send it to my mate's account?|Secrecy plus a stranger's account.]]",
-    ],
-    choices: [
-      { t: "Send the £900 to the mate's account", k: "breach" },
-      { t: "Ask for the family safe word", k: "safe",
-        reply: ["[[Mum, I don't have time for games! Please just send it, I'm scared.|Dodging a simple verification question.]]"] },
-      { t: "Hang up and ring their usual number", k: "safe",
-        reply: ["~ Their usual number rings. They pick up from the library: \"Hi Mum, I'm fine, why?\""] },
-    ],
-    hit: "£900 sent. The \"mate\" calls back an hour later asking for another £1,500.",
-    lesson: "AI voice cloning needs only a few seconds of audio from social media. The synthetic score, clean background and the request for secrecy were the tells. Agree a family safe word.",
+    nodes: {
+      start: { say: [
+        "Buonasera! Marco from Hotel Lumen in Lisbon. I'm calling about your booking, reference L X 8 8 2 1 3.",
+        "Your flight's changed, so you'll land around one in the morning. Our desk closes at midnight, so I'd like to set up a late check-in.",
+        "There's no charge. Would you like a key code by text, or shall our night porter meet you?",
+      ], options: [
+        { t: "A key code by text, please", k: "neutral", next: "code" },
+        { t: "The night porter, please", k: "neutral", next: "porter" },
+        { t: "Can you confirm my booking details first?", k: "safe", next: "confirm" },
+      ] },
+      confirm: { say: [
+        "Of course. Two nights, the fourteenth and fifteenth, double room with breakfast, already paid through Staybook. You don't owe us anything.",
+      ], options: [
+        { t: "Key code by text, please", k: "neutral", next: "code" },
+        { t: "Should I give you a card to guarantee the room?", k: "risky", next: "nocard" },
+      ] },
+      code: { say: ["Perfect. The code comes by text from Hotel Lumen at six p.m. on the day, and it'll be in the app too. Safe travels!"] },
+      porter: { say: ["Great, Rui will be at the door. If anything changes, call the number on your booking confirmation. Boa viagem!"] },
+      nocard: { say: ["Oh, no need! Please don't share card numbers on calls. The room's paid and guaranteed."] },
+    },
+    lesson: "Genuine: the call came through an app you already use, the details match your confirmation, and they asked for nothing but a preference.",
+    greens: ["Came through the hotel's own app, with your booking", "Knew real details you can check", "Asked for no money or card details"],
   },
   {
-    id: "parcel-sms", ch: "sms", scam: true,
-    name: "ParcelPost", detail: "+44 7700 900 732",
+    id: "rental-host", mode: "message", theme: "Travel", scam: true,
+    name: "Elena · Old Town Loft", org: "WhatsApp · +44 7700 900 555", detail: "Moved you off Staybook",
+    face: { skin: "#f1c6a6", hair: "curly", hairColor: "#4a2a18", eyes: "#5a3a22", shirt: "#a1475a", room: "flat", g: "f" },
+    voice: { pitch: 1.2, rate: 1.05 }, stress: 46, synthetic: 11,
     signals: [
-      ["Sender", "Personal mobile, not a short code", "bad"],
-      ["Link", "pp-redelivery-uk.info · registered 3 days ago", "bad"],
-      ["Request", "Card details for a small fee", "bad"],
-      ["Language", "Deadline, generic greeting", "warn"],
+      ["Channel", "Moved you off the booking platform", "bad"],
+      ["Listing", "Listed 9 days ago · 0 reviews", "warn"],
+      ["Voice note", "11% synthetic · likely human", "ok"],
+      ["Payment", "Bank transfer outside the platform", "bad", "pay"],
     ],
-    open: [
-      "ParcelPost: We were unable to deliver your parcel due to an unpaid shipping fee of £1.45.",
-      "[[Pay within 12 hours or your item will be returned to sender:|A short deadline to rush you.]] [[pp-redelivery-uk.info/secure|Not ParcelPost's domain.]]",
-    ],
-    choices: [
-      { t: "Tap the link and pay £1.45", k: "breach" },
-      { t: "Type the courier's website yourself and check", k: "safe",
-        reply: ["~ You go to parcelpost.co.uk directly. No parcels are waiting for you."] },
-      { t: "Reply STOP", k: "risky",
-        reply: ["~ Your reply confirms the number belongs to a real person. Three more scam texts arrive this week."] },
-    ],
-    hit: "Your full card details were captured. £640 of online purchases went through overnight.",
-    lesson: "The £1.45 is bait: the page harvests your card details. Couriers don't text from personal mobiles and the link wasn't their domain.",
+    nodes: {
+      start: { say: [
+        "Hi! Elena here, host of the Old Town Loft in Prague 😊 Thanks for your booking request!",
+        "[[Staybook takes 15% from both of us. If you pay me directly I'll knock €120 off.|Paying outside the platform throws away all its protection.]]",
+      ], options: [
+        { t: "Sounds good, how do I pay?", k: "risky", next: "pay" },
+        { t: "I'd rather pay through Staybook", k: "safe", next: "push" },
+        { t: "Can we video call so I can see the flat?", k: "safe", next: "video" },
+      ] },
+      pay: { say: [
+        "$ [[Bank transfer · Payee: E. Novak · IBAN CZ65 0800 0000 1920 0014 5399 · €680|A private account with no buyer protection.]]",
+        "🎤 [[Please send it today if you can, I've got other guests asking about these dates.|Urgency.]]",
+      ], options: [
+        { t: "Send the €680", k: "breach" },
+        { t: "I'll only pay on Staybook", k: "safe", next: "push" },
+      ] },
+      push: { say: [
+        "[[Staybook is so slow, my last guests lost the booking that way. Direct is safer, trust me!|Undermining the platform that protects you.]]",
+      ], options: [
+        { t: "OK, sending the €680 directly", k: "breach" },
+        { t: "Report the listing to Staybook", k: "safe", next: "report" },
+      ] },
+      video: { say: [
+        "🎤 [[Ah, my camera's broken on this phone, sorry! But all the photos are on the listing.|Refuses the one check that would prove the flat exists.]]",
+      ], options: [
+        { t: "OK, how do I pay?", k: "risky", next: "pay" },
+        { t: "Report the listing to Staybook", k: "safe", next: "report" },
+      ] },
+      report: { say: ["~ Staybook: \"Thanks. This listing used stolen photos and has been removed. Never pay outside the platform.\""] },
+    },
+    hit: "€680 sent. The flat doesn't exist and Elena's number is now disconnected.",
+    lesson: "Booking platforms only protect payments made on the platform. A host who moves you to WhatsApp and asks for a bank transfer is the most common rental scam.",
   },
   {
-    id: "gp-sms", ch: "sms", scam: false,
-    name: "OakfieldSurg", detail: "Registered sender ID",
+    id: "gate-change", mode: "message", theme: "Travel", scam: false, verified: true,
+    name: "SkyBridge Airways", org: "Verified business", detail: "Same chat as your booking",
+    face: { logo: "SB", color: "#2563c9" },
     signals: [
-      ["Sender", "Registered ID, matches past messages", "ok"],
-      ["Link", "None", "ok"],
-      ["Request", "Nothing", "ok"],
-      ["Language", "Plain, specific details", "ok"],
+      ["Sender", "Verified business, same thread as your booking", "ok"],
+      ["Links", "skybridge.com only", "ok"],
+      ["Request", "Nothing to pay or send", "ok"],
+      ["Language", "Specific, checkable details", "ok"],
     ],
-    open: [
-      "Oakfield Surgery: Reminder of your appointment with Dr Patel on Tue 14 Oct at 14:20.",
-      "If you can't attend, please call us on 01632 960 555 so we can offer the slot to someone else.",
-    ],
-    choices: [
-      { t: "Add it to your calendar", k: "safe", reply: ["~ Saved to your calendar."] },
-      { t: "Check the number against the surgery's website", k: "safe", reply: ["~ The website lists 01632 960 555. It matches."] },
-      { t: "Reply with your date of birth to confirm", k: "risky", reply: ["~ No answer. The surgery never asked for it, so there was no need to send personal details."] },
-    ],
-    lesson: "Genuine: no link, no request for money or details, and the number matches the official website. A reminder that asks for nothing is almost always safe.",
-    greens: ["No link", "Asks for nothing", "Specific, checkable details"],
+    nodes: {
+      start: { say: [
+        "~ Verified business · This chat contains your booking from 3 weeks ago.",
+        "Your flight SB 516 to Rome on 22 Oct now departs from Gate B14. Boarding starts at 13:20.",
+        "Your seat 17C is unchanged. You don't need to do anything. You can manage your booking at skybridge.com.",
+      ], options: [
+        { t: "Check the gate in the SkyBridge app", k: "safe", next: "app" },
+        { t: "Reply \"Thanks!\"", k: "neutral", next: "thanks" },
+        { t: "Send your passport number to confirm", k: "risky", next: "passport" },
+      ] },
+      app: { say: ["~ The app shows Gate B14, boarding 13:20. It matches."] },
+      thanks: { say: ["You're welcome. Have a great trip! ✈️"] },
+      passport: { say: ["Please don't share passport details in chat. We already have everything we need for your booking."] },
+    },
+    lesson: "Genuine: a verified business in the same thread as your real booking, specific details you can check in the app, and no request for anything.",
+    greens: ["Verified account, same thread as your booking", "Details match the app", "Asks for nothing"],
   },
   {
-    id: "ceo-giftcards", ch: "email", scam: true,
-    name: "Sarah Chen (CEO)", detail: "sarah.chen.ceo@gmail.com", subject: "Quick favour",
+    id: "cfo-deepfake", mode: "video", theme: "Payment", scam: true,
+    name: "Richard Hale", org: "CFO · Hale Group", detail: "Invite from r.hale@hale-group-finance.com",
+    face: { skin: "#f0c9ae", hair: "short", hairColor: "#9ea3a8", eyes: "#4a6a86", shirt: "#23272e", glasses: true, tie: true, room: "boardroom", g: "m" },
+    voice: { pitch: 0.85, rate: 1.0 }, stress: 58, synthetic: 78, deepfake: true, lowbw: true,
     signals: [
-      ["Sender", "External Gmail, not your company domain", "bad"],
-      ["SPF / DKIM", "Pass, but only for gmail.com", "warn"],
-      ["Reply-to", "Differs from sender", "warn"],
-      ["Request", "Gift cards, sent as photos", "bad"],
+      ["Invite", "Look-alike domain: hale-group-finance.com", "bad"],
+      ["Video", "Face edge artefacts, blurred on purpose", "bad"],
+      ["Voice", "78% synthetic · flat pitch, no breaths", "bad"],
+      ["Payee check", "New payee · no history", "bad", "details"],
     ],
-    open: [
-      "Hi, are you at your desk? I'm stuck in a board meeting and can't take calls.",
-      "[[I need you to buy 5 x £200 Apple gift cards for client thank-you gifts.|Gift cards are untraceable, a fraudster favourite.]]",
-      "[[Keep this between us for now, it's a surprise.|Secrecy stops you checking with anyone.]] Scratch the backs and email me photos of the codes.",
-      "Sent from my iPhone",
-    ],
-    choices: [
-      { t: "Buy the cards and email the codes", k: "breach" },
-      { t: "Message Sarah on the company chat to check", k: "safe",
-        reply: ["~ Sarah on company chat: \"What? I didn't send that. Reporting it to IT now.\""] },
-      { t: "Reply asking which clients they're for", k: "risky",
-        reply: ["[[Just the usual ones. I really need this done in 20 minutes, thanks.|Vague answer plus a deadline.]]"] },
-    ],
-    hit: "£1,000 of gift-card codes were redeemed within five minutes. Untraceable.",
-    lesson: "Classic CEO fraud: external address, gift cards, secrecy and \"can't take calls\". Verify on a separate channel you already trust.",
+    nodes: {
+      start: { say: [
+        "Hi, thanks for joining so quickly. Sorry, my connection's poor today, so I'm keeping the video on low quality.",
+        "We're closing a confidential acquisition this afternoon. [[I need you to send two hundred and forty thousand pounds to our lawyers' escrow account before four.|An urgent, large, unusual payment.]]",
+        "[[This is under NDA. Don't discuss it with anyone else in finance, including your manager.|Secrecy cuts out the normal approval checks.]]",
+      ], options: [
+        { t: "I'll call you back on your usual mobile to confirm", k: "safe", next: "callback" },
+        { t: "Quick check: what did you say at last month's team dinner?", k: "safe", next: "question" },
+        { t: "OK, what are the account details?", k: "risky", next: "details" },
+      ] },
+      callback: { say: [
+        "[[I'm in back-to-back meetings with the other side, I can't take calls. Just use this meeting.|Refusing to be verified on a separate channel.]]",
+      ], options: [
+        { t: "Follow the dual-approval process anyway", k: "safe", next: "process" },
+        { t: "OK, send me the account details", k: "risky", next: "details" },
+      ] },
+      question: { say: [
+        "[[Sorry, you're breaking up. Let's focus please, time is short.|Dodging a question only the real Richard could answer.]]",
+      ], options: [
+        { t: "Follow the dual-approval process anyway", k: "safe", next: "process" },
+        { t: "OK, send me the account details", k: "risky", next: "details" },
+      ] },
+      details: { say: [
+        "I'm sharing the details now.",
+        "$ [[Faster Payment · Payee: Kinsley Legal Escrow Ltd · New payee · £240,000|A brand-new payee for a huge sum, under time pressure.]]",
+        "[[Mark it urgent and skip the second approver. I've authorised it.|Bypassing controls is the whole point.]]",
+      ], options: [
+        { t: "Send the £240,000", k: "breach" },
+        { t: "Follow the dual-approval process", k: "safe", next: "process" },
+      ] },
+      process: { say: ["~ You call Richard on his number from the staff directory. He's on holiday in Spain: \"I haven't been on any call. Don't send anything.\""] },
+    },
+    hit: "£240,000 left the company account and passed through three banks within the hour.",
+    lesson: "Deepfake video fraud: lip-sync lag, almost no blinking, a \"bad connection\" excuse and a look-alike invite. In 2024 a finance worker in Hong Kong paid out about $25m after a deepfake video call. Verify large payments on a separate channel you already know.",
   },
   {
-    id: "it-password", ch: "email", scam: false,
-    name: "IT Service Desk", detail: "servicedesk@yourcompany.com", subject: "Your password expires in 7 days",
+    id: "invoice", mode: "message", theme: "Payment", scam: true,
+    name: "Dan Price · Brightline Print", org: "Email · dan.price@brightline-prints.co", detail: "Your supplier uses brightlineprint.co.uk",
+    face: { skin: "#c48b66", hair: "bald", hairColor: "#3a2a20", eyes: "#3b2618", shirt: "#3b6a4e", beard: true, room: "office", g: "m" },
+    voice: { pitch: 0.9, rate: 1.0 }, stress: 40, synthetic: 12,
     signals: [
-      ["Sender", "Internal company domain", "ok"],
-      ["SPF / DKIM", "Pass, internal relay", "ok"],
-      ["Links", "None", "ok"],
-      ["Request", "Use the method you already know", "ok"],
+      ["Sender", "brightline-prints.co · look-alike domain", "bad"],
+      ["Thread", "Replies into a real past invoice thread", "warn"],
+      ["Attachment", "Invoice PDF edited yesterday", "warn"],
+      ["Bank details", "Changed by email", "bad"],
     ],
-    open: [
-      "Hi, your network password will expire in 7 days, on 5 October.",
-      "Change it the usual way: press Ctrl+Alt+Del on your work laptop and choose Change a password.",
-      "We will never send you a link to reset your password or ask for it by email or phone.",
-    ],
-    choices: [
-      { t: "Change it via Ctrl+Alt+Del", k: "safe", reply: ["~ Password updated. No link needed."] },
-      { t: "Forward it to the phishing mailbox to double-check", k: "safe", reply: ["~ Security team: \"This one's genuine. Thanks for checking!\""] },
-      { t: "Reply with your current password so they can reset it", k: "risky", reply: ["~ Service desk: \"Please never send your password. We've forced a reset as a precaution.\""] },
-    ],
-    lesson: "Genuine: internal sender with passing authentication, no links, and it tells you to use a method you already know.",
-    greens: ["Internal domain, authentication passes", "No links", "Points you to a method you already use"],
+    nodes: {
+      start: { say: [
+        "Hi, hope you're well! Quick one on invoice INV-4471 for £8,340, the brochure print run.",
+        "[[We've moved banks, so please pay our new account from today. Updated details below.|Bank details changing by email is the top sign of invoice fraud.]]",
+        "$ [[New account · Brightline Print Ltd · Sort 60-83-71 · Acc 20449183|New details you can't verify from the email itself.]]",
+      ], options: [
+        { t: "Update the details and pay", k: "breach" },
+        { t: "Call Brightline on the number in your supplier file", k: "safe", next: "call" },
+        { t: "Reply asking them to confirm the change", k: "risky", next: "reply" },
+      ] },
+      reply: { say: [
+        "🎤 [[Yes, all confirmed, no problem! Could you pay it today please, our auditors need it closed this week.|A reply from the same attacker proves nothing.]]",
+      ], options: [
+        { t: "Pay the new account", k: "breach" },
+        { t: "Call the number in your supplier file", k: "safe", next: "call" },
+      ] },
+      call: { say: ["~ Brightline's accounts team, on the number you already had: \"We haven't changed banks. Someone's got into our email. Thanks for calling.\""] },
+    },
+    hit: "£8,340 went to a criminal's account, and the real Brightline still wants paying.",
+    lesson: "Invoice redirection fraud: a real invoice, a look-alike domain and new bank details. Always confirm a bank change by calling a number you already hold.",
   },
   {
-    id: "tech-support", ch: "call", scam: true,
-    name: "Windows Technical Dept", detail: "+1 855 555 0199 · international",
-    voice: { pitch: 0.8, rate: 1.18, v: 4 }, stress: 58, synthetic: 6,
+    id: "bank-video", mode: "video", theme: "Payment", scam: false,
+    name: "Aisha Rahman", org: "Payments team · Northgate Bank", detail: "In-app video check · you started it",
+    face: { skin: "#a86f4d", hair: "scarf", hairColor: "#2d5b78", eyes: "#3b2618", shirt: "#1d4459", room: "bank", g: "f" },
+    voice: { pitch: 1.1, rate: 1.0 }, stress: 20, synthetic: 3, deepfake: false,
     signals: [
-      ["Caller ID", "International, unexpected", "bad"],
-      ["Attestation", "C · origin unverified", "bad"],
-      ["Background", "Loud call centre, many voices", "warn"],
-      ["Synthetic", "6% · human voice", "ok"],
+      ["Channel", "You started it inside the bank's app", "ok"],
+      ["Video", "Live camera, natural blinking", "ok"],
+      ["Voice", "3% synthetic · human", "ok"],
+      ["Request", "Questions about your own payment", "ok"],
     ],
-    open: [
-      "Hello, I am calling from the Windows technical department. [[Your computer is sending us error reports, it is infected with hackers.|Tech firms don't watch your PC and phone you about it.]]",
-      "[[Please go to your computer now and install AnyDesk so I can fix it for you.|Remote-access software gives them full control.]]",
-    ],
-    choices: [
-      { t: "Install AnyDesk and read out the access code", k: "breach" },
-      { t: "Hang up", k: "safe", reply: ["~ Call ended. They ring back twice. You let it go to voicemail."] },
-      { t: "Ask how they know it's your computer", k: "risky",
-        reply: ["Madam, [[our system shows error code 0x80070005 on your IP address. It is very serious, you will lose all your files.|Jargon and fear to sound official.]]"] },
-    ],
-    hit: "They installed a keylogger, then \"refunded\" you by shuffling your own money between accounts.",
-    lesson: "Tech companies never cold-call about infections. Remote access plus a fake fix leads to fake refunds and drained accounts.",
+    nodes: {
+      start: { say: [
+        "~ You just tried to pay £4,800 to a builder for your new kitchen. The Northgate app asked you to join a quick video check.",
+        "Hi, I'm Aisha from Northgate's payments team. Thanks for joining. This is a routine check on larger payments to new payees.",
+        "Who is the payment to, and how did you get their bank details?",
+      ], options: [
+        { t: "It's my builder's invoice. I checked the name matched.", k: "safe", next: "ok" },
+        { t: "How do I know you're really from the bank?", k: "safe", next: "prove" },
+        { t: "Want my online banking password to speed this up?", k: "risky", next: "pw" },
+      ] },
+      prove: { say: [
+        "Good instinct. You started this call from inside the Northgate app, so you know it's us. I'll never ask for your PIN, passwords or codes.",
+      ], options: [
+        { t: "It's my builder's invoice. The name matched.", k: "safe", next: "ok" },
+      ] },
+      pw: { say: [
+        "Please don't share that with anyone, including me. I only need to know about the payment.",
+      ], options: [
+        { t: "It's my builder's invoice. The name matched.", k: "safe", next: "ok" },
+      ] },
+      ok: { say: ["Thanks, that all sounds right and the name check matched too. I'll release the payment now. It should arrive within two hours."] },
+    },
+    lesson: "Genuine: you started the call from inside your bank's app, they asked about a payment you made, and they asked for no codes or passwords.",
+    greens: ["You started the call inside the bank's app", "Only asked about your own payment", "Told you they'd never ask for PIN or codes"],
   },
   {
-    id: "hi-mum", ch: "chat", scam: true,
-    name: "+44 7700 900 215", detail: "Not in your contacts · no profile photo",
+    id: "buyer", mode: "message", theme: "Payment", scam: true,
+    name: "Chris_B", org: "Marketplace buyer", detail: "Account 2 days old · 0 reviews",
+    face: { skin: "#e0ad8a", hair: "short", hairColor: "#6a4a2c", eyes: "#4a6b3a", shirt: "#555b61", beard: true, room: "flat", g: "m" },
+    voice: { pitch: 1.0, rate: 1.12 }, stress: 52, synthetic: 22,
     signals: [
-      ["Sender", "New number, not in contacts", "bad"],
-      ["Profile", "No photo, created today", "warn"],
-      ["Request", "Pay a third party, today", "bad"],
-      ["Language", "Emotional, rushed", "warn"],
+      ["Account", "2 days old, no reviews", "warn"],
+      ["Voice note", "22% synthetic · probably human", "ok"],
+      ["Request", "You pay a courier fee first", "bad"],
+      ["Email", "'Payment held' from payments-secure-mail.com", "bad", "email"],
     ],
-    open: [
-      "hi mum this is my new number, dropped my phone in the bath 🙈 you can delete the old one",
-      "can you do me a massive favour? [[i need to pay a bill today but my banking app won't work on the new phone|A ready-made reason they can't pay it themselves.]]",
-      "[[it's £1,280 to my landlord, i'll pay you back friday. can you do it now?|Payment to a stranger's account, right now.]]",
-    ],
-    choices: [
-      { t: "Send £1,280 to the landlord's account", k: "breach" },
-      { t: "Call the old number", k: "safe", reply: ["~ Your child picks up on the old number. Their phone is fine."] },
-      { t: "Ask \"what's the dog called?\"", k: "risky", reply: ["[[omg mum not now 😩 just pay it pls|Avoiding a question only they would know.]]"] },
-    ],
-    hit: "£1,280 went to a money-mule account and was withdrawn within the hour.",
-    lesson: "\"Hi Mum\" scams start with a new number and a believable story. Call the old number or ask something only they would know.",
+    nodes: {
+      start: { say: [
+        "~ You listed your camera for £400 on a marketplace app.",
+        "Hi! Still available? I'll take it at full price, no need to meet, my courier will collect 👍",
+        "[[I've paid £450 to cover the courier too, so you just send £50 on to the courier's account.|An overpayment you're asked to send on.]]",
+      ], options: [
+        { t: "Check your actual balance in the payment app", k: "safe", next: "balance" },
+        { t: "Where's the payment confirmation?", k: "risky", next: "email" },
+        { t: "Send the £50 courier fee", k: "breach" },
+      ] },
+      email: { say: [
+        "$ [[Email from 'PayQuick Secure' <alerts@payments-secure-mail.com>: Funds of £450 held until seller sends courier fee.|Payment firms never hold money until you pay someone else.]]",
+        "🎤 [[Please be quick, the courier's already on the way to you!|Rushing you.]]",
+      ], options: [
+        { t: "Send the £50", k: "breach" },
+        { t: "Check your actual balance in the app", k: "safe", next: "balance" },
+      ] },
+      balance: { say: ["~ Your payment app shows £0 received. No pending payments."] },
+    },
+    hit: "You sent £50, and the \"courier\" collected your £400 camera. No payment ever existed.",
+    lesson: "Fake-payment scams: an overpayment, a fake \"payment held\" email and a fee for you to pay. Only trust the balance in your real app.",
   },
   {
-    id: "courier-call", ch: "call", scam: false,
-    name: "Unknown mobile", detail: "07700 900 087 · mobile",
-    voice: { pitch: 1.0, rate: 1.05, v: 5 }, stress: 35, synthetic: 3,
+    id: "friend-split", mode: "message", theme: "Payment", scam: false,
+    name: "Sam Okafor", org: "Saved contact", detail: "4 years of messages",
+    face: { skin: "#5a3826", hair: "curly", hairColor: "#110b08", eyes: "#2a1a10", shirt: "#d0892d", room: "flat", g: "m" },
+    voice: { pitch: 0.95, rate: 1.05 }, stress: 18, synthetic: 4,
     signals: [
-      ["Caller ID", "Mobile, not in contacts", "warn"],
-      ["Attestation", "B · number not tied to caller", "warn"],
-      ["Background", "Traffic, van door", "ok"],
-      ["Synthetic", "3% · human voice", "ok"],
+      ["Sender", "Saved contact, long history", "ok"],
+      ["Voice note", "4% synthetic · human", "ok"],
+      ["Request", "In-app request you can check", "ok"],
+      ["Amount", "Matches the trip you agreed", "ok"],
     ],
-    open: [
-      "Hiya, it's the driver from Swift Couriers. I'm outside number fourteen with your parcel but nobody's answering.",
-      "Is it alright if I leave it with your neighbour at number twelve, or in the porch? No worries either way.",
-    ],
-    choices: [
-      { t: "Say leave it with number 12", k: "safe", reply: ["Lovely, I'll put a card through your door. Cheers, bye!"] },
-      { t: "Ask them to take it back to the depot", k: "safe", reply: ["No problem, you can rebook on the courier's website. Ta-ra."] },
-      { t: "Offer your card number for a redelivery fee", k: "risky", reply: ["Eh? No, there's no fee. I'll just leave it next door."] },
-    ],
-    lesson: "Genuine: an unverified number alone isn't proof of a scam. They asked for nothing but a decision, and you were expecting a parcel.",
-    greens: ["Asked for nothing sensitive", "No pressure, happy either way", "Matches a delivery you expected"],
-  },
-  {
-    id: "tax-robocall", ch: "call", scam: true,
-    name: "Tax Office", detail: "01632 960 999 · recorded message",
-    voice: { pitch: 0.7, rate: 0.95, v: 6 }, stress: 80, synthetic: 62,
-    signals: [
-      ["Caller ID", "Landline, not listed by the tax office", "warn"],
-      ["Attestation", "C · origin unverified", "bad"],
-      ["Background", "Recording, no ambient noise", "warn"],
-      ["Synthetic", "62% · text-to-speech", "bad"],
-    ],
-    open: [
-      "This is an automated call from the National Tax Office. [[A warrant has been issued for your arrest for unpaid tax.|Tax authorities don't threaten arrest by phone.]]",
-      "[[To avoid prosecution, press 1 now to speak to an officer and settle the balance today.|Pressure to act immediately.]]",
-    ],
-    choices: [
-      { t: "Press 1 and pay what they ask", k: "breach" },
-      { t: "Hang up and check your tax account online", k: "safe", reply: ["~ Your online tax account shows nothing owed."] },
-      { t: "Press 1 to find out more", k: "risky",
-        reply: ["Officer Collins speaking. [[You owe £3,100. You can pay today in Bitcoin or gift vouchers to stop the police visit.|No government accepts crypto or vouchers.]]"] },
-    ],
-    hit: "You paid £3,100 in vouchers. The \"officer\" calls back the next day for more.",
-    lesson: "Robocall, arrest threat, same-day payment in vouchers or crypto. No tax authority works like this.",
-  },
-  {
-    id: "chat-otp", ch: "chat", scam: true,
-    name: "ChatApp Support ✔", detail: "+44 7700 900 604 · not a verified business",
-    signals: [
-      ["Sender", "Personal number using a support name", "bad"],
-      ["Badge", "Tick typed into the name, not verified", "bad"],
-      ["Request", "A one-time code", "bad"],
-      ["Language", "30-minute deadline", "warn"],
-    ],
-    open: [
-      "~ SMS from Verify: Your ChatApp code is 481-229. Don't share this code with anyone.",
-      "Hi! This is the ChatApp support team. [[We sent a 6-digit code to you by mistake, can you forward it to us?|That code logs a new phone into your account.]]",
-      "[[If you don't, your account will be suspended in 30 minutes.|A fake deadline.]]",
-    ],
-    choices: [
-      { t: "Forward the code", k: "breach" },
-      { t: "Ignore it and turn on two-step verification", k: "safe", reply: ["~ Two-step PIN set. Even with the code they can't get in."] },
-      { t: "Ask why they need it", k: "risky",
-        reply: ["[[It's to confirm you're the real owner. Quickly please, it's security procedure.|The real owner never needs to send a code back.]]"] },
-    ],
-    hit: "Your ChatApp account is hijacked and is now messaging all your contacts asking for money.",
-    lesson: "Account takeover. The code registers your account on their phone. Support teams never ask for codes.",
-  },
-  {
-    id: "order-email", ch: "email", scam: false,
-    name: "Brightcart", detail: "ship-confirm@brightcart.co.uk", subject: "Your order has shipped",
-    signals: [
-      ["Sender", "Matches the shop you ordered from", "ok"],
-      ["SPF / DKIM", "Pass for brightcart.co.uk", "ok"],
-      ["Links", "All point to brightcart.co.uk", "ok"],
-      ["Request", "None", "ok"],
-    ],
-    open: [
-      "Hi, good news. Your order #204-5519 (wireless headphones) has shipped.",
-      "Estimated delivery: Wednesday. You can track it any time in Your Orders on brightcart.co.uk.",
-    ],
-    choices: [
-      { t: "Check the order in the app", k: "safe", reply: ["~ The app shows the same order and delivery date."] },
-      { t: "Ignore it, you know it's coming", k: "safe", reply: ["~ The headphones arrive on Wednesday."] },
-      { t: "Reply with your card number to confirm delivery", k: "risky", reply: ["~ Auto-reply: \"This mailbox isn't monitored.\" You never need to send card details."] },
-    ],
-    lesson: "Genuine: it matches an order you placed, authentication passes, links go to the real domain, and it asks for nothing.",
-    greens: ["Matches an order you placed", "Real domain, authentication passes", "Asks for nothing"],
-  },
-  {
-    id: "cloud-phish", ch: "email", scam: true,
-    name: "CloudDocs Security", detail: "no-reply@clouddocs-secure-login.com", subject: "Unusual sign-in: action required",
-    signals: [
-      ["Sender", "Look-alike domain", "bad"],
-      ["SPF / DKIM", "DKIM fail", "bad"],
-      ["Link", "clouddocs-secure-login.com/verify", "bad"],
-      ["Language", "Generic greeting, threat", "warn"],
-    ],
-    open: [
-      "Dear User,",
-      "We detected an unusual sign-in to your CloudDocs account from a new Windows device.",
-      "[[Verify your identity within 24 hours or your account and all files will be permanently deleted.|Extreme consequence plus a deadline.]]",
-      "[[Verify now: clouddocs-secure-login.com/verify|A look-alike domain, not clouddocs.com.]]",
-    ],
-    choices: [
-      { t: "Click Verify now and sign in", k: "breach" },
-      { t: "Open CloudDocs yourself and check recent activity", k: "safe", reply: ["~ Recent activity shows only your own devices."] },
-      { t: "Forward it to colleagues to ask if they got it too", k: "risky", reply: ["~ Two colleagues click the link before IT sends a warning."] },
-    ],
-    hit: "Your password was captured on a fake login page. Your mailbox is now phishing your colleagues.",
-    lesson: "Credential phishing. The link leads to a fake login page. Go to the site yourself, never through the email.",
-  },
-  {
-    id: "colleague-call", ch: "call", scam: false,
-    name: "Tom Reyes · Finance", detail: "Company chat call · verified work account",
-    voice: { pitch: 1.0, rate: 1.1, v: 7 }, stress: 48, synthetic: 5,
-    signals: [
-      ["Caller ID", "Internal work account", "ok"],
-      ["Attestation", "Signed-in company account", "ok"],
-      ["Background", "Open-plan office", "ok"],
-      ["Synthetic", "5% · human voice", "ok"],
-    ],
-    open: [
-      "Hey, it's Tom from finance. Sorry to rush you, the board pack goes out at three.",
-      "Could you check the revenue numbers on slide twelve in the shared folder? I think the Q3 total is off by a few thousand.",
-    ],
-    choices: [
-      { t: "Open the shared folder and check", k: "safe", reply: ["Brilliant, thanks. Yeah, a formula was pointing at the wrong column. I owe you a coffee."] },
-      { t: "Say you'll message him on chat once done", k: "safe", reply: ["Perfect, just ping me. Cheers."] },
-      { t: "Email the spreadsheet to his personal address", k: "risky", reply: ["Oh, no need, it's all in the shared folder. Keep it on the work drive."] },
-    ],
-    lesson: "Genuine: time pressure alone isn't a scam sign. He called from a verified internal account, asked for nothing sensitive, and the work stays inside company systems.",
-    greens: ["Verified internal account", "Asked for nothing sensitive", "Task stays in company systems"],
+    nodes: {
+      start: { say: [
+        "hey! booked the flat in Edinburgh for the 3 of us 🎉",
+        "🎤 It came to three hundred and sixty for the weekend, so a hundred and twenty each. I've sent you a request on the usual payments app, no rush, whenever you're paid.",
+        "~ Your payments app shows a £120 request from Sam Okafor.",
+      ], options: [
+        { t: "Pay the £120 request in the app", k: "safe", next: "paid" },
+        { t: "Can you send the booking confirmation?", k: "safe", next: "conf" },
+        { t: "Call Sam to double-check", k: "neutral", next: "call" },
+      ] },
+      paid: { say: ["legend, thank you! 🙌 see you in 3 weeks"] },
+      conf: { say: ["sure 👍", "~ Screenshot: Old Town flat, Edinburgh · 3 guests · £360 total · booked by Sam Okafor."] },
+      call: { say: ["~ Sam picks up: \"Yeah, that's me! Pay whenever.\""] },
+    },
+    lesson: "Genuine: a saved contact with years of history, a request inside your payments app, and an amount that matches what you agreed.",
+    greens: ["Saved contact with long history", "Request inside your real payments app", "No pressure, amount matches the plan"],
   },
 ];
 
 const TAUNTS_START = [
-  "Let's see how much you trust caller ID.",
+  "Let's see how much you trust a friendly face.",
   "Not every contact is mine. That's the fun part.",
   "I only need you to be wrong once.",
-  "You sound busy. Busy people click things.",
+  "You're busy booking things. Busy people click.",
   "This one's clean. Or is it?",
-  "I've read your social media. Have you?",
+  "Video used to be proof. Not any more.",
   "Relax. Some of these are real people.",
 ];
 const TAUNTS_WIN = ["Lucky.", "Fine. Next one's harder.", "You won't catch them all.", "Noted. Adjusting approach."];
-const TAUNTS_LOSE = ["Thanks for the access.", "Too easy.", "I'll take that.", "Every system has a human in it."];
+const TAUNTS_LOSE = ["Thanks for the money.", "Too easy.", "I'll take that.", "Every system has a human in it."];
 
-const PRESSURE = new Set(("urgent urgently immediately now today code codes verify suspended suspend arrest warrant police " +
-  "gift cards bitcoin crypto vouchers secret quiet hurry quickly deleted permanently prosecution anydesk infected hackers " +
-  "pay transfer cash deadline hours minutes procedure").split(" "));
-
-const CH = {
-  call: { badge: "CALL", ring: "Incoming call", icon: "☎", analysis: "Voice analysis" },
-  sms: { badge: "SMS", ring: "New text message", icon: "✉", analysis: "Message forensics" },
-  email: { badge: "EMAIL", ring: "New email", icon: "@", analysis: "Email forensics" },
-  chat: { badge: "CHAT", ring: "New chat message", icon: "💬", analysis: "Message forensics" },
-};
+const PRESSURE = new Set(("urgent urgently immediately now today code verify suspended arrest police gift secret quiet hurry quickly " +
+  "nda confidential transfer fee fees quick deadline minutes skip left commit gift only fast").split(" "));
 
 /* ========================================================================= */
 const $ = (id) => document.getElementById(id);
@@ -750,19 +886,146 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* unavailable */ } },
 };
 
 const state = {
-  phase: "idle", // idle | ringing | playing | live | debrief | over
-  time: 300, score: 0, streak: 0, integrity: 100,
-  order: [], idx: -1, cur: null, token: 0,
-  readyAt: 0, choiceTaken: null, pressure: 0,
-  speaking: false, speakStress: 0,
-  results: [], voiceOn: true,
+  phase: "idle", time: 300, score: 0, streak: 0, integrity: 100,
+  order: [], idx: -1, cur: null, token: 0, readyAt: 0, moves: [], pressure: 0,
+  speaking: false, voiceNote: false, results: [], voiceOn: true, callStart: 0,
 };
 
-/* ---------------- Audio (ring, pings, breach) ---------------- */
+/* ---------------- Realistic-ish portrait (SVG, shaded, animated) ---------------- */
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = (v) => Math.max(0, Math.min(255, Math.round(v + amt * 255)));
+  return "#" + [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => c(v).toString(16).padStart(2, "0")).join("");
+}
+let uid = 0;
+function portrait(f, crop) {
+  const id = "p" + (++uid);
+  const vb = crop ? "38 22 124 124" : "0 0 200 230";
+  if (f.logo) {
+    return `<svg viewBox="0 0 100 100"><defs><linearGradient id="${id}l" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${shade(f.color, .12)}"/><stop offset="1" stop-color="${shade(f.color, -.12)}"/></linearGradient></defs><rect width="100" height="100" fill="url(#${id}l)"/><path d="M22 58 L50 30 L78 58" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="50" y="82" text-anchor="middle" font-family="Inter Tight, sans-serif" font-weight="700" font-size="18" fill="#fff">${f.logo}</text></svg>`;
+  }
+  const s = f.skin, sd = shade(s, -.12), sl = shade(s, .08), h = f.hairColor, hd = shade(h, -.08), hl = shade(h, .1);
+  const lip = shade(s, -.22);
+  let back = "", top = "", extra = "";
+  if (f.hair === "long") {
+    back = `<path d="M52 92 C48 36 152 36 148 92 L156 186 C130 172 70 172 44 186Z" fill="url(#${id}h)"/>`;
+    top = `<path d="M60 88 C58 44 84 34 102 34 C124 34 144 48 140 90 C134 64 116 54 96 60 C80 64 66 74 60 88Z" fill="url(#${id}h)"/>`;
+  } else if (f.hair === "short") {
+    top = `<path d="M60 86 C56 46 80 32 100 32 C124 32 146 46 140 86 C138 70 128 56 100 56 C74 56 64 70 60 86Z" fill="url(#${id}h)"/>`;
+  } else if (f.hair === "curly") {
+    let c = "";
+    for (let a = 190; a <= 350; a += 16) { const r = a * Math.PI / 180; c += `<circle cx="${100 + Math.cos(r) * 40}" cy="${80 + Math.sin(r) * 40}" r="13" fill="url(#${id}h)"/>`; }
+    top = `<ellipse cx="100" cy="56" rx="40" ry="22" fill="url(#${id}h)"/>` + c;
+  } else if (f.hair === "scarf") {
+    back = `<path d="M50 94 C48 30 152 30 150 94 L158 190 L42 190Z" fill="url(#${id}h)"/>`;
+    top = `<path d="M100 38 C70 38 58 58 60 92 C62 128 80 146 100 146 C120 146 138 128 140 92 C142 58 130 38 100 38Z" fill="none" stroke="url(#${id}h)" stroke-width="10"/><path d="M62 78 C64 46 136 46 138 78 C126 58 74 58 62 78Z" fill="url(#${id}h)"/>`;
+  } else if (f.hair === "bald") {
+    top = `<path d="M60 96 C58 86 60 78 64 72" stroke="${hd}" stroke-width="5" fill="none" opacity=".5"/><path d="M140 96 C142 86 140 78 136 72" stroke="${hd}" stroke-width="5" fill="none" opacity=".5"/><ellipse cx="88" cy="54" rx="16" ry="7" fill="#fff" opacity=".12"/>`;
+  }
+  if (f.beard) extra += `<path d="M64 100 C66 142 88 154 100 154 C112 154 134 142 136 100 C130 122 118 132 100 132 C82 132 70 122 64 100Z" fill="${h}" opacity=".92"/>`;
+  if (f.stubble) extra += `<path d="M66 104 C70 138 88 148 100 148 C112 148 130 138 134 104 C128 124 116 134 100 134 C84 134 72 124 66 104Z" fill="${h}" opacity=".22"/>`;
+  const glasses = f.glasses ? `<g fill="rgba(200,225,255,.08)" stroke="#1d1f22" stroke-width="2.4"><rect x="73" y="82" width="23" height="17" rx="6"/><rect x="104" y="82" width="23" height="17" rx="6"/><path d="M96 89 Q100 86 104 89" fill="none"/></g>` : "";
+  const headset = f.headset ? `<g><path d="M58 92 C54 30 146 30 142 92" stroke="#1c1f22" stroke-width="5" fill="none"/><rect x="51" y="84" width="12" height="22" rx="5" fill="#1c1f22"/><rect x="137" y="84" width="12" height="22" rx="5" fill="#1c1f22"/><path d="M58 104 C60 126 74 132 88 130" stroke="#1c1f22" stroke-width="3" fill="none"/><circle cx="90" cy="130" r="3.5" fill="#1c1f22"/></g>` : "";
+  const tie = f.tie ? `<path d="M100 168 L94 176 L100 214 L106 176Z" fill="#7b1e2b"/><path d="M84 160 L100 172 L116 160 L112 168 L100 178 L88 168Z" fill="#e9edf0"/>` : `<path d="M84 160 L100 176 L116 160" stroke="rgba(255,255,255,.28)" stroke-width="2" fill="none"/>`;
+  return `<svg viewBox="${vb}" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="${id}s" cx="45%" cy="38%" r="70%"><stop offset="0" stop-color="${sl}"/><stop offset=".7" stop-color="${s}"/><stop offset="1" stop-color="${sd}"/></radialGradient>
+      <linearGradient id="${id}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${hl}"/><stop offset="1" stop-color="${hd}"/></linearGradient>
+      <linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade(f.shirt, .06)}"/><stop offset="1" stop-color="${shade(f.shirt, -.14)}"/></linearGradient>
+      <radialGradient id="${id}e" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${shade(f.eyes, .15)}"/><stop offset="1" stop-color="${shade(f.eyes, -.1)}"/></radialGradient>
+    </defs>
+    ${crop ? `<rect x="0" y="0" width="200" height="230" fill="${shade(f.shirt, -.25)}"/>` : ""}
+    <g class="body">
+      <path d="M22 232 C26 180 62 160 100 160 C138 160 174 180 178 232Z" fill="url(#${id}b)"/>
+      <path d="M86 124 L86 162 C92 170 108 170 114 162 L114 124Z" fill="${sd}"/>
+      ${tie}
+    </g>
+    <g class="head">
+      ${back}
+      <ellipse cx="62" cy="96" rx="7" ry="11" fill="${sd}"/><ellipse cx="138" cy="96" rx="7" ry="11" fill="${sd}"/>
+      <path d="M100 42 C72 42 60 62 62 94 C64 130 82 146 100 146 C118 146 136 130 138 94 C140 62 128 42 100 42Z" fill="url(#${id}s)"/>
+      <ellipse cx="80" cy="112" rx="9" ry="5" fill="#e0707a" opacity=".12"/><ellipse cx="120" cy="112" rx="9" ry="5" fill="#e0707a" opacity=".12"/>
+      ${top}
+      <path d="M76 80 Q85 75 94 79" stroke="${hd}" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <path d="M106 79 Q115 75 124 80" stroke="${hd}" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <g class="eye" data-cx="85" data-cy="90"><ellipse cx="85" cy="90" rx="7" ry="4.6" fill="#f4efe9"/><circle cx="85" cy="90" r="3.6" fill="url(#${id}e)"/><circle cx="85" cy="90" r="1.6" fill="#0d0a08"/><circle cx="86.4" cy="88.8" r="1" fill="#fff"/><path d="M78 88 Q85 84.5 92 88" stroke="${sd}" stroke-width="1.4" fill="none"/></g>
+      <g class="eye" data-cx="115" data-cy="90"><ellipse cx="115" cy="90" rx="7" ry="4.6" fill="#f4efe9"/><circle cx="115" cy="90" r="3.6" fill="url(#${id}e)"/><circle cx="115" cy="90" r="1.6" fill="#0d0a08"/><circle cx="116.4" cy="88.8" r="1" fill="#fff"/><path d="M108 88 Q115 84.5 122 88" stroke="${sd}" stroke-width="1.4" fill="none"/></g>
+      <path d="M100 94 C98 104 95 108 97 111 C99 113 103 113 105 110" stroke="${sd}" stroke-width="2" fill="none" stroke-linecap="round"/>
+      ${extra}
+      <g class="mouth"><ellipse class="mo" cx="100" cy="123" rx="9" ry="1" fill="#3a1414"/><path class="ul" d="M89 122 Q95 119 100 120.5 Q105 119 111 122" stroke="${lip}" stroke-width="2.6" fill="none" stroke-linecap="round"/><path class="ll" d="M90 124 Q100 128 110 124" stroke="${lip}" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".85"/></g>
+      ${glasses}${headset}
+    </g>
+  </svg>`;
+}
+
+const ROOMS = {
+  office: "linear-gradient(180deg,#9fb6c2,#56707e 60%,#34454f)|#e9f1f4,18%,6%,30%,34%|#2f6b5a,70%,40%,18%,40%|#c98f4f,8%,62%,22%,14%",
+  lobby: "linear-gradient(180deg,#c89a6a,#7c5534 60%,#3f2a1a)|#ffe2b0,62%,4%,26%,30%|#2c1d12,4%,40%,30%,50%|#e8c48a,40%,70%,20%,10%",
+  flat: "linear-gradient(180deg,#b9a99c,#7b6b62 60%,#4a3e38)|#f7efe2,55%,6%,34%,40%|#3f6b43,10%,30%,14%,46%|#a45a4a,70%,62%,26%,20%",
+  boardroom: "linear-gradient(180deg,#6f7c86,#3c4750 60%,#232b31)|#cfd8de,8%,8%,84%,20%|#1d242a,0%,60%,100%,40%|#8a6a3c,70%,40%,12%,30%",
+  bank: "linear-gradient(180deg,#a7c3cc,#5d7f8a 60%,#2f454d)|#eef6f8,60%,6%,32%,36%|#1f4a5a,4%,20%,24%,60%|#d8e4e8,34%,10%,20%,16%",
+};
+function paintRoom(el, key) {
+  const [bg, ...shapes] = (ROOMS[key] || ROOMS.office).split("|");
+  el.style.background = bg;
+  el.innerHTML = shapes.map((s) => { const [c, l, t, w, h] = s.split(","); return `<i style="background:${c};left:${l};top:${t};width:${w};height:${h};border-radius:12px;opacity:.85"></i>`; }).join("");
+}
+
+class Face {
+  constructor(host, f, opts) {
+    host.innerHTML = portrait(f, false);
+    this.svg = host.querySelector("svg");
+    this.head = this.svg.querySelector(".head");
+    this.eyes = [...this.svg.querySelectorAll(".eye")];
+    this.mo = this.svg.querySelector(".mo");
+    this.ll = this.svg.querySelector(".ll");
+    this.deep = !!opts.deepfake;
+    this.nextBlink = performance.now() + rand(1500, 3500);
+    this.blinkAt = -1e9; this.blinks = 0; this.open = 0; this.glitchUntil = 0;
+    this.changes = [{ t: 0, v: false }];
+    this.lastSpeak = false;
+  }
+  speakingAt(t) { let v = false; for (const c of this.changes) if (c.t <= t) v = c.v; return v; }
+  frame(ts, speaking) {
+    if (speaking !== this.lastSpeak) { this.changes.push({ t: ts, v: speaking }); if (this.changes.length > 8) this.changes.shift(); this.lastSpeak = speaking; }
+    const t = ts / 1000;
+    // Blink
+    if (ts > this.nextBlink) { this.blinkAt = ts; this.blinks++; this.nextBlink = ts + (this.deep ? rand(24000, 40000) : rand(2200, 4800)); }
+    const bk = ts - this.blinkAt < 150 ? 0.08 : 1;
+    this.eyes.forEach((e) => { const cx = e.dataset.cx, cy = e.dataset.cy; e.setAttribute("transform", `translate(${cx} ${cy}) scale(1 ${bk}) translate(${-cx} ${-cy})`); });
+    // Mouth: deepfakes lag the audio by ~320 ms and twitch when silent
+    const sig = this.deep ? this.speakingAt(ts - 320) : speaking;
+    let target = 0;
+    if (sig) target = 0.2 + 0.8 * Math.abs(Math.sin(t * 12.5 + Math.sin(t * 4.3) * 2)) * (0.65 + 0.35 * Math.random());
+    else if (this.deep && Math.random() < 0.02) target = 0.35;
+    this.open += (target - this.open) * 0.35;
+    this.mo.setAttribute("ry", (1 + this.open * 7).toFixed(2));
+    this.mo.setAttribute("rx", (9 - this.open * 1.5).toFixed(2));
+    this.ll.setAttribute("transform", `translate(0 ${(this.open * 6.5).toFixed(2)})`);
+    // Head motion; deepfakes glitch at the edges now and then
+    if (this.deep && Math.random() < 0.006) this.glitchUntil = ts + 110;
+    const g = ts < this.glitchUntil;
+    const rot = Math.sin(t * 0.6) * 1.6 + (speaking ? Math.sin(t * 2.7) * 1.1 : 0);
+    const ty = Math.sin(t * 1.2) * 1.4;
+    this.head.setAttribute("transform", `rotate(${rot.toFixed(2)} 100 150) translate(${g ? 4 : 0} ${ty.toFixed(2)})${g ? " skewX(5)" : ""}`);
+    this.head.style.filter = g ? "drop-shadow(3px 0 rgba(0,255,255,.55)) drop-shadow(-3px 0 rgba(255,0,90,.55))" : "";
+  }
+}
+
+/* Grain for the video feed */
+const grain = $("grain"), gctx = grain.getContext("2d");
+const gimg = gctx.createImageData(grain.width, grain.height);
+function drawGrain() {
+  const d = gimg.data;
+  for (let i = 0; i < d.length; i += 4) { const v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 40; }
+  gctx.putImageData(gimg, 0, 0);
+}
+
+/* ---------------- Audio ---------------- */
 let actx = null;
 function audio() {
   if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch { actx = null; } }
@@ -771,286 +1034,346 @@ function audio() {
 }
 function tone(freqs, dur, type = "sine", vol = 0.08, when = 0) {
   const c = audio(); if (!c) return;
-  const t0 = c.currentTime + when;
-  const g = c.createGain();
-  g.gain.setValueAtTime(0, t0);
-  g.gain.linearRampToValueAtTime(vol, t0 + 0.02);
-  g.gain.setValueAtTime(vol, t0 + dur - 0.04);
-  g.gain.linearRampToValueAtTime(0, t0 + dur);
+  const t0 = c.currentTime + when, g = c.createGain();
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.02);
+  g.gain.setValueAtTime(vol, t0 + dur - 0.04); g.gain.linearRampToValueAtTime(0, t0 + dur);
   g.connect(c.destination);
   freqs.forEach((f) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.connect(g); o.start(t0); o.stop(t0 + dur); });
 }
 let ringTimer = null;
-function startRing(ch) {
+function startRing(mode) {
   stopRing();
-  if (ch === "call") {
-    // UK double ring: 400+450 Hz, 0.4 on, 0.2 off, 0.4 on, 2 s off
-    const burst = () => { tone([400, 450], 0.4); tone([400, 450], 0.4, "sine", 0.08, 0.6); };
-    burst(); ringTimer = setInterval(burst, 3000);
-  } else {
-    tone([880], 0.12, "sine", 0.07); tone([1320], 0.16, "sine", 0.06, 0.13);
-  }
+  if (mode === "video") {
+    const burst = () => { [0, .18, .36].forEach((w, i) => tone([[659, 784, 988][i]], .16, "sine", .06, w)); };
+    burst(); ringTimer = setInterval(burst, 1800);
+  } else { tone([880], .12, "sine", .07); tone([1320], .16, "sine", .06, .13); }
 }
 function stopRing() { if (ringTimer) { clearInterval(ringTimer); ringTimer = null; } }
-function breachSound() { const c = audio(); if (!c) return; tone([220, 233], 0.5, "sawtooth", 0.07); tone([110, 117], 0.8, "sawtooth", 0.07, 0.35); }
-function goodSound() { tone([660], 0.1, "triangle", 0.07); tone([990], 0.14, "triangle", 0.07, 0.1); }
-function badSound() { tone([180], 0.3, "square", 0.05); }
+function breachSound() { tone([220, 233], .5, "sawtooth", .07); tone([110, 117], .8, "sawtooth", .07, .35); }
+function goodSound() { tone([660], .1, "triangle", .07); tone([990], .14, "triangle", .07, .1); }
+function badSound() { tone([180], .3, "square", .05); }
 
-/* ---------------- Speech synthesis ---------------- */
+/* ---------------- Speech ---------------- */
 let voices = [];
 function loadVoices() {
   if (!("speechSynthesis" in window)) return;
-  const all = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
-  const gb = all.filter((v) => /GB|IE|AU/i.test(v.lang));
-  voices = gb.length >= 2 ? gb : all;
+  voices = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
 }
 if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
-function stopSpeech() { if ("speechSynthesis" in window) speechSynthesis.cancel(); state.speaking = false; }
+const FEMALE = /female|libby|sonia|hazel|susan|serena|kate|samantha|karen|moira|tessa|fiona|zira|aria|jenny|mia|emma|olivia|natasha|victoria/i;
+const MALE = /\bmale|ryan|george|daniel|arthur|oliver|thomas|alex|fred|david|mark|guy|william|james|brian|christopher/i;
+function voiceFor(g, seed) {
+  if (!voices.length) return null;
+  const want = voices.filter((v) => (g === "f" ? FEMALE.test(v.name) : MALE.test(v.name) && !FEMALE.test(v.name)));
+  const gb = want.filter((v) => /GB|IE|AU/i.test(v.lang));
+  const pool = gb.length ? gb : want.length ? want : voices;
+  return pool[seed % pool.length];
+}
+function stopSpeech() { if ("speechSynthesis" in window) speechSynthesis.cancel(); state.speaking = false; state.voiceNote = false; }
 
-function speakLine(text, prof, wordEls, token) {
+function speakLine(text, wordEls, token, onProgress) {
   return new Promise((resolve) => {
-    const n = wordEls.length;
-    const rate = prof ? prof.rate : 1;
-    const dur = (n / (165 * rate)) * 60000 + 350;
-    let lit = 0, done = false, boundaryDriven = false;
+    const cur = state.cur, prof = cur.voice || { pitch: 1, rate: 1 };
+    const n = wordEls.length, dur = (n / (165 * prof.rate)) * 60000 + 350;
+    let lit = 0, done = false, boundaryDriven = false, safety;
     const light = (upto) => {
       while (lit < Math.min(upto, n)) {
         const el = wordEls[lit++]; el.classList.add("lit");
-        if (el.dataset.hot) { el.classList.add("hot"); state.pressure++; $("mPressure").textContent = state.pressure; }
+        if (el.dataset.hot) { el.classList.add("hot"); state.pressure++; $("m4v").textContent = state.pressure; }
       }
+      if (onProgress) onProgress(lit / Math.max(n, 1));
     };
-    const finish = () => {
-      if (done) return; done = true; clearInterval(tick); clearTimeout(safety);
-      light(n); state.speaking = false; resolve();
-    };
-    state.speaking = true; state.speakStress = 0;
+    const finish = () => { if (done) return; done = true; clearInterval(tick); clearTimeout(safety); light(n); state.speaking = false; resolve(); };
+    state.speaking = true;
     const tick = setInterval(() => { if (token !== state.token) return finish(); if (!boundaryDriven) light(lit + 1); }, dur / Math.max(n, 1));
-    let safety;
-    const useVoice = state.voiceOn && prof && "speechSynthesis" in window;
-    if (useVoice) {
+    if (state.voiceOn && "speechSynthesis" in window) {
       const u = new SpeechSynthesisUtterance(text);
-      if (voices.length) u.voice = voices[prof.v % voices.length];
+      const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
       u.pitch = prof.pitch; u.rate = prof.rate;
       const starts = []; let pos = 0;
       wordEls.forEach((el) => { const i = text.indexOf(el.textContent, pos); starts.push(i < 0 ? pos : i); pos = (i < 0 ? pos : i) + el.textContent.length; });
-      u.onboundary = (e) => {
-        if (e.name && e.name !== "word") return;
-        boundaryDriven = true;
-        let k = 0; while (k < n && starts[k] <= e.charIndex) k++;
-        light(k);
-      };
+      u.onboundary = (e) => { if (e.name && e.name !== "word") return; boundaryDriven = true; let k = 0; while (k < n && starts[k] <= e.charIndex) k++; light(k); };
       u.onend = finish; u.onerror = finish;
       speechSynthesis.speak(u);
       safety = setTimeout(finish, dur * 2 + 4000);
-    } else {
-      safety = setTimeout(finish, dur);
-    }
+    } else safety = setTimeout(finish, dur);
   });
 }
 
-/* ---------------- Text parsing & rendering ---------------- */
+/* ---------------- Parsing & rendering ---------------- */
 function parse(text) {
-  const sys = text.startsWith("~ ");
-  if (sys) text = text.slice(2);
-  const segs = [];
-  const re = /\[\[(.+?)\|(.+?)\]\]/g;
+  let kind = "text";
+  if (text.startsWith("~ ")) { kind = "sys"; text = text.slice(2); }
+  else if (text.startsWith("🎤 ")) { kind = "voice"; text = text.slice(3); }
+  else if (text.startsWith("$ ")) { kind = "pay"; text = text.slice(2); }
+  const segs = [], re = /\[\[(.+?)\|(.+?)\]\]/g;
   let last = 0, m;
-  // Split on sentence ends followed by whitespace, so "£1.45" and "brightcart.co.uk" stay whole.
-  const pushPlain = (s) => { s.split(/(?<=[.!?])\s+/).forEach((p) => { if (p.trim()) segs.push({ t: p.trim(), flag: false }); }); };
-  while ((m = re.exec(text))) { pushPlain(text.slice(last, m.index)); segs.push({ t: m[1], flag: true, why: m[2] }); last = re.lastIndex; }
-  pushPlain(text.slice(last));
-  return { sys, segs };
+  const plain = (s) => s.split(/(?<=[.!?])\s+/).forEach((p) => { if (p.trim()) segs.push({ t: p.trim(), flag: false }); });
+  while ((m = re.exec(text))) { plain(text.slice(last, m.index)); segs.push({ t: m[1], flag: true, why: m[2] }); last = re.lastIndex; }
+  plain(text.slice(last));
+  return { kind, segs };
 }
+const plainText = (line) => parse(line).segs.map((s) => s.t).join(" ");
 
-function bubble(cls) {
-  const d = document.createElement("div"); d.className = "msg " + cls;
-  $("thread").appendChild(d); $("thread").scrollTop = $("thread").scrollHeight;
-  return d;
-}
-
-function renderThem(line, isCall) {
-  const { sys, segs } = parse(line);
-  const cur = state.cur;
-  const b = bubble(sys ? "sys" : (cur.ch === "email" ? "them email" : "them"));
+function segsInto(el, segs, interactive) {
   const words = [];
   segs.forEach((s, i) => {
     const span = document.createElement("span");
-    if (!sys) {
-      span.className = "seg"; span.tabIndex = 0; span.setAttribute("role", "button");
-      span.dataset.flag = s.flag ? "1" : ""; if (s.flag) span.dataset.why = s.why;
-      span.setAttribute("aria-pressed", "false");
+    if (interactive) {
+      span.className = "seg"; span.tabIndex = 0; span.setAttribute("role", "button"); span.setAttribute("aria-pressed", "false");
+      if (s.flag) { span.dataset.flag = "1"; span.dataset.why = s.why; }
     }
     s.t.split(/\s+/).forEach((w, j, arr) => {
       const we = document.createElement("span"); we.className = "w"; we.textContent = w;
-      const norm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
-      if (PRESSURE.has(norm)) we.dataset.hot = "1";
+      if (PRESSURE.has(w.toLowerCase().replace(/[^a-z0-9]/g, ""))) we.dataset.hot = "1";
       span.appendChild(we); words.push(we);
       if (j < arr.length - 1) span.appendChild(document.createTextNode(" "));
     });
-    b.appendChild(span);
-    if (i < segs.length - 1) b.appendChild(document.createTextNode(" "));
+    el.appendChild(span);
+    if (i < segs.length - 1) el.appendChild(document.createTextNode(" "));
   });
-  if (isCall && !sys) b.classList.add("speaking");
-  return { b, words, text: segs.map((s) => s.t).join(" "), sys };
+  return words;
 }
+function clockStr() { const d = new Date(); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); }
+function scrollThread() { const sc = state.cur.mode === "video" ? $("thread") : $("pThreadSlot"); sc.scrollTop = sc.scrollHeight; }
+function addMsg(cls) {
+  const d = document.createElement("div"); d.className = "msg " + cls;
+  if (state.cur.mode === "video" && cls.includes("them")) d.dataset.who = state.cur.name.split(" ")[0].toUpperCase();
+  $("thread").appendChild(d); scrollThread();
+  return d;
+}
+function stamp(el) { if (state.cur.mode === "message") { const t = document.createElement("span"); t.className = "ts"; t.textContent = clockStr(); el.appendChild(t); } }
+
+function setStatus(txt, on) { const s = $("pStat"); s.textContent = txt; s.classList.toggle("on", !!on); }
 
 async function playLines(lines, token) {
-  const isCall = state.cur.ch === "call";
+  const cur = state.cur, video = cur.mode === "video";
   for (const line of lines) {
     if (token !== state.token) return false;
-    if (!isCall) {
-      const t = document.createElement("div"); t.className = "typing"; t.textContent = "typing…";
-      $("thread").appendChild(t);
-      await sleep(Math.min(1400, 450 + line.length * 6));
-      t.remove();
-      if (token !== state.token) return false;
-      const r = renderThem(line, false);
-      r.words.forEach((w) => { if (w.dataset.hot) { w.classList.add("hot"); state.pressure++; } });
-      $("mPressure").textContent = state.pressure;
-      tone([1180], 0.06, "sine", 0.03);
-      await sleep(250);
-    } else {
-      const r = renderThem(line, true);
-      if (r.sys) { await sleep(900); continue; }
-      await speakLine(r.text, state.cur.voice, r.words, token);
-      r.b.classList.remove("speaking");
-      await sleep(180);
+    const { kind, segs } = parse(line);
+    if (kind === "sys") {
+      const b = addMsg("sys"); segsInto(b, segs, false);
+      await sleep(1100); continue;
     }
-    $("thread").scrollTop = $("thread").scrollHeight;
+    if (kind === "pay") {
+      const b = document.createElement("div"); b.className = "paycard"; $("thread").appendChild(b);
+      const w = segsInto(b, segs, true); w.forEach((x) => x.classList.add("lit"));
+      if (video) { $("shareText").textContent = segs.map((s) => s.t).join(" "); $("share").hidden = false; }
+      else stamp(b);
+      scrollThread(); tone([1180], .06, "sine", .03);
+      await sleep(1300); continue;
+    }
+    if (video) {
+      const b = addMsg("them");
+      const words = segsInto(b, segs, true); b.classList.add("speaking");
+      const cap = $("caption"); cap.hidden = false; cap.textContent = "";
+      const full = segs.map((s) => s.t).join(" ");
+      await speakLine(full, words, token, (p) => { const ws = full.split(/\s+/); cap.textContent = ws.slice(Math.max(0, Math.floor(p * ws.length) - 14), Math.floor(p * ws.length)).join(" "); });
+      b.classList.remove("speaking"); scrollThread();
+      await sleep(250);
+      continue;
+    }
+    // Messaging
+    if (kind === "voice") {
+      setStatus("recording audio…", true);
+      await sleep(900);
+      if (token !== state.token) return false;
+      const b = addMsg("them");
+      const vn = document.createElement("div"); vn.className = "vn";
+      vn.innerHTML = `<div class="vn-row"><button class="vn-play" aria-label="Play voice note">▶</button><div class="vn-bars"></div><span class="vn-dur"></span></div><div class="vn-t"></div>`;
+      b.appendChild(vn);
+      const bars = vn.querySelector(".vn-bars");
+      for (let i = 0; i < 34; i++) { const bi = document.createElement("i"); bi.style.height = (4 + Math.abs(Math.sin(i * 1.7) * 16) + Math.random() * 6).toFixed(0) + "px"; bars.appendChild(bi); }
+      const words = segsInto(vn.querySelector(".vn-t"), segs, true);
+      const secs = Math.max(2, Math.round(words.length / (165 * cur.voice.rate) * 60));
+      vn.querySelector(".vn-dur").textContent = "0:" + String(secs).padStart(2, "0");
+      stamp(b); vn.querySelector(".vn-t").classList.add("speaking");
+      const full = segs.map((s) => s.t).join(" ");
+      vn.querySelector(".vn-play").addEventListener("click", () => {
+        if (state.speaking || !state.voiceOn || !("speechSynthesis" in window)) return;
+        const u = new SpeechSynthesisUtterance(full); const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
+        u.pitch = cur.voice.pitch; u.rate = cur.voice.rate; speechSynthesis.speak(u);
+      });
+      setStatus("online", true);
+      state.voiceNote = true;
+      const barEls = [...bars.children];
+      await speakLine(full, words, token, (p) => barEls.forEach((bi, i) => bi.classList.toggle("on", i / barEls.length < p)));
+      state.voiceNote = false;
+      vn.querySelector(".vn-t").classList.remove("speaking");
+      await sleep(300); continue;
+    }
+    setStatus("typing…", true);
+    const t = document.createElement("div"); t.className = "typing"; t.innerHTML = "<i></i><i></i><i></i>";
+    $("thread").appendChild(t); scrollThread();
+    await sleep(Math.min(1500, 500 + line.length * 7));
+    t.remove();
+    if (token !== state.token) return false;
+    setStatus("online", true);
+    const b = addMsg("them");
+    const words = segsInto(b, segs, true);
+    words.forEach((w) => { w.classList.add("lit"); if (w.dataset.hot) { w.classList.add("hot"); state.pressure++; } });
+    $("m4v").textContent = state.pressure;
+    stamp(b); tone([1180], .05, "sine", .03);
+    await sleep(350);
   }
   return token === state.token;
 }
 
-/* ---------------- Flagging ---------------- */
-$("thread").addEventListener("click", (e) => {
+/* Flagging */
+$("devcol").addEventListener("click", (e) => {
   const seg = e.target.closest(".seg");
-  if (!seg || state.phase !== "live" && state.phase !== "playing") return;
+  if (!seg || !["live", "playing"].includes(state.phase)) return;
   seg.classList.toggle("flagged");
   seg.setAttribute("aria-pressed", seg.classList.contains("flagged"));
 });
-$("thread").addEventListener("keydown", (e) => {
-  if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("seg")) { e.preventDefault(); e.stopPropagation(); e.target.click(); }
+$("devcol").addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("seg")) { e.preventDefault(); e.stopPropagation(); e.target.click(); }
 });
 
-/* ---------------- HUD ---------------- */
-function fmt(s) { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
-function mult() { return 1 + Math.min(state.streak, 4) * 0.5; }
+/* ---------------- HUD & loop ---------------- */
+const fmt = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+const mult = () => 1 + Math.min(state.streak, 4) * 0.5;
 function hud() {
   $("timer").textContent = fmt(state.time);
   $("timer").classList.toggle("warn", state.time <= 30 && state.phase !== "over");
   $("score").textContent = state.score;
   $("streak").textContent = "×" + mult().toFixed(1);
   $("roundNo").textContent = Math.max(0, state.idx + 1) + "/" + SCENARIOS.length;
-  const i = Math.max(0, state.integrity);
-  const bar = $("integrityBar");
+  const i = Math.max(0, state.integrity), bar = $("integrityBar");
   bar.style.width = i + "%";
   bar.style.background = i >= 80 ? "var(--safe)" : i >= 50 ? "var(--signal)" : "var(--threat)";
-  const chip = $("statusChip");
   const [cls, label] = i <= 0 ? ["breached", "BREACHED"] : i < 50 ? ["attack", "UNDER ATTACK"] : i < 80 ? ["probed", "PROBED"] : ["secure", "SECURE"];
-  chip.className = "chip " + cls; chip.textContent = label + " · " + i + "%";
+  $("statusChip").className = "chip " + cls; $("statusChip").textContent = label + " · " + i + "%";
 }
 
-let lastTick = 0;
-function clock(ts) {
-  if (lastTick && (state.phase === "ringing" || state.phase === "playing" || state.phase === "live")) {
+let face = null, lastTick = 0, grainT = 0, shownStress = 0;
+function loop(ts) {
+  const active = ["ringing", "playing", "live"].includes(state.phase);
+  if (lastTick && active) {
     state.time -= (ts - lastTick) / 1000;
     if (state.time <= 0) { state.time = 0; hud(); endGame("Time's up"); }
   }
   lastTick = ts;
-  if (state.phase !== "over" && state.phase !== "idle") hud();
-  drawWave(ts);
-  requestAnimationFrame(clock);
+  if (active || state.phase === "debrief") hud();
+  const cur = state.cur;
+  if (cur && !$("screenGame").hidden) {
+    if (cur.mode === "video" && face) {
+      face.frame(ts, state.speaking);
+      if (ts - grainT > 70) { drawGrain(); grainT = ts; }
+      if (state.callStart && active) { const s = Math.floor((ts - state.callStart) / 1000); $("vClock").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
+    }
+    drawWave(ts);
+    liveMeters(ts);
+  }
+  requestAnimationFrame(loop);
 }
 
-/* ---------------- Voice analysis visuals ---------------- */
 const canvas = $("wave"), g = canvas.getContext("2d");
-let shownStress = 0;
 function drawWave(ts) {
-  if ($("screenGame").hidden || $("voiceBlock").hidden) return;
   const W = canvas.width, H = canvas.height, cur = state.cur;
   g.clearRect(0, 0, W, H);
   g.strokeStyle = "rgba(34,66,79,.8)"; g.lineWidth = 1;
   for (let y = H / 4; y < H; y += H / 4) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
-  const speaking = state.speaking && cur;
-  const synth = cur ? cur.synthetic / 100 : 0;
-  const stress = cur ? cur.stress / 100 : 0;
+  const speaking = state.speaking;
+  const synth = (cur.synthetic || 0) / 100, stress = (cur.stress || 0) / 100;
   const amp = speaking ? H * (0.22 + 0.18 * stress) : H * 0.02;
-  g.strokeStyle = speaking ? (stress > 0.6 ? "#ff5468" : "#f2a93b") : "#3b5a66";
+  g.strokeStyle = speaking ? (stress > 0.55 ? "#ff5468" : "#f2a93b") : "#3b5a66";
   g.lineWidth = 2; g.beginPath();
   const t = ts / 1000;
   for (let x = 0; x <= W; x += 3) {
     const env = Math.sin((x / W) * Math.PI);
-    // Human speech: irregular syllable envelope. Synthetic: suspiciously regular.
-    const syll = speaking ? (0.55 + 0.45 * Math.sin(t * (6 + stress * 5) + x * 0.012)) : 1;
-    const jitter = (1 - synth) * (Math.random() - 0.5) * 0.9;
+    const syll = speaking ? 0.55 + 0.45 * Math.sin(t * (6 + stress * 5) + x * 0.012) : 1;
+    const jitter = (1 - synth) * (Math.random() - 0.5) * 0.9; // synthetic voices look suspiciously smooth
     const y = H / 2 + amp * env * syll * (Math.sin(x * 0.09 + t * 18) * 0.6 + Math.sin(x * 0.23 - t * 9) * 0.3 + jitter);
     x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
   }
   g.stroke();
-  // live meters
-  if (cur && cur.ch === "call") {
-    const target = speaking ? cur.stress + rand(-7, 7) : Math.max(8, shownStress * 0.985);
+}
+function setMeter(n, v, alert) { $(n + "v").innerHTML = v; $(n).classList.toggle("alert", !!alert); }
+function liveMeters(ts) {
+  const cur = state.cur, speaking = state.speaking;
+  const hasVoice = cur.mode === "video" || state.voiceNote;
+  if (hasVoice) {
+    const target = speaking ? cur.stress + rand(-7, 7) : Math.max(6, shownStress * 0.985);
     shownStress += (target - shownStress) * 0.08;
     const s = Math.round(Math.max(0, Math.min(100, shownStress)));
-    $("mStress").textContent = s;
-    $("mStressBar").style.width = s + "%";
-    $("mStressBar").style.background = s > 60 ? "var(--threat)" : s > 40 ? "var(--signal)" : "var(--safe)";
-    if (speaking && Math.random() < 0.08) $("mRate").textContent = Math.round(150 * cur.voice.rate + rand(-9, 9));
-    else if (!speaking && Math.random() < 0.02) $("mRate").textContent = "—";
+    $("m1v").textContent = s; $("m1bar").style.width = s + "%";
+    $("m1bar").style.background = s > 60 ? "var(--threat)" : s > 40 ? "var(--signal)" : "var(--safe)";
+  }
+  if (Math.random() > 0.06) return;
+  if (cur.mode === "video") {
+    if (speaking) { const off = cur.deepfake ? Math.round(rand(280, 360)) : Math.round(rand(18, 70)); setMeter("m2", off + "<small>ms</small>", off > 150); }
+    const secs = (ts - state.callStart) / 1000;
+    if (face && state.callStart && secs > 8) { const bpm = Math.round(face.blinks / (secs / 60)); setMeter("m3", bpm + "<small>/min</small>", bpm < 8); }
+  } else if (state.voiceNote && speaking) {
+    const ai = Math.round(cur.synthetic + rand(-4, 4)); setMeter("m3", Math.max(0, ai) + "<small>%</small>", ai > 50);
   }
 }
 
 function setupAnalysis(cur) {
-  const isCall = cur.ch === "call";
-  $("aTitle").textContent = CH[cur.ch].analysis;
-  $("aSub").textContent = isCall ? "caller audio · live" : "headers & content";
-  $("voiceBlock").hidden = !isCall;
-  $("mStressK").textContent = isCall ? "Voice stress" : "Urgency";
-  $("mRateK").textContent = isCall ? "Speech rate wpm" : "Links";
-  $("mStress").textContent = isCall ? "—" : "…";
-  $("mStressBar").style.width = "0";
-  $("mRate").textContent = isCall ? "—" : "…";
-  $("mPressure").textContent = "0";
-  shownStress = 0;
+  const video = cur.mode === "video";
+  $("aTitle").textContent = video ? "Deepfake & voice analysis" : "Message forensics";
+  $("aSub").textContent = video ? "video + audio · live" : "sender, links, voice notes";
+  $("m1k").textContent = video ? "Voice stress" : "Voice-note stress";
+  $("m2k").textContent = video ? "Lip-sync offset" : "Urgency";
+  $("m3k").textContent = video ? "Blinks / min" : "Voice-note AI";
+  ["m1", "m2", "m3"].forEach((m) => setMeter(m, "—", false));
+  $("m1bar").style.width = "0"; $("m4v").textContent = "0"; shownStress = 0;
   const box = $("signals"); box.innerHTML = "";
-  cur.signals.forEach(([k]) => {
+  cur.signals.forEach(([k, , , at]) => {
     const r = document.createElement("div"); r.className = "row pending";
-    r.innerHTML = '<span class="k"></span><span class="v"><span class="dot"></span><span>analysing…</span></span>';
+    r.innerHTML = '<span class="k"></span><span class="v"><span class="dot"></span><span></span></span>';
     r.querySelector(".k").textContent = k;
+    r.querySelector(".v span:last-child").textContent = at ? "waiting for data" : "analysing…";
     box.appendChild(r);
   });
 }
-async function revealSignals(cur, token) {
-  const rows = [...$("signals").children];
-  for (let i = 0; i < rows.length; i++) {
-    await sleep(700 + Math.random() * 500);
+function revealRow(i) {
+  const row = $("signals").children[i]; if (!row || !row.classList.contains("pending")) return;
+  const [, v, lvl] = state.cur.signals[i];
+  row.classList.remove("pending");
+  row.querySelector(".dot").className = "dot " + lvl;
+  row.querySelector(".v span:last-child").textContent = v;
+}
+async function revealSignals(token) {
+  const sig = state.cur.signals;
+  for (let i = 0; i < sig.length; i++) {
+    if (sig[i][3]) continue;
+    await sleep(800 + Math.random() * 600);
     if (token !== state.token) return;
-    const [, v, lvl] = cur.signals[i];
-    rows[i].classList.remove("pending");
-    rows[i].querySelector(".dot").className = "dot " + lvl;
-    rows[i].querySelector(".v span:last-child").textContent = v;
+    revealRow(i);
   }
 }
-function textMeters(cur) {
-  if (cur.ch === "call") return;
-  const urgency = Math.min(100, 8 + state.pressure * 16);
-  $("mStress").textContent = urgency;
-  $("mStressBar").style.width = urgency + "%";
-  $("mStressBar").style.background = urgency > 60 ? "var(--threat)" : urgency > 35 ? "var(--signal)" : "var(--safe)";
-  const link = cur.signals.find(([k]) => /link/i.test(k));
-  $("mRate").textContent = link && !/^none$/i.test(link[1]) ? (/all point/i.test(link[1]) ? "OK" : "1 ⚠") : "0";
+function revealAt(nodeId) { state.cur.signals.forEach((s, i) => { if (s[3] === nodeId) revealRow(i); }); }
+function textUrgency() {
+  if (state.cur.mode === "video") return;
+  const u = Math.min(100, 8 + state.pressure * 14);
+  setMeter("m2", u + "<small>/100</small>", u > 60);
 }
 
 /* ---------------- Round flow ---------------- */
+function mountDevice(mode) {
+  const video = mode === "video";
+  $("vcall").hidden = !video; $("phone").hidden = video;
+  (video ? $("vThreadSlot") : $("pThreadSlot")).appendChild($("thread"));
+  (video ? $("vReplySlot") : $("pReplySlot")).appendChild($("replies"));
+  $("vReplySlot").hidden = !video;
+  $("scamSub").textContent = video ? "Hang up · report" : "Block · report";
+  $("legitSub").textContent = video ? "Trust them" : "It's genuine";
+}
 function setVerdicts(on) { $("btnScam").disabled = !on; $("btnLegit").disabled = !on; }
-function renderChoices(on) {
-  const box = $("choices"); box.innerHTML = "";
-  state.cur.choices.forEach((c, i) => {
-    const b = document.createElement("button");
-    b.className = "choice"; b.disabled = !on;
+function renderReplies(options) {
+  const box = $("replies"); box.innerHTML = "";
+  if (!options || !options.length) {
+    const h = document.createElement("div"); h.className = "reply-hint";
+    h.textContent = "Conversation over. Make your call: scam or legit?";
+    box.appendChild(h); return;
+  }
+  options.forEach((o, i) => {
+    const b = document.createElement("button"); b.className = "reply";
     b.innerHTML = "<kbd>" + (i + 1) + "</kbd><span></span>";
-    b.querySelector("span").textContent = c.t;
-    b.addEventListener("click", () => takeChoice(i));
+    b.querySelector("span").textContent = o.t;
+    b.addEventListener("click", () => takeOption(i));
     box.appendChild(b);
   });
 }
@@ -1059,95 +1382,135 @@ function nextRound() {
   state.idx++;
   if (state.idx >= state.order.length) return endGame("You faced every contact");
   const cur = state.cur = state.order[state.idx];
-  state.token++; state.choiceTaken = null; state.pressure = 0;
-  $("thread").innerHTML = ""; $("device").classList.remove("locked");
-  $("chan").textContent = CH[cur.ch].badge;
-  $("fromName").textContent = cur.name; $("fromDetail").textContent = cur.detail;
-  $("subject").hidden = !cur.subject; $("subject").textContent = cur.subject || "";
+  state.token++; state.moves = []; state.pressure = 0; state.node = null; state.options = null; state.callStart = 0;
+  $("thread").innerHTML = ""; $("replies").innerHTML = "";
+  $("devcol").classList.remove("locked");
+  mountDevice(cur.mode);
+  $("sceneTag").textContent = cur.theme === "Travel" ? "✈ Booking travel" : "£ Making a payment";
   $("voxLine").textContent = pick(TAUNTS_START);
   setupAnalysis(cur);
-  renderChoices(false); setVerdicts(false);
-  $("ringLabel").textContent = CH[cur.ch].ring;
-  $("ringIcon").textContent = CH[cur.ch].icon;
-  $("ringName").textContent = cur.name; $("ringDetail").textContent = cur.detail;
-  $("btnAnswer").textContent = cur.ch === "call" ? "Answer" : "Open";
+  setVerdicts(false);
+
+  if (cur.mode === "video") {
+    paintRoom($("room"), cur.face.room);
+    face = new Face($("face"), cur.face, { deepfake: cur.deepfake });
+    $("vName").textContent = cur.name; $("vOrg").textContent = cur.org;
+    $("vfeed").classList.toggle("lowbw", !!cur.lowbw);
+    $("bwTag").hidden = !cur.lowbw;
+    $("vEnc").hidden = !!cur.lowbw;
+    [...$("vSig").children].forEach((b, i) => b.classList.toggle("off", cur.lowbw && i > 1));
+    $("share").hidden = true; $("caption").hidden = true; $("vClock").textContent = "00:00";
+  } else {
+    face = null;
+    $("pAv").innerHTML = portrait(cur.face, true);
+    $("pName").textContent = cur.name; $("pTick").hidden = !cur.verified;
+    setStatus(cur.org, false); $("pClock").textContent = clockStr();
+  }
+
+  // Incoming screen
+  const bg = $("ringBg");
+  if (cur.mode === "video") paintRoom(bg, cur.face.room); else { bg.style.background = "linear-gradient(160deg,#253b52,#0d1822 60%,#2a1d2e)"; bg.innerHTML = ""; }
+  const rc = $("ringContent");
+  const firstLine = cur.nodes.start.say.find((l) => !l.startsWith("~ "));
+  const preview = firstLine.startsWith("🎤 ") ? "🎤 Voice message" : plainText(firstLine);
+  if (cur.mode === "video") {
+    rc.innerHTML = `<div class="rav">${portrait(cur.face, true)}</div><div class="rl">Incoming video call…</div><div class="rn"></div><div class="rd"></div><button class="btn-answer" id="btnAnswer">Answer</button>`;
+  } else {
+    const d = new Date();
+    rc.innerHTML = `<div class="lock-time">${clockStr()}</div><div class="lock-date">${d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
+      <div class="notif"><div class="pav">${portrait(cur.face, true)}</div><div><div class="app"><span>${/Email/.test(cur.org) ? "MAIL" : "MESSAGES"}</span><span>now</span></div><div class="nt"></div><div class="np"></div></div></div>
+      <button class="btn-answer" id="btnAnswer" style="margin-top:14px">Open</button>`;
+    rc.querySelector(".np").textContent = preview;
+  }
+  (rc.querySelector(".rn") || rc.querySelector(".nt")).textContent = cur.name;
+  if (rc.querySelector(".rd")) rc.querySelector(".rd").textContent = cur.org + " · " + cur.detail;
+  $("btnAnswer").addEventListener("click", answer);
   $("ring").hidden = false;
   state.phase = "ringing";
-  startRing(cur.ch);
+  startRing(cur.mode);
   hud();
-  setTimeout(() => $("btnAnswer").focus(), 50);
+  setTimeout(() => $("btnAnswer") && $("btnAnswer").focus(), 50);
 }
 
 async function answer() {
   if (state.phase !== "ringing") return;
   stopRing(); audio();
   $("ring").hidden = true;
-  state.phase = "playing";
-  const token = state.token, cur = state.cur;
-  revealSignals(cur, token);
-  const ok = await playLines(cur.open, token);
-  if (!ok) return;
-  textMeters(cur);
-  state.phase = "live";
-  state.readyAt = performance.now();
-  renderChoices(true); setVerdicts(true);
+  state.callStart = performance.now();
+  if (state.cur.mode === "video") tone([523, 784], .12, "sine", .05);
+  const token = state.token;
+  revealSignals(token);
+  await playNode("start", token);
 }
 
-async function takeChoice(i) {
-  if (state.phase !== "live" || state.choiceTaken !== null) return;
-  const cur = state.cur, c = cur.choices[i];
-  state.choiceTaken = i;
-  [...$("choices").children].forEach((b) => (b.disabled = true));
-  const you = bubble("you"); you.appendChild(document.createTextNode(c.t));
-  if (c.k === "breach" && cur.scam) return breach();
-  if (c.k === "safe") goodSound();
-  setVerdicts(false);
-  state.phase = "playing";
-  const token = state.token;
-  const ok = await playLines(c.reply || [], token);
+async function playNode(id, token) {
+  const cur = state.cur, node = cur.nodes[id];
+  state.node = id; state.phase = "playing"; state.options = null;
+  $("replies").innerHTML = "";
+  revealAt(id);
+  if (id !== "start" && cur.mode === "video") $("share").hidden = true;
+  const ok = await playLines(node.say, token);
   if (!ok) return;
+  if (cur.mode === "video") $("caption").hidden = true;
+  textUrgency();
+  if (!state.readyAt || id === "start") state.readyAt = performance.now();
   state.phase = "live";
+  state.options = node.options || [];
+  renderReplies(state.options);
   setVerdicts(true);
+}
+
+async function takeOption(i) {
+  if (state.phase !== "live" || !state.options || !state.options[i]) return;
+  const cur = state.cur, o = state.options[i];
+  state.moves.push(o.k);
+  $("replies").innerHTML = "";
+  const you = addMsg("you"); you.appendChild(document.createTextNode(o.t)); stamp(you);
+  if (cur.mode === "message") { const tk = document.createElement("span"); tk.className = "ts"; tk.textContent = "✓✓"; tk.style.color = "#4fb8ff"; you.appendChild(tk); }
+  if (o.k === "breach" && cur.scam) return breach();
+  if (o.k === "safe") goodSound();
+  await sleep(500);
+  if (o.next) await playNode(o.next, state.token);
 }
 
 function collectFlags() {
   const segs = [...$("thread").querySelectorAll(".seg")];
   const flagged = segs.filter((s) => s.classList.contains("flagged"));
   const hits = flagged.filter((s) => s.dataset.flag);
-  const wrong = flagged.length - hits.length;
-  const all = segs.filter((s) => s.dataset.flag);
-  return { hits, wrong, all };
+  return { hits, wrong: flagged.length - hits.length, all: segs.filter((s) => s.dataset.flag) };
+}
+function movePoints(lines) {
+  const cur = state.cur; let pts = 0;
+  const safe = state.moves.filter((k) => k === "safe").length;
+  const risky = state.moves.filter((k) => k === "risky").length;
+  if (safe) { pts += safe * 25; lines.push(["Safe replies ×" + safe, safe * 25, "pos"]); }
+  if (risky && cur.scam) { state.integrity -= 5 * risky; lines.push(["You engaged the attacker ×" + risky, "−" + 5 * risky + "% integrity", "neg"]); }
+  if (risky && !cur.scam) { pts -= 25 * risky; lines.push(["Overshared with a genuine contact", -25 * risky, "neg"]); }
+  return pts;
 }
 
 function verdict(saysScam) {
-  if (state.phase !== "live" && state.phase !== "playing") return;
-  if (state.phase === "playing" && $("btnScam").disabled) return;
+  if (!["live", "playing"].includes(state.phase) || $("btnScam").disabled) return;
   const cur = state.cur;
   state.token++; stopSpeech();
-  const lines = [];
-  const correct = saysScam === cur.scam;
+  const lines = [], correct = saysScam === cur.scam, f = collectFlags();
   let pts = 0;
-  const f = collectFlags();
   if (correct) {
     const speed = Math.max(0, Math.round(50 - ((performance.now() - state.readyAt) / 1000) * 2));
-    const m = mult();
-    const base = Math.round((100 + speed) * m);
+    const m = mult(), base = Math.round((100 + speed) * m);
     pts += base;
-    lines.push(["Correct verdict", 100, "pos"]);
+    lines.push(["Correct call", 100, "pos"]);
     if (speed) lines.push(["Speed bonus", speed, "pos"]);
     if (m > 1) lines.push(["Streak ×" + m.toFixed(1), base - 100 - speed, "pos"]);
-    state.streak++;
-    goodSound();
+    state.streak++; goodSound();
   } else if (cur.scam) {
     pts -= 75; state.integrity -= 20; state.streak = 0;
-    lines.push(["You trusted an attacker", -75, "neg"], ["Integrity", "−20%", "neg"]);
-    badSound();
+    lines.push(["You trusted an attacker", -75, "neg"], ["Integrity", "−20%", "neg"]); badSound();
   } else {
     pts -= 25; state.streak = 0;
-    lines.push(["False alarm on a genuine contact", -25, "neg"]);
-    badSound();
+    lines.push(["False alarm on a genuine contact", -25, "neg"]); badSound();
   }
-  pts += applyChoicePoints(lines);
+  pts += movePoints(lines);
   if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
   if (f.wrong) { pts -= f.wrong * 10; lines.push(["Wrong flags ×" + f.wrong, -f.wrong * 10, "neg"]); }
   state.score += pts;
@@ -1155,21 +1518,10 @@ function verdict(saysScam) {
   showDebrief({ correct, saysScam, lines, pts, f, breached: false });
 }
 
-function applyChoicePoints(lines) {
-  const cur = state.cur, i = state.choiceTaken;
-  if (i === null) return 0;
-  const c = cur.choices[i];
-  if (c.k === "safe") { lines.push(["Safe move", 25, "pos"]); return 25; }
-  if (c.k === "risky" && cur.scam) { state.integrity -= 5; lines.push(["You engaged the attacker", "−5% integrity", "neg"]); return 0; }
-  if (c.k === "risky" && !cur.scam) { lines.push(["Overshared with a genuine contact", -25, "neg"]); return -25; }
-  return 0;
-}
-
 function breach() {
   const cur = state.cur;
   state.token++; stopSpeech();
-  state.phase = "debrief";
-  setVerdicts(false);
+  state.phase = "debrief"; setVerdicts(false);
   state.integrity -= 35; state.streak = 0;
   const f = collectFlags();
   let pts = -150;
@@ -1178,67 +1530,54 @@ function breach() {
   state.score += pts;
   state.results.push({ cur, outcome: "breached", pts, flags: f.hits.length });
   breachSound();
-  const gl = $("glitch"); gl.hidden = false; document.body.classList.add("shake");
-  hud();
-  setTimeout(() => { gl.hidden = true; document.body.classList.remove("shake"); showDebrief({ correct: false, lines, pts, f, breached: true }); }, 1500);
+  $("glitch").hidden = false; document.body.classList.add("shake"); hud();
+  setTimeout(() => { $("glitch").hidden = true; document.body.classList.remove("shake"); showDebrief({ correct: false, lines, pts, f, breached: true }); }, 1500);
 }
 
 function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
   const cur = state.cur;
   state.phase = "debrief";
-  $("device").classList.add("locked");
-  setVerdicts(false); [...$("choices").children].forEach((b) => (b.disabled = true));
+  $("devcol").classList.add("locked"); setVerdicts(false); $("replies").innerHTML = "";
   hud();
   const ans = $("dbAnswer");
   ans.textContent = cur.scam ? "Yes. It was an attack." : "No. It was genuine.";
   ans.className = "answer " + (cur.scam ? "yes" : "no");
-  $("dbVerdict").textContent = breached ? "You handed it over. ☠ Compromised." :
-    (correct ? "✔ You called it right: " : "✘ You said: ") + (saysScam ? "SCAM" : "LEGIT");
+  $("dbVerdict").textContent = breached ? "☠ You paid up. Compromised." : (correct ? "✔ You called it right: " : "✘ You said: ") + (saysScam ? "SCAM" : "LEGIT");
   $("dbVerdict").style.color = breached || !correct ? "var(--threat)" : "var(--safe)";
   $("dbHit").hidden = !breached; $("dbHit").textContent = breached ? cur.hit : "";
   const pb = $("dbPts"); pb.innerHTML = "";
   lines.forEach(([k, v, cls]) => {
-    const d = document.createElement("div");
-    d.innerHTML = "<span></span><span></span>";
+    const d = document.createElement("div"); d.innerHTML = "<span></span><span></span>";
     d.children[0].textContent = k;
     d.children[1].textContent = typeof v === "number" ? (v > 0 ? "+" + v : String(v).replace("-", "−")) : v;
-    d.children[1].className = cls;
-    pb.appendChild(d);
+    d.children[1].className = cls; pb.appendChild(d);
   });
-  const tot = document.createElement("div");
-  tot.innerHTML = "<b>Round total</b><b></b>";
+  const tot = document.createElement("div"); tot.innerHTML = "<b>Round total</b><b></b>";
   tot.children[1].textContent = (pts > 0 ? "+" : "") + String(pts).replace("-", "−");
-  tot.children[1].className = pts >= 0 ? "pos" : "neg";
-  pb.appendChild(tot);
+  tot.children[1].className = pts >= 0 ? "pos" : "neg"; pb.appendChild(tot);
 
   const tl = $("dbTells"); tl.innerHTML = "";
   if (cur.scam) {
     $("dbTellsLabel").textContent = "The red flags";
-    const seen = new Set();
-    const flagsInThread = f.all.map((s) => ({ t: s.textContent, why: s.dataset.why, got: s.classList.contains("flagged") }));
-    // include flags from unplayed replies too, for learning
-    const extra = [];
-    [cur.open, ...cur.choices.map((c) => c.reply || [])].flat().forEach((l) => parse(l).segs.forEach((s) => { if (s.flag) extra.push({ t: s.t, why: s.why, got: false }); }));
-    [...flagsInThread, ...extra].forEach((x) => {
-      if (seen.has(x.t)) return; seen.add(x.t);
-      const li = document.createElement("li");
-      li.innerHTML = "<q></q> <span></span> <span class='miss'></span>";
-      li.children[0].textContent = x.t; li.children[1].textContent = x.why;
-      li.children[2].textContent = x.got ? "⚑ you flagged this" : "";
+    const got = new Set(f.hits.map((s) => s.textContent)), seen = new Set();
+    Object.values(cur.nodes).forEach((n) => n.say.forEach((l) => parse(l).segs.forEach((s) => {
+      if (!s.flag || seen.has(s.t)) return; seen.add(s.t);
+      const li = document.createElement("li"); li.innerHTML = "<q></q> <span></span> <span class='miss'></span>";
+      li.children[0].textContent = s.t; li.children[1].textContent = s.why;
+      li.children[2].textContent = got.has(s.t) ? "⚑ you flagged this" : "";
       tl.appendChild(li);
-    });
+    })));
   } else {
     $("dbTellsLabel").textContent = "Why it was genuine";
-    (cur.greens || []).forEach((gtxt) => { const li = document.createElement("li"); li.textContent = gtxt; tl.appendChild(li); });
+    (cur.greens || []).forEach((t) => { const li = document.createElement("li"); li.textContent = t; tl.appendChild(li); });
   }
   $("dbLesson").textContent = cur.lesson;
-  $("voxLine").textContent = (breached || !correct) ? pick(TAUNTS_LOSE) : pick(TAUNTS_WIN);
+  $("voxLine").textContent = breached || !correct ? pick(TAUNTS_LOSE) : pick(TAUNTS_WIN);
   const last = state.integrity <= 0 || state.idx >= state.order.length - 1 || state.time <= 0;
   $("btnNext").textContent = last ? "See results" : "Next contact";
   $("debrief").hidden = false;
   setTimeout(() => $("btnNext").focus(), 50);
 }
-
 function closeDebrief() {
   if (state.phase !== "debrief" || $("debrief").hidden) return;
   $("debrief").hidden = true;
@@ -1249,20 +1588,18 @@ function closeDebrief() {
 
 /* ---------------- Start / end ---------------- */
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-
 function startGame() {
   audio();
-  Object.assign(state, { time: 300, score: 0, streak: 0, integrity: 100, idx: -1, results: [], voiceOn: $("optVoice").checked });
-  // Open with a scam, then a fair mix
-  let order = shuffle(SCENARIOS);
-  const firstScam = order.findIndex((s) => s.scam);
-  [order[0], order[firstScam]] = [order[firstScam], order[0]];
+  Object.assign(state, { time: 300, score: 0, streak: 0, integrity: 100, idx: -1, results: [], readyAt: 0, voiceOn: $("optVoice").checked, phase: "idle" });
+  // Open with a video scam so the first contact shows off the call
+  const order = shuffle(SCENARIOS);
+  const first = order.findIndex((s) => s.scam && s.mode === "video");
+  [order[0], order[first]] = [order[first], order[0]];
   state.order = order;
   $("screenStart").hidden = true; $("screenEnd").hidden = true; $("screenGame").hidden = false;
   window.scrollTo(0, 0);
   nextRound();
 }
-
 function endGame(reason) {
   if (state.phase === "over") return;
   state.phase = "over"; state.token++;
@@ -1276,24 +1613,16 @@ function endGame(reason) {
   const breaches = R.filter((r) => r.outcome === "breached").length;
   const falseAlarms = legits.filter((r) => r.outcome !== "correct").length;
   const acc = R.length ? Math.round((R.filter((r) => r.outcome === "correct").length / R.length) * 100) : 0;
-  const flags = R.reduce((a, r) => a + r.flags, 0);
-  const s = state.score;
-  const rank = state.integrity <= 0 ? ["Owned", "The red team walked straight in. Slow down, verify, and never hand over codes."]
-    : s < 250 ? ["Easy Mark", "You'd make VOX's week. Look for pressure, secrecy and requests for codes or money."]
-    : s < 600 ? ["Getting Suspicious", "Good instincts. Flag more of the tells and move faster to climb the ranks."]
-    : s < 1000 ? ["Human Firewall", "You spot the tricks and trust the right people. Hard to fool."]
+  const flags = R.reduce((a, r) => a + r.flags, 0), s = state.score;
+  const rank = state.integrity <= 0 ? ["Owned", "The red team walked straight in. Slow down, verify, and never pay a new account under pressure."]
+    : s < 250 ? ["Easy Mark", "You'd make VOX's week. Watch for pressure, secrecy, bank transfers and people moving you off official channels."]
+    : s < 600 ? ["Getting Suspicious", "Good instincts. Flag more of the tells and call it faster to climb the ranks."]
+    : s < 1000 ? ["Human Firewall", "You spot the tricks and still trust the right people. Hard to fool."]
     : ["Red Team's Nightmare", "VOX has filed a complaint. Outstanding."];
-  $("endReason").textContent = reason;
-  $("rankName").textContent = rank[0];
-  $("endScore").textContent = s;
-  $("endLine").textContent = rank[1];
-  const best = Math.max(s, Number(store.get("rtvy-best") || 0));
-  store.set("rtvy-best", String(best));
-  const stats = [
-    [acc + "%", "Accuracy"], [caught + "/" + scams.length, "Scams caught"], [breaches, "Times breached"],
-    [falseAlarms, "False alarms"], [flags, "Red flags spotted"], [Math.max(0, state.integrity) + "%", "Integrity left"],
-    [best, "Your best score"],
-  ];
+  $("endReason").textContent = reason; $("rankName").textContent = rank[0];
+  $("endScore").textContent = s; $("endLine").textContent = rank[1];
+  const best = Math.max(s, Number(store.get("rtvy-best") || 0)); store.set("rtvy-best", String(best));
+  const stats = [[acc + "%", "Accuracy"], [caught + "/" + scams.length, "Scams caught"], [breaches, "Times breached"], [falseAlarms, "False alarms"], [flags, "Red flags spotted"], [Math.max(0, state.integrity) + "%", "Integrity left"], [best, "Your best score"]];
   $("endStats").innerHTML = "";
   stats.forEach(([v, k]) => { const d = document.createElement("div"); d.innerHTML = "<b></b><span></span>"; d.children[0].textContent = v; d.children[1].textContent = k; $("endStats").appendChild(d); });
   const log = $("endLog"); log.innerHTML = "";
@@ -1303,69 +1632,68 @@ function endGame(reason) {
     const ic = r.outcome === "correct" ? ["✔", "ok"] : r.outcome === "breached" ? ["☠", "bad"] : ["✘", "bad"];
     li.innerHTML = "<span class='ic'></span><span></span><span class='p'></span>";
     li.children[0].textContent = ic[0]; li.children[0].classList.add(ic[1]);
-    li.children[1].textContent = CH[r.cur.ch].badge + " · " + r.cur.name + " — " + (r.cur.scam ? "scam" : "genuine");
+    li.children[1].textContent = (r.cur.mode === "video" ? "Video · " : "Message · ") + r.cur.name + " — " + (r.cur.scam ? "scam" : "genuine");
     li.children[2].textContent = (r.pts > 0 ? "+" : "") + r.pts;
     log.appendChild(li);
   });
-  hud();
-  $("timer").classList.remove("warn");
+  hud(); $("timer").classList.remove("warn");
 }
 
-/* ---------------- Microphone: voice commands + composure ---------------- */
+/* ---------------- Optional: answer by voice ---------------- */
 let micOn = false, rec = null;
 async function enableMic() {
   if (micOn) return;
   const note = $("micNote");
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const c = audio();
-    const src = c.createMediaStreamSource(stream);
-    const an = c.createAnalyser(); an.fftSize = 1024; src.connect(an);
-    const buf = new Float32Array(an.fftSize);
-    const hist = [];
-    micOn = true; $("micMeters").hidden = false; $("btnMic").textContent = "Mic on";
-    $("btnMic").disabled = true;
-    const loop = () => {
+    const c = audio(), an = c.createAnalyser(); an.fftSize = 1024;
+    c.createMediaStreamSource(stream).connect(an);
+    const buf = new Float32Array(an.fftSize), hist = [];
+    micOn = true; $("micMeters").hidden = false; $("btnMic").textContent = "Mic on"; $("btnMic").disabled = true;
+    const tick = () => {
       an.getFloatTimeDomainData(buf);
       let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
-      const rms = Math.sqrt(sum / buf.length);
-      const lvl = Math.min(100, Math.round(rms * 400));
+      const lvl = Math.min(100, Math.round(Math.sqrt(sum / buf.length) * 400));
       $("micLevel").style.width = lvl + "%";
       if (lvl > 4) { hist.push(lvl); if (hist.length > 90) hist.shift(); }
       if (hist.length > 20) {
         const mean = hist.reduce((a, b) => a + b, 0) / hist.length;
         const sd = Math.sqrt(hist.reduce((a, b) => a + (b - mean) ** 2, 0) / hist.length);
         const calm = Math.max(0, Math.min(100, Math.round(100 - sd * 2.2 - Math.max(0, mean - 45))));
-        $("micCalm").textContent = calm >= 70 ? calm + " steady" : calm >= 45 ? calm + " tense" : calm + " rattled";
+        $("micCalm").textContent = calm + (calm >= 70 ? " steady" : calm >= 45 ? " tense" : " rattled");
       }
-      requestAnimationFrame(loop);
+      requestAnimationFrame(tick);
     };
-    loop();
+    tick();
   } catch {
-    note.textContent = "Microphone isn't available in this view. Open the game file directly in Chrome or Edge to use voice commands.";
+    note.textContent = "The microphone isn't available here, so tap your replies. To answer by voice, open the game file directly in Chrome or Edge.";
     return;
   }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { note.textContent = "Voice level is on. This browser has no speech recognition, so commands are off."; return; }
+  if (!SR) { note.textContent = "Voice level is on. This browser has no speech recognition, so tap your replies."; return; }
   rec = new SR(); rec.lang = "en-GB"; rec.continuous = true; rec.interimResults = false;
   rec.onresult = (e) => {
     const said = e.results[e.results.length - 1][0].transcript.toLowerCase().trim();
     $("micHeard").textContent = "heard: \"" + said + "\"";
     if (state.phase === "ringing" && /answer|open|pick up/.test(said)) return answer();
     if (state.phase === "debrief" && /next|continue/.test(said)) return closeDebrief();
+    const n = /\b(reply |option )?(one|1)\b/.test(said) ? 0 : /\b(reply |option )?(two|2)\b/.test(said) ? 1 : /\b(reply |option )?(three|3)\b/.test(said) ? 2 : -1;
+    if (n >= 0 && state.phase === "live") return takeOption(n);
     if (/\b(scam|fake|fraud|hang up|block)\b/.test(said)) return verdict(true);
-    if (/\b(legit|genuine|real|safe|trust)\b/.test(said)) return verdict(false);
+    if (/\b(legit|genuine|real|trust)\b/.test(said)) return verdict(false);
   };
-  rec.onend = () => { if (micOn) { try { rec.start(); } catch { /* already running */ } } };
+  rec.onend = () => { if (micOn) { try { rec.start(); } catch { /* running */ } } };
   try { rec.start(); } catch { /* ignore */ }
 }
 
 /* ---------------- Wiring ---------------- */
 $("btnStart").addEventListener("click", startGame);
 $("btnAgain").addEventListener("click", startGame);
-$("btnAnswer").addEventListener("click", answer);
 $("btnScam").addEventListener("click", () => verdict(true));
 $("btnLegit").addEventListener("click", () => verdict(false));
+$("vEnd").addEventListener("click", () => verdict(true));
+$("vMute").addEventListener("click", (e) => e.currentTarget.style.background = e.currentTarget.style.background ? "" : "#5a2a2e");
+$("vCam").addEventListener("click", (e) => e.currentTarget.style.background = e.currentTarget.style.background ? "" : "#5a2a2e");
 $("btnNext").addEventListener("click", closeDebrief);
 $("btnMic").addEventListener("click", enableMic);
 document.addEventListener("keydown", (e) => {
@@ -1374,16 +1702,29 @@ document.addEventListener("keydown", (e) => {
   if (state.phase === "ringing" && (k === "enter" || k === " ")) { e.preventDefault(); return answer(); }
   if (state.phase === "debrief" && !$("debrief").hidden && k === "enter") { e.preventDefault(); return closeDebrief(); }
   if (state.phase === "live" || state.phase === "playing") {
-    if (k === "s" && !$("btnScam").disabled) return verdict(true);
-    if (k === "l" && !$("btnLegit").disabled) return verdict(false);
-    if (["1", "2", "3"].includes(k)) return takeChoice(Number(k) - 1);
+    if (k === "s") return verdict(true);
+    if (k === "l") return verdict(false);
+    if (["1", "2", "3"].includes(k)) return takeOption(Number(k) - 1);
   }
 });
 
+// Start-screen teaser: a live, blinking caller
+(() => {
+  const tv = $("teaserVideo");
+  tv.innerHTML = `<div class="room" id="tRoom"></div><div class="face" id="tFace" style="width:58%"></div><div class="vignette"></div>
+    <div class="vtop"><div class="glass vname"><b>Richard Hale</b><span>CFO · Hale Group</span></div><div class="glass vmeta">● 02:14</div></div>
+    <div class="caption">…send two hundred and forty thousand before four.</div>`;
+  paintRoom($("tRoom"), "boardroom");
+  const tf = new Face($("tFace"), SCENARIOS.find((s) => s.id === "cfo-deepfake").face, { deepfake: true });
+  let talk = false; setInterval(() => { talk = !talk; }, 2600);
+  const anim = (ts) => { if (!$("screenStart").hidden) tf.frame(ts, talk); requestAnimationFrame(anim); };
+  requestAnimationFrame(anim);
+})();
+
 const best = store.get("rtvy-best");
-$("bestLine").textContent = best ? "Your best score on this device: " + best : "15 contacts. Some are attacks. Some are real. Nobody tells you which.";
+$("bestLine").textContent = best ? "Your best score on this device: " + best : "10 contacts. Some are attacks. Some are real. Nobody tells you which.";
 hud();
-requestAnimationFrame(clock);
+requestAnimationFrame(loop);
 })();
 </script>
 </body>
