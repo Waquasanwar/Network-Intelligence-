@@ -14,10 +14,10 @@ const sheet = (css: string) => { const s = new CSSStyleSheet(); s.replaceSync(cs
 
 /** Tokens every component inherits from the page, so light and dark follow the host. */
 const BASE = `
-  :host { --ink: var(--c-ink, #131714); --ink-2: var(--c-ink-2, #5c635c); --ink-3: var(--c-ink-3, #8e948d);
-    --rule: var(--c-rule, rgba(19,23,20,0.12)); --paper: var(--c-paper, #fff); --sunk: var(--c-sunk, #f3f4f1);
-    --trust: var(--c-trust, #186b4e); --trust-b: var(--c-trust-b, #2f9e6f); --alert: var(--c-alert, #9a6212); --alert-b: var(--c-alert-b, #d08a1f); --stop: var(--c-stop, #a3352b);
-    --accent: var(--c-accent, #186b4e); --accent-b: var(--c-accent-b, #2f9e6f);
+  :host { --ink: var(--c-ink, #1a1d29); --ink-2: var(--c-ink-2, #5a5f6e); --ink-3: var(--c-ink-3, #9498a5);
+    --rule: var(--c-rule, rgba(20,24,45,0.12)); --paper: var(--c-paper, #fff); --sunk: var(--c-sunk, #eceef4);
+    --trust: var(--c-trust, #3b3ba8); --trust-b: var(--c-trust-b, #6b6bf0); --alert: var(--c-alert, #9a6212); --alert-b: var(--c-alert-b, #d08a1f); --stop: var(--c-stop, #a3352b);
+    --accent: var(--c-accent, #3b3ba8); --accent-b: var(--c-accent-b, #6b6bf0);
     --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; --sans: "Aptos", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif; --serif: var(--c-serif, "Newsreader", Georgia, serif);
     display: inline-block; }
   * { box-sizing: border-box; }
