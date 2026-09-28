@@ -2,14 +2,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Network Intelligence</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root {
-  --canvas: #f5f5f7; --surface: #ffffff; --surface-2: #eeeef1; --surface-hover: #fafafb;
-  --line: rgba(15, 23, 42, 0.07); --line-strong: rgba(15, 23, 42, 0.14);
-  --ink: #1d1d1f; --ink-2: #6e6e73; --ink-3: #a1a1a6;
-  --rail: #0f1720; --rail-2: #0f1720; --rail-ink: rgba(255,255,255,0.62);
-  --teal: #186b4e; --teal-b: #2f9e6f; --teal-bg: rgba(47,158,111,0.11);
+  --canvas: #f1ede4; --surface: #fbfaf6; --surface-2: #ebe6db; --surface-hover: #f6f3ec;
+  --line: rgba(30, 40, 34, 0.08); --line-strong: rgba(30, 40, 34, 0.15);
+  --ink: #182420; --ink-2: #5a635d; --ink-3: #939a93;
+  --rail: #ece7dc; --rail-2: #ece7dc; --rail-ink: #5a635d;
+  --pop: #16211c; --pop-ink: #f4f1ea;
+  --teal: #197a6c; --teal-b: #23a08d; --teal-bg: rgba(35,160,141,0.12);
   --navy: #2f3730; --navy-b: #5c7a6a; --navy-bg: rgba(19,23,20,0.06);
   --amber: #9a6212; --amber-b: #d08a1f; --amber-bg: rgba(208,138,31,0.12);
   --risk: #a3352b; --risk-bg: rgba(163,53,43,0.1);
@@ -27,15 +28,16 @@
   --sans: "Aptos", "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   /* One family carries the whole interface. Figures are the same sans with tabular numerals —
      a display or serif face on a number reads as decoration, not data. */
-  --serif: var(--sans); --display: var(--sans);
+  --serif: "Newsreader", Georgia, "Times New Roman", serif; --display: "Newsreader", Georgia, serif;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --c-ink: #1d1d1f; --c-ink-2: #6e6e73; --c-ink-3: #a1a1a6; --c-rule: rgba(15,23,42,0.08); --c-paper: #ffffff; --c-sunk: #eeeef1;
-  --c-trust: #186b4e; --c-trust-b: #2f9e6f; --c-alert: #9a6212; --c-alert-b: #d08a1f; --c-stop: #a3352b;
+  --c-serif: "Newsreader", Georgia, serif;
+  --c-ink: #182420; --c-ink-2: #5a635d; --c-ink-3: #939a93; --c-rule: rgba(30,40,34,0.09); --c-paper: #fbfaf6; --c-sunk: #ebe6db;
+  --c-trust: #197a6c; --c-trust-b: #23a08d; --c-alert: #9a6212; --c-alert-b: #d08a1f; --c-stop: #a3352b;
   --c-accent: var(--accent); --c-accent-b: var(--accent-b);
   /* Each view has its own light. The network is evergreen; a client is indigo; an agency is copper; a member is lagoon. */
-  --accent: #186b4e; --accent-b: #2f9e6f; --accent-bg: rgba(47,158,111,0.11); --accent-ink: #ffffff;
-  --wash: linear-gradient(135deg, #0f2a20 0%, #14503a 46%, #1d7d59 100%);
-  --wash-soft: linear-gradient(135deg, rgba(47,158,111,0.14), rgba(47,158,111,0.03) 70%);
+  --accent: #197a6c; --accent-b: #23a08d; --accent-bg: rgba(35,160,141,0.12); --accent-ink: #ffffff;
+  --wash: linear-gradient(135deg, #0c211d 0%, #14544a 48%, #1e8676 100%);
+  --wash-soft: linear-gradient(135deg, rgba(35,160,141,0.13), rgba(35,160,141,0.03) 70%);
   --glow: rgba(47,158,111,0.34);
 }
 :root[data-view="client"] {
@@ -61,6 +63,7 @@
   --line: rgba(255,255,255,0.09); --line-strong: rgba(255,255,255,0.17);
   --ink: #e8edf4; --ink-2: #9aa5b4; --ink-3: #6b7685;
   --rail: #080c11; --rail-2: #080c11;
+  --pop: #1f2933; --pop-ink: #e8edf4;
   --teal: #56c99a; --teal-b: #3fb98a; --navy: #e2e6e0; --navy-b: #8fae9c; --amber: #e0a244; --risk: #e5776a;
   --c-ink: #e8edf4; --c-ink-2: #9aa5b4; --c-ink-3: #6b7685; --c-rule: rgba(255,255,255,0.12); --c-paper: #121821; --c-sunk: #161d27;
   --c-trust: #56c99a; --c-trust-b: #3fb98a; --c-alert: #e0a244; --c-alert-b: #d08a1f; --c-stop: #e5776a;
@@ -77,6 +80,7 @@
   --line: rgba(255,255,255,0.09); --line-strong: rgba(255,255,255,0.17);
   --ink: #e8edf4; --ink-2: #9aa5b4; --ink-3: #6b7685;
   --rail: #080c11; --rail-2: #080c11;
+  --pop: #1f2933; --pop-ink: #e8edf4;
   --teal: #56c99a; --teal-b: #3fb98a; --navy: #e2e6e0; --navy-b: #8fae9c; --amber: #e0a244; --risk: #e5776a;
   --c-ink: #e8edf4; --c-ink-2: #9aa5b4; --c-ink-3: #6b7685; --c-rule: rgba(255,255,255,0.12); --c-paper: #121821; --c-sunk: #161d27;
   --c-trust: #56c99a; --c-trust-b: #3fb98a; --c-alert: #e0a244; --c-alert-b: #d08a1f; --c-stop: #e5776a;
@@ -360,7 +364,7 @@ details summary { cursor: pointer; font-size: 12.5px; color: var(--ink-3); margi
 #palette .in { display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line); } #palette .in svg { color: var(--ink-3); flex: none; } #palette input { border: 0; box-shadow: none; height: 50px; padding: 0; font-size: 14.5px; background: transparent; } #palette input:focus { box-shadow: none; }
 #palette ul { list-style: none; margin: 0; padding: 6px; max-height: 380px; overflow-y: auto; } #palette li a { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 13px; } #palette li a.active, #palette li a:hover { background: var(--navy-bg); } #palette li small { color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #palette li.none { padding: 24px; text-align: center; color: var(--ink-3); font-size: 12.5px; }
 #toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 60; pointer-events: none; }
-.toast { background: var(--rail); color: #fff; padding: 11px 18px; border-radius: 999px; font-size: 13px; box-shadow: var(--shadow-pop); animation: toast-in 380ms var(--spring); display: flex; align-items: center; gap: 8px; }
+.toast { background: var(--pop); color: var(--pop-ink); padding: 11px 18px; border-radius: 999px; font-size: 13px; box-shadow: var(--shadow-pop); animation: toast-in 380ms var(--spring); display: flex; align-items: center; gap: 8px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(0.94); } to { opacity: 1; transform: none; } } .toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--teal-b); box-shadow: 0 0 10px rgba(20,184,166,0.8); } .toast.tone-amber::before { background: var(--amber-b); } .toast.tone-risk::before { background: #f87171; } .toast.tone-neutral::before { background: rgba(255,255,255,0.5); box-shadow: none; } .toast.out { opacity: 0; transition: opacity 400ms; }
 
 /* demand: co-pilot, requirements, portal */
@@ -382,7 +386,7 @@ details summary { cursor: pointer; font-size: 12.5px; color: var(--ink-3); margi
 .checks-list li.met { color: var(--teal); } .checks-list li.met i { background: var(--teal-bg); } 
 .checks-list li.unmet { color: var(--risk); } .checks-list li.unmet i { background: var(--risk-bg); } 
 .checks-list li.unknown { color: var(--amber); } .checks-list li.unknown i { background: var(--amber-bg); } 
-.checks-list li small { display: none; position: absolute; left: 0; top: 22px; z-index: 5; width: 260px; background: var(--rail); color: #fff; padding: 8px 10px; border-radius: 10px; font-size: 11.5px; font-weight: 400; line-height: 1.4; box-shadow: var(--shadow-pop); }
+.checks-list li small { display: none; position: absolute; left: 0; top: 22px; z-index: 5; width: 260px; background: var(--pop); color: var(--pop-ink); padding: 8px 10px; border-radius: 10px; font-size: 11.5px; font-weight: 400; line-height: 1.4; box-shadow: var(--shadow-pop); }
 .checks-list li:hover small { display: block; }
 .save-brief h3 { font-size: 15px; font-weight: 600; } .save-brief .body { padding: 18px 20px 20px; }
 .fee-box { border-radius: 16px; padding: 14px 16px; background: linear-gradient(135deg, rgba(20,184,166,0.14), rgba(79,111,214,0.10)); border: 1px solid rgba(20,184,166,0.3); }
@@ -609,8 +613,8 @@ details summary { cursor: pointer; font-size: 12.5px; color: var(--ink-3); margi
 #alerts { position: fixed; top: 64px; right: 28px; z-index: 30; width: 380px; max-width: calc(100vw - 32px); animation: pop 200ms cubic-bezier(0.2,0.8,0.2,1); }
 .alerts-panel { border-radius: 16px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-pop); overflow: hidden; } .alerts-panel header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 13px; } .alerts-panel header small { color: var(--ink-3); }
 .alerts-panel ul { list-style: none; margin: 0; padding: 6px; max-height: 60vh; overflow: auto; } .alerts-panel li a { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 12px; font-size: 12.5px; } .alerts-panel li a:hover { background: var(--surface-2); } .alerts-panel li a small { color: var(--ink-3); white-space: nowrap; } .alerts-panel p { padding: 14px 16px; font-size: 12.5px; }
-#rail .signin { display: block; margin-top: 8px; padding: 8px 10px 10px; border-radius: 12px; background: rgba(255,255,255,0.04); } #rail .signin span { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; margin-bottom: 6px; }
-#rail .signin select { width: 100%; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.14); font-size: 12.5px; padding: 0 8px; } #rail .signin select option, #rail .signin select optgroup { color: var(--ink); background: var(--surface); }
+#rail .signin { display: block; margin-top: 8px; padding: 8px 10px 10px; border-radius: 12px; background: color-mix(in srgb, var(--rail-ink) 8%, transparent); } #rail .signin span { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--rail-ink); opacity: 0.7; font-weight: 600; margin-bottom: 6px; }
+#rail .signin select { width: 100%; height: 32px; border-radius: 10px; background: var(--surface); color: var(--ink); border: 1px solid color-mix(in srgb, var(--rail-ink) 22%, transparent); font-size: 12.5px; padding: 0 8px; } #rail .signin select option, #rail .signin select optgroup { color: var(--ink); background: var(--surface); }
 
 /* trust, fit */
 .ring > div { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1; } .ring b { font-size: calc(var(--size, 64px) * 0.3); font-weight: 600; letter-spacing: -0.03em; } .ring small { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
@@ -1182,6 +1186,73 @@ code, .steps li b, .badge.filled { border-radius: 5px; }
 /* the figures on a tile line up as numbers, everywhere */
 .stat b, .bignum b, .fn-n, .fl-val, .cs-row b, .trio b, .hb-v, .split-key b, .parts .pct,
 .pulse-ring li b, .figures b, .posture-top b { font-variant-numeric: tabular-nums; }
+
+/* ==========================================================================
+   Ethos language — warm paper, teal, serif headlines, a quiet light rail.
+   Matched to askethos.com: editorial serif headings with a teal accent word,
+   a calm light sidebar, and soft warm-white cards floating on paper.
+   Appended last so it settles the cascade.
+   ========================================================================== */
+
+/* headings become the serif; small card headers and labels stay in the sans */
+.page-head h1, .sect-head h2, .section-head h2, .mh-quote, .open h1,
+.hero-text h1, .join-hero h1, .lobby-card h1, .plain h2, .sign h2,
+.close h2, h2.head, .bignum b {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.page-head h1 { font-weight: 500; letter-spacing: -0.022em; }
+/* an accent word inside a headline, Ethos style */
+.page-head h1 em, .sect-head h2 em { font-style: normal; color: var(--accent); }
+
+/* the light rail: ink on warm paper, a hairline divider, no dark chrome */
+#rail { border-right: 1px solid var(--line); }
+#rail .brand .mark { background: var(--accent); box-shadow: none; color: #fff; }
+#rail .brand b { color: var(--ink); }
+#rail .brand small { color: var(--ink-3); }
+#rail nav a { color: var(--ink-2); }
+#rail nav a i { color: var(--ink-3); }
+#rail nav a:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); color: var(--ink); }
+#rail nav a.active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+#rail nav a.active i { color: var(--accent); }
+#rail .group { color: var(--ink-3); }
+#rail .me { background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+#rail .me b { color: var(--ink); }
+#rail .me small { color: var(--ink-3); }
+#rail .me .icon { color: var(--ink-3); }
+
+/* the top bar sits on the same paper */
+#top { border-bottom: 1px solid var(--line); }
+
+/* Ethos cards: warm white, gentle radius, soft edge — quieter than before */
+.card { border: 1px solid var(--line); background: var(--surface); box-shadow: 0 1px 2px rgba(24,36,32,0.03), 0 10px 30px -18px rgba(24,36,32,0.10); }
+.card > header h3 { font-weight: 600; letter-spacing: -0.01em; }
+
+/* a signature Ethos element: the dark-glass panel with a glowing teal ring.
+   Any card given .ethos-orb becomes it. Used on the overview masthead. */
+.ethos-orb {
+  position: relative; overflow: hidden; color: #eafffb; border: 0;
+  background: radial-gradient(120% 140% at 15% 20%, #123028 0%, #0a1714 55%, #08110f 100%);
+  box-shadow: 0 20px 50px -24px rgba(8,17,15,0.7);
+}
+.ethos-orb::before {
+  content: ""; position: absolute; left: 6%; top: 50%; transform: translateY(-50%);
+  width: 128px; height: 128px; border-radius: 50%;
+  background: conic-gradient(from 210deg, #1e8676, #35c9b0, #0f5a4d, #2aa595, #1e8676);
+  filter: blur(2px); opacity: 0.9;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px));
+  animation: orbspin 14s linear infinite;
+}
+@keyframes orbspin { to { transform: translateY(-50%) rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ethos-orb::before { animation: none; } }
+
+/* pills/buttons keep their shape but the primary takes Ethos teal via the accent system */
+.btn.primary { letter-spacing: -0.005em; }
+
+/* the sidebar theme toggle etc. inherit ink now */
+#rail svg { color: currentColor; }
 </style>
 <div id="app"></div>
 <script>/*APP*/</script>

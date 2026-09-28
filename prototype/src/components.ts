@@ -18,7 +18,7 @@ const BASE = `
     --rule: var(--c-rule, rgba(19,23,20,0.12)); --paper: var(--c-paper, #fff); --sunk: var(--c-sunk, #f3f4f1);
     --trust: var(--c-trust, #186b4e); --trust-b: var(--c-trust-b, #2f9e6f); --alert: var(--c-alert, #9a6212); --alert-b: var(--c-alert-b, #d08a1f); --stop: var(--c-stop, #a3352b);
     --accent: var(--c-accent, #186b4e); --accent-b: var(--c-accent-b, #2f9e6f);
-    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; --sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; --serif: var(--sans);
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; --sans: "Aptos", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif; --serif: var(--c-serif, "Newsreader", Georgia, serif);
     display: inline-block; }
   * { box-sizing: border-box; }
 `;
@@ -98,10 +98,12 @@ class Quote extends HTMLElement {
   attributeChangedCallback() { this.#render(); }
   #render() {
     const size = this.getAttribute("size") ?? "md";
-    const px = size === "xl" ? 40 : size === "lg" ? 23 : size === "sm" ? 14.5 : 17;
+    const px = size === "xl" ? 40 : size === "lg" ? 27 : size === "sm" ? 14.5 : 17;
+    // The hero moments (xl, lg) speak in the editorial serif; smaller quotes stay in the sans.
+    const serif = size === "xl" || size === "lg";
     this.#root.adoptedStyleSheets = [sheet(`${BASE}
       :host { display: block; }
-      blockquote { margin: 0; font: ${size === "xl" ? 600 : 450} ${px}px/${size === "xl" ? 1.12 : 1.45} var(--sans); letter-spacing: ${size === "xl" ? "-0.035em" : "-0.011em"}; color: var(--ink); text-wrap: pretty; }
+      blockquote { margin: 0; font: ${serif ? 500 : 450} ${px}px/${serif ? 1.18 : 1.45} ${serif ? "var(--serif)" : "var(--sans)"}; letter-spacing: ${serif ? "-0.015em" : "-0.011em"}; color: var(--ink); text-wrap: pretty; }
       .a { margin-top: ${size === "xl" ? 20 : 10}px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
         font: 600 ${size === "xl" ? 12 : 11}px/1.4 var(--sans); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); }
       .a b { color: var(--ink-2); font-weight: 600; }
