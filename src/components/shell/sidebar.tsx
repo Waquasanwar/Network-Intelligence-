@@ -43,25 +43,25 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         href={href}
         className={cn(
           "group relative flex items-center gap-2.5 rounded-[10px] px-2.5 py-[7px] text-[13px] transition-colors",
-          active ? "bg-rail-active text-rail-ink-strong font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" : "text-rail-ink hover:bg-white/5 hover:text-rail-ink-strong",
+          active ? "bg-rail-active text-rail-ink-strong font-medium" : "text-rail-ink hover:bg-rail-active hover:text-rail-ink-strong",
         )}
       >
-        {active ? <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-teal-400" /> : null}
-        <Icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-teal-400" : "text-white/45 group-hover:text-white/70")} />
+        {active ? <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-navy" /> : null}
+        <Icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-navy" : "text-rail-ink group-hover:text-rail-ink-strong")} />
         {label}
       </Link>
     );
   };
-  const Group = ({ label }: { label: string }) => <div className="px-2.5 pt-5 pb-1.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-white/35">{label}</div>;
+  const Group = ({ label }: { label: string }) => <div className="px-2.5 pt-5 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-rail-ink">{label}</div>;
 
   return (
-    <aside className="w-[232px] flex-none bg-rail h-screen sticky top-0 flex flex-col text-rail-ink">
+    <aside className="w-[232px] flex-none bg-rail h-screen sticky top-0 flex flex-col text-rail-ink border-r border-rail-line">
       <div className="px-4 pt-5 pb-4">
         <Link href={restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview"} className="flex items-center gap-2.5">
-          <span className="h-8 w-8 rounded-[9px] bg-gradient-to-br from-white/20 to-white/5 text-white text-[11.5px] font-semibold inline-flex items-center justify-center tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-white/10">NI</span>
+          <span className="h-8 w-8 rounded-[9px] bg-navy text-white text-[11.5px] font-semibold inline-flex items-center justify-center tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">NI</span>
           <span className="leading-tight">
-            <span className="block text-[13px] font-semibold text-white">Network Intelligence</span>
-            <span className="block text-[11px] text-white/45">{user.tenantName}</span>
+            <span className="block text-[13px] font-semibold text-rail-ink-strong">Network Intelligence</span>
+            <span className="block text-[11px] text-rail-ink">{user.tenantName}</span>
           </span>
         </Link>
       </div>
@@ -76,17 +76,17 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
           </>
         )}
       </nav>
-      <div className="m-2.5 mt-0 rounded-[12px] bg-white/5 ring-1 ring-white/8 px-3 py-2.5">
+      <div className="m-2.5 mt-0 rounded-[12px] bg-surface ring-1 ring-rail-line px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="h-7 w-7 rounded-full bg-gradient-to-br from-teal-400 to-navy-400 text-white text-[11px] font-semibold inline-flex items-center justify-center flex-none">{user.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}</span>
+            <span className="h-7 w-7 rounded-full bg-gradient-to-br from-navy-400 to-navy text-white text-[11px] font-semibold inline-flex items-center justify-center flex-none">{user.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}</span>
             <div className="min-w-0 leading-tight">
-              <div className="text-[12.5px] font-medium text-white truncate">{user.name}</div>
-              <div className="text-[11px] text-white/45 truncate capitalize">{user.role.toLowerCase()}</div>
+              <div className="text-[12.5px] font-medium text-rail-ink-strong truncate">{user.name}</div>
+              <div className="text-[11px] text-rail-ink truncate capitalize">{user.role.toLowerCase()}</div>
             </div>
           </div>
           <form action="/api/auth/signout" method="post">
-            <button className="p-1.5 rounded-md text-white/45 hover:text-white hover:bg-white/10 cursor-pointer" title="Sign out" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
+            <button className="p-1.5 rounded-md text-rail-ink hover:text-rail-ink-strong hover:bg-rail-active cursor-pointer" title="Sign out" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
           </form>
         </div>
       </div>

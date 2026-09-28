@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-// Aptos is the intended face (it ships with Office, so most viewers on Windows/Mac have it and get
-// it for real via the CSS stack). Aptos is proprietary and cannot be web-hosted, so Hanken Grotesk
-// — a warm humanist grotesque with near-identical metrics — is the freely-licensed fallback that
-// everyone else sees. No Vercel/Geist or other AI-tooling faces.
-const sans = Hanken_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sans-fallback", display: "swap" });
+// Inter carries the whole interface: a modern, neutral grotesque tuned for screens — the same
+// register as the products this is measured against. It falls to the Apple system face on Apple
+// devices so the typography feels native there too.
+const sans = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans-inter", display: "swap" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono-fallback", display: "swap" });
 
 export const metadata: Metadata = {
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en-GB" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

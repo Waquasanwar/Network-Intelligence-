@@ -6,47 +6,51 @@
   teal for trusted/healthy, amber for attention, red only for risk.
 */
 @theme {
-  --color-canvas: #f2f2f5;
+  /* Cool-white grounds, slate ink, one indigo accent. A quiet light rail, not dark chrome.
+     Amber for attention, red only for risk. Apple-grade calm: precise spacing, soft depth. */
+  --color-canvas: #f6f7fb;
   --color-surface: #ffffff;
-  --color-surface-muted: #f5f5f8;
-  --color-surface-hover: #f8f8fb;
-  --color-line: rgba(16, 24, 40, 0.07);
-  --color-line-strong: rgba(16, 24, 40, 0.14);
-  --color-ink: #0f172a;
-  --color-ink-muted: #5b6474;
-  --color-ink-faint: #8a92a3;
-  --color-navy: #0f1e3d;
-  --color-navy-600: #1b2f5e;
-  --color-navy-400: #3b5ba9;
-  --color-navy-100: #e6eaf5;
-  --color-navy-50: #f1f3fa;
-  --color-teal: #0d7a6f;
-  --color-teal-400: #14b8a6;
-  --color-teal-100: #d5f0ec;
-  --color-teal-50: #ecf8f6;
-  --color-amber: #b05a00;
+  --color-surface-muted: #eceef4;
+  --color-surface-hover: #f7f8fc;
+  --color-line: rgba(20, 24, 45, 0.07);
+  --color-line-strong: rgba(20, 24, 45, 0.13);
+  --color-ink: #1a1d29;
+  --color-ink-muted: #5a5f6e;
+  --color-ink-faint: #9498a5;
+  /* "navy" is the primary/indigo family (kept its token names so components need no rename) */
+  --color-navy: #3b3ba8;
+  --color-navy-600: #4a45c4;
+  --color-navy-400: #6b6bf0;
+  --color-navy-100: #e6e6fa;
+  --color-navy-50: #f1f1fc;
+  /* "teal" is the positive/trusted signal — also indigo, so the interface reads as one accent */
+  --color-teal: #3b3ba8;
+  --color-teal-400: #6b6bf0;
+  --color-teal-100: #e6e6fa;
+  --color-teal-50: #f1f1fc;
+  --color-amber: #9a6212;
   --color-amber-100: #fdebcf;
   --color-amber-50: #fdf6ea;
   --color-risk: #b42318;
   --color-risk-100: #fde3e1;
-  --color-rail: #0c1730;
-  --color-rail-ink: rgba(255, 255, 255, 0.72);
-  --color-rail-ink-strong: #ffffff;
-  --color-rail-line: rgba(255, 255, 255, 0.08);
-  --color-rail-active: rgba(255, 255, 255, 0.1);
-  --color-chart-a: #0f1e3d;
-  --color-chart-b: #0d7a6f;
-  --font-sans: "Aptos", var(--font-sans-fallback), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-rail: #eef0f7;
+  --color-rail-ink: #5a5f6e;
+  --color-rail-ink-strong: #1a1d29;
+  --color-rail-line: rgba(20, 24, 45, 0.08);
+  --color-rail-active: rgba(107, 107, 240, 0.12);
+  --color-chart-a: #3b3ba8;
+  --color-chart-b: #6b6bf0;
+  --font-sans: var(--font-sans-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-fallback), ui-monospace, SFMono-Regular, Menlo, monospace;
   --radius-sm: 8px;
-  --radius-md: 10px;
+  --radius-md: 11px;
   --radius-lg: 16px;
-  --radius-xl: 20px;
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px -20px rgba(16, 24, 40, 0.25);
-  --shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 20px 40px -20px rgba(16, 24, 40, 0.3);
-  --shadow-drawer: 0 32px 80px -16px rgba(16, 24, 40, 0.35), 0 0 0 1px rgba(16, 24, 40, 0.05);
-  --shadow-pop: 0 20px 60px -12px rgba(16, 24, 40, 0.3), 0 0 0 1px rgba(16, 24, 40, 0.05);
-  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(15, 30, 61, 0.3), 0 6px 14px -8px rgba(15, 30, 61, 0.5);
+  --radius-xl: 22px;
+  --shadow-card: 0 1px 2px rgba(20, 24, 45, 0.03), 0 10px 30px -18px rgba(20, 24, 45, 0.12);
+  --shadow-card-hover: 0 2px 6px rgba(20, 24, 45, 0.05), 0 20px 44px -22px rgba(20, 24, 45, 0.2);
+  --shadow-drawer: 0 32px 80px -16px rgba(20, 24, 45, 0.28), 0 0 0 1px rgba(20, 24, 45, 0.05);
+  --shadow-pop: 0 20px 60px -12px rgba(20, 24, 45, 0.24), 0 0 0 1px rgba(20, 24, 45, 0.05);
+  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(59, 59, 168, 0.24), 0 6px 14px -8px rgba(59, 59, 168, 0.4);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -60,23 +64,27 @@
     --color-ink: #eef1f7;
     --color-ink-muted: #a3acbf;
     --color-ink-faint: #6f7a90;
-    --color-navy: #dfe6f8;
-    --color-navy-600: #c9d4f3;
-    --color-navy-400: #8ea6e6;
-    --color-navy-100: #223054;
-    --color-navy-50: #1a2540;
-    --color-teal: #3fd2c0;
-    --color-teal-400: #2dd4bf;
-    --color-teal-100: #123c38;
-    --color-teal-50: #0f2c2a;
+    --color-navy: #b9b9fb;
+    --color-navy-600: #a5a5fb;
+    --color-navy-400: #8b8bf7;
+    --color-navy-100: #26264a;
+    --color-navy-50: #1c1c3a;
+    --color-teal: #b9b9fb;
+    --color-teal-400: #8b8bf7;
+    --color-teal-100: #26264a;
+    --color-teal-50: #1c1c3a;
     --color-amber: #f0a64a;
     --color-amber-100: #3e2a10;
     --color-amber-50: #2a1f0f;
     --color-risk: #f87171;
     --color-risk-100: #3b1414;
     --color-rail: #070b14;
-    --color-chart-a: #8ea6e6;
-    --color-chart-b: #3fd2c0;
+    --color-rail-ink: rgba(255, 255, 255, 0.68);
+    --color-rail-ink-strong: #ffffff;
+    --color-rail-line: rgba(255, 255, 255, 0.08);
+    --color-rail-active: rgba(139, 139, 247, 0.16);
+    --color-chart-a: #8b8bf7;
+    --color-chart-b: #b9b9fb;
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -20px rgba(0, 0, 0, 0.6);
     --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 40px -20px rgba(0, 0, 0, 0.7);
     --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -98,8 +106,8 @@ html, body {
 .ambient {
   position: fixed; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(900px 500px at 12% -10%, rgba(15, 30, 61, 0.07), transparent 60%),
-    radial-gradient(800px 500px at 100% 10%, rgba(13, 122, 111, 0.08), transparent 60%);
+    radial-gradient(900px 500px at 12% -10%, rgba(59, 59, 168, 0.06), transparent 60%),
+    radial-gradient(800px 500px at 100% 10%, rgba(107, 107, 240, 0.07), transparent 60%);
 }
 @media (prefers-color-scheme: dark) {
   .ambient {

@@ -43,7 +43,7 @@ export async function AppShell({ user, children }: { user: SessionUser; children
       <div className="flex-1 min-w-0 flex flex-col relative z-[1]">
         <TopBar alerts={alerts} />
         <main className="flex-1">
-          <div className="max-w-[1360px] mx-auto px-7 py-7 reveal">{children}</div>
+          <div className="max-w-[1220px] mx-auto px-8 py-9 reveal">{children}</div>
         </main>
       </div>
       <CommandPalette items={items} />
