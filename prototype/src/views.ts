@@ -182,40 +182,20 @@ function overview(): View {
     </section>
     <section class="widgets">
       ${([
-        ["Experts in the network", String(total), `${worked} you have worked with`, "", spark.people, chg.people, ""],
-        ["Screened experts", String(screened), `${joining} in the queue`, "trust", spark.screened, chg.screened, ""],
+        ["Experts in the network", String(total), `${worked} you have worked with`, "", spark.people, chg.people, "#/network"],
         ["Members on the platform", String(memberCount), `${trusted} trusted · avg score ${avgTrust}`, "trust", spark.screened, null, "#/performance"],
         ["Placements", String(placedCount), `${S.briefs.filter((b) => b.status === "FILLED").length} requirement${S.briefs.filter((b) => b.status === "FILLED").length === 1 ? "" : "s"} filled`, "trust", spark.proposed, null, "#/performance"],
-        ["Conversations", String(convs), `${freshPct}% of statuses fresh`, freshPct < 50 ? "alert" : "", spark.convs, chg.convs, ""],
         ["Fees in play", moneyCompact(pipeline, feeCur), `${moneyCompact(feeSum(["AGREED", "INVOICED"]), feeCur)} agreed`, "", spark.fees, null, "#/requirements?tab=fees"],
       ] as [string, string, string, string, string, { delta: number; label: string } | null, string][]).map(([l, v, n, t, sp, d, href]) => `<ni-stat label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" ${t ? `tone="${t}"` : ""} spark="${sp}" ${d ? `delta="${d.delta}" delta-label="${esc(d.label)}"` : ""} ${href ? `href="${href}"` : ""}></ni-stat>`).join("")}
     </section>
-    <section class="widgets sub">
-      ${([
-        ["Open requirements", String(S.briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length), `${S.briefs.filter((b) => b.submittedVia === "PORTAL").length} came from clients`, "#/requirements", spark.briefs, "up"],
-        ["Experts proposed", String(S.shortlist.filter((x) => C.demand.PORTAL_VISIBLE.includes(x.decision)).length), "anonymised, never named", "#/requirements", spark.proposed, "up"],
-        ["Referrals", String(S.referrals.length), `${S.referrals.filter((r) => r.status === "ACCEPTED").length} joined the network`, "#/referrals", spark.referrals, "up"],
-        ["Pitches waiting", String(S.pitches.filter((x) => x.status === "SUBMITTED").length), "experts who put themselves forward", "#/referrals?tab=pitches", spark.pitches, "up"],
-        ["Needs a check", String(total - freshN), "status has gone stale", "#/network?freshness=stale", spark.stale, "down"],
-        ["Amana bench", String(S.people.filter((p) => p.amanaBench).length), "trusted for SOW work", "#/amana", spark.bench, "up"],
-      ] as [string, string, string, string, string, string][]).map(([l, v, n, href, sp, good]) => `<ni-stat label="${esc(l)}" value="${esc(v)}" note="${esc(n)}" href="${href}" spark="${sp}" good="${good}"></ni-stat>`).join("")}
-    </section>
     <div class="grid-3"><div class="col-2 stack">
       ${setupCard}
-      ${card("Most trusted right now", `<div class="scroll"><table class="data"><thead><tr><th>Expert</th><th>Known for</th><th>Who stands behind them</th><th>Availability</th></tr></thead><tbody>${[...S.people].map((p) => ({ p, t: C.trustOf(p) })).sort((a, b) => b.t.score - a.t.score).slice(0, 6).map(({ p, t }) => `<tr><td>${personLink(p, null)}</td><td class="dim wrap">${esc(p.headline ?? "—")}</td><td>${mv.chainOf(p)}</td><td class="nowrap">${availBadge(p)}</td></tr>`).join("")}</tbody></table></div>`, { desc: "Who the network stands behind, and how current we are on them.", flush: true, action: `<a class="btn ghost sm" href="#/network">All experts</a>` })}
       ${card("Suggested next actions", rows(sugg.map((s) => `<a class="action" href="${s.href}"><i></i>${esc(s.text)}</a>`), "Nothing pressing. The network is in good shape."), { desc: "Generated from the state of the network. You decide." })}
-      <div class="grid-2">
-        ${card("My week", rows(upcoming.map((u) => `${personLink(C.person(u.personId)!, u.meetingType.replace(/_/g, " ").toLowerCase())}<span class="when">${esc(rel(u.startAt))}</span>`), "No conversations booked"), { desc: "Conversations in the next seven days" })}
-        ${card("Reconnect queue", rows(reconnect.map((p) => `${personLink(p)}${availBadge(p)}`), "Everyone is current"), { desc: "Trusted people whose status is stale" })}
-        ${card("Needs review", rows(review.map((c) => `${personLink(C.person(c.personId)!, null)}<a class="mini" href="#/conversations?tab=review&open=${c.id}">${c.approvalStatus === "DRAFT" ? "Draft" : "Review"}</a>`), "Inbox zero"), { desc: "AI summaries waiting for a human" })}
-        ${card("Evidence gaps", rows(gaps.map((p) => `${personLink(p)}${badge("No evidence", "amber")}`), "No gaps"), { desc: "Active or bench people with nothing observed" })}
-      </div></div>
+      ${card("Most trusted right now", `<div class="scroll"><table class="data"><thead><tr><th>Expert</th><th>Known for</th><th>Who stands behind them</th><th>Availability</th></tr></thead><tbody>${[...S.people].map((p) => ({ p, t: C.trustOf(p) })).sort((a, b) => b.t.score - a.t.score).slice(0, 6).map(({ p, t }) => `<tr><td>${personLink(p, null)}</td><td class="dim wrap">${esc(p.headline ?? "—")}</td><td>${mv.chainOf(p)}</td><td class="nowrap">${availBadge(p)}</td></tr>`).join("")}</tbody></table></div>`, { desc: "Who the network stands behind, and how current we are on them.", flush: true, action: `<a class="btn ghost sm" href="#/network">All experts</a>` })}</div>
       <div class="stack">
-        ${card("Amana Expert Network", `<div class="trio"><div><b data-count="${S.people.filter((p) => p.amanaBench).length}">${S.people.filter((p) => p.amanaBench).length}</b><small>bench</small></div><div><b data-count="${S.people.filter((p) => p.usedByAmana).length}">${S.people.filter((p) => p.usedByAmana).length}</b><small>used before</small></div><div><b data-count="${active.filter((o) => o.isAmana).length}">${active.filter((o) => o.isAmana).length}</b><small>open</small></div></div>`, { action: '<a class="mini" href="#/amana">Open</a>' })}
+        ${card("My week", rows(upcoming.map((u) => `${personLink(C.person(u.personId)!, u.meetingType.replace(/_/g, " ").toLowerCase())}<span class="when">${esc(rel(u.startAt))}</span>`), "No conversations booked"), { desc: "Conversations in the next seven days" })}
+        ${card("Needs review", rows(review.map((c) => `${personLink(C.person(c.personId)!, null)}<a class="mini" href="#/conversations?tab=review&open=${c.id}">${c.approvalStatus === "DRAFT" ? "Draft" : "Review"}</a>`), "Inbox zero"), { desc: "AI summaries waiting for a human" })}
         ${card("Opportunities", rows(active.slice(0, 5).map((o) => `<a class="olink" href="#/opportunities/${o.id}"><b>${esc(o.title)}</b><small>${esc(o.clientName ?? "")} · ${esc(L().ROUTE_LABELS[o.engagementRoute])}</small></a>${badge(L().OPPORTUNITY_STATUS_LABELS[o.status], "navy")}`), "No open opportunities"), { action: '<a class="mini" href="#/opportunities?view=board">Board</a>' })}
-        ${card("Introductions", rows(intros.slice(0, 4).map((i) => `<span><b class="t">${esc(C.full(C.person(i.personId)!))}</b><small class="t">${esc(S.opportunities.find((o) => o.id === i.opportunityId)?.title ?? "")}</small></span>${badge(L().INTRO_STATUS_LABELS[i.status], ["INTRODUCED", "ENGAGED", "APPROVED"].includes(i.status) ? "teal" : i.status === "REQUESTED" ? "amber" : "navy")}`), "None yet"))}
-        ${card("Relocation signals", rows(S.relocation.filter((r) => !["COMPLETED", "NOT_PROCEEDING"].includes(r.advisoryStatus)).slice(0, 4).map((r) => `${personLink(C.person(r.personId)!, `${r.currentLocation ?? "?"} → ${r.targetLocation ?? "?"}`)}${badge(r.employerSponsored ? "Employer funded" : "Individual", r.employerSponsored ? "teal" : "neutral")}`), "No live relocation interest"), { action: '<a class="mini" href="#/relocation">Pipeline</a>' })}
-        ${card("Recent activity", `<ul class="log">${S.audit.slice(0, 6).map((a) => `<li><span>${esc(C.userName(a.actorId).split(" ")[0])} · <code>${esc(a.action)}</code></span><small>${esc(rel(a.createdAt))}</small></li>`).join("")}</ul>`, { action: '<a class="mini" href="#/settings">Audit log</a>' })}
       </div></div>`;
   return { title: "Overview", crumbs: [["Overview"]], html: raw(html) };
 }
