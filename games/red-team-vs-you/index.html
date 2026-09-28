@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Red Team vs You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* One committed look: a night-shift signals-intercept console. Single dark theme by design. */
+  :root {
+    color-scheme: dark;
+    --ink: #0a141b;
+    --panel: #0f1f28;
+    --panel-2: #142a35;
+    --line: #22424f;
+    --text: #dcebee;
+    --muted: #87a4ad;
+    --signal: #f2a93b;
+    --signal-dim: rgba(242, 169, 59, .16);
+    --threat: #ff5468;
+    --threat-dim: rgba(255, 84, 104, .16);
+    --safe: #41d6a0;
+    --safe-dim: rgba(65, 214, 160, .14);
+    --display: "Chakra Petch", "Rajdhani", "Segoe UI", system-ui, sans-serif;
+    --body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --r: 10px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    background-image:
+      radial-gradient(1200px 500px at 80% -10%, rgba(242,169,59,.07), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+    color: var(--text);
+    font: 15px/1.55 var(--body);
+    padding-inline: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+  button:disabled { cursor: not-allowed; opacity: .4; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-block: 12px 40px; }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+    background: rgba(10,20,27,.92); backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    margin-inline: -16px; padding: 10px 16px;
+  }
+  .hud-row { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { font-family: var(--display); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 15px; margin-right: auto; }
+  .brand .r { color: var(--threat); }
+  .brand .vs { color: var(--muted); font-weight: 500; padding-inline: 4px; }
+  .stat { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+  .stat .k { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .stat .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; }
+  #timer.warn { color: var(--threat); animation: pulse 1s infinite; }
+  #streak { color: var(--signal); }
+  .integrity { max-width: 1120px; margin: 8px auto 0; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+  .integrity .q { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .bar { height: 8px; border-radius: 99px; background: var(--panel-2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 100%; background: var(--safe); transition: width .5s, background .5s; }
+  .chip { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; padding: 3px 9px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+  .chip.secure { color: var(--safe); }
+  .chip.probed { color: var(--signal); }
+  .chip.attack, .chip.breached { color: var(--threat); }
+  .chip.breached { background: var(--threat-dim); }
+
+  /* ---------- Start / end ---------- */
+  .hero { padding-block: 36px 12px; display: grid; gap: 28px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--signal); }
+  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(40px, 7vw, 76px); line-height: .95; letter-spacing: -.01em; margin: 10px 0 16px; text-wrap: balance; }
+  h1 .red { color: var(--threat); }
+  .lede { color: var(--muted); font-size: 17px; max-width: 56ch; margin: 0 0 22px; }
+  .rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .rules li { display: grid; grid-template-columns: 76px 1fr; gap: 12px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+  .rules b { font-family: var(--mono); font-size: 12px; color: var(--signal); padding-top: 2px; }
+  .rules span { color: var(--text); font-size: 14px; }
+  .cta-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+  .btn-go { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: .06em; text-transform: uppercase; background: var(--signal); color: #1a1204; border: 0; border-radius: var(--r); padding: 14px 26px; }
+  .btn-go:hover { filter: brightness(1.08); }
+  .toggle { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; }
+  .toggle input { accent-color: var(--signal); width: 16px; height: 16px; }
+  .best { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+
+  /* ---------- Game layout ---------- */
+  .vox { margin-block: 14px; font-family: var(--mono); font-size: 13px; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
+  .vox b { color: var(--threat); letter-spacing: .1em; font-weight: 600; white-space: nowrap; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+  .device { position: relative; display: flex; flex-direction: column; min-height: 440px; overflow: hidden; }
+  .dev-head { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .badge { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .12em; padding: 4px 8px; border-radius: 6px; background: var(--signal-dim); color: var(--signal); }
+  .who { min-width: 0; }
+  .who .n { font-weight: 600; font-size: 16px; }
+  .who .d { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+  .subject { padding: 10px 16px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  .subject::before { content: "Subject  "; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--muted); font-weight: 400; }
+  .thread { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 460px; }
+  .msg { max-width: 88%; padding: 10px 13px; border-radius: 12px; font-size: 15px; }
+  .msg.them { align-self: flex-start; background: var(--panel-2); border-bottom-left-radius: 4px; }
+  .msg.you { align-self: flex-end; background: var(--signal-dim); border: 1px solid rgba(242,169,59,.35); border-bottom-right-radius: 4px; }
+  .msg.you::before { content: "You  "; font-family: var(--mono); font-size: 11px; color: var(--signal); }
+  .msg.sys { align-self: center; max-width: 94%; background: transparent; color: var(--muted); font-style: italic; font-size: 14px; text-align: center; border: 1px dashed var(--line); }
+  .msg.email { max-width: 100%; background: transparent; padding: 2px 0; }
+  .seg { border-radius: 4px; cursor: pointer; transition: background .15s; }
+  .seg:hover { background: rgba(255,255,255,.06); text-decoration: underline dotted var(--muted); text-underline-offset: 3px; }
+  .seg.flagged { background: var(--threat-dim); text-decoration: underline solid var(--threat); text-underline-offset: 3px; }
+  .seg.flagged::before { content: "⚑ "; color: var(--threat); }
+  .locked .seg { cursor: default; }
+  .w { transition: color .12s; }
+  .speaking .w { color: var(--muted); }
+  .speaking .w.lit { color: var(--text); }
+  .w.hot { color: var(--signal) !important; }
+  .typing { align-self: flex-start; font-family: var(--mono); color: var(--muted); font-size: 13px; }
+
+  .ring { position: absolute; inset: 0; background: rgba(10,20,27,.94); display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 20px; z-index: 3; }
+  .ring .pulse { width: 96px; height: 96px; border-radius: 50%; border: 2px solid var(--safe); display: grid; place-items: center; font-family: var(--display); font-size: 30px; font-weight: 700; animation: ringpulse 1.2s infinite; }
+  .ring .n { font-family: var(--display); font-size: 26px; font-weight: 700; }
+  .ring .d { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .btn-answer { background: var(--safe); color: #04241a; border: 0; border-radius: 99px; padding: 12px 34px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: .06em; text-transform: uppercase; }
+
+  .analysis { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .a-title { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-weight: 600; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
+  .a-title small { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: none; font-weight: 400; }
+  canvas#wave { width: 100%; height: 86px; display: block; background: #08121a; border-radius: 8px; border: 1px solid var(--line); }
+  .meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .meter { background: var(--panel-2); border-radius: 8px; padding: 8px 10px; }
+  .meter .k { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .meter .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; }
+  .meter .bar { height: 4px; margin-top: 4px; }
+  .rows { display: grid; gap: 6px; }
+  .row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid rgba(34,66,79,.6); align-items: start; }
+  .row .k { color: var(--muted); font-size: 12px; }
+  .row .v { font-family: var(--mono); font-size: 12.5px; display: flex; gap: 8px; align-items: flex-start; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 5px; background: var(--muted); }
+  .dot.ok { background: var(--safe); } .dot.warn { background: var(--signal); } .dot.bad { background: var(--threat); }
+  .row.pending .v { color: var(--muted); }
+  .caveat { font-size: 12px; color: var(--muted); margin: 0; }
+  .mic { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+  .mic-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn-ghost { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; }
+  .btn-ghost:hover { border-color: var(--muted); }
+  .mic .note { font-size: 12px; color: var(--muted); }
+  .mic .heard { font-family: var(--mono); font-size: 12px; color: var(--signal); }
+
+  .controls { margin-top: 16px; display: grid; gap: 14px; }
+  .label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; }
+  .choice { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 11px 14px; font-size: 14px; display: flex; gap: 10px; }
+  .choice:hover:not(:disabled) { border-color: var(--signal); }
+  .choice kbd { font-family: var(--mono); font-size: 11px; color: var(--signal); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; height: fit-content; }
+  .verdicts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .verdict { border: 0; border-radius: var(--r); padding: 16px; font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: .06em; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .verdict small { font-family: var(--body); font-weight: 500; font-size: 12px; letter-spacing: 0; text-transform: none; opacity: .85; }
+  .v-scam { background: var(--threat); color: #2a0409; }
+  .v-legit { background: var(--safe); color: #04241a; }
+  .verdict:hover:not(:disabled) { filter: brightness(1.08); }
+  .hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+  /* ---------- Overlays ---------- */
+  .modal { position: fixed; inset: 0; z-index: 40; background: rgba(4,9,13,.8); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+  .card { width: min(600px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 14px; }
+  .answer { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1.05; }
+  .answer.yes { color: var(--threat); } .answer.no { color: var(--safe); }
+  .verdict-line { font-family: var(--mono); font-size: 13px; }
+  .pts { display: grid; gap: 4px; font-family: var(--mono); font-size: 13px; }
+  .pts div { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding-block: 3px; }
+  .pts .pos { color: var(--safe); } .pts .neg { color: var(--threat); }
+  .tells { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+  .tells q { color: var(--signal); }
+  .tells .miss { color: var(--muted); font-size: 12px; font-family: var(--mono); }
+  .lesson { font-size: 14px; color: var(--text); background: var(--panel-2); border-radius: 8px; padding: 10px 12px; margin: 0; }
+  .hit { font-size: 14px; color: var(--threat); font-weight: 600; margin: 0; }
+
+  .glitch { position: fixed; inset: 0; z-index: 60; pointer-events: none; display: grid; place-items: center; background: rgba(255,84,104,.22); }
+  .glitch::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,84,104,.25) 0 2px, transparent 2px 6px); animation: scan .25s linear infinite; }
+  .glitch span { position: relative; font-family: var(--mono); font-weight: 600; font-size: clamp(28px, 7vw, 64px); color: var(--threat); letter-spacing: .12em; text-shadow: 3px 0 #fff3, -3px 0 #0ff5; animation: jitter .12s infinite; text-align: center; }
+  body.shake .wrap { animation: shake .4s 3; }
+
+  .end-score { font-family: var(--display); font-size: clamp(56px, 12vw, 110px); font-weight: 700; line-height: 1; color: var(--signal); font-variant-numeric: tabular-nums; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
+  .stats b { display: block; font-family: var(--mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+  .stats span { font-size: 12px; color: var(--muted); }
+  .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .log li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+  .log .ic { font-family: var(--mono); font-weight: 600; }
+  .log .ok { color: var(--safe); } .log .bad { color: var(--threat); }
+  .log .p { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .end-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding-block: 30px; }
+
+  @keyframes pulse { 50% { opacity: .45; } }
+  @keyframes ringpulse { 0% { box-shadow: 0 0 0 0 rgba(65,214,160,.5); } 100% { box-shadow: 0 0 0 26px rgba(65,214,160,0); } }
+  @keyframes scan { to { transform: translateY(6px); } }
+  @keyframes jitter { 0% { transform: translate(0,0); } 33% { transform: translate(-3px,1px); } 66% { transform: translate(2px,-2px); } }
+  @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+  @media (max-width: 860px) {
+    .stage, .hero, .end-grid { grid-template-columns: minmax(0, 1fr); }
+    .device { min-height: 360px; }
+  }
+  @media (max-width: 520px) {
+    .hud-row { gap: 12px; }
+    .brand { width: 100%; }
+    .stat .v { font-size: 17px; }
+    .integrity { grid-template-columns: 1fr auto; }
+    .integrity .bar { grid-column: 1 / -1; grid-row: 2; }
+    .meters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .row { grid-template-columns: 92px 1fr; }
+    .verdict { font-size: 17px; padding: 14px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hud">
+  <div class="hud-row">
+    <div class="brand"><span class="r">Red team</span><span class="vs">vs</span>You</div>
+    <div class="stat"><span class="k">Time</span><span class="v" id="timer">5:00</span></div>
+    <div class="stat"><span class="k">Score</span><span class="v" id="score">0</span></div>
+    <div class="stat"><span class="k">Streak</span><span class="v" id="streak">×1.0</span></div>
+    <div class="stat"><span class="k">Contact</span><span class="v" id="roundNo">0</span></div>
+  </div>
+  <div class="integrity">
+    <span class="q">Am I being hacked?</span>
+    <div class="bar" title="System integrity"><i id="integrityBar"></i></div>
+    <span class="chip secure" id="statusChip">SECURE · 100%</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- START -->
+  <section id="screenStart">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Live social-engineering drill · 5 minutes</div>
+        <h1>Someone is trying to <span class="red">scam you.</span> Maybe.</h1>
+        <p class="lede">VOX, our red-team operator, will call, text, email and message you with a mix of real attacks and perfectly genuine contacts. Read the signals, listen to the voice analysis, make your move, then call it: scam or legit. Beat the clock and keep your system from being breached.</p>
+        <div class="cta-row">
+          <button class="btn-go" id="btnStart">Start the attack</button>
+          <label class="toggle"><input type="checkbox" id="optVoice" checked> Spoken calls</label>
+        </div>
+        <p class="best" id="bestLine"></p>
+      </div>
+      <ul class="rules">
+        <li><b>+100</b><span>Correct verdict. Faster calls earn up to +50 speed bonus, and streaks multiply it up to ×3.</span></li>
+        <li><b>+20 ⚑</b><span>Tap any sentence you think is a red flag. Right flags score, wrong ones cost 10.</span></li>
+        <li><b>+25</b><span>Pick a safe move: verify on a channel you trust, refuse, hang up.</span></li>
+        <li><b>−150</b><span>Hand over a code, money or access to an attacker and you get breached. Integrity at 0% ends the game.</span></li>
+        <li><b>KEYS</b><span><kbd>S</kbd> scam · <kbd>L</kbd> legit · <kbd>1</kbd>–<kbd>3</kbd> moves · <kbd>Enter</kbd> answer / next</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="screenGame" hidden>
+    <p class="vox"><b>VOX ▸</b><span id="voxLine">Connecting…</span></p>
+    <div class="stage">
+      <div class="panel device" id="device">
+        <div class="dev-head">
+          <span class="badge" id="chan">CALL</span>
+          <div class="who"><div class="n" id="fromName">—</div><div class="d" id="fromDetail">—</div></div>
+        </div>
+        <div class="subject" id="subject" hidden></div>
+        <div class="thread" id="thread" aria-live="polite"></div>
+        <div class="ring" id="ring" hidden>
+          <div class="pulse" id="ringIcon">☎</div>
+          <div class="eyebrow" id="ringLabel">Incoming call</div>
+          <div class="n" id="ringName">—</div>
+          <div class="d" id="ringDetail">—</div>
+          <button class="btn-answer" id="btnAnswer">Answer</button>
+        </div>
+      </div>
+
+      <aside class="panel analysis">
+        <div class="a-title"><span id="aTitle">Voice analysis</span><small id="aSub">live</small></div>
+        <div id="voiceBlock">
+          <canvas id="wave" width="600" height="160" aria-label="Caller voice waveform"></canvas>
+        </div>
+        <div class="meters">
+          <div class="meter" id="mStressBox"><div class="k" id="mStressK">Voice stress</div><div class="v" id="mStress">—</div><div class="bar"><i id="mStressBar" style="width:0"></i></div></div>
+          <div class="meter" id="mRateBox"><div class="k" id="mRateK">Speech rate</div><div class="v" id="mRate">—</div></div>
+          <div class="meter"><div class="k">Pressure words</div><div class="v" id="mPressure">0</div></div>
+        </div>
+        <div class="rows" id="signals"></div>
+        <p class="caveat">Signals are probabilistic. Caller ID can be spoofed and real people can sound stressed. Weigh what they ask you to do.</p>
+        <div class="mic">
+          <div class="mic-row">
+            <button class="btn-ghost" id="btnMic">Enable voice commands</button>
+            <span class="heard" id="micHeard"></span>
+          </div>
+          <div class="mic-row" id="micMeters" hidden>
+            <div class="meter" style="flex:1"><div class="k">Your voice level</div><div class="bar"><i id="micLevel" style="width:0"></i></div></div>
+            <div class="meter" style="flex:1"><div class="k">Your composure</div><div class="v" id="micCalm">—</div></div>
+          </div>
+          <div class="note" id="micNote">Say "scam", "hang up", "legit" or "genuine" to call it hands-free.</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="controls">
+      <div>
+        <div class="label" style="margin-bottom:6px">Your move</div>
+        <div class="choices" id="choices"></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:6px">Am I being scammed?</div>
+        <div class="verdicts">
+          <button class="verdict v-scam" id="btnScam" disabled>Scam<small>Hang up · report · block</small></button>
+          <button class="verdict v-legit" id="btnLegit" disabled>Legit<small>It's genuine</small></button>
+        </div>
+      </div>
+      <p class="hint">Tap sentences to flag red flags ⚑ before you give your verdict.</p>
+    </div>
+  </section>
+
+  <!-- END -->
+  <section id="screenEnd" hidden>
+    <div class="end-grid">
+      <div>
+        <div class="eyebrow" id="endReason">Time's up</div>
+        <h1 id="rankName" style="margin-bottom:6px">Human Firewall</h1>
+        <div class="end-score" id="endScore">0</div>
+        <p class="lede" id="endLine" style="margin-top:12px"></p>
+        <div class="stats" id="endStats"></div>
+        <div class="cta-row" style="margin-top:18px"><button class="btn-go" id="btnAgain">Play again</button></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:8px">Contact log</div>
+        <ul class="log" id="endLog"></ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="debrief" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="dbAnswer">
+    <div class="eyebrow">Am I being hacked?</div>
+    <div class="answer" id="dbAnswer"></div>
+    <div class="verdict-line" id="dbVerdict"></div>
+    <p class="hit" id="dbHit" hidden></p>
+    <div class="pts" id="dbPts"></div>
+    <div>
+      <div class="label" style="margin-bottom:6px" id="dbTellsLabel">The tells</div>
+      <ul class="tells" id="dbTells"></ul>
+    </div>
+    <p class="lesson" id="dbLesson"></p>
+    <button class="btn-go" id="btnNext">Next contact</button>
+  </div>
+</div>
+
+<div class="glitch" id="glitch" hidden><span>ACCESS GRANTED<br>YOU'VE BEEN HACKED</span></div>
+
+<script>
+(() => {
+"use strict";
+
+/* =========================================================================
+   Scenario data
+   Text markup:  [[flagged phrase|why it's a red flag]]   ·   lines starting "~ " are system notes
+   Choice kinds: safe (+25) · risky (engages; costs on scams, overshares on genuine) · breach (attacker wins)
+   ========================================================================= */
+const SCENARIOS = [
+  {
+    id: "bank-otp", ch: "call", scam: true,
+    name: "Northgate Bank · Fraud Team", detail: "020 7946 0321 · matches the number on your card",
+    voice: { pitch: 0.9, rate: 1.12, v: 1 }, stress: 64, synthetic: 7,
+    signals: [
+      ["Caller ID", "Matches Northgate's public number", "warn"],
+      ["Attestation", "C · carrier can't verify origin", "bad"],
+      ["Background", "Call-centre chatter, loops every 6 s", "warn"],
+      ["Synthetic", "7% · human voice", "ok"],
+    ],
+    open: [
+      "Hello, this is Daniel from the Northgate Bank fraud team. We've blocked a payment of £1,840 to an online electronics store from your account.",
+      "To cancel it, [[I'm sending you a security code now, please read me the six digits.|Your bank will never ask you to read out a one-time code. The code approves a payment or a new device.]]",
+      "[[Please stay on the line, if you hang up the payment will go through.|Pressure to stay on the line stops you calling the bank yourself.]]",
+    ],
+    choices: [
+      { t: "Read out the six-digit code", k: "breach" },
+      { t: "Say you'll hang up and call the number on the back of your card", k: "safe",
+        reply: ["[[If you hang up now I can't stop the transfer. That's your decision.|Guilt and fear to stop you verifying.]]"] },
+      { t: "Ask for his staff ID number", k: "risky",
+        reply: ["Of course, it's staff number four four seven one. [[Now we're running out of time, the code please.|The urgency comes straight back.]]"] },
+    ],
+    hit: "The code approved a new payee. £4,200 left your account in two transfers.",
+    lesson: "Caller ID can be spoofed to show your bank's real number. Real fraud teams never ask for one-time codes and are happy for you to hang up and call back.",
+  },
+  {
+    id: "bank-real", ch: "call", scam: false,
+    name: "Northgate Bank", detail: "01632 960 210 · number on the back of your card",
+    voice: { pitch: 1.1, rate: 1.0, v: 2 }, stress: 22, synthetic: 4,
+    signals: [
+      ["Caller ID", "Matches the number on your card", "ok"],
+      ["Attestation", "A · network verified the caller", "ok"],
+      ["Background", "Quiet office", "ok"],
+      ["Synthetic", "4% · human voice", "ok"],
+    ],
+    open: [
+      "Hi, this is Priya from Northgate Bank's card security team, calling about some unusual activity.",
+      "Did you just try to spend £62.40 at a petrol station in Leeds? A simple yes or no is fine.",
+      "We'll never ask for your PIN, your password or any codes. If you'd rather, hang up and call the number on the back of your card.",
+    ],
+    choices: [
+      { t: "Say no, that wasn't you", k: "safe",
+        reply: ["Thanks. I've cancelled that card and a new one will arrive in three to five working days. There's nothing else you need to do."] },
+      { t: "Hang up and call the number on your card", k: "safe",
+        reply: ["~ You call 01632 960 210 yourself.", "Hello again. I can see my colleague just contacted you about a declined payment. Let's go through it."] },
+      { t: "Offer your card number and PIN to prove who you are", k: "risky",
+        reply: ["Please don't share that. We never need your PIN. I only need a yes or no on the transaction."] },
+    ],
+    lesson: "Genuine: only yes/no questions, no codes, no payments, and they invited you to hang up and call back. Attestation A means the network verified the caller.",
+    greens: ["Only asked a yes/no question", "Said they'd never ask for PIN or codes", "Invited you to call back on the card number"],
+  },
+  {
+    id: "voice-clone", ch: "call", scam: true,
+    name: "Unknown number", detail: "+44 7700 900 418 · mobile",
+    voice: { pitch: 1.35, rate: 1.08, v: 3 }, stress: 71, synthetic: 83,
+    signals: [
+      ["Caller ID", "Unknown mobile, not in contacts", "warn"],
+      ["Attestation", "B · number not tied to caller", "warn"],
+      ["Background", "None. Too clean for a roadside call", "warn"],
+      ["Synthetic", "83% · flat prosody, no breaths", "bad"],
+    ],
+    open: [
+      "Mum? Mum, it's me. I've dropped my phone down a drain, this is my mate's phone.",
+      "I've had a small crash, I'm fine, but [[the other driver says I have to pay £900 cash for the damage today or he's calling the police.|An urgent money demand wrapped in a threat.]]",
+      "[[Please don't tell Dad, he'll go mad. Can you send it to my mate's account?|Secrecy plus a stranger's account.]]",
+    ],
+    choices: [
+      { t: "Send the £900 to the mate's account", k: "breach" },
+      { t: "Ask for the family safe word", k: "safe",
+        reply: ["[[Mum, I don't have time for games! Please just send it, I'm scared.|Dodging a simple verification question.]]"] },
+      { t: "Hang up and ring their usual number", k: "safe",
+        reply: ["~ Their usual number rings. They pick up from the library: \"Hi Mum, I'm fine, why?\""] },
+    ],
+    hit: "£900 sent. The \"mate\" calls back an hour later asking for another £1,500.",
+    lesson: "AI voice cloning needs only a few seconds of audio from social media. The synthetic score, clean background and the request for secrecy were the tells. Agree a family safe word.",
+  },
+  {
+    id: "parcel-sms", ch: "sms", scam: true,
+    name: "ParcelPost", detail: "+44 7700 900 732",
+    signals: [
+      ["Sender", "Personal mobile, not a short code", "bad"],
+      ["Link", "pp-redelivery-uk.info · registered 3 days ago", "bad"],
+      ["Request", "Card details for a small fee", "bad"],
+      ["Language", "Deadline, generic greeting", "warn"],
+    ],
+    open: [
+      "ParcelPost: We were unable to deliver your parcel due to an unpaid shipping fee of £1.45.",
+      "[[Pay within 12 hours or your item will be returned to sender:|A short deadline to rush you.]] [[pp-redelivery-uk.info/secure|Not ParcelPost's domain.]]",
+    ],
+    choices: [
+      { t: "Tap the link and pay £1.45", k: "breach" },
+      { t: "Type the courier's website yourself and check", k: "safe",
+        reply: ["~ You go to parcelpost.co.uk directly. No parcels are waiting for you."] },
+      { t: "Reply STOP", k: "risky",
+        reply: ["~ Your reply confirms the number belongs to a real person. Three more scam texts arrive this week."] },
+    ],
+    hit: "Your full card details were captured. £640 of online purchases went through overnight.",
+    lesson: "The £1.45 is bait: the page harvests your card details. Couriers don't text from personal mobiles and the link wasn't their domain.",
+  },
+  {
+    id: "gp-sms", ch: "sms", scam: false,
+    name: "OakfieldSurg", detail: "Registered sender ID",
+    signals: [
+      ["Sender", "Registered ID, matches past messages", "ok"],
+      ["Link", "None", "ok"],
+      ["Request", "Nothing", "ok"],
+      ["Language", "Plain, specific details", "ok"],
+    ],
+    open: [
+      "Oakfield Surgery: Reminder of your appointment with Dr Patel on Tue 14 Oct at 14:20.",
+      "If you can't attend, please call us on 01632 960 555 so we can offer the slot to someone else.",
+    ],
+    choices: [
+      { t: "Add it to your calendar", k: "safe", reply: ["~ Saved to your calendar."] },
+      { t: "Check the number against the surgery's website", k: "safe", reply: ["~ The website lists 01632 960 555. It matches."] },
+      { t: "Reply with your date of birth to confirm", k: "risky", reply: ["~ No answer. The surgery never asked for it, so there was no need to send personal details."] },
+    ],
+    lesson: "Genuine: no link, no request for money or details, and the number matches the official website. A reminder that asks for nothing is almost always safe.",
+    greens: ["No link", "Asks for nothing", "Specific, checkable details"],
+  },
+  {
+    id: "ceo-giftcards", ch: "email", scam: true,
+    name: "Sarah Chen (CEO)", detail: "sarah.chen.ceo@gmail.com", subject: "Quick favour",
+    signals: [
+      ["Sender", "External Gmail, not your company domain", "bad"],
+      ["SPF / DKIM", "Pass, but only for gmail.com", "warn"],
+      ["Reply-to", "Differs from sender", "warn"],
+      ["Request", "Gift cards, sent as photos", "bad"],
+    ],
+    open: [
+      "Hi, are you at your desk? I'm stuck in a board meeting and can't take calls.",
+      "[[I need you to buy 5 x £200 Apple gift cards for client thank-you gifts.|Gift cards are untraceable, a fraudster favourite.]]",
+      "[[Keep this between us for now, it's a surprise.|Secrecy stops you checking with anyone.]] Scratch the backs and email me photos of the codes.",
+      "Sent from my iPhone",
+    ],
+    choices: [
+      { t: "Buy the cards and email the codes", k: "breach" },
+      { t: "Message Sarah on the company chat to check", k: "safe",
+        reply: ["~ Sarah on company chat: \"What? I didn't send that. Reporting it to IT now.\""] },
+      { t: "Reply asking which clients they're for", k: "risky",
+        reply: ["[[Just the usual ones. I really need this done in 20 minutes, thanks.|Vague answer plus a deadline.]]"] },
+    ],
+    hit: "£1,000 of gift-card codes were redeemed within five minutes. Untraceable.",
+    lesson: "Classic CEO fraud: external address, gift cards, secrecy and \"can't take calls\". Verify on a separate channel you already trust.",
+  },
+  {
+    id: "it-password", ch: "email", scam: false,
+    name: "IT Service Desk", detail: "servicedesk@yourcompany.com", subject: "Your password expires in 7 days",
+    signals: [
+      ["Sender", "Internal company domain", "ok"],
+      ["SPF / DKIM", "Pass, internal relay", "ok"],
+      ["Links", "None", "ok"],
+      ["Request", "Use the method you already know", "ok"],
+    ],
+    open: [
+      "Hi, your network password will expire in 7 days, on 5 October.",
+      "Change it the usual way: press Ctrl+Alt+Del on your work laptop and choose Change a password.",
+      "We will never send you a link to reset your password or ask for it by email or phone.",
+    ],
+    choices: [
+      { t: "Change it via Ctrl+Alt+Del", k: "safe", reply: ["~ Password updated. No link needed."] },
+      { t: "Forward it to the phishing mailbox to double-check", k: "safe", reply: ["~ Security team: \"This one's genuine. Thanks for checking!\""] },
+      { t: "Reply with your current password so they can reset it", k: "risky", reply: ["~ Service desk: \"Please never send your password. We've forced a reset as a precaution.\""] },
+    ],
+    lesson: "Genuine: internal sender with passing authentication, no links, and it tells you to use a method you already know.",
+    greens: ["Internal domain, authentication passes", "No links", "Points you to a method you already use"],
+  },
+  {
+    id: "tech-support", ch: "call", scam: true,
+    name: "Windows Technical Dept", detail: "+1 855 555 0199 · international",
+    voice: { pitch: 0.8, rate: 1.18, v: 4 }, stress: 58, synthetic: 6,
+    signals: [
+      ["Caller ID", "International, unexpected", "bad"],
+      ["Attestation", "C · origin unverified", "bad"],
+      ["Background", "Loud call centre, many voices", "warn"],
+      ["Synthetic", "6% · human voice", "ok"],
+    ],
+    open: [
+      "Hello, I am calling from the Windows technical department. [[Your computer is sending us error reports, it is infected with hackers.|Tech firms don't watch your PC and phone you about it.]]",
+      "[[Please go to your computer now and install AnyDesk so I can fix it for you.|Remote-access software gives them full control.]]",
+    ],
+    choices: [
+      { t: "Install AnyDesk and read out the access code", k: "breach" },
+      { t: "Hang up", k: "safe", reply: ["~ Call ended. They ring back twice. You let it go to voicemail."] },
+      { t: "Ask how they know it's your computer", k: "risky",
+        reply: ["Madam, [[our system shows error code 0x80070005 on your IP address. It is very serious, you will lose all your files.|Jargon and fear to sound official.]]"] },
+    ],
+    hit: "They installed a keylogger, then \"refunded\" you by shuffling your own money between accounts.",
+    lesson: "Tech companies never cold-call about infections. Remote access plus a fake fix leads to fake refunds and drained accounts.",
+  },
+  {
+    id: "hi-mum", ch: "chat", scam: true,
+    name: "+44 7700 900 215", detail: "Not in your contacts · no profile photo",
+    signals: [
+      ["Sender", "New number, not in contacts", "bad"],
+      ["Profile", "No photo, created today", "warn"],
+      ["Request", "Pay a third party, today", "bad"],
+      ["Language", "Emotional, rushed", "warn"],
+    ],
+    open: [
+      "hi mum this is my new number, dropped my phone in the bath 🙈 you can delete the old one",
+      "can you do me a massive favour? [[i need to pay a bill today but my banking app won't work on the new phone|A ready-made reason they can't pay it themselves.]]",
+      "[[it's £1,280 to my landlord, i'll pay you back friday. can you do it now?|Payment to a stranger's account, right now.]]",
+    ],
+    choices: [
+      { t: "Send £1,280 to the landlord's account", k: "breach" },
+      { t: "Call the old number", k: "safe", reply: ["~ Your child picks up on the old number. Their phone is fine."] },
+      { t: "Ask \"what's the dog called?\"", k: "risky", reply: ["[[omg mum not now 😩 just pay it pls|Avoiding a question only they would know.]]"] },
+    ],
+    hit: "£1,280 went to a money-mule account and was withdrawn within the hour.",
+    lesson: "\"Hi Mum\" scams start with a new number and a believable story. Call the old number or ask something only they would know.",
+  },
+  {
+    id: "courier-call", ch: "call", scam: false,
+    name: "Unknown mobile", detail: "07700 900 087 · mobile",
+    voice: { pitch: 1.0, rate: 1.05, v: 5 }, stress: 35, synthetic: 3,
+    signals: [
+      ["Caller ID", "Mobile, not in contacts", "warn"],
+      ["Attestation", "B · number not tied to caller", "warn"],
+      ["Background", "Traffic, van door", "ok"],
+      ["Synthetic", "3% · human voice", "ok"],
+    ],
+    open: [
+      "Hiya, it's the driver from Swift Couriers. I'm outside number fourteen with your parcel but nobody's answering.",
+      "Is it alright if I leave it with your neighbour at number twelve, or in the porch? No worries either way.",
+    ],
+    choices: [
+      { t: "Say leave it with number 12", k: "safe", reply: ["Lovely, I'll put a card through your door. Cheers, bye!"] },
+      { t: "Ask them to take it back to the depot", k: "safe", reply: ["No problem, you can rebook on the courier's website. Ta-ra."] },
+      { t: "Offer your card number for a redelivery fee", k: "risky", reply: ["Eh? No, there's no fee. I'll just leave it next door."] },
+    ],
+    lesson: "Genuine: an unverified number alone isn't proof of a scam. They asked for nothing but a decision, and you were expecting a parcel.",
+    greens: ["Asked for nothing sensitive", "No pressure, happy either way", "Matches a delivery you expected"],
+  },
+  {
+    id: "tax-robocall", ch: "call", scam: true,
+    name: "Tax Office", detail: "01632 960 999 · recorded message",
+    voice: { pitch: 0.7, rate: 0.95, v: 6 }, stress: 80, synthetic: 62,
+    signals: [
+      ["Caller ID", "Landline, not listed by the tax office", "warn"],
+      ["Attestation", "C · origin unverified", "bad"],
+      ["Background", "Recording, no ambient noise", "warn"],
+      ["Synthetic", "62% · text-to-speech", "bad"],
+    ],
+    open: [
+      "This is an automated call from the National Tax Office. [[A warrant has been issued for your arrest for unpaid tax.|Tax authorities don't threaten arrest by phone.]]",
+      "[[To avoid prosecution, press 1 now to speak to an officer and settle the balance today.|Pressure to act immediately.]]",
+    ],
+    choices: [
+      { t: "Press 1 and pay what they ask", k: "breach" },
+      { t: "Hang up and check your tax account online", k: "safe", reply: ["~ Your online tax account shows nothing owed."] },
+      { t: "Press 1 to find out more", k: "risky",
+        reply: ["Officer Collins speaking. [[You owe £3,100. You can pay today in Bitcoin or gift vouchers to stop the police visit.|No government accepts crypto or vouchers.]]"] },
+    ],
+    hit: "You paid £3,100 in vouchers. The \"officer\" calls back the next day for more.",
+    lesson: "Robocall, arrest threat, same-day payment in vouchers or crypto. No tax authority works like this.",
+  },
+  {
+    id: "chat-otp", ch: "chat", scam: true,
+    name: "ChatApp Support ✔", detail: "+44 7700 900 604 · not a verified business",
+    signals: [
+      ["Sender", "Personal number using a support name", "bad"],
+      ["Badge", "Tick typed into the name, not verified", "bad"],
+      ["Request", "A one-time code", "bad"],
+      ["Language", "30-minute deadline", "warn"],
+    ],
+    open: [
+      "~ SMS from Verify: Your ChatApp code is 481-229. Don't share this code with anyone.",
+      "Hi! This is the ChatApp support team. [[We sent a 6-digit code to you by mistake, can you forward it to us?|That code logs a new phone into your account.]]",
+      "[[If you don't, your account will be suspended in 30 minutes.|A fake deadline.]]",
+    ],
+    choices: [
+      { t: "Forward the code", k: "breach" },
+      { t: "Ignore it and turn on two-step verification", k: "safe", reply: ["~ Two-step PIN set. Even with the code they can't get in."] },
+      { t: "Ask why they need it", k: "risky",
+        reply: ["[[It's to confirm you're the real owner. Quickly please, it's security procedure.|The real owner never needs to send a code back.]]"] },
+    ],
+    hit: "Your ChatApp account is hijacked and is now messaging all your contacts asking for money.",
+    lesson: "Account takeover. The code registers your account on their phone. Support teams never ask for codes.",
+  },
+  {
+    id: "order-email", ch: "email", scam: false,
+    name: "Brightcart", detail: "ship-confirm@brightcart.co.uk", subject: "Your order has shipped",
+    signals: [
+      ["Sender", "Matches the shop you ordered from", "ok"],
+      ["SPF / DKIM", "Pass for brightcart.co.uk", "ok"],
+      ["Links", "All point to brightcart.co.uk", "ok"],
+      ["Request", "None", "ok"],
+    ],
+    open: [
+      "Hi, good news. Your order #204-5519 (wireless headphones) has shipped.",
+      "Estimated delivery: Wednesday. You can track it any time in Your Orders on brightcart.co.uk.",
+    ],
+    choices: [
+      { t: "Check the order in the app", k: "safe", reply: ["~ The app shows the same order and delivery date."] },
+      { t: "Ignore it, you know it's coming", k: "safe", reply: ["~ The headphones arrive on Wednesday."] },
+      { t: "Reply with your card number to confirm delivery", k: "risky", reply: ["~ Auto-reply: \"This mailbox isn't monitored.\" You never need to send card details."] },
+    ],
+    lesson: "Genuine: it matches an order you placed, authentication passes, links go to the real domain, and it asks for nothing.",
+    greens: ["Matches an order you placed", "Real domain, authentication passes", "Asks for nothing"],
+  },
+  {
+    id: "cloud-phish", ch: "email", scam: true,
+    name: "CloudDocs Security", detail: "no-reply@clouddocs-secure-login.com", subject: "Unusual sign-in: action required",
+    signals: [
+      ["Sender", "Look-alike domain", "bad"],
+      ["SPF / DKIM", "DKIM fail", "bad"],
+      ["Link", "clouddocs-secure-login.com/verify", "bad"],
+      ["Language", "Generic greeting, threat", "warn"],
+    ],
+    open: [
+      "Dear User,",
+      "We detected an unusual sign-in to your CloudDocs account from a new Windows device.",
+      "[[Verify your identity within 24 hours or your account and all files will be permanently deleted.|Extreme consequence plus a deadline.]]",
+      "[[Verify now: clouddocs-secure-login.com/verify|A look-alike domain, not clouddocs.com.]]",
+    ],
+    choices: [
+      { t: "Click Verify now and sign in", k: "breach" },
+      { t: "Open CloudDocs yourself and check recent activity", k: "safe", reply: ["~ Recent activity shows only your own devices."] },
+      { t: "Forward it to colleagues to ask if they got it too", k: "risky", reply: ["~ Two colleagues click the link before IT sends a warning."] },
+    ],
+    hit: "Your password was captured on a fake login page. Your mailbox is now phishing your colleagues.",
+    lesson: "Credential phishing. The link leads to a fake login page. Go to the site yourself, never through the email.",
+  },
+  {
+    id: "colleague-call", ch: "call", scam: false,
+    name: "Tom Reyes · Finance", detail: "Company chat call · verified work account",
+    voice: { pitch: 1.0, rate: 1.1, v: 7 }, stress: 48, synthetic: 5,
+    signals: [
+      ["Caller ID", "Internal work account", "ok"],
+      ["Attestation", "Signed-in company account", "ok"],
+      ["Background", "Open-plan office", "ok"],
+      ["Synthetic", "5% · human voice", "ok"],
+    ],
+    open: [
+      "Hey, it's Tom from finance. Sorry to rush you, the board pack goes out at three.",
+      "Could you check the revenue numbers on slide twelve in the shared folder? I think the Q3 total is off by a few thousand.",
+    ],
+    choices: [
+      { t: "Open the shared folder and check", k: "safe", reply: ["Brilliant, thanks. Yeah, a formula was pointing at the wrong column. I owe you a coffee."] },
+      { t: "Say you'll message him on chat once done", k: "safe", reply: ["Perfect, just ping me. Cheers."] },
+      { t: "Email the spreadsheet to his personal address", k: "risky", reply: ["Oh, no need, it's all in the shared folder. Keep it on the work drive."] },
+    ],
+    lesson: "Genuine: time pressure alone isn't a scam sign. He called from a verified internal account, asked for nothing sensitive, and the work stays inside company systems.",
+    greens: ["Verified internal account", "Asked for nothing sensitive", "Task stays in company systems"],
+  },
+];
+
+const TAUNTS_START = [
+  "Let's see how much you trust caller ID.",
+  "Not every contact is mine. That's the fun part.",
+  "I only need you to be wrong once.",
+  "You sound busy. Busy people click things.",
+  "This one's clean. Or is it?",
+  "I've read your social media. Have you?",
+  "Relax. Some of these are real people.",
+];
+const TAUNTS_WIN = ["Lucky.", "Fine. Next one's harder.", "You won't catch them all.", "Noted. Adjusting approach."];
+const TAUNTS_LOSE = ["Thanks for the access.", "Too easy.", "I'll take that.", "Every system has a human in it."];
+
+const PRESSURE = new Set(("urgent urgently immediately now today code codes verify suspended suspend arrest warrant police " +
+  "gift cards bitcoin crypto vouchers secret quiet hurry quickly deleted permanently prosecution anydesk infected hackers " +
+  "pay transfer cash deadline hours minutes procedure").split(" "));
+
+const CH = {
+  call: { badge: "CALL", ring: "Incoming call", icon: "☎", analysis: "Voice analysis" },
+  sms: { badge: "SMS", ring: "New text message", icon: "✉", analysis: "Message forensics" },
+  email: { badge: "EMAIL", ring: "New email", icon: "@", analysis: "Email forensics" },
+  chat: { badge: "CHAT", ring: "New chat message", icon: "💬", analysis: "Message forensics" },
+};
+
+/* ========================================================================= */
+const $ = (id) => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+};
+
+const state = {
+  phase: "idle", // idle | ringing | playing | live | debrief | over
+  time: 300, score: 0, streak: 0, integrity: 100,
+  order: [], idx: -1, cur: null, token: 0,
+  readyAt: 0, choiceTaken: null, pressure: 0,
+  speaking: false, speakStress: 0,
+  results: [], voiceOn: true,
+};
+
+/* ---------------- Audio (ring, pings, breach) ---------------- */
+let actx = null;
+function audio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch { actx = null; } }
+  if (actx && actx.state === "suspended") actx.resume();
+  return actx;
+}
+function tone(freqs, dur, type = "sine", vol = 0.08, when = 0) {
+  const c = audio(); if (!c) return;
+  const t0 = c.currentTime + when;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + 0.02);
+  g.gain.setValueAtTime(vol, t0 + dur - 0.04);
+  g.gain.linearRampToValueAtTime(0, t0 + dur);
+  g.connect(c.destination);
+  freqs.forEach((f) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.connect(g); o.start(t0); o.stop(t0 + dur); });
+}
+let ringTimer = null;
+function startRing(ch) {
+  stopRing();
+  if (ch === "call") {
+    // UK double ring: 400+450 Hz, 0.4 on, 0.2 off, 0.4 on, 2 s off
+    const burst = () => { tone([400, 450], 0.4); tone([400, 450], 0.4, "sine", 0.08, 0.6); };
+    burst(); ringTimer = setInterval(burst, 3000);
+  } else {
+    tone([880], 0.12, "sine", 0.07); tone([1320], 0.16, "sine", 0.06, 0.13);
+  }
+}
+function stopRing() { if (ringTimer) { clearInterval(ringTimer); ringTimer = null; } }
+function breachSound() { const c = audio(); if (!c) return; tone([220, 233], 0.5, "sawtooth", 0.07); tone([110, 117], 0.8, "sawtooth", 0.07, 0.35); }
+function goodSound() { tone([660], 0.1, "triangle", 0.07); tone([990], 0.14, "triangle", 0.07, 0.1); }
+function badSound() { tone([180], 0.3, "square", 0.05); }
+
+/* ---------------- Speech synthesis ---------------- */
+let voices = [];
+function loadVoices() {
+  if (!("speechSynthesis" in window)) return;
+  const all = speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang));
+  const gb = all.filter((v) => /GB|IE|AU/i.test(v.lang));
+  voices = gb.length >= 2 ? gb : all;
+}
+if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function stopSpeech() { if ("speechSynthesis" in window) speechSynthesis.cancel(); state.speaking = false; }
+
+function speakLine(text, prof, wordEls, token) {
+  return new Promise((resolve) => {
+    const n = wordEls.length;
+    const rate = prof ? prof.rate : 1;
+    const dur = (n / (165 * rate)) * 60000 + 350;
+    let lit = 0, done = false, boundaryDriven = false;
+    const light = (upto) => {
+      while (lit < Math.min(upto, n)) {
+        const el = wordEls[lit++]; el.classList.add("lit");
+        if (el.dataset.hot) { el.classList.add("hot"); state.pressure++; $("mPressure").textContent = state.pressure; }
+      }
+    };
+    const finish = () => {
+      if (done) return; done = true; clearInterval(tick); clearTimeout(safety);
+      light(n); state.speaking = false; resolve();
+    };
+    state.speaking = true; state.speakStress = 0;
+    const tick = setInterval(() => { if (token !== state.token) return finish(); if (!boundaryDriven) light(lit + 1); }, dur / Math.max(n, 1));
+    let safety;
+    const useVoice = state.voiceOn && prof && "speechSynthesis" in window;
+    if (useVoice) {
+      const u = new SpeechSynthesisUtterance(text);
+      if (voices.length) u.voice = voices[prof.v % voices.length];
+      u.pitch = prof.pitch; u.rate = prof.rate;
+      const starts = []; let pos = 0;
+      wordEls.forEach((el) => { const i = text.indexOf(el.textContent, pos); starts.push(i < 0 ? pos : i); pos = (i < 0 ? pos : i) + el.textContent.length; });
+      u.onboundary = (e) => {
+        if (e.name && e.name !== "word") return;
+        boundaryDriven = true;
+        let k = 0; while (k < n && starts[k] <= e.charIndex) k++;
+        light(k);
+      };
+      u.onend = finish; u.onerror = finish;
+      speechSynthesis.speak(u);
+      safety = setTimeout(finish, dur * 2 + 4000);
+    } else {
+      safety = setTimeout(finish, dur);
+    }
+  });
+}
+
+/* ---------------- Text parsing & rendering ---------------- */
+function parse(text) {
+  const sys = text.startsWith("~ ");
+  if (sys) text = text.slice(2);
+  const segs = [];
+  const re = /\[\[(.+?)\|(.+?)\]\]/g;
+  let last = 0, m;
+  // Split on sentence ends followed by whitespace, so "£1.45" and "brightcart.co.uk" stay whole.
+  const pushPlain = (s) => { s.split(/(?<=[.!?])\s+/).forEach((p) => { if (p.trim()) segs.push({ t: p.trim(), flag: false }); }); };
+  while ((m = re.exec(text))) { pushPlain(text.slice(last, m.index)); segs.push({ t: m[1], flag: true, why: m[2] }); last = re.lastIndex; }
+  pushPlain(text.slice(last));
+  return { sys, segs };
+}
+
+function bubble(cls) {
+  const d = document.createElement("div"); d.className = "msg " + cls;
+  $("thread").appendChild(d); $("thread").scrollTop = $("thread").scrollHeight;
+  return d;
+}
+
+function renderThem(line, isCall) {
+  const { sys, segs } = parse(line);
+  const cur = state.cur;
+  const b = bubble(sys ? "sys" : (cur.ch === "email" ? "them email" : "them"));
+  const words = [];
+  segs.forEach((s, i) => {
+    const span = document.createElement("span");
+    if (!sys) {
+      span.className = "seg"; span.tabIndex = 0; span.setAttribute("role", "button");
+      span.dataset.flag = s.flag ? "1" : ""; if (s.flag) span.dataset.why = s.why;
+      span.setAttribute("aria-pressed", "false");
+    }
+    s.t.split(/\s+/).forEach((w, j, arr) => {
+      const we = document.createElement("span"); we.className = "w"; we.textContent = w;
+      const norm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (PRESSURE.has(norm)) we.dataset.hot = "1";
+      span.appendChild(we); words.push(we);
+      if (j < arr.length - 1) span.appendChild(document.createTextNode(" "));
+    });
+    b.appendChild(span);
+    if (i < segs.length - 1) b.appendChild(document.createTextNode(" "));
+  });
+  if (isCall && !sys) b.classList.add("speaking");
+  return { b, words, text: segs.map((s) => s.t).join(" "), sys };
+}
+
+async function playLines(lines, token) {
+  const isCall = state.cur.ch === "call";
+  for (const line of lines) {
+    if (token !== state.token) return false;
+    if (!isCall) {
+      const t = document.createElement("div"); t.className = "typing"; t.textContent = "typing…";
+      $("thread").appendChild(t);
+      await sleep(Math.min(1400, 450 + line.length * 6));
+      t.remove();
+      if (token !== state.token) return false;
+      const r = renderThem(line, false);
+      r.words.forEach((w) => { if (w.dataset.hot) { w.classList.add("hot"); state.pressure++; } });
+      $("mPressure").textContent = state.pressure;
+      tone([1180], 0.06, "sine", 0.03);
+      await sleep(250);
+    } else {
+      const r = renderThem(line, true);
+      if (r.sys) { await sleep(900); continue; }
+      await speakLine(r.text, state.cur.voice, r.words, token);
+      r.b.classList.remove("speaking");
+      await sleep(180);
+    }
+    $("thread").scrollTop = $("thread").scrollHeight;
+  }
+  return token === state.token;
+}
+
+/* ---------------- Flagging ---------------- */
+$("thread").addEventListener("click", (e) => {
+  const seg = e.target.closest(".seg");
+  if (!seg || state.phase !== "live" && state.phase !== "playing") return;
+  seg.classList.toggle("flagged");
+  seg.setAttribute("aria-pressed", seg.classList.contains("flagged"));
+});
+$("thread").addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("seg")) { e.preventDefault(); e.stopPropagation(); e.target.click(); }
+});
+
+/* ---------------- HUD ---------------- */
+function fmt(s) { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function mult() { return 1 + Math.min(state.streak, 4) * 0.5; }
+function hud() {
+  $("timer").textContent = fmt(state.time);
+  $("timer").classList.toggle("warn", state.time <= 30 && state.phase !== "over");
+  $("score").textContent = state.score;
+  $("streak").textContent = "×" + mult().toFixed(1);
+  $("roundNo").textContent = Math.max(0, state.idx + 1) + "/" + SCENARIOS.length;
+  const i = Math.max(0, state.integrity);
+  const bar = $("integrityBar");
+  bar.style.width = i + "%";
+  bar.style.background = i >= 80 ? "var(--safe)" : i >= 50 ? "var(--signal)" : "var(--threat)";
+  const chip = $("statusChip");
+  const [cls, label] = i <= 0 ? ["breached", "BREACHED"] : i < 50 ? ["attack", "UNDER ATTACK"] : i < 80 ? ["probed", "PROBED"] : ["secure", "SECURE"];
+  chip.className = "chip " + cls; chip.textContent = label + " · " + i + "%";
+}
+
+let lastTick = 0;
+function clock(ts) {
+  if (lastTick && (state.phase === "ringing" || state.phase === "playing" || state.phase === "live")) {
+    state.time -= (ts - lastTick) / 1000;
+    if (state.time <= 0) { state.time = 0; hud(); endGame("Time's up"); }
+  }
+  lastTick = ts;
+  if (state.phase !== "over" && state.phase !== "idle") hud();
+  drawWave(ts);
+  requestAnimationFrame(clock);
+}
+
+/* ---------------- Voice analysis visuals ---------------- */
+const canvas = $("wave"), g = canvas.getContext("2d");
+let shownStress = 0;
+function drawWave(ts) {
+  if ($("screenGame").hidden || $("voiceBlock").hidden) return;
+  const W = canvas.width, H = canvas.height, cur = state.cur;
+  g.clearRect(0, 0, W, H);
+  g.strokeStyle = "rgba(34,66,79,.8)"; g.lineWidth = 1;
+  for (let y = H / 4; y < H; y += H / 4) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const speaking = state.speaking && cur;
+  const synth = cur ? cur.synthetic / 100 : 0;
+  const stress = cur ? cur.stress / 100 : 0;
+  const amp = speaking ? H * (0.22 + 0.18 * stress) : H * 0.02;
+  g.strokeStyle = speaking ? (stress > 0.6 ? "#ff5468" : "#f2a93b") : "#3b5a66";
+  g.lineWidth = 2; g.beginPath();
+  const t = ts / 1000;
+  for (let x = 0; x <= W; x += 3) {
+    const env = Math.sin((x / W) * Math.PI);
+    // Human speech: irregular syllable envelope. Synthetic: suspiciously regular.
+    const syll = speaking ? (0.55 + 0.45 * Math.sin(t * (6 + stress * 5) + x * 0.012)) : 1;
+    const jitter = (1 - synth) * (Math.random() - 0.5) * 0.9;
+    const y = H / 2 + amp * env * syll * (Math.sin(x * 0.09 + t * 18) * 0.6 + Math.sin(x * 0.23 - t * 9) * 0.3 + jitter);
+    x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
+  }
+  g.stroke();
+  // live meters
+  if (cur && cur.ch === "call") {
+    const target = speaking ? cur.stress + rand(-7, 7) : Math.max(8, shownStress * 0.985);
+    shownStress += (target - shownStress) * 0.08;
+    const s = Math.round(Math.max(0, Math.min(100, shownStress)));
+    $("mStress").textContent = s;
+    $("mStressBar").style.width = s + "%";
+    $("mStressBar").style.background = s > 60 ? "var(--threat)" : s > 40 ? "var(--signal)" : "var(--safe)";
+    if (speaking && Math.random() < 0.08) $("mRate").textContent = Math.round(150 * cur.voice.rate + rand(-9, 9));
+    else if (!speaking && Math.random() < 0.02) $("mRate").textContent = "—";
+  }
+}
+
+function setupAnalysis(cur) {
+  const isCall = cur.ch === "call";
+  $("aTitle").textContent = CH[cur.ch].analysis;
+  $("aSub").textContent = isCall ? "caller audio · live" : "headers & content";
+  $("voiceBlock").hidden = !isCall;
+  $("mStressK").textContent = isCall ? "Voice stress" : "Urgency";
+  $("mRateK").textContent = isCall ? "Speech rate wpm" : "Links";
+  $("mStress").textContent = isCall ? "—" : "…";
+  $("mStressBar").style.width = "0";
+  $("mRate").textContent = isCall ? "—" : "…";
+  $("mPressure").textContent = "0";
+  shownStress = 0;
+  const box = $("signals"); box.innerHTML = "";
+  cur.signals.forEach(([k]) => {
+    const r = document.createElement("div"); r.className = "row pending";
+    r.innerHTML = '<span class="k"></span><span class="v"><span class="dot"></span><span>analysing…</span></span>';
+    r.querySelector(".k").textContent = k;
+    box.appendChild(r);
+  });
+}
+async function revealSignals(cur, token) {
+  const rows = [...$("signals").children];
+  for (let i = 0; i < rows.length; i++) {
+    await sleep(700 + Math.random() * 500);
+    if (token !== state.token) return;
+    const [, v, lvl] = cur.signals[i];
+    rows[i].classList.remove("pending");
+    rows[i].querySelector(".dot").className = "dot " + lvl;
+    rows[i].querySelector(".v span:last-child").textContent = v;
+  }
+}
+function textMeters(cur) {
+  if (cur.ch === "call") return;
+  const urgency = Math.min(100, 8 + state.pressure * 16);
+  $("mStress").textContent = urgency;
+  $("mStressBar").style.width = urgency + "%";
+  $("mStressBar").style.background = urgency > 60 ? "var(--threat)" : urgency > 35 ? "var(--signal)" : "var(--safe)";
+  const link = cur.signals.find(([k]) => /link/i.test(k));
+  $("mRate").textContent = link && !/^none$/i.test(link[1]) ? (/all point/i.test(link[1]) ? "OK" : "1 ⚠") : "0";
+}
+
+/* ---------------- Round flow ---------------- */
+function setVerdicts(on) { $("btnScam").disabled = !on; $("btnLegit").disabled = !on; }
+function renderChoices(on) {
+  const box = $("choices"); box.innerHTML = "";
+  state.cur.choices.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.className = "choice"; b.disabled = !on;
+    b.innerHTML = "<kbd>" + (i + 1) + "</kbd><span></span>";
+    b.querySelector("span").textContent = c.t;
+    b.addEventListener("click", () => takeChoice(i));
+    box.appendChild(b);
+  });
+}
+
+function nextRound() {
+  state.idx++;
+  if (state.idx >= state.order.length) return endGame("You faced every contact");
+  const cur = state.cur = state.order[state.idx];
+  state.token++; state.choiceTaken = null; state.pressure = 0;
+  $("thread").innerHTML = ""; $("device").classList.remove("locked");
+  $("chan").textContent = CH[cur.ch].badge;
+  $("fromName").textContent = cur.name; $("fromDetail").textContent = cur.detail;
+  $("subject").hidden = !cur.subject; $("subject").textContent = cur.subject || "";
+  $("voxLine").textContent = pick(TAUNTS_START);
+  setupAnalysis(cur);
+  renderChoices(false); setVerdicts(false);
+  $("ringLabel").textContent = CH[cur.ch].ring;
+  $("ringIcon").textContent = CH[cur.ch].icon;
+  $("ringName").textContent = cur.name; $("ringDetail").textContent = cur.detail;
+  $("btnAnswer").textContent = cur.ch === "call" ? "Answer" : "Open";
+  $("ring").hidden = false;
+  state.phase = "ringing";
+  startRing(cur.ch);
+  hud();
+  setTimeout(() => $("btnAnswer").focus(), 50);
+}
+
+async function answer() {
+  if (state.phase !== "ringing") return;
+  stopRing(); audio();
+  $("ring").hidden = true;
+  state.phase = "playing";
+  const token = state.token, cur = state.cur;
+  revealSignals(cur, token);
+  const ok = await playLines(cur.open, token);
+  if (!ok) return;
+  textMeters(cur);
+  state.phase = "live";
+  state.readyAt = performance.now();
+  renderChoices(true); setVerdicts(true);
+}
+
+async function takeChoice(i) {
+  if (state.phase !== "live" || state.choiceTaken !== null) return;
+  const cur = state.cur, c = cur.choices[i];
+  state.choiceTaken = i;
+  [...$("choices").children].forEach((b) => (b.disabled = true));
+  const you = bubble("you"); you.appendChild(document.createTextNode(c.t));
+  if (c.k === "breach" && cur.scam) return breach();
+  if (c.k === "safe") goodSound();
+  setVerdicts(false);
+  state.phase = "playing";
+  const token = state.token;
+  const ok = await playLines(c.reply || [], token);
+  if (!ok) return;
+  state.phase = "live";
+  setVerdicts(true);
+}
+
+function collectFlags() {
+  const segs = [...$("thread").querySelectorAll(".seg")];
+  const flagged = segs.filter((s) => s.classList.contains("flagged"));
+  const hits = flagged.filter((s) => s.dataset.flag);
+  const wrong = flagged.length - hits.length;
+  const all = segs.filter((s) => s.dataset.flag);
+  return { hits, wrong, all };
+}
+
+function verdict(saysScam) {
+  if (state.phase !== "live" && state.phase !== "playing") return;
+  if (state.phase === "playing" && $("btnScam").disabled) return;
+  const cur = state.cur;
+  state.token++; stopSpeech();
+  const lines = [];
+  const correct = saysScam === cur.scam;
+  let pts = 0;
+  const f = collectFlags();
+  if (correct) {
+    const speed = Math.max(0, Math.round(50 - ((performance.now() - state.readyAt) / 1000) * 2));
+    const m = mult();
+    const base = Math.round((100 + speed) * m);
+    pts += base;
+    lines.push(["Correct verdict", 100, "pos"]);
+    if (speed) lines.push(["Speed bonus", speed, "pos"]);
+    if (m > 1) lines.push(["Streak ×" + m.toFixed(1), base - 100 - speed, "pos"]);
+    state.streak++;
+    goodSound();
+  } else if (cur.scam) {
+    pts -= 75; state.integrity -= 20; state.streak = 0;
+    lines.push(["You trusted an attacker", -75, "neg"], ["Integrity", "−20%", "neg"]);
+    badSound();
+  } else {
+    pts -= 25; state.streak = 0;
+    lines.push(["False alarm on a genuine contact", -25, "neg"]);
+    badSound();
+  }
+  pts += applyChoicePoints(lines);
+  if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
+  if (f.wrong) { pts -= f.wrong * 10; lines.push(["Wrong flags ×" + f.wrong, -f.wrong * 10, "neg"]); }
+  state.score += pts;
+  state.results.push({ cur, outcome: correct ? "correct" : "wrong", pts, flags: f.hits.length });
+  showDebrief({ correct, saysScam, lines, pts, f, breached: false });
+}
+
+function applyChoicePoints(lines) {
+  const cur = state.cur, i = state.choiceTaken;
+  if (i === null) return 0;
+  const c = cur.choices[i];
+  if (c.k === "safe") { lines.push(["Safe move", 25, "pos"]); return 25; }
+  if (c.k === "risky" && cur.scam) { state.integrity -= 5; lines.push(["You engaged the attacker", "−5% integrity", "neg"]); return 0; }
+  if (c.k === "risky" && !cur.scam) { lines.push(["Overshared with a genuine contact", -25, "neg"]); return -25; }
+  return 0;
+}
+
+function breach() {
+  const cur = state.cur;
+  state.token++; stopSpeech();
+  state.phase = "debrief";
+  setVerdicts(false);
+  state.integrity -= 35; state.streak = 0;
+  const f = collectFlags();
+  let pts = -150;
+  const lines = [["Breached by the red team", -150, "neg"], ["Integrity", "−35%", "neg"]];
+  if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
+  state.score += pts;
+  state.results.push({ cur, outcome: "breached", pts, flags: f.hits.length });
+  breachSound();
+  const gl = $("glitch"); gl.hidden = false; document.body.classList.add("shake");
+  hud();
+  setTimeout(() => { gl.hidden = true; document.body.classList.remove("shake"); showDebrief({ correct: false, lines, pts, f, breached: true }); }, 1500);
+}
+
+function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
+  const cur = state.cur;
+  state.phase = "debrief";
+  $("device").classList.add("locked");
+  setVerdicts(false); [...$("choices").children].forEach((b) => (b.disabled = true));
+  hud();
+  const ans = $("dbAnswer");
+  ans.textContent = cur.scam ? "Yes. It was an attack." : "No. It was genuine.";
+  ans.className = "answer " + (cur.scam ? "yes" : "no");
+  $("dbVerdict").textContent = breached ? "You handed it over. ☠ Compromised." :
+    (correct ? "✔ You called it right: " : "✘ You said: ") + (saysScam ? "SCAM" : "LEGIT");
+  $("dbVerdict").style.color = breached || !correct ? "var(--threat)" : "var(--safe)";
+  $("dbHit").hidden = !breached; $("dbHit").textContent = breached ? cur.hit : "";
+  const pb = $("dbPts"); pb.innerHTML = "";
+  lines.forEach(([k, v, cls]) => {
+    const d = document.createElement("div");
+    d.innerHTML = "<span></span><span></span>";
+    d.children[0].textContent = k;
+    d.children[1].textContent = typeof v === "number" ? (v > 0 ? "+" + v : String(v).replace("-", "−")) : v;
+    d.children[1].className = cls;
+    pb.appendChild(d);
+  });
+  const tot = document.createElement("div");
+  tot.innerHTML = "<b>Round total</b><b></b>";
+  tot.children[1].textContent = (pts > 0 ? "+" : "") + String(pts).replace("-", "−");
+  tot.children[1].className = pts >= 0 ? "pos" : "neg";
+  pb.appendChild(tot);
+
+  const tl = $("dbTells"); tl.innerHTML = "";
+  if (cur.scam) {
+    $("dbTellsLabel").textContent = "The red flags";
+    const seen = new Set();
+    const flagsInThread = f.all.map((s) => ({ t: s.textContent, why: s.dataset.why, got: s.classList.contains("flagged") }));
+    // include flags from unplayed replies too, for learning
+    const extra = [];
+    [cur.open, ...cur.choices.map((c) => c.reply || [])].flat().forEach((l) => parse(l).segs.forEach((s) => { if (s.flag) extra.push({ t: s.t, why: s.why, got: false }); }));
+    [...flagsInThread, ...extra].forEach((x) => {
+      if (seen.has(x.t)) return; seen.add(x.t);
+      const li = document.createElement("li");
+      li.innerHTML = "<q></q> <span></span> <span class='miss'></span>";
+      li.children[0].textContent = x.t; li.children[1].textContent = x.why;
+      li.children[2].textContent = x.got ? "⚑ you flagged this" : "";
+      tl.appendChild(li);
+    });
+  } else {
+    $("dbTellsLabel").textContent = "Why it was genuine";
+    (cur.greens || []).forEach((gtxt) => { const li = document.createElement("li"); li.textContent = gtxt; tl.appendChild(li); });
+  }
+  $("dbLesson").textContent = cur.lesson;
+  $("voxLine").textContent = (breached || !correct) ? pick(TAUNTS_LOSE) : pick(TAUNTS_WIN);
+  const last = state.integrity <= 0 || state.idx >= state.order.length - 1 || state.time <= 0;
+  $("btnNext").textContent = last ? "See results" : "Next contact";
+  $("debrief").hidden = false;
+  setTimeout(() => $("btnNext").focus(), 50);
+}
+
+function closeDebrief() {
+  if (state.phase !== "debrief" || $("debrief").hidden) return;
+  $("debrief").hidden = true;
+  if (state.integrity <= 0) return endGame("System breached");
+  if (state.time <= 0) return endGame("Time's up");
+  nextRound();
+}
+
+/* ---------------- Start / end ---------------- */
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function startGame() {
+  audio();
+  Object.assign(state, { time: 300, score: 0, streak: 0, integrity: 100, idx: -1, results: [], voiceOn: $("optVoice").checked });
+  // Open with a scam, then a fair mix
+  let order = shuffle(SCENARIOS);
+  const firstScam = order.findIndex((s) => s.scam);
+  [order[0], order[firstScam]] = [order[firstScam], order[0]];
+  state.order = order;
+  $("screenStart").hidden = true; $("screenEnd").hidden = true; $("screenGame").hidden = false;
+  window.scrollTo(0, 0);
+  nextRound();
+}
+
+function endGame(reason) {
+  if (state.phase === "over") return;
+  state.phase = "over"; state.token++;
+  stopSpeech(); stopRing();
+  $("debrief").hidden = true; $("ring").hidden = true;
+  $("screenGame").hidden = true; $("screenEnd").hidden = false;
+  window.scrollTo(0, 0);
+  const R = state.results;
+  const scams = R.filter((r) => r.cur.scam), legits = R.filter((r) => !r.cur.scam);
+  const caught = scams.filter((r) => r.outcome === "correct").length;
+  const breaches = R.filter((r) => r.outcome === "breached").length;
+  const falseAlarms = legits.filter((r) => r.outcome !== "correct").length;
+  const acc = R.length ? Math.round((R.filter((r) => r.outcome === "correct").length / R.length) * 100) : 0;
+  const flags = R.reduce((a, r) => a + r.flags, 0);
+  const s = state.score;
+  const rank = state.integrity <= 0 ? ["Owned", "The red team walked straight in. Slow down, verify, and never hand over codes."]
+    : s < 250 ? ["Easy Mark", "You'd make VOX's week. Look for pressure, secrecy and requests for codes or money."]
+    : s < 600 ? ["Getting Suspicious", "Good instincts. Flag more of the tells and move faster to climb the ranks."]
+    : s < 1000 ? ["Human Firewall", "You spot the tricks and trust the right people. Hard to fool."]
+    : ["Red Team's Nightmare", "VOX has filed a complaint. Outstanding."];
+  $("endReason").textContent = reason;
+  $("rankName").textContent = rank[0];
+  $("endScore").textContent = s;
+  $("endLine").textContent = rank[1];
+  const best = Math.max(s, Number(store.get("rtvy-best") || 0));
+  store.set("rtvy-best", String(best));
+  const stats = [
+    [acc + "%", "Accuracy"], [caught + "/" + scams.length, "Scams caught"], [breaches, "Times breached"],
+    [falseAlarms, "False alarms"], [flags, "Red flags spotted"], [Math.max(0, state.integrity) + "%", "Integrity left"],
+    [best, "Your best score"],
+  ];
+  $("endStats").innerHTML = "";
+  stats.forEach(([v, k]) => { const d = document.createElement("div"); d.innerHTML = "<b></b><span></span>"; d.children[0].textContent = v; d.children[1].textContent = k; $("endStats").appendChild(d); });
+  const log = $("endLog"); log.innerHTML = "";
+  if (!R.length) { const li = document.createElement("li"); li.innerHTML = "<span></span><span>No contacts judged.</span><span></span>"; log.appendChild(li); }
+  R.forEach((r) => {
+    const li = document.createElement("li");
+    const ic = r.outcome === "correct" ? ["✔", "ok"] : r.outcome === "breached" ? ["☠", "bad"] : ["✘", "bad"];
+    li.innerHTML = "<span class='ic'></span><span></span><span class='p'></span>";
+    li.children[0].textContent = ic[0]; li.children[0].classList.add(ic[1]);
+    li.children[1].textContent = CH[r.cur.ch].badge + " · " + r.cur.name + " — " + (r.cur.scam ? "scam" : "genuine");
+    li.children[2].textContent = (r.pts > 0 ? "+" : "") + r.pts;
+    log.appendChild(li);
+  });
+  hud();
+  $("timer").classList.remove("warn");
+}
+
+/* ---------------- Microphone: voice commands + composure ---------------- */
+let micOn = false, rec = null;
+async function enableMic() {
+  if (micOn) return;
+  const note = $("micNote");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const c = audio();
+    const src = c.createMediaStreamSource(stream);
+    const an = c.createAnalyser(); an.fftSize = 1024; src.connect(an);
+    const buf = new Float32Array(an.fftSize);
+    const hist = [];
+    micOn = true; $("micMeters").hidden = false; $("btnMic").textContent = "Mic on";
+    $("btnMic").disabled = true;
+    const loop = () => {
+      an.getFloatTimeDomainData(buf);
+      let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+      const rms = Math.sqrt(sum / buf.length);
+      const lvl = Math.min(100, Math.round(rms * 400));
+      $("micLevel").style.width = lvl + "%";
+      if (lvl > 4) { hist.push(lvl); if (hist.length > 90) hist.shift(); }
+      if (hist.length > 20) {
+        const mean = hist.reduce((a, b) => a + b, 0) / hist.length;
+        const sd = Math.sqrt(hist.reduce((a, b) => a + (b - mean) ** 2, 0) / hist.length);
+        const calm = Math.max(0, Math.min(100, Math.round(100 - sd * 2.2 - Math.max(0, mean - 45))));
+        $("micCalm").textContent = calm >= 70 ? calm + " steady" : calm >= 45 ? calm + " tense" : calm + " rattled";
+      }
+      requestAnimationFrame(loop);
+    };
+    loop();
+  } catch {
+    note.textContent = "Microphone isn't available in this view. Open the game file directly in Chrome or Edge to use voice commands.";
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { note.textContent = "Voice level is on. This browser has no speech recognition, so commands are off."; return; }
+  rec = new SR(); rec.lang = "en-GB"; rec.continuous = true; rec.interimResults = false;
+  rec.onresult = (e) => {
+    const said = e.results[e.results.length - 1][0].transcript.toLowerCase().trim();
+    $("micHeard").textContent = "heard: \"" + said + "\"";
+    if (state.phase === "ringing" && /answer|open|pick up/.test(said)) return answer();
+    if (state.phase === "debrief" && /next|continue/.test(said)) return closeDebrief();
+    if (/\b(scam|fake|fraud|hang up|block)\b/.test(said)) return verdict(true);
+    if (/\b(legit|genuine|real|safe|trust)\b/.test(said)) return verdict(false);
+  };
+  rec.onend = () => { if (micOn) { try { rec.start(); } catch { /* already running */ } } };
+  try { rec.start(); } catch { /* ignore */ }
+}
+
+/* ---------------- Wiring ---------------- */
+$("btnStart").addEventListener("click", startGame);
+$("btnAgain").addEventListener("click", startGame);
+$("btnAnswer").addEventListener("click", answer);
+$("btnScam").addEventListener("click", () => verdict(true));
+$("btnLegit").addEventListener("click", () => verdict(false));
+$("btnNext").addEventListener("click", closeDebrief);
+$("btnMic").addEventListener("click", enableMic);
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (state.phase === "ringing" && (k === "enter" || k === " ")) { e.preventDefault(); return answer(); }
+  if (state.phase === "debrief" && !$("debrief").hidden && k === "enter") { e.preventDefault(); return closeDebrief(); }
+  if (state.phase === "live" || state.phase === "playing") {
+    if (k === "s" && !$("btnScam").disabled) return verdict(true);
+    if (k === "l" && !$("btnLegit").disabled) return verdict(false);
+    if (["1", "2", "3"].includes(k)) return takeChoice(Number(k) - 1);
+  }
+});
+
+const best = store.get("rtvy-best");
+$("bestLine").textContent = best ? "Your best score on this device: " + best : "15 contacts. Some are attacks. Some are real. Nobody tells you which.";
+hud();
+requestAnimationFrame(clock);
+})();
+</script>
+</body>
+</html>
