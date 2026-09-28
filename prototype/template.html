@@ -5,23 +5,23 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root {
-  --canvas: #f4f6f8; --surface: #ffffff; --surface-2: #f1f4f7; --surface-hover: #f7f9fb;
-  --line: rgba(15, 23, 42, 0.10); --line-strong: rgba(15, 23, 42, 0.18);
-  --ink: #0f172a; --ink-2: #4a5568; --ink-3: #8b95a5;
+  --canvas: #f5f5f7; --surface: #ffffff; --surface-2: #eeeef1; --surface-hover: #fafafb;
+  --line: rgba(15, 23, 42, 0.07); --line-strong: rgba(15, 23, 42, 0.14);
+  --ink: #1d1d1f; --ink-2: #6e6e73; --ink-3: #a1a1a6;
   --rail: #0f1720; --rail-2: #0f1720; --rail-ink: rgba(255,255,255,0.62);
   --teal: #186b4e; --teal-b: #2f9e6f; --teal-bg: rgba(47,158,111,0.11);
   --navy: #2f3730; --navy-b: #5c7a6a; --navy-bg: rgba(19,23,20,0.06);
   --amber: #9a6212; --amber-b: #d08a1f; --amber-bg: rgba(208,138,31,0.12);
   --risk: #a3352b; --risk-bg: rgba(163,53,43,0.1);
   --hero-a: #0f1720; --hero-b: #16202b;
-  --shadow: 0 1px 2px rgba(20,20,18,0.04);
-  --shadow-hover: 0 2px 8px rgba(20,20,18,0.07);
-  --shadow-pop: 0 24px 60px -16px rgba(20,20,18,0.22), 0 0 0 1px rgba(20,20,18,0.05);
+  --shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px -6px rgba(0,0,0,0.06);
+  --shadow-hover: 0 2px 4px rgba(0,0,0,0.04), 0 12px 32px -10px rgba(0,0,0,0.12);
+  --shadow-pop: 0 30px 70px -22px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.04);
   --btn-shadow: 0 1px 2px rgba(20,20,18,0.16);
   --primary-bg: #0f172a; --primary-ink: #ffffff;
   --glass: rgba(255,255,255,0.82); --glass-line: rgba(20,20,18,0.07);
   --code-bg: rgba(15,23,42,0.055);
-  --r-card: 12px; --r-ctl: 9px; --r-pill: 999px;
+  --r-card: 16px; --r-ctl: 12px; --r-pill: 999px;
   /* motion: a spring for things that appear, a soft out for things that move */
   --spring: cubic-bezier(0.34, 1.4, 0.64, 1); --out: cubic-bezier(0.22, 1, 0.36, 1); --inout: cubic-bezier(0.65, 0, 0.35, 1);
   --sans: "Aptos", "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -29,7 +29,7 @@
      a display or serif face on a number reads as decoration, not data. */
   --serif: var(--sans); --display: var(--sans);
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --c-ink: #0f172a; --c-ink-2: #4a5568; --c-ink-3: #8b95a5; --c-rule: rgba(15,23,42,0.11); --c-paper: #ffffff; --c-sunk: #f1f4f7;
+  --c-ink: #1d1d1f; --c-ink-2: #6e6e73; --c-ink-3: #a1a1a6; --c-rule: rgba(15,23,42,0.08); --c-paper: #ffffff; --c-sunk: #eeeef1;
   --c-trust: #186b4e; --c-trust-b: #2f9e6f; --c-alert: #9a6212; --c-alert-b: #d08a1f; --c-stop: #a3352b;
   --c-accent: var(--accent); --c-accent-b: var(--accent-b);
   /* Each view has its own light. The network is evergreen; a client is indigo; an agency is copper; a member is lagoon. */
@@ -152,12 +152,12 @@ code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
 
 /* content */
 .content { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; z-index: 1; }
-#top { position: sticky; top: 0; z-index: 20; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 40px; background: color-mix(in srgb, var(--canvas) 86%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+#top { position: sticky; top: 0; z-index: 20; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 40px; background: color-mix(in srgb, var(--canvas) 72%, transparent); backdrop-filter: saturate(1.6) blur(20px); -webkit-backdrop-filter: saturate(1.6) blur(20px); border-bottom: 1px solid var(--line); }
 #crumbs { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); min-width: 0; } #crumbs b { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #crumbs .sep { color: var(--ink-3); }
 .searchbtn svg { width: 15px; height: 15px; flex: none; } .searchbtn { display: flex; align-items: center; gap: 8px; height: 36px; width: 320px; max-width: 40vw; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-3); font: inherit; font-size: 12.5px; padding: 0 12px 0 14px; cursor: text; box-shadow: 0 1px 2px rgba(15,23,42,0.04); transition: border-color 120ms; }
 .searchbtn:hover { border-color: var(--line-strong); } .searchbtn kbd { margin-left: auto; }
 kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line-strong); border-radius: 5px; padding: 2px 6px; color: var(--ink-2); background: var(--surface); }
-main { padding: 36px 40px 120px; max-width: 1320px; width: 100%; margin: 0 auto; }
+main { padding: 44px 44px 140px; max-width: 1320px; width: 100%; margin: 0 auto; }
 main > * { animation: rise 460ms var(--out) backwards; }
 main > *:nth-child(2) { animation-delay: 45ms; } main > *:nth-child(3) { animation-delay: 90ms; } main > *:nth-child(4) { animation-delay: 130ms; } main > *:nth-child(n+5) { animation-delay: 165ms; }
 @keyframes rise { from { opacity: 0; transform: translateY(12px) scale(0.995); } to { opacity: 1; transform: none; } }
@@ -191,10 +191,10 @@ a.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); bor
 .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
 .card { border-radius: var(--r-card); border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); min-width: 0; }
 
-.card > header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 20px 22px 4px; }
+.card > header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 22px 24px 6px; }
 .card > header > :last-child:not(:first-child) { justify-self: end; }
 .card > header h3 { font-size: 14.5px; font-weight: 500; letter-spacing: -0.01em; } .card > header p { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; line-height: 1.5; max-width: 62ch; }
-.card > .body { padding: 12px 22px 22px; } .card > .body.flush { padding: 6px 0 0; }
+.card > .body { padding: 14px 24px 24px; } .card > .body.flush { padding: 6px 0 0; }
 .card.caution { border-color: rgba(245,158,11,0.4); }
 .card.match > .body > .row:first-child { align-items: flex-start; flex-wrap: wrap; }
 .card.match > .body > .row:first-child .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; justify-content: flex-end; }
@@ -221,7 +221,7 @@ a.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); bor
 .empty { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 28px 20px; text-align: center; color: var(--ink-2); } .empty b { display: block; color: var(--ink); font-size: 13px; } .empty p { font-size: 12.5px; margin-top: 4px; } .empty .btn { margin-top: 12px; } .empty.tall { padding: 80px 20px; }
 .page-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 16px 24px; margin-bottom: 22px; }
 .page-head > :last-child:not(:first-child) { justify-self: end; }
-.page-head h1 { font-size: clamp(23px, 5.4vw, 28px); font-weight: 600; letter-spacing: -0.03em; overflow-wrap: anywhere; } .page-head p { color: var(--ink-2); margin-top: 4px; max-width: 70ch; overflow-wrap: anywhere; } .page-head .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.page-head h1 { font-size: clamp(26px, 5.4vw, 34px); font-weight: 600; letter-spacing: -0.035em; line-height: 1.08; overflow-wrap: anywhere; } .page-head p { color: var(--ink-2); margin-top: 4px; max-width: 70ch; overflow-wrap: anywhere; } .page-head .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .actions { display: flex; gap: 8px; align-items: center; flex: none; flex-wrap: wrap; justify-content: flex-end; max-width: 560px; }
 
 .sect-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 8px 0 4px; } .sect-head h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.025em; } .sect-head p { font-size: 12.5px; color: var(--ink-2); max-width: 70ch; }
