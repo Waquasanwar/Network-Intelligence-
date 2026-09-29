@@ -257,7 +257,7 @@
   .seg.flagged::before { content: "⚑ "; color: #ff3b30; }
   .locked .seg { cursor: default; }
   .speaking .w { opacity: .4; } .speaking .w.lit { opacity: 1; }
-  .w.hot { color: #c2410c; font-weight: 600; }
+  .w.hot { }
   /* Replies */
   .reply { text-align: left; border: 1px solid #0a84ff; color: #0a84ff; background: #fff; border-radius: 18px; padding: 8px 12px; font-size: 14px; line-height: 1.3; display: flex; gap: 8px; }
   .reply:hover:not(:disabled) { background: #eef5ff; }
@@ -284,7 +284,6 @@
   .transcript .msg.you::before { content: "You"; display: block; font-size: 11px; font-weight: 700; }
   .transcript .msg.sys { align-self: flex-start; text-align: left; color: var(--muted); padding: 0; }
   .transcript .paycard { background: var(--surface); color: var(--text); border-color: var(--line); }
-  .transcript .w.hot { color: var(--warn); }
   .transcript .seg:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
   canvas#wave { width: 100%; height: 64px; display: block; border-radius: 12px; background: var(--surface-2); }
   .meters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -293,16 +292,53 @@
   .mt .v { font-family: var(--mono); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .mt .v small { font-size: 10px; color: var(--muted); margin-left: 2px; }
   .mt .track { height: 4px; margin-top: 4px; }
-  .mt.alert .v { color: var(--hacker); }
+
   .rows { display: grid; }
   .row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: start; font-size: 13px; }
   .row:last-child { border-bottom: 0; }
   .row .k { color: var(--muted); font-size: 12.5px; }
   .row .v { display: flex; gap: 8px; align-items: flex-start; }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 5px; background: var(--line); }
-  .dot.ok { background: var(--you); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--hacker); }
+  .dot.n { background: var(--muted); }
   .row.pending .v { color: var(--muted); }
   .caveat { font-size: 12px; color: var(--muted); margin: 0; }
+  .check { display: flex; gap: 12px; align-items: center; justify-content: space-between; background: var(--surface-2); border: 1px dashed var(--line); border-radius: 14px; padding: 12px 14px; font-size: 13px; color: var(--muted); }
+  .check b { color: var(--text); }
+  .check button { border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 13px; background: var(--text); color: var(--bg); white-space: nowrap; }
+  .dclock { font-family: var(--mono); font-weight: 600; font-size: 13px; color: var(--muted); margin: 0; }
+  .dclock.urgent { color: var(--hacker); }
+  /* Analysis report */
+  .report { display: grid; gap: 18px; margin-top: 8px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; box-shadow: var(--shadow); }
+  .card h3 { font-family: var(--display); font-size: 18px; font-weight: 800; margin: 0 0 10px; letter-spacing: -.01em; }
+  .profile b { font-family: var(--display); font-size: 24px; font-weight: 800; display: block; }
+  .profile p { margin: 6px 0 0; color: var(--muted); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .tag { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); }
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .kpi { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+  .kpi b { display: block; font-family: var(--mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+  .kpi span { font-size: 12px; color: var(--muted); }
+  .kpi small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tact { display: grid; gap: 8px; }
+  .tact-row { display: grid; grid-template-columns: minmax(0, 1.3fr) 90px minmax(0, 2fr); gap: 12px; align-items: center; font-size: 13.5px; padding-block: 6px; border-bottom: 1px solid var(--line); }
+  .tact-row:last-child { border-bottom: 0; }
+  .res { font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 99px; text-align: center; }
+  .res.ok { background: var(--you-soft); color: var(--you); } .res.bad { background: var(--hacker-soft); color: var(--hacker); } .res.mid { background: var(--warn-soft); color: var(--warn); }
+  .tact-row span:last-child { color: var(--muted); }
+  .timebars { display: grid; gap: 6px; }
+  .tb { display: grid; grid-template-columns: 130px 1fr 44px; gap: 10px; align-items: center; font-size: 12.5px; }
+  .tb .bar { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .tb .bar i { display: block; height: 100%; border-radius: 99px; }
+  .tb .t { font-family: var(--mono); color: var(--muted); text-align: right; }
+  .advice { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; }
+  details.contact { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  details.contact summary { cursor: pointer; display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; font-size: 14px; list-style: none; }
+  details.contact summary::-webkit-details-marker { display: none; }
+  details.contact .body { margin-top: 10px; font-size: 13.5px; display: grid; gap: 8px; }
+  details.contact .body ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+  details.contact .body q { font-weight: 600; }
+  .sp { color: var(--you); font-weight: 700; font-size: 12px; } .ms { color: var(--hacker); font-weight: 700; font-size: 12px; }
   .mic { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; font-size: 12.5px; color: var(--muted); }
   .mic-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .ghost { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
@@ -326,7 +362,7 @@
   .lesson { margin: 0; font-size: 14px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
   .btn { border: 0; border-radius: 14px; padding: 14px 20px; font-family: var(--display); font-weight: 800; font-size: 16px; background: var(--text); color: var(--bg); }
   .btn.alt { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
-  .end { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; padding-block: 34px; }
+  .end { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; padding-block: 34px; align-items: start; }
   .end h1 { margin-bottom: 8px; }
   .score2 { display: flex; gap: 12px; margin: 18px 0; flex-wrap: wrap; }
   .score2 div { flex: 1; min-width: 150px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); }
@@ -366,6 +402,8 @@
     .hero, .end { grid-template-columns: minmax(0, 1fr); }
     .game { grid-template-columns: minmax(0, 1fr); }
     .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tact-row { grid-template-columns: 1fr 80px; } .tact-row span:last-child { grid-column: 1 / -1; }
   }
   @media (max-width: 520px) {
     .brand { width: 100%; }
@@ -428,9 +466,9 @@
       </div>
     </div>
     <div class="how">
-      <div><b>+100</b>Right call, scam or legit. Faster calls and streaks score more.</div>
+      <div><b>+100</b>Right call, scam or legit. Faster calls and streaks score more. Each contact has a countdown.</div>
       <div><b>+20 ⚑</b>Tap any sentence that's a red flag. Wrong flags cost 10.</div>
-      <div><b>+25</b>Safe replies: check through a channel you trust, pay the protected way.</div>
+      <div><b>3 checks</b>Scam Radar only works when you spend a check. Checking with someone directly costs 20 seconds.</div>
       <div><b>−150</b>Pay the hacker or hand over a code and they steal the money.</div>
     </div>
   </section>
@@ -517,7 +555,8 @@
           <button class="verdict v-scam" id="btnScam" disabled>It's a scam<small id="scamSub">Hang up and report</small></button>
           <button class="verdict v-legit" id="btnLegit" disabled>It's legit<small id="legitSub">Carry on</small></button>
         </div>
-        <p class="hint">Tap any sentence to flag it as a red flag ⚑. Call it as soon as you're sure.</p>
+        <p class="dclock" id="dclock"></p>
+        <p class="hint">Tap any sentence to flag it as a red flag ⚑.</p>
       </div>
 
       <aside class="radar">
@@ -528,14 +567,17 @@
         </div>
         <div id="transcriptWrap"><div class="sec-t">Live transcript</div><div class="transcript" id="transcriptBox"></div></div>
         <div><div class="sec-t" id="waveT">Caller's voice</div><canvas id="wave" width="600" height="120" aria-label="Voice waveform"></canvas></div>
+        <div class="check" id="checkBox"><span><b>Run a check on this contact?</b><br><span id="checksLeft">3 checks left this game</span></span><button id="btnCheck">Run check</button></div>
+        <div id="checkResults" hidden>
         <div class="meters">
           <div class="mt" id="m1"><div class="k" id="m1k">Voice stress</div><div class="v" id="m1v">—</div><div class="track"><i id="m1bar" style="width:0"></i></div></div>
           <div class="mt" id="m2"><div class="k" id="m2k">Lip-sync delay</div><div class="v" id="m2v">—</div></div>
           <div class="mt" id="m3"><div class="k" id="m3k">Blinks per min</div><div class="v" id="m3v">—</div></div>
           <div class="mt"><div class="k">Pressure words</div><div class="v" id="m4v">0</div></div>
         </div>
-        <div><div class="sec-t">What we know</div><div class="rows" id="signals"></div></div>
-        <p class="caveat">These are clues, not proof. Scammers can fake caller ID and real people can sound stressed. What matters most is what they ask you to do.</p>
+        <div style="margin-top:12px"><div class="sec-t">What the check found</div><div class="rows" id="signals"></div></div>
+        </div>
+        <p class="caveat">A check gives you facts, not a verdict. You decide what they mean.</p>
         <div class="mic">
           <div class="mic-row"><button class="ghost" id="btnMic">Answer by voice (optional)</button><span class="heard" id="micHeard"></span></div>
           <div id="micNote">Say "reply one", "two" or "three", then "scam" or "legit". Tapping works everywhere.</div>
@@ -557,8 +599,9 @@
         <div class="stats" id="endStats"></div>
         <div class="row2"><button class="btn" id="btnAgain">Play again</button><button class="btn alt" id="btnRoles">Change role</button></div>
       </div>
-      <div><div class="sec-t">What happened</div><ul class="log" id="endLog"></ul></div>
+      <div class="card profile" id="profileCard"></div>
     </div>
+    <div class="report" id="report"></div>
   </section>
 </div>
 
@@ -569,7 +612,7 @@
     <div class="vline" id="dbVerdict"></div>
     <p class="hit" id="dbHit" hidden></p>
     <div class="pts" id="dbPts"></div>
-    <div><div class="sec-t" id="dbTellsLabel">Red flags</div><ul class="tells" id="dbTells"></ul></div>
+    <div class="vline" id="dbFlags" style="font-weight:600;color:var(--muted)"></div>
     <p class="lesson" id="dbLesson"></p>
     <button class="btn" id="btnNext">Next</button>
   </div>
@@ -587,10 +630,10 @@ const SCENARIOS = [
     face: { skin: "#eab896", hair: "long", hairColor: "#a57a45", eyes: "#4a6b3a", shirt: "#1d7f80", headset: true, room: "office", g: "f" },
     voice: { pitch: 1.15, rate: 1.1 }, stress: 55, synthetic: 9, deepfake: false,
     signals: [
-      ["Contact", "Instagram ad → video link", "warn"],
-      ["Website", "sunseeker-villas.net · registered 6 weeks ago", "bad"],
-      ["Video", "Live camera, natural blinking", "ok"],
-      ["Payee check", "Name doesn't match the company", "bad", "pay"],
+      ["Contact", "Instagram ad, then a video link", "n"],
+      ["Website", "sunseeker-villas.net · registered 6 weeks ago", "n"],
+      ["Video", "Live camera", "n"],
+      ["Payee check", "Name on account: M. Kowalski", "n", "pay"],
     ],
     nodes: {
       start: { say: [
@@ -639,10 +682,10 @@ const SCENARIOS = [
     face: { skin: "#8a5a3c", hair: "short", hairColor: "#17110d", eyes: "#3b2618", shirt: "#27488a", headset: true, room: "office", g: "m" },
     voice: { pitch: 1.0, rate: 1.08 }, stress: 50, synthetic: 14,
     signals: [
-      ["Sender", "Personal number, not a verified business", "bad"],
-      ["Trigger", "Messaged you after your public complaint", "warn"],
-      ["Voice note", "14% synthetic · likely human", "ok"],
-      ["Link", "skybridge-rebook.help · not skybridge.com", "bad", "link"],
+      ["Sender", "+44 7700 900 381 · not in your contacts", "n"],
+      ["Account", "Standard account, business name in profile", "n"],
+      ["Voice note", "Synthetic score 14%", "n"],
+      ["Link", "skybridge-rebook.help", "n", "link"],
     ],
     nodes: {
       start: { say: [
@@ -685,10 +728,10 @@ const SCENARIOS = [
     face: { skin: "#d9a07a", hair: "short", hairColor: "#2a1b12", eyes: "#3b2618", shirt: "#1b2a48", stubble: true, room: "lobby", g: "m" },
     voice: { pitch: 0.95, rate: 1.02 }, stress: 24, synthetic: 4, deepfake: false,
     signals: [
-      ["Contact", "Hotel's own app, where you booked extras", "ok"],
-      ["Booking ref", "Matches your confirmation email", "ok"],
-      ["Video", "Live camera, natural blinking", "ok"],
-      ["Payment", "Already paid on Staybook", "ok"],
+      ["Contact", "Video call inside the Hotel Lumen app", "n"],
+      ["Booking ref", "LX-88213", "n"],
+      ["Video", "Live camera", "n"],
+      ["Payment", "Booking paid on Staybook", "n"],
     ],
     nodes: {
       start: { say: [
@@ -719,10 +762,10 @@ const SCENARIOS = [
     face: { skin: "#f1c6a6", hair: "curly", hairColor: "#4a2a18", eyes: "#5a3a22", shirt: "#a1475a", room: "flat", g: "f" },
     voice: { pitch: 1.2, rate: 1.05 }, stress: 46, synthetic: 11,
     signals: [
-      ["Channel", "Moved you off the booking platform", "bad"],
-      ["Listing", "Listed 9 days ago · 0 reviews", "warn"],
-      ["Voice note", "11% synthetic · likely human", "ok"],
-      ["Payment", "Bank transfer outside the platform", "bad", "pay"],
+      ["Channel", "Started on Staybook, now WhatsApp", "n"],
+      ["Listing", "Listed 9 days ago · 0 reviews", "n"],
+      ["Voice note", "Synthetic score 11%", "n"],
+      ["Payment", "Bank transfer to a CZ IBAN", "n", "pay"],
     ],
     nodes: {
       start: { say: [
@@ -762,10 +805,10 @@ const SCENARIOS = [
     name: "SkyBridge Airways", org: "Verified business", detail: "Same chat as your booking",
     face: { logo: "SB", color: "#2563c9" },
     signals: [
-      ["Sender", "Verified business, same thread as your booking", "ok"],
-      ["Links", "skybridge.com only", "ok"],
-      ["Request", "Nothing to pay or send", "ok"],
-      ["Language", "Specific, checkable details", "ok"],
+      ["Sender", "Business account with a tick", "n"],
+      ["Links", "skybridge.com", "n"],
+      ["Request", "None", "n"],
+      ["Thread", "Same chat as your booking", "n"],
     ],
     nodes: {
       start: { say: [
@@ -790,10 +833,10 @@ const SCENARIOS = [
     face: { skin: "#f0c9ae", hair: "short", hairColor: "#9ea3a8", eyes: "#4a6a86", shirt: "#23272e", glasses: true, tie: true, room: "boardroom", g: "m" },
     voice: { pitch: 0.85, rate: 1.0 }, stress: 58, synthetic: 78, deepfake: true, lowbw: true,
     signals: [
-      ["Invite", "Look-alike domain: hale-group-finance.com", "bad"],
-      ["Video", "Face edge artefacts, blurred on purpose", "bad"],
-      ["Voice", "78% synthetic · flat pitch, no breaths", "bad"],
-      ["Payee check", "New payee · no history", "bad", "details"],
+      ["Invite", "From r.hale@hale-group-finance.com", "n"],
+      ["Video", "Low resolution stream", "n"],
+      ["Voice", "Synthetic score 78%", "n"],
+      ["Payee check", "New payee · no payment history", "n", "details"],
     ],
     nodes: {
       start: { say: [
@@ -836,10 +879,10 @@ const SCENARIOS = [
     face: { skin: "#c48b66", hair: "bald", hairColor: "#3a2a20", eyes: "#3b2618", shirt: "#3b6a4e", beard: true, room: "office", g: "m" },
     voice: { pitch: 0.9, rate: 1.0 }, stress: 40, synthetic: 12,
     signals: [
-      ["Sender", "brightline-prints.co · look-alike domain", "bad"],
-      ["Thread", "Replies into a real past invoice thread", "warn"],
-      ["Attachment", "Invoice PDF edited yesterday", "warn"],
-      ["Bank details", "Changed by email", "bad"],
+      ["Sender", "dan.price@brightline-prints.co", "n"],
+      ["Thread", "Reply in the INV-4471 thread", "n"],
+      ["Attachment", "PDF · last edited yesterday", "n"],
+      ["Bank details", "Different from the last invoice", "n"],
     ],
     nodes: {
       start: { say: [
@@ -868,10 +911,10 @@ const SCENARIOS = [
     face: { skin: "#a86f4d", hair: "scarf", hairColor: "#2d5b78", eyes: "#3b2618", shirt: "#1d4459", room: "bank", g: "f" },
     voice: { pitch: 1.1, rate: 1.0 }, stress: 20, synthetic: 3, deepfake: false,
     signals: [
-      ["Channel", "You started it inside the bank's app", "ok"],
-      ["Video", "Live camera, natural blinking", "ok"],
-      ["Voice", "3% synthetic · human", "ok"],
-      ["Request", "Questions about your own payment", "ok"],
+      ["Channel", "Call started from the Northgate app", "n"],
+      ["Video", "Live camera", "n"],
+      ["Voice", "Synthetic score 3%", "n"],
+      ["Request", "Questions about your £4,800 payment", "n"],
     ],
     nodes: {
       start: { say: [
@@ -904,10 +947,10 @@ const SCENARIOS = [
     face: { skin: "#e0ad8a", hair: "short", hairColor: "#6a4a2c", eyes: "#4a6b3a", shirt: "#555b61", beard: true, room: "flat", g: "m" },
     voice: { pitch: 1.0, rate: 1.12 }, stress: 52, synthetic: 22,
     signals: [
-      ["Account", "2 days old, no reviews", "warn"],
-      ["Voice note", "22% synthetic · probably human", "ok"],
-      ["Request", "You pay a courier fee first", "bad"],
-      ["Email", "'Payment held' from payments-secure-mail.com", "bad", "email"],
+      ["Account", "Created 2 days ago · 0 reviews", "n"],
+      ["Voice note", "Synthetic score 22%", "n"],
+      ["Request", "£50 courier fee", "n"],
+      ["Email", "Sent from payments-secure-mail.com", "n", "email"],
     ],
     nodes: {
       start: { say: [
@@ -937,10 +980,10 @@ const SCENARIOS = [
     face: { skin: "#5a3826", hair: "curly", hairColor: "#110b08", eyes: "#2a1a10", shirt: "#d0892d", room: "flat", g: "m" },
     voice: { pitch: 0.95, rate: 1.05 }, stress: 18, synthetic: 4,
     signals: [
-      ["Sender", "Saved contact, long history", "ok"],
-      ["Voice note", "4% synthetic · human", "ok"],
-      ["Request", "In-app request you can check", "ok"],
-      ["Amount", "Matches the trip you agreed", "ok"],
+      ["Sender", "Saved contact", "n"],
+      ["Voice note", "Synthetic score 4%", "n"],
+      ["Request", "£120 request in your payments app", "n"],
+      ["Amount", "A third of £360", "n"],
     ],
     nodes: {
       start: { say: [
@@ -991,6 +1034,20 @@ const ROLES = {
   pay: { label: "The payer", themes: ["Payment"] },
   all: { label: "Full day", themes: ["Travel", "Payment"] },
 };
+const TACTIC = {
+  villa: "Too-good-to-be-true deal", "airline-dm": "Fake customer support", "rental-host": "Moved off the platform",
+  "cfo-deepfake": "Deepfake boss on video", invoice: "Changed bank details", buyer: "Fake payment",
+  hotel: "Genuine: hotel", "gate-change": "Genuine: airline", "bank-video": "Genuine: bank check", "friend-split": "Genuine: friend",
+};
+const ADVICE = {
+  villa: "If the price is far below everyone else's, it's bait. Pay by credit card to a company you can look up on the ABTA or ATOL register.",
+  "airline-dm": "Airlines don't message you on WhatsApp after you complain online, and rebooking a cancelled flight is free. Use the airline's own app.",
+  "rental-host": "Never pay a host outside the booking site. The site's protection only covers payments made through it.",
+  "cfo-deepfake": "A face and voice on video are no longer proof. Big, urgent, secret payments must be confirmed on a separate channel you already know.",
+  invoice: "When a supplier's bank details change by email, call them on the number you already hold before paying a penny.",
+  buyer: "Trust the balance in your real payment app, never a 'payment received' email. No real buyer needs you to pay them first.",
+};
+const DECIDE_SECS = 40, CHECK_SECS = 20;
 const LOSS = { villa: 1450, "airline-dm": 1900, "rental-host": 580, "cfo-deepfake": 240000, invoice: 8340, buyer: 450 };
 const TAUNTS_START = [
   "Let's see how much you trust a friendly face.",
@@ -1463,7 +1520,16 @@ function loop(ts) {
     state.time -= (ts - lastTick) / 1000;
     if (state.time <= 0) { state.time = 0; hud(); endGame("Time's up"); }
   }
+  if (lastTick && state.phase === "live" && state.readyAt && state.decideLeft > 0) {
+    state.decideLeft -= (ts - lastTick) / 1000;
+    if (state.decideLeft <= 0) { state.decideLeft = 0; timeoutDecision(); }
+  }
   lastTick = ts;
+  const dc = $("dclock");
+  if ((state.phase === "live" || state.phase === "playing") && state.readyAt) {
+    dc.textContent = "Decide in " + fmt(state.decideLeft) + (state.phase === "playing" ? " (paused while they talk)" : "");
+    dc.classList.toggle("urgent", state.decideLeft <= 10);
+  } else dc.textContent = "";
   if (active || state.phase === "debrief") hud();
   if (!state.clockT || ts - state.clockT > 5000) { state.clockT = ts; $("sClock").textContent = clockStr(); }
   const cur = state.cur;
@@ -1489,7 +1555,7 @@ function drawWave(ts) {
   g.strokeStyle = lineCol; g.lineWidth = 1; g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.stroke();
   const speaking = state.speaking;
   const synth = (cur.synthetic || 0) / 100, stress = (cur.stress || 0) / 100;
-  const col = stress > 0.55 ? (cssVar("--hacker") || "#d92d3a") : (cssVar("--you") || "#0d8f6a");
+  const col = cssVar("--text") || "#0f1720";
   if (speaking && state.realAudio && analyser) {
     analyser.getFloatTimeDomainData(anBuf);
     let sum = 0; for (let i = 0; i < anBuf.length; i++) sum += anBuf[i] * anBuf[i];
@@ -1511,7 +1577,7 @@ function drawWave(ts) {
   }
   g.stroke();
 }
-function setMeter(n, v, alert) { $(n + "v").innerHTML = v; $(n).classList.toggle("alert", !!alert); }
+function setMeter(n, v) { $(n + "v").innerHTML = v; }
 function liveMeters(ts) {
   const cur = state.cur, speaking = state.speaking;
   if (cur.mode === "video" || state.voiceNote) {
@@ -1520,19 +1586,34 @@ function liveMeters(ts) {
     shownStress += (target - shownStress) * 0.08;
     const s = Math.round(Math.max(0, Math.min(100, shownStress)));
     $("m1v").textContent = s; $("m1bar").style.width = s + "%";
-    $("m1bar").style.background = s > 60 ? "var(--hacker)" : s > 40 ? "var(--warn)" : "var(--you)";
+    $("m1bar").style.background = "var(--muted)";
   }
   if (Math.random() > 0.06) return;
   if (cur.mode === "video") {
-    if (speaking) { const off = cur.deepfake ? Math.round(rand(280, 360)) : Math.round(rand(18, 70)); setMeter("m2", off + "<small>ms</small>", off > 150); }
+    if (speaking) { const off = cur.deepfake ? Math.round(rand(170, 330)) : Math.round(rand(20, 160)); setMeter("m2", off + "<small>ms</small>", off > 150); }
     const secs = (ts - state.callStart) / 1000;
-    if (state.callStart && secs > 8) { const bpm = face && !state.photo ? Math.round(face.blinks / (secs / 60)) : Math.round(cur.deepfake ? rand(1, 4) : rand(13, 19)); setMeter("m3", bpm, bpm < 8); }
+    if (state.callStart && secs > 8) { const bpm = face && !state.photo ? Math.round(face.blinks / (secs / 60)) : Math.round(cur.deepfake ? rand(3, 9) : rand(7, 19)); setMeter("m3", bpm, bpm < 8); }
   } else if (state.voiceNote && speaking) {
     const ai = Math.max(0, Math.round(cur.synthetic + rand(-4, 4))); setMeter("m3", ai + "<small>%</small>", ai > 50);
   }
 }
+function updateChecks() {
+  $("checksLeft").textContent = state.checksLeft + (state.checksLeft === 1 ? " check" : " checks") + " left this game";
+  $("btnCheck").disabled = state.checksLeft <= 0 || state.checked || !["ringing", "playing", "live"].includes(state.phase);
+}
+function runCheck() {
+  if (state.checked || state.checksLeft <= 0 || !["ringing", "playing", "live"].includes(state.phase)) return;
+  state.checksLeft--; state.checked = true; state.checksUsed++;
+  $("checkBox").hidden = true; $("checkResults").hidden = false;
+  revealSignals(state.token);
+  state.reached.forEach((n) => revealAt(n));
+  updateChecks();
+}
 function setupAnalysis(cur) {
   const video = cur.mode === "video";
+  state.checked = false; state.reached = new Set();
+  $("checkBox").hidden = false; $("checkResults").hidden = true;
+  updateChecks();
   $("aSub").textContent = video ? "Watching the video and listening to the voice" : isMail(cur) ? "Checking the sender, links and attachments" : "Checking the sender, links and voice notes";
   $("waveT").textContent = video ? "Caller's voice" : "Voice notes";
   $("m1k").textContent = video ? "Voice stress" : "Voice-note stress";
@@ -1565,7 +1646,7 @@ async function revealSignals(token) {
     revealRow(i);
   }
 }
-function revealAt(nodeId) { state.cur.signals.forEach((s, i) => { if (s[3] === nodeId) revealRow(i); }); }
+function revealAt(nodeId) { state.reached.add(nodeId); if (!state.checked) return; state.cur.signals.forEach((s, i) => { if (s[3] === nodeId) revealRow(i); }); }
 function textUrgency() {
   if (state.cur.mode === "video") return;
   const u = Math.min(100, 8 + state.pressure * 14);
@@ -1594,7 +1675,7 @@ function nextRound() {
   state.idx++;
   if (state.idx >= state.order.length) return endGame("You got through every contact");
   const cur = state.cur = state.order[state.idx];
-  state.token++; state.moves = []; state.pressure = 0; state.node = null; state.options = null; state.callStart = 0;
+  state.token++; state.moves = []; state.pressure = 0; state.node = null; state.options = null; state.callStart = 0; state.readyAt = 0; state.decideLeft = DECIDE_SECS; state.verified = false; state.roundStart = performance.now();
   $("thread").innerHTML = ""; $("replies").innerHTML = "";
   $("phone").classList.remove("locked");
   placeThread(cur);
@@ -1621,8 +1702,7 @@ function nextRound() {
     $("vName").textContent = cur.name;
     $("vfeed").classList.toggle("lowbw", !!cur.lowbw);
     $("bwTag").hidden = true;
-    $("vEnc").textContent = cur.lowbw ? "Not verified · video quality reduced" : "End-to-end encrypted";
-    $("vEnc").classList.toggle("bad", !!cur.lowbw);
+    $("vEnc").textContent = cur.lowbw ? "End-to-end encrypted · poor connection" : "End-to-end encrypted";
     $("share").hidden = true; $("caption").hidden = true; $("callToast").hidden = true; $("vClock").textContent = "00:00";
     // Incoming screen
     const bg = $("inBg");
@@ -1669,7 +1749,7 @@ async function answer() {
   state.callStart = performance.now();
   if (cur.mode === "video") tone([523, 784], .12, "sine", .05);
   const token = state.token;
-  revealSignals(token);
+  updateChecks();
   await playNode("start", token);
 }
 function decline() {
@@ -1691,6 +1771,7 @@ async function playNode(id, token) {
   if (cur.mode === "video") $("caption").hidden = true;
   textUrgency();
   if (id === "start") state.readyAt = performance.now();
+  updateChecks();
   state.phase = "live";
   state.options = node.options || [];
   renderReplies(state.options);
@@ -1705,8 +1786,16 @@ async function takeOption(i) {
   const you = addMsg("you"); you.appendChild(document.createTextNode(o.t)); stamp(you);
   if (cur.mode === "video") toast("You: " + o.t);
   if (o.k === "breach" && cur.scam) return breach();
-  if (o.k === "safe") goodSound();
-  await sleep(500);
+  tone([900], .05, "sine", .03);
+  const nx = o.next && cur.nodes[o.next];
+  if (nx && nx.say[0].startsWith("~ ")) {
+    // Checking with someone directly takes real time.
+    state.time = Math.max(1, state.time - CHECK_SECS);
+    const note = addMsg("sys"); note.textContent = "You take " + CHECK_SECS + " seconds to check…";
+    if (cur.mode === "video") toast("You take " + CHECK_SECS + " seconds to check…");
+    state.verified = true;
+    await sleep(900);
+  } else await sleep(500);
   if (o.next) await playNode(o.next, state.token);
 }
 
@@ -1733,7 +1822,7 @@ function verdict(saysScam, fromDecline) {
   const lines = [], correct = saysScam === cur.scam, f = collectFlags();
   let pts = 0;
   if (correct) {
-    const speed = Math.max(0, Math.round(50 - ((performance.now() - state.readyAt) / 1000) * 2));
+    const speed = Math.max(0, Math.round(50 - ((performance.now() - state.readyAt) / 1000) * 3));
     const m = mult(), base = Math.round((100 + speed) * m);
     pts += base;
     lines.push(["Right call", 100, "pos"]);
@@ -1754,10 +1843,39 @@ function verdict(saysScam, fromDecline) {
   if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
   if (f.wrong) { pts -= f.wrong * 10; lines.push(["Wrong flags ×" + f.wrong, -f.wrong * 10, "neg"]); }
   state.score += pts;
-  state.results.push({ cur, outcome: correct ? "correct" : "wrong", pts, flags: f.hits.length });
+  record(correct ? "correct" : "wrong", pts, f, saysScam);
   showDebrief({ correct, saysScam, lines, pts, f, breached: false });
 }
 
+function timeoutDecision() {
+  if (state.phase !== "live") return;
+  const cur = state.cur;
+  state.token++; stopSpeech();
+  const lines = [], f = collectFlags();
+  let pts = 0;
+  state.streak = 0;
+  if (cur.scam) {
+    const loss = LOSS[cur.id] || 0; state.stolen += loss;
+    pts -= 75; state.integrity -= 20;
+    lines.push(["You didn't decide in time and went along with it", -75, "neg"], ["Security", "−20%", "neg"]);
+    if (loss) lines.push(["Hacker walks off with", money(loss), "neg"]);
+    badSound();
+  } else lines.push(["You ran out of time on a real person", 0, "neg"]);
+  pts += movePoints(lines);
+  state.score += pts;
+  record(cur.scam ? "timeout" : "timeout", pts, f, null);
+  showDebrief({ correct: false, saysScam: null, lines, pts, f, breached: false, timedOut: true });
+}
+function record(outcome, pts, f, saysScam) {
+  const cur = state.cur;
+  const total = new Set(); Object.values(cur.nodes).forEach((n) => n.say.forEach((l) => parse(l).segs.forEach((s) => { if (s.flag) total.add(s.t); })));
+  const spotted = f.hits.map((h) => h.textContent);
+  state.results.push({
+    cur, outcome, pts, saysScam, flags: f.hits.length, wrongFlags: f.wrong, flagsTotal: total.size, spotted,
+    decision: state.readyAt ? (performance.now() - state.readyAt) / 1000 : 0,
+    moves: state.moves.slice(), verified: !!state.verified, checked: !!state.checked,
+  });
+}
 function breach() {
   const cur = state.cur;
   state.token++; stopSpeech();
@@ -1770,14 +1888,14 @@ function breach() {
   if (loss) lines.push(["Stolen", money(loss), "neg"]);
   if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
   state.score += pts;
-  state.results.push({ cur, outcome: "breached", pts, flags: f.hits.length });
+  record("breached", pts, f, null);
   breachSound();
   $("breachAmt").textContent = loss ? money(loss) + " gone" : "Account taken over";
   $("breach").hidden = false; document.body.classList.add("shake"); hud();
   setTimeout(() => { $("breach").hidden = true; document.body.classList.remove("shake"); showDebrief({ correct: false, lines, pts, f, breached: true }); }, 1500);
 }
 
-function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
+function showDebrief({ correct, saysScam, lines, pts, f, breached, timedOut }) {
   const cur = state.cur;
   state.phase = "debrief";
   $("phone").classList.add("locked"); setVerdicts(false); $("replies").innerHTML = "";
@@ -1785,7 +1903,7 @@ function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
   $("dbPill").textContent = cur.scam ? "HACKER" : "REAL PERSON";
   $("dbPill").className = "pill " + (cur.scam ? "scam" : "real");
   $("dbAnswer").textContent = cur.scam ? "Yes, you were being hacked." : "No, this one was genuine.";
-  $("dbVerdict").textContent = breached ? "You gave the hacker what they wanted." : (correct ? "✓ You called it right: " : "✗ You said: ") + (saysScam ? "scam" : "legit");
+  $("dbVerdict").textContent = breached ? "You gave the hacker what they wanted." : timedOut ? "✗ You ran out of time." : (correct ? "✓ You called it right: " : "✗ You said: ") + (saysScam ? "scam" : "legit");
   $("dbVerdict").style.color = breached || !correct ? "var(--hacker)" : "var(--you)";
   $("dbHit").hidden = !breached; $("dbHit").textContent = breached ? cur.hit : "";
   const pb = $("dbPts"); pb.innerHTML = "";
@@ -1798,21 +1916,8 @@ function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
   const tot = document.createElement("div"); tot.innerHTML = "<b>This round</b><b></b>";
   tot.children[1].textContent = (pts > 0 ? "+" : "") + String(pts).replace("-", "−");
   tot.children[1].className = pts >= 0 ? "pos" : "neg"; pb.appendChild(tot);
-  const tl = $("dbTells"); tl.innerHTML = "";
-  if (cur.scam) {
-    $("dbTellsLabel").textContent = "The red flags";
-    const got = new Set(f.hits.map((s) => s.textContent)), seen = new Set();
-    Object.values(cur.nodes).forEach((n) => n.say.forEach((l) => parse(l).segs.forEach((s) => {
-      if (!s.flag || seen.has(s.t)) return; seen.add(s.t);
-      const li = document.createElement("li"); li.innerHTML = "<q></q> <span></span> <span class='got'></span>";
-      li.children[0].textContent = s.t; li.children[1].textContent = s.why;
-      li.children[2].textContent = got.has(s.t) ? "⚑ You spotted this" : "";
-      tl.appendChild(li);
-    })));
-  } else {
-    $("dbTellsLabel").textContent = "Why it was genuine";
-    (cur.greens || []).forEach((t) => { const li = document.createElement("li"); li.textContent = t; tl.appendChild(li); });
-  }
+  const r = state.results[state.results.length - 1];
+  $("dbFlags").textContent = cur.scam ? "Red flags spotted: " + r.flags + " of " + r.flagsTotal + ". The full breakdown is in your report at the end." : (r.wrongFlags ? "You flagged " + r.wrongFlags + " harmless sentence" + (r.wrongFlags > 1 ? "s" : "") + "." : "");
   $("dbLesson").textContent = cur.lesson;
   $("hackerLine").textContent = breached || !correct ? pick(TAUNTS_LOSE) : pick(TAUNTS_WIN);
   const last = state.integrity <= 0 || state.idx >= state.order.length - 1 || state.time <= 0;
@@ -1833,7 +1938,7 @@ function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { co
 function startGame(role) {
   audio();
   state.role = role || state.role;
-  Object.assign(state, { time: 300, score: 0, streak: 0, integrity: 100, stolen: 0, idx: -1, results: [], readyAt: 0, voiceOn: $("optVoice").checked, phase: "idle" });
+  Object.assign(state, { time: 300, score: 0, streak: 0, integrity: 100, stolen: 0, idx: -1, results: [], readyAt: 0, voiceOn: $("optVoice").checked, phase: "idle", checksLeft: state.role === "all" ? 5 : 3, checksUsed: 0 });
   const themes = ROLES[state.role].themes;
   const order = shuffle(SCENARIOS.filter((s) => themes.includes(s.theme)));
   const first = order.findIndex((s) => s.scam && s.mode === "video");
@@ -1844,6 +1949,7 @@ function startGame(role) {
   window.scrollTo(0, 0);
   nextRound();
 }
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function endGame(reason) {
   if (state.phase === "over") return;
   state.phase = "over"; state.token++;
@@ -1854,33 +1960,142 @@ function endGame(reason) {
   const R = state.results;
   const scams = R.filter((r) => r.cur.scam), legits = R.filter((r) => !r.cur.scam);
   const caught = scams.filter((r) => r.outcome === "correct").length;
+  const missed = scams.length - caught;
   const breaches = R.filter((r) => r.outcome === "breached").length;
+  const timeouts = R.filter((r) => r.outcome === "timeout").length;
   const falseAlarms = legits.filter((r) => r.outcome !== "correct").length;
-  const acc = R.length ? Math.round((R.filter((r) => r.outcome === "correct").length / R.length) * 100) : 0;
-  const flags = R.reduce((a, r) => a + r.flags, 0), s = state.score;
-  const won = state.stolen === 0 && state.integrity > 0 && R.length > 0 && caught === scams.length;
+  const correctAll = R.filter((r) => r.outcome === "correct").length;
+  const acc = R.length ? Math.round((correctAll / R.length) * 100) : 0;
+  const decided = R.filter((r) => r.outcome === "correct" || r.outcome === "wrong");
+  const avgT = decided.length ? decided.reduce((a, r) => a + r.decision, 0) / decided.length : 0;
+  const flagsFound = scams.reduce((a, r) => a + r.flags, 0), flagsTotal = scams.reduce((a, r) => a + r.flagsTotal, 0);
+  const wrongFlags = R.reduce((a, r) => a + r.wrongFlags, 0);
+  const verifiedN = R.filter((r) => r.verified).length;
+  const s = state.score;
+  const unseen = state.order.length - R.length;
+
+  const won = R.length > 0 && state.stolen === 0 && state.integrity > 0 && missed === 0 && falseAlarms === 0 && unseen === 0;
   const close = !won && state.integrity > 0 && caught >= Math.ceil(scams.length * 0.6);
   $("endReason").textContent = reason;
-  $("endTitle").textContent = won ? "You beat the hacker." : close ? "Close. The hacker got something." : "The hacker won this time.";
-  $("endLine").textContent = won ? "You caught every attack and still trusted the real people. That's exactly the balance you want."
-    : close ? "You stopped most attacks. Look at the ones that got through: the red flags are listed below each one."
-    : "Slow down, check through a channel you already trust, and never move money or share codes because someone is rushing you.";
+  $("endTitle").textContent = won ? "You beat the hacker." : close ? "Close, but the hacker got something." : "The hacker won this time.";
+  $("endLine").textContent = won ? "Every attack caught, every real person trusted, and all before the clock ran out."
+    : unseen > 0 && missed === 0 && falseAlarms === 0 ? "No mistakes, but you ran out of time with " + unseen + " contact" + (unseen > 1 ? "s" : "") + " still waiting. Hesitation is a weakness hackers rely on."
+    : "Read your analysis below to see exactly where the hacker got through.";
   $("endScore").textContent = s; $("endStolen").textContent = money(state.stolen);
   const best = Math.max(s, Number(store.get("hvy-best") || 0)); store.set("hvy-best", String(best));
-  const stats = [[acc + "%", "Accuracy"], [caught + "/" + scams.length, "Hackers caught"], [breaches, "Times hacked"], [falseAlarms, "Real people you doubted"], [flags, "Red flags spotted"], [best, "Your best score"]];
+  const stats = [[acc + "%", "Accuracy"], [caught + "/" + scams.length, "Hackers caught"], [breaches, "Times you paid"], [falseAlarms, "Real people doubted"], [timeouts, "Ran out of time"], [best, "Best score"]];
   $("endStats").innerHTML = "";
-  stats.forEach(([v, k]) => { const d = document.createElement("div"); d.innerHTML = "<b></b><span></span>"; d.children[0].textContent = v; d.children[1].textContent = k; $("endStats").appendChild(d); });
-  const log = $("endLog"); log.innerHTML = "";
-  if (!R.length) { const li = document.createElement("li"); li.innerHTML = "<span></span><span>No contacts answered.</span><span></span>"; log.appendChild(li); }
+  stats.forEach(([v, k]) => { const d = el("div"); d.append(el("b", null, v), el("span", null, k)); $("endStats").appendChild(d); });
+
+  // ---- Profile
+  let prof, desc;
+  const rushed = decided.length >= 2 && avgT < 8 && acc < 70;
+  if (!R.length) { prof = "Not tested"; desc = "You didn't finish a single contact. Try again and make a call on each one."; }
+  else if (missed === 0 && falseAlarms === 0) { prof = "Human firewall"; desc = "You told attackers from real people every time. Keep the habit: slow down, verify on a channel you already trust."; }
+  else if (missed > falseAlarms) { prof = "Too trusting"; desc = "The hacker got through more often than you doubted real people. Friendly faces, urgency and believable stories are working on you."; }
+  else if (falseAlarms > missed) { prof = "Over-suspicious"; desc = "You caught attacks but also blocked genuine people. In real life that costs trips, deliveries and relationships. Look for proof, not just discomfort."; }
+  else { prof = "Mixed instincts"; desc = "You made mistakes in both directions. Your gut isn't reliable yet, so lean on verification instead."; }
+  const tags = [];
+  if (rushed) tags.push("Decides too fast");
+  if (avgT > 25) tags.push("Hesitates under pressure");
+  if (timeouts) tags.push("Runs out of time");
+  if (R.length && verifiedN / R.length < 0.3) tags.push("Rarely verifies");
+  if (R.length && verifiedN / R.length >= 0.6) tags.push("Verifies before acting");
+  if (flagsTotal && flagsFound / flagsTotal >= 0.5) tags.push("Good at spotting red flags");
+  if (flagsTotal && flagsFound / flagsTotal < 0.2) tags.push("Misses the red flags");
+  if (wrongFlags >= 3) tags.push("Flags harmless things");
+  const pc = $("profileCard"); pc.innerHTML = "";
+  pc.append(el("div", "sec-t", "Your hacker-resistance profile"), el("b", null, prof), el("p", null, desc));
+  const tg = el("div", "tags"); tags.forEach((t) => tg.appendChild(el("span", "tag", t))); pc.appendChild(tg);
+
+  // ---- Report
+  const rep = $("report"); rep.innerHTML = "";
+  const k = el("div", "card"); k.appendChild(el("h3", null, "Analysis"));
+  const kp = el("div", "kpis");
+  [
+    [scams.length ? Math.round((caught / scams.length) * 100) + "%" : "—", "Detection rate", caught + " of " + scams.length + " attacks caught"],
+    [legits.length ? Math.round((falseAlarms / legits.length) * 100) + "%" : "—", "False-alarm rate", falseAlarms + " of " + legits.length + " real people doubted"],
+    [avgT ? avgT.toFixed(1) + "s" : "—", "Average decision time", "after they made their pitch"],
+    [flagsTotal ? flagsFound + "/" + flagsTotal : "—", "Red flags spotted", wrongFlags + " harmless sentences flagged"],
+    [R.length ? Math.round((verifiedN / R.length) * 100) + "%" : "—", "Verified first", "checked with someone directly"],
+    [state.checksUsed + "", "Radar checks used", "of " + (state.role === "all" ? 5 : 3) + " available"],
+    [money(state.stolen), "Money lost", breaches + " paid · " + (missed - breaches) + " trusted"],
+    [unseen + "", "Contacts not reached", unseen ? "the clock ran out" : "you got through them all"],
+  ].forEach(([v, l, sm]) => { const d = el("div", "kpi"); d.append(el("b", null, v), el("span", null, l), el("small", null, sm)); kp.appendChild(d); });
+  k.appendChild(kp); rep.appendChild(k);
+
+  // By attack type
+  const t = el("div", "card"); t.appendChild(el("h3", null, "By attack type"));
+  const tw = el("div", "tact");
   R.forEach((r) => {
-    const li = document.createElement("li");
+    const row = el("div", "tact-row");
     const ok = r.outcome === "correct";
-    li.innerHTML = "<span class='ic'></span><span></span><span class='p'></span>";
-    li.children[0].textContent = ok ? "✓" : "✗"; li.children[0].classList.add(ok ? "ok" : "bad");
-    li.children[1].textContent = (r.cur.mode === "video" ? "Video call · " : isMail(r.cur) ? "Email · " : "Chat · ") + r.cur.name.split(" · ")[0] + (r.cur.scam ? " (hacker)" : " (real)") + (r.outcome === "breached" ? " · you paid" : "");
-    li.children[2].textContent = (r.pts > 0 ? "+" : "") + r.pts;
-    log.appendChild(li);
+    const label = r.outcome === "breached" ? "Paid" : r.outcome === "timeout" ? "Too slow" : ok ? (r.cur.scam ? "Caught" : "Trusted") : (r.cur.scam ? "Fooled" : "Doubted");
+    const why = r.cur.scam ? (ok ? "Spotted " + r.flags + " of " + r.flagsTotal + " red flags" + (r.verified ? " and verified first" : "") : "Missed it" + (r.flags ? " despite flagging " + r.flags : "") + ". " + (ADVICE[r.cur.id] || ""))
+      : (ok ? "Right to trust them" + (r.verified ? ", and you checked first" : "") : "They were genuine. " + (r.cur.greens || []).join(". ") + ".");
+    row.append(el("b", null, TACTIC[r.cur.id] || r.cur.name), el("span", "res " + (ok ? "ok" : r.outcome === "timeout" ? "mid" : "bad"), label), el("span", null, why));
+    tw.appendChild(row);
   });
+  if (!R.length) tw.appendChild(el("p", "caveat", "No contacts completed."));
+  t.appendChild(tw); rep.appendChild(t);
+
+  // Decision time chart
+  if (R.length) {
+    const c = el("div", "card"); c.appendChild(el("h3", null, "How long you took to decide"));
+    c.appendChild(el("p", "caveat", "Measured from the moment they finished their pitch. You had " + DECIDE_SECS + " seconds each."));
+    const tb = el("div", "timebars"); tb.style.marginTop = "10px";
+    R.forEach((r) => {
+      const row = el("div", "tb"), bar = el("div", "bar"), fill = el("i");
+      const v = Math.min(DECIDE_SECS, r.decision);
+      fill.style.width = Math.max(3, (v / DECIDE_SECS) * 100) + "%";
+      fill.style.background = r.outcome === "correct" ? "var(--you)" : "var(--hacker)";
+      bar.appendChild(fill);
+      row.append(el("span", null, r.cur.name.split(" · ")[0]), bar, el("span", "t", r.decision ? r.decision.toFixed(0) + "s" : "—"));
+      tb.appendChild(row);
+    });
+    c.appendChild(tb); rep.appendChild(c);
+  }
+
+  // What to work on
+  const w = el("div", "card"); w.appendChild(el("h3", null, "What to work on"));
+  const ul = el("ul", "advice");
+  R.filter((r) => r.cur.scam && r.outcome !== "correct").forEach((r) => ul.appendChild(el("li", null, TACTIC[r.cur.id] + ": " + ADVICE[r.cur.id])));
+  if (falseAlarms) ul.appendChild(el("li", null, "Real people can sound rushed or come from unknown numbers. Before you block someone, check for proof: do they ask for money, codes or secrecy? If not, it's probably genuine."));
+  if (rushed) ul.appendChild(el("li", null, "You decided fast and got it wrong. Hackers design every message to be answered quickly. Take ten seconds and reread the request."));
+  if (timeouts) ul.appendChild(el("li", null, "Freezing is also a win for the hacker: they keep pushing until you give in. If you're not sure, end the conversation and verify."));
+  if (R.length && verifiedN / R.length < 0.3) ul.appendChild(el("li", null, "You rarely checked with anyone. Calling a number you already have is the single best defence against almost every attack here."));
+  if (!ul.children.length) ul.appendChild(el("li", null, "Nothing major. Try Full day to test yourself against all ten contacts in the same five minutes."));
+  w.appendChild(ul); rep.appendChild(w);
+
+  // Every contact, with red flags
+  const d = el("div", "card"); d.appendChild(el("h3", null, "Every contact, in detail"));
+  const list = el("div"); list.style.display = "grid"; list.style.gap = "8px";
+  R.forEach((r) => {
+    const det = el("details", "contact"), sum = el("summary");
+    const ok = r.outcome === "correct";
+    const ic = el("span", "ic " + (ok ? "ok" : "bad"), ok ? "✓" : "✗"); ic.style.cssText = "width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;background:" + (ok ? "var(--you)" : "var(--hacker)");
+    sum.append(ic, el("span", null, (r.cur.mode === "video" ? "Video call · " : isMail(r.cur) ? "Email · " : "Chat · ") + r.cur.name.split(" · ")[0] + (r.cur.scam ? " (hacker)" : " (real)")), el("span", "num", (r.pts > 0 ? "+" : "") + r.pts));
+    det.appendChild(sum);
+    const body = el("div", "body");
+    body.appendChild(el("div", null, r.cur.lesson));
+    if (r.cur.scam) {
+      body.appendChild(el("div", "sec-t", "Red flags"));
+      const fl = el("ul"), seen = new Set();
+      Object.values(r.cur.nodes).forEach((n) => n.say.forEach((l) => parse(l).segs.forEach((sg) => {
+        if (!sg.flag || seen.has(sg.t)) return; seen.add(sg.t);
+        const li = el("li"); li.append(el("q", null, sg.t), document.createTextNode(" " + sg.why + " "), el("span", r.spotted.includes(sg.t) ? "sp" : "ms", r.spotted.includes(sg.t) ? "You spotted this" : "Missed"));
+        fl.appendChild(li);
+      })));
+      body.appendChild(fl);
+    } else if (r.cur.greens) {
+      body.appendChild(el("div", "sec-t", "Why it was genuine"));
+      const gl = el("ul"); r.cur.greens.forEach((x) => gl.appendChild(el("li", null, x))); body.appendChild(gl);
+    }
+    const mv = r.moves.length ? "Your replies: " + r.moves.map((m) => ({ safe: "cautious", risky: "played along", neutral: "neutral", breach: "paid / handed over" })[m]).join(", ") + "." : "You didn't reply before deciding.";
+    body.appendChild(el("div", "caveat", mv + (r.checked ? " You used a Radar check." : "")));
+    det.appendChild(body); list.appendChild(det);
+  });
+  d.appendChild(list); rep.appendChild(d);
   hud(); $("timer").classList.remove("warn");
 }
 
@@ -1924,6 +2139,7 @@ $("cMute").addEventListener("click", (e) => e.currentTarget.classList.toggle("of
 $("cCam").addEventListener("click", (e) => e.currentTarget.classList.toggle("off"));
 $("btnNext").addEventListener("click", closeDebrief);
 $("btnMic").addEventListener("click", enableMic);
+$("btnCheck").addEventListener("click", runCheck);
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
@@ -1931,6 +2147,7 @@ document.addEventListener("keydown", (e) => {
   if (state.phase === "ringing" && k === "d") return decline();
   if (state.phase === "debrief" && !$("debrief").hidden && k === "enter") { e.preventDefault(); return closeDebrief(); }
   if (state.phase === "live" || state.phase === "playing") {
+    if (k === "c") return runCheck();
     if (k === "s") return verdict(true);
     if (k === "l") return verdict(false);
     if (["1", "2", "3"].includes(k)) return takeOption(Number(k) - 1);
