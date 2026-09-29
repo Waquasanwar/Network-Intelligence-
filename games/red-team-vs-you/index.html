@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Red Team vs You</title>
+<title>Hacker vs You</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap">
@@ -96,6 +96,13 @@
   .room i { position: absolute; display: block; }
   .face { position: absolute; left: 50%; bottom: -2%; width: 62%; max-width: 420px; transform: translateX(-50%); }
   .face svg { width: 100%; display: block; overflow: visible; }
+  .vphoto, .vclip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .vphoto { animation: breathe 7s ease-in-out infinite; transform-origin: 50% 70%; }
+  .vclip { opacity: 0; transition: opacity .16s; }
+  .vclip.on { opacity: 1; }
+  .vfeed.lowbw .vphoto, .vfeed.lowbw .vclip { filter: blur(.8px) contrast(1.06) saturate(.85); }
+  .vfeed.glitch .vphoto, .vfeed.glitch .vclip { filter: drop-shadow(4px 0 rgba(0,255,255,.6)) drop-shadow(-4px 0 rgba(255,0,90,.6)); transform: skewX(3deg) translateX(4px); }
+  .pav img, .rav img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .grain { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: .35; }
   .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.55)); }
   .vfeed.lowbw .face svg { filter: blur(.6px) contrast(1.08) saturate(.85); }
@@ -270,6 +277,7 @@
   .end-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; padding-block: 30px; }
 
   @keyframes pulse { 50% { opacity: .45; } }
+  @keyframes breathe { 50% { transform: scale(1.018) translateY(-2px); } }
   @keyframes ringpulse { 0% { box-shadow: 0 0 0 0 rgba(65,214,160,.55); } 100% { box-shadow: 0 0 0 28px rgba(65,214,160,0); } }
   @keyframes scan { to { transform: translateY(6px); } }
   @keyframes jitter { 0% { transform: translate(0,0); } 33% { transform: translate(-3px,1px); } 66% { transform: translate(2px,-2px); } }
@@ -301,7 +309,7 @@
 
 <header class="hud">
   <div class="hud-row">
-    <div class="brand"><span class="r">Red team</span><span class="vs">vs</span>You</div>
+    <div class="brand"><span class="r">Hacker</span><span class="vs">vs</span>You</div>
     <div class="stat"><span class="k">Time</span><span class="v" id="timer">5:00</span></div>
     <div class="stat"><span class="k">Score</span><span class="v" id="score">0</span></div>
     <div class="stat"><span class="k">Streak</span><span class="v" id="streak">×1.0</span></div>
@@ -320,18 +328,18 @@
   <section id="screenStart">
     <div class="hero">
       <div>
-        <div class="eyebrow">Live social-engineering drill · 5 minutes</div>
+        <div class="eyebrow">Cyber awareness drill · 5 minutes</div>
         <h1>Book a trip. Make a payment. <span class="red">Someone's lying.</span></h1>
-        <p class="lede">Ten people will video call you or message you while you book travel and pay for things. Some are genuine. Some are a red team using deepfakes, fake payment details and pressure. Watch them, listen to them, reply, then decide: scam or legit.</p>
+        <p class="lede">Ten people will video call you or message you while you book travel and pay for things. Some are genuine. Some are VOX, a hacker using deepfakes, fake payment details and pressure. Watch them, listen to them, reply, then decide: scam or legit.</p>
         <div class="cta-row">
-          <button class="btn-go" id="btnStart">Start the attack</button>
+          <button class="btn-go" id="btnStart">Start: am I being hacked?</button>
           <label class="toggle"><input type="checkbox" id="optVoice" checked> Characters speak out loud</label>
         </div>
         <ul class="rules">
           <li><b>+100</b><span>Right call. Up to +50 for speed, and a streak multiplies it up to ×3.</span></li>
           <li><b>+20 ⚑</b><span>Tap a sentence in the transcript or chat to flag it as a red flag. Wrong flags cost 10.</span></li>
           <li><b>+25</b><span>Safe replies: verify on a channel you trust, refuse, pay by protected methods.</span></li>
-          <li><b>−150</b><span>Send the money, the code or the card details to an attacker and you're breached.</span></li>
+          <li><b>−150</b><span>Send the money, the code or the card details to the hacker and you're breached.</span></li>
           <li><b>KEYS</b><span><kbd>S</kbd> scam · <kbd>L</kbd> legit · <kbd>1</kbd>–<kbd>3</kbd> reply · <kbd>Enter</kbd> answer / next</span></li>
         </ul>
         <p class="best" id="bestLine" style="margin-top:16px"></p>
@@ -358,6 +366,8 @@
           <div class="vfeed" id="vfeed">
             <div class="room" id="room"></div>
             <div class="face" id="face"></div>
+            <img class="vphoto" id="vPhoto" alt="" hidden>
+            <video class="vclip" id="vClip" muted playsinline loop preload="auto"></video>
             <canvas class="grain" id="grain" width="160" height="110"></canvas>
             <div class="vignette"></div>
             <div class="vtop">
@@ -864,6 +874,30 @@ const SCENARIOS = [
   },
 ];
 
+/* Pre-generated media (one-off, baked into the game: no runtime API, no ongoing cost).
+   Missing files fall back to the drawn character and the browser's own voice. */
+const MEDIA = {
+  villa: ["jade", true], "airline-dm": ["alex"], hotel: ["marco", true], "rental-host": ["elena"],
+  "cfo-deepfake": ["richard", true], invoice: ["dan"], "bank-video": ["aisha", true], buyer: ["chris"], "friend-split": ["sam"],
+};
+const AUDIO_KEYS = new Set([
+  "villa_start_0", "villa_start_1", "villa_start_2", "villa_card_0", "villa_abta_0", "villa_pay_0", "villa_pay_2", "villa_pressure_0",
+  "hotel_start_0", "hotel_start_1", "hotel_start_2", "hotel_confirm_0", "hotel_code_0", "hotel_porter_0", "hotel_nocard_0",
+  "cfo-deepfake_start_0", "cfo-deepfake_start_1", "cfo-deepfake_start_2", "cfo-deepfake_callback_0", "cfo-deepfake_question_0", "cfo-deepfake_details_0", "cfo-deepfake_details_2",
+  "bank-video_start_1", "bank-video_start_2", "bank-video_prove_0", "bank-video_pw_0", "bank-video_ok_0",
+  "airline-dm_start_2", "airline-dm_app_0", "rental-host_pay_1", "rental-host_video_0", "invoice_reply_0", "buyer_email_1", "friend-split_start_1",
+]);
+const photoOf = (cur) => MEDIA[cur.id] ? "media/p_" + MEDIA[cur.id][0] + ".jpg" : null;
+const clipOf = (cur) => MEDIA[cur.id] && MEDIA[cur.id][1] ? "media/v_" + MEDIA[cur.id][0] + ".mp4" : null;
+const audioOf = (cur, node, i) => AUDIO_KEYS.has(cur.id + "_" + node + "_" + i) ? "media/a/" + cur.id + "_" + node + "_" + i + ".mp3" : null;
+function avatarHTML(cur) {
+  const p = photoOf(cur);
+  return p ? `<img src="${p}" alt="" data-fallback="1">` : portrait(cur.face, true);
+}
+function fixAvatars(root, cur) {
+  root.querySelectorAll('img[data-fallback]').forEach((img) => { img.onerror = () => { img.outerHTML = portrait(cur.face, true); }; });
+}
+
 const TAUNTS_START = [
   "Let's see how much you trust a friendly face.",
   "Not every contact is mine. That's the fun part.",
@@ -1069,13 +1103,42 @@ function voiceFor(g, seed) {
   const pool = gb.length ? gb : want.length ? want : voices;
   return pool[seed % pool.length];
 }
-function stopSpeech() { if ("speechSynthesis" in window) speechSynthesis.cancel(); state.speaking = false; state.voiceNote = false; }
+const voiceEl = new Audio(); voiceEl.preload = "auto";
+let analyser = null, anBuf = null;
+function ensureAnalyser() {
+  if (analyser) return;
+  const c = audio(); if (!c) return;
+  try {
+    const src = c.createMediaElementSource(voiceEl);
+    analyser = c.createAnalyser(); analyser.fftSize = 2048;
+    src.connect(analyser); analyser.connect(c.destination);
+    anBuf = new Float32Array(analyser.fftSize);
+  } catch { analyser = null; }
+}
+function stopSpeech() {
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  try { voiceEl.pause(); } catch { /* ignore */ }
+  setTalking(false, true);
+  state.speaking = false; state.voiceNote = false; state.realAudio = false;
+}
+/* Video callers: the talking clip plays while they speak. Deepfakes lag the audio by ~320 ms. */
+let talkTimer = null;
+function setTalking(on, now) {
+  const clip = $("vClip");
+  if (!state.cur || state.cur.mode !== "video" || !clip.getAttribute("src")) return;
+  clearTimeout(talkTimer);
+  const apply = () => {
+    if (on) { clip.classList.add("on"); const p = clip.play(); if (p && p.catch) p.catch(() => {}); }
+    else { clip.classList.remove("on"); clip.pause(); }
+  };
+  if (state.cur.deepfake && !now) talkTimer = setTimeout(apply, 320); else apply();
+}
 
-function speakLine(text, wordEls, token, onProgress) {
+function speakLine(text, wordEls, token, onProgress, src) {
   return new Promise((resolve) => {
     const cur = state.cur, prof = cur.voice || { pitch: 1, rate: 1 };
     const n = wordEls.length, dur = (n / (165 * prof.rate)) * 60000 + 350;
-    let lit = 0, done = false, boundaryDriven = false, safety;
+    let lit = 0, done = false, tick = null, safety = null;
     const light = (upto) => {
       while (lit < Math.min(upto, n)) {
         const el = wordEls[lit++]; el.classList.add("lit");
@@ -1083,20 +1146,54 @@ function speakLine(text, wordEls, token, onProgress) {
       }
       if (onProgress) onProgress(lit / Math.max(n, 1));
     };
-    const finish = () => { if (done) return; done = true; clearInterval(tick); clearTimeout(safety); light(n); state.speaking = false; resolve(); };
+    const finish = () => {
+      if (done) return; done = true;
+      clearInterval(tick); clearTimeout(safety);
+      if (state.realAudio) { try { voiceEl.pause(); } catch { /* ignore */ } }
+      voiceEl.onended = voiceEl.onerror = null;
+      state.realAudio = false;
+      light(n); state.speaking = false; setTalking(false); resolve();
+    };
     state.speaking = true;
-    const tick = setInterval(() => { if (token !== state.token) return finish(); if (!boundaryDriven) light(lit + 1); }, dur / Math.max(n, 1));
-    if (state.voiceOn && "speechSynthesis" in window) {
-      const u = new SpeechSynthesisUtterance(text);
-      const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
-      u.pitch = prof.pitch; u.rate = prof.rate;
-      const starts = []; let pos = 0;
-      wordEls.forEach((el) => { const i = text.indexOf(el.textContent, pos); starts.push(i < 0 ? pos : i); pos = (i < 0 ? pos : i) + el.textContent.length; });
-      u.onboundary = (e) => { if (e.name && e.name !== "word") return; boundaryDriven = true; let k = 0; while (k < n && starts[k] <= e.charIndex) k++; light(k); };
-      u.onend = finish; u.onerror = finish;
-      speechSynthesis.speak(u);
-      safety = setTimeout(finish, dur * 2 + 4000);
-    } else safety = setTimeout(finish, dur);
+    setTalking(true);
+
+    // Browser voice with word-by-word timing (fallback when no recording exists or it fails to load).
+    const synth = () => {
+      if (done) return;
+      state.realAudio = false;
+      let boundaryDriven = false;
+      clearInterval(tick); clearTimeout(safety);
+      tick = setInterval(() => { if (token !== state.token) return finish(); if (!boundaryDriven) light(lit + 1); }, dur / Math.max(n, 1));
+      if (state.voiceOn && "speechSynthesis" in window) {
+        const u = new SpeechSynthesisUtterance(text);
+        const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
+        u.pitch = prof.pitch; u.rate = prof.rate;
+        const starts = []; let pos = 0;
+        wordEls.forEach((el) => { const i = text.indexOf(el.textContent, pos); starts.push(i < 0 ? pos : i); pos = (i < 0 ? pos : i) + el.textContent.length; });
+        u.onboundary = (e) => { if (e.name && e.name !== "word") return; boundaryDriven = true; let k = 0; while (k < n && starts[k] <= e.charIndex) k++; light(k); };
+        u.onend = finish; u.onerror = finish;
+        speechSynthesis.speak(u);
+        safety = setTimeout(finish, dur * 2 + 4000);
+      } else safety = setTimeout(finish, dur);
+    };
+
+    if (!(src && state.voiceOn)) return synth();
+
+    // Natural recorded voice; words light up in step with the audio.
+    let failed = false;
+    const fail = () => { if (failed || done) return; failed = true; voiceEl.onended = voiceEl.onerror = null; synth(); };
+    ensureAnalyser();
+    voiceEl.onended = finish;
+    voiceEl.onerror = fail;
+    voiceEl.src = src;
+    state.realAudio = true;
+    const p = voiceEl.play();
+    if (p && p.catch) p.catch((e) => { if (e && e.name === "AbortError") return; fail(); });
+    tick = setInterval(() => {
+      if (token !== state.token) return finish();
+      if (voiceEl.duration) light(Math.ceil((voiceEl.currentTime / voiceEl.duration) * n + 0.5));
+    }, 80);
+    safety = setTimeout(finish, 30000);
   });
 }
 
@@ -1146,9 +1243,10 @@ function stamp(el) { if (state.cur.mode === "message") { const t = document.crea
 
 function setStatus(txt, on) { const s = $("pStat"); s.textContent = txt; s.classList.toggle("on", !!on); }
 
-async function playLines(lines, token) {
+async function playLines(lines, token, nodeId) {
   const cur = state.cur, video = cur.mode === "video";
-  for (const line of lines) {
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li], src = audioOf(cur, nodeId, li);
     if (token !== state.token) return false;
     const { kind, segs } = parse(line);
     if (kind === "sys") {
@@ -1168,7 +1266,7 @@ async function playLines(lines, token) {
       const words = segsInto(b, segs, true); b.classList.add("speaking");
       const cap = $("caption"); cap.hidden = false; cap.textContent = "";
       const full = segs.map((s) => s.t).join(" ");
-      await speakLine(full, words, token, (p) => { const ws = full.split(/\s+/); cap.textContent = ws.slice(Math.max(0, Math.floor(p * ws.length) - 14), Math.floor(p * ws.length)).join(" "); });
+      await speakLine(full, words, token, (p) => { const ws = full.split(/\s+/); cap.textContent = ws.slice(Math.max(0, Math.floor(p * ws.length) - 14), Math.floor(p * ws.length)).join(" "); }, src);
       b.classList.remove("speaking"); scrollThread();
       await sleep(250);
       continue;
@@ -1190,14 +1288,16 @@ async function playLines(lines, token) {
       stamp(b); vn.querySelector(".vn-t").classList.add("speaking");
       const full = segs.map((s) => s.t).join(" ");
       vn.querySelector(".vn-play").addEventListener("click", () => {
-        if (state.speaking || !state.voiceOn || !("speechSynthesis" in window)) return;
+        if (state.speaking || !state.voiceOn) return;
+        if (src) { const a = new Audio(src); a.play().catch(() => {}); return; }
+        if (!("speechSynthesis" in window)) return;
         const u = new SpeechSynthesisUtterance(full); const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
         u.pitch = cur.voice.pitch; u.rate = cur.voice.rate; speechSynthesis.speak(u);
       });
       setStatus("online", true);
       state.voiceNote = true;
       const barEls = [...bars.children];
-      await speakLine(full, words, token, (p) => barEls.forEach((bi, i) => bi.classList.toggle("on", i / barEls.length < p)));
+      await speakLine(full, words, token, (p) => barEls.forEach((bi, i) => bi.classList.toggle("on", i / barEls.length < p)), src);
       state.voiceNote = false;
       vn.querySelector(".vn-t").classList.remove("speaking");
       await sleep(300); continue;
@@ -1257,8 +1357,12 @@ function loop(ts) {
   if (active || state.phase === "debrief") hud();
   const cur = state.cur;
   if (cur && !$("screenGame").hidden) {
+    if (cur.mode === "video" && cur.deepfake && state.photo) {
+      if (Math.random() < 0.006) state.glitchUntil = ts + 120;
+      $("vfeed").classList.toggle("glitch", ts < (state.glitchUntil || 0));
+    }
     if (cur.mode === "video" && face) {
-      face.frame(ts, state.speaking);
+      if (!state.photo) face.frame(ts, state.speaking);
       if (ts - grainT > 70) { drawGrain(); grainT = ts; }
       if (state.callStart && active) { const s = Math.floor((ts - state.callStart) / 1000); $("vClock").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
     }
@@ -1276,6 +1380,16 @@ function drawWave(ts) {
   for (let y = H / 4; y < H; y += H / 4) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   const speaking = state.speaking;
   const synth = (cur.synthetic || 0) / 100, stress = (cur.stress || 0) / 100;
+  if (speaking && state.realAudio && analyser) {
+    analyser.getFloatTimeDomainData(anBuf);
+    let sum = 0; for (let i = 0; i < anBuf.length; i++) sum += anBuf[i] * anBuf[i];
+    state.rms = Math.sqrt(sum / anBuf.length);
+    g.strokeStyle = stress > 0.55 ? "#ff5468" : "#f2a93b"; g.lineWidth = 2; g.beginPath();
+    const step = anBuf.length / W;
+    for (let x = 0; x <= W; x += 2) { const y = H / 2 + anBuf[Math.floor(x * step)] * H * 1.6; x === 0 ? g.moveTo(x, y) : g.lineTo(x, y); }
+    g.stroke();
+    return;
+  }
   const amp = speaking ? H * (0.22 + 0.18 * stress) : H * 0.02;
   g.strokeStyle = speaking ? (stress > 0.55 ? "#ff5468" : "#f2a93b") : "#3b5a66";
   g.lineWidth = 2; g.beginPath();
@@ -1294,7 +1408,8 @@ function liveMeters(ts) {
   const cur = state.cur, speaking = state.speaking;
   const hasVoice = cur.mode === "video" || state.voiceNote;
   if (hasVoice) {
-    const target = speaking ? cur.stress + rand(-7, 7) : Math.max(6, shownStress * 0.985);
+    const live = state.realAudio && state.rms ? Math.max(-12, Math.min(12, (state.rms - 0.06) * 160)) : rand(-7, 7);
+    const target = speaking ? cur.stress + live : Math.max(6, shownStress * 0.985);
     shownStress += (target - shownStress) * 0.08;
     const s = Math.round(Math.max(0, Math.min(100, shownStress)));
     $("m1v").textContent = s; $("m1bar").style.width = s + "%";
@@ -1304,7 +1419,7 @@ function liveMeters(ts) {
   if (cur.mode === "video") {
     if (speaking) { const off = cur.deepfake ? Math.round(rand(280, 360)) : Math.round(rand(18, 70)); setMeter("m2", off + "<small>ms</small>", off > 150); }
     const secs = (ts - state.callStart) / 1000;
-    if (face && state.callStart && secs > 8) { const bpm = Math.round(face.blinks / (secs / 60)); setMeter("m3", bpm + "<small>/min</small>", bpm < 8); }
+    if (state.callStart && secs > 8) { const bpm = face && !state.photo ? Math.round(face.blinks / (secs / 60)) : Math.round(cur.deepfake ? rand(1, 4) : rand(13, 19)); setMeter("m3", bpm + "<small>/min</small>", bpm < 8); }
   } else if (state.voiceNote && speaking) {
     const ai = Math.round(cur.synthetic + rand(-4, 4)); setMeter("m3", Math.max(0, ai) + "<small>%</small>", ai > 50);
   }
@@ -1394,6 +1509,16 @@ function nextRound() {
   if (cur.mode === "video") {
     paintRoom($("room"), cur.face.room);
     face = new Face($("face"), cur.face, { deepfake: cur.deepfake });
+    const ph = photoOf(cur), vp = $("vPhoto"), vc = $("vClip");
+    state.photo = !!ph;
+    $("face").hidden = !!ph; vp.hidden = !ph;
+    vc.classList.remove("on"); vc.pause();
+    if (ph) {
+      vp.onerror = () => { vp.hidden = true; $("face").hidden = false; state.photo = false; vc.removeAttribute("src"); };
+      vp.src = ph;
+      const cl = clipOf(cur);
+      if (cl) { vc.onerror = () => vc.removeAttribute("src"); vc.src = cl; vc.load(); } else vc.removeAttribute("src");
+    } else vc.removeAttribute("src");
     $("vName").textContent = cur.name; $("vOrg").textContent = cur.org;
     $("vfeed").classList.toggle("lowbw", !!cur.lowbw);
     $("bwTag").hidden = !cur.lowbw;
@@ -1402,26 +1527,28 @@ function nextRound() {
     $("share").hidden = true; $("caption").hidden = true; $("vClock").textContent = "00:00";
   } else {
     face = null;
-    $("pAv").innerHTML = portrait(cur.face, true);
+    $("pAv").innerHTML = avatarHTML(cur); fixAvatars($("pAv"), cur);
     $("pName").textContent = cur.name; $("pTick").hidden = !cur.verified;
     setStatus(cur.org, false); $("pClock").textContent = clockStr();
   }
 
   // Incoming screen
   const bg = $("ringBg");
-  if (cur.mode === "video") paintRoom(bg, cur.face.room); else { bg.style.background = "linear-gradient(160deg,#253b52,#0d1822 60%,#2a1d2e)"; bg.innerHTML = ""; }
+  if (cur.mode === "video" && photoOf(cur)) { bg.innerHTML = `<img src="${photoOf(cur)}" alt="" style="width:100%;height:100%;object-fit:cover">`; bg.style.background = "#111"; }
+  else if (cur.mode === "video") paintRoom(bg, cur.face.room); else { bg.style.background = "linear-gradient(160deg,#253b52,#0d1822 60%,#2a1d2e)"; bg.innerHTML = ""; }
   const rc = $("ringContent");
   const firstLine = cur.nodes.start.say.find((l) => !l.startsWith("~ "));
   const preview = firstLine.startsWith("🎤 ") ? "🎤 Voice message" : plainText(firstLine);
   if (cur.mode === "video") {
-    rc.innerHTML = `<div class="rav">${portrait(cur.face, true)}</div><div class="rl">Incoming video call…</div><div class="rn"></div><div class="rd"></div><button class="btn-answer" id="btnAnswer">Answer</button>`;
+    rc.innerHTML = `<div class="rav">${avatarHTML(cur)}</div><div class="rl">Incoming video call…</div><div class="rn"></div><div class="rd"></div><button class="btn-answer" id="btnAnswer">Answer</button>`;
   } else {
     const d = new Date();
     rc.innerHTML = `<div class="lock-time">${clockStr()}</div><div class="lock-date">${d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
-      <div class="notif"><div class="pav">${portrait(cur.face, true)}</div><div><div class="app"><span>${/Email/.test(cur.org) ? "MAIL" : "MESSAGES"}</span><span>now</span></div><div class="nt"></div><div class="np"></div></div></div>
+      <div class="notif"><div class="pav">${avatarHTML(cur)}</div><div><div class="app"><span>${/Email/.test(cur.org) ? "MAIL" : "MESSAGES"}</span><span>now</span></div><div class="nt"></div><div class="np"></div></div></div>
       <button class="btn-answer" id="btnAnswer" style="margin-top:14px">Open</button>`;
     rc.querySelector(".np").textContent = preview;
   }
+  fixAvatars(rc, cur);
   (rc.querySelector(".rn") || rc.querySelector(".nt")).textContent = cur.name;
   if (rc.querySelector(".rd")) rc.querySelector(".rd").textContent = cur.org + " · " + cur.detail;
   $("btnAnswer").addEventListener("click", answer);
@@ -1449,7 +1576,7 @@ async function playNode(id, token) {
   $("replies").innerHTML = "";
   revealAt(id);
   if (id !== "start" && cur.mode === "video") $("share").hidden = true;
-  const ok = await playLines(node.say, token);
+  const ok = await playLines(node.say, token, id);
   if (!ok) return;
   if (cur.mode === "video") $("caption").hidden = true;
   textUrgency();
@@ -1525,7 +1652,7 @@ function breach() {
   state.integrity -= 35; state.streak = 0;
   const f = collectFlags();
   let pts = -150;
-  const lines = [["Breached by the red team", -150, "neg"], ["Integrity", "−35%", "neg"]];
+  const lines = [["Breached by the hacker", -150, "neg"], ["Integrity", "−35%", "neg"]];
   if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
   state.score += pts;
   state.results.push({ cur, outcome: "breached", pts, flags: f.hits.length });
@@ -1614,7 +1741,7 @@ function endGame(reason) {
   const falseAlarms = legits.filter((r) => r.outcome !== "correct").length;
   const acc = R.length ? Math.round((R.filter((r) => r.outcome === "correct").length / R.length) * 100) : 0;
   const flags = R.reduce((a, r) => a + r.flags, 0), s = state.score;
-  const rank = state.integrity <= 0 ? ["Owned", "The red team walked straight in. Slow down, verify, and never pay a new account under pressure."]
+  const rank = state.integrity <= 0 ? ["Owned", "The hacker walked straight in. Slow down, verify, and never pay a new account under pressure."]
     : s < 250 ? ["Easy Mark", "You'd make VOX's week. Watch for pressure, secrecy, bank transfers and people moving you off official channels."]
     : s < 600 ? ["Getting Suspicious", "Good instincts. Flag more of the tells and call it faster to climb the ranks."]
     : s < 1000 ? ["Human Firewall", "You spot the tricks and still trust the right people. Hard to fool."]
@@ -1715,6 +1842,12 @@ document.addEventListener("keydown", (e) => {
     <div class="vtop"><div class="glass vname"><b>Richard Hale</b><span>CFO · Hale Group</span></div><div class="glass vmeta">● 02:14</div></div>
     <div class="caption">…send two hundred and forty thousand before four.</div>`;
   paintRoom($("tRoom"), "boardroom");
+  const tv2 = document.createElement("video");
+  tv2.className = "vclip on"; tv2.muted = true; tv2.loop = true; tv2.autoplay = true; tv2.playsInline = true;
+  tv2.src = "media/v_richard.mp4";
+  tv2.onerror = () => tv2.remove();
+  tv2.onloadeddata = () => { $("tFace").hidden = true; };
+  tv.insertBefore(tv2, tv.querySelector(".vignette"));
   const tf = new Face($("tFace"), SCENARIOS.find((s) => s.id === "cfo-deepfake").face, { deepfake: true });
   let talk = false; setInterval(() => { talk = !talk; }, 2600);
   const anim = (ts) => { if (!$("screenStart").hidden) tf.frame(ts, talk); requestAnimationFrame(anim); };
