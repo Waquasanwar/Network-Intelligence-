@@ -42,7 +42,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
       <Link
         href={href}
         className={cn(
-          "group relative flex items-center gap-2.5 rounded-[10px] px-2.5 py-[7px] text-[13px] transition-colors",
+          "group relative flex items-center gap-3 rounded-[10px] px-3 py-[9px] text-[13px] transition-colors",
           active ? "bg-rail-active text-rail-ink-strong font-medium" : "text-rail-ink hover:bg-rail-active hover:text-rail-ink-strong",
         )}
       >
@@ -52,7 +52,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
       </Link>
     );
   };
-  const Group = ({ label }: { label: string }) => <div className="px-2.5 pt-5 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-rail-ink">{label}</div>;
+  const Group = ({ label }: { label: string }) => <div className="px-3 pt-6 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-rail-ink">{label}</div>;
 
   return (
     <aside className="w-[232px] flex-none bg-rail h-screen sticky top-0 flex flex-col text-rail-ink border-r border-rail-line">
@@ -65,7 +65,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
           </span>
         </Link>
       </div>
-      <nav className="px-2.5 flex-1 space-y-0.5 overflow-y-auto">
+      <nav className="px-2.5 flex-1 space-y-1 overflow-y-auto py-1">
         {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {INTERNAL_NAV.map((i) => <Item key={i.href} {...i} />)}

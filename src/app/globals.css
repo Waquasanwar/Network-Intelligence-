@@ -132,10 +132,10 @@ table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-siz
 table.data th {
   position: sticky; top: 0; z-index: 1;
   text-align: left; font-weight: 500; color: var(--color-ink-faint);
-  padding: 10px 12px; background: var(--color-surface); border-bottom: 1px solid var(--color-line);
+  padding: 12px 16px; background: var(--color-surface); border-bottom: 1px solid var(--color-line);
   white-space: nowrap; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
 }
-table.data td { padding: 10px 12px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
+table.data td { padding: 14px 16px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
 table.data tbody tr { transition: background-color 90ms ease; }
 table.data tbody tr:hover td { background: var(--color-surface-hover); }
 table.data tr:last-child td { border-bottom: none; }

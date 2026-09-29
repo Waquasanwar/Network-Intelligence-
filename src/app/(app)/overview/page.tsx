@@ -88,7 +88,7 @@ export default async function OverviewPage() {
               {suggestions.length === 0 ? <EmptyState title="Nothing pressing" description="The network is in good shape." /> : (
                 <ul className="divide-y divide-line">
                   {suggestions.map((s, i) => (
-                    <li key={i} className="py-2 flex items-start gap-2">
+                    <li key={i} className="py-2.5 flex items-start gap-2">
                       <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
                       <Link href={s.href} className="text-[13px] text-ink hover:underline underline-offset-4">{s.text}</Link>
                     </li>
@@ -105,7 +105,7 @@ export default async function OverviewPage() {
                 {upcoming.length === 0 ? <EmptyState title="No conversations booked" description="Book one from a person's profile." /> : (
                   <ul className="divide-y divide-line">
                     {upcoming.map((u) => (
-                      <li key={u.id} className="py-2 flex items-center justify-between gap-2">
+                      <li key={u.id} className="py-2.5 flex items-center justify-between gap-2">
                         <PersonLink person={u.person} sub={u.meetingType.replace(/_/g, " ").toLowerCase()} />
                         <DateText date={u.startAt} relative className="text-xs text-ink-muted whitespace-nowrap" />
                       </li>
@@ -120,7 +120,7 @@ export default async function OverviewPage() {
                 {reconnect.length === 0 ? <EmptyState title="Everyone is current" /> : (
                   <ul className="divide-y divide-line">
                     {reconnect.map((p) => (
-                      <li key={p.id} className="py-2 flex items-center justify-between gap-2">
+                      <li key={p.id} className="py-2.5 flex items-center justify-between gap-2">
                         <PersonLink person={p} />
                         <AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} />
                       </li>
@@ -144,7 +144,7 @@ export default async function OverviewPage() {
               </div>
               <ul className="divide-y divide-line">
                 {activeOpps.slice(0, 5).map((o) => (
-                  <li key={o.id} className="py-2 flex items-center justify-between gap-3">
+                  <li key={o.id} className="py-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <Link href={`/opportunities/${o.id}`} className="text-[13px] font-medium text-ink hover:underline underline-offset-4 truncate block">{o.title}</Link>
                       <div className="text-[11px] text-ink-faint">{o.clientName ?? "—"} · {ROUTE_LABELS[o.engagementRoute]} · {o.matches.length} suggestions, {o.matches.filter((m) => m.humanDecision === "RECOMMEND").length} recommended</div>
@@ -174,7 +174,7 @@ export default async function OverviewPage() {
               {needsReview.length === 0 ? <EmptyState title="Inbox zero" /> : (
                 <ul className="divide-y divide-line">
                   {needsReview.map((c) => (
-                    <li key={c.id} className="py-2 flex items-center justify-between gap-2">
+                    <li key={c.id} className="py-2.5 flex items-center justify-between gap-2">
                       <PersonLink person={c.person} sub={null} />
                       <Link href={`/conversations?tab=review&open=${c.id}`} className="text-xs text-navy hover:underline">{c.approvalStatus === "DRAFT" ? "Draft" : "Review"}</Link>
                     </li>
@@ -189,7 +189,7 @@ export default async function OverviewPage() {
               {partnerReqs.length === 0 ? <EmptyState title="No open partner requirements" /> : (
                 <ul className="divide-y divide-line">
                   {partnerReqs.map((r) => (
-                    <li key={r.id} className="py-2">
+                    <li key={r.id} className="py-2.5">
                       <div className="text-[13px] text-ink">{r.title}</div>
                       <div className="text-[11px] text-ink-faint">{r.partner.name} · {r.status.replace(/_/g, " ").toLowerCase()}</div>
                     </li>
@@ -204,7 +204,7 @@ export default async function OverviewPage() {
               {liveIntros.length === 0 ? <EmptyState title="None yet" /> : (
                 <ul className="divide-y divide-line">
                   {liveIntros.slice(0, 5).map((i) => (
-                    <li key={i.id} className="py-2 flex items-center justify-between gap-2">
+                    <li key={i.id} className="py-2.5 flex items-center justify-between gap-2">
                       <div className="min-w-0"><div className="text-[13px] text-ink truncate">{fullName(i.person)}</div><div className="text-[11px] text-ink-faint truncate">{i.opportunity.title}</div></div>
                       <IntroBadge status={i.status} />
                     </li>
