@@ -6,319 +6,394 @@
 <title>Hacker vs You</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
 <style>
-  /* One committed look: a night-shift intercept console around realistic call and chat apps. */
+  /* Page tokens. The phone keeps its own fixed palette, like a real handset would. */
   :root {
+    --bg: #eceff3;
+    --surface: #ffffff;
+    --surface-2: #f4f6f9;
+    --line: #dde2e8;
+    --text: #0f1720;
+    --muted: #5d6b79;
+    --hacker: #d92d3a;
+    --hacker-soft: #fde8ea;
+    --you: #0d8f6a;
+    --you-soft: #e2f5ee;
+    --warn: #c07a00;
+    --warn-soft: #fff3dc;
+    --shadow: 0 1px 2px rgba(15,23,32,.06), 0 8px 30px rgba(15,23,32,.07);
+    --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --display: "Manrope", var(--sys);
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0b0f14; --surface: #131a21; --surface-2: #19222b; --line: #26313c; --text: #e8eef3; --muted: #8c9bab;
+      --hacker: #ff5c68; --hacker-soft: #3a1519; --you: #3ccf9d; --you-soft: #0f2e25; --warn: #f0b440; --warn-soft: #33260b;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 40px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
     color-scheme: dark;
-    --ink: #0a141b;
-    --panel: #0f1f28;
-    --panel-2: #142a35;
-    --line: #22424f;
-    --text: #dcebee;
-    --muted: #87a4ad;
-    --signal: #f2a93b;
-    --signal-dim: rgba(242,169,59,.16);
-    --threat: #ff5468;
-    --threat-dim: rgba(255,84,104,.16);
-    --safe: #41d6a0;
-    --safe-dim: rgba(65,214,160,.14);
-    --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
-    --body: "Inter Tight", "Segoe UI", system-ui, -apple-system, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-    --r: 10px;
+    --bg: #0b0f14; --surface: #131a21; --surface-2: #19222b; --line: #26313c; --text: #e8eef3; --muted: #8c9bab;
+    --hacker: #ff5c68; --hacker-soft: #3a1519; --you: #3ccf9d; --you-soft: #0f2e25; --warn: #f0b440; --warn-soft: #33260b;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 40px rgba(0,0,0,.35);
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
-  body {
-    margin: 0; background: var(--ink); color: var(--text);
-    background-image: radial-gradient(1200px 520px at 85% -10%, rgba(242,169,59,.07), transparent 60%);
-    font: 15px/1.5 var(--body); padding-inline: 16px; -webkit-font-smoothing: antialiased;
-  }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--sys); padding-inline: 16px; -webkit-font-smoothing: antialiased; }
   button { font: inherit; color: inherit; cursor: pointer; }
-  button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
-  button:disabled { cursor: not-allowed; opacity: .4; }
-  .wrap { max-width: 1160px; margin: 0 auto; padding-block: 12px 40px; }
+  button:focus-visible, [tabindex]:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+  button:disabled { cursor: not-allowed; opacity: .45; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-block: 16px 48px; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-  /* ---------- HUD ---------- */
-  .hud { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(10,20,27,.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); margin-inline: -16px; padding: 10px 16px; }
-  .hud-row { max-width: 1160px; margin: 0 auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-  .brand { font-family: var(--display); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 15px; margin-right: auto; }
-  .brand .r { color: var(--threat); } .brand .vs { color: var(--muted); font-weight: 500; padding-inline: 4px; }
-  .stat { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
-  .stat .k { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-  .stat .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; }
-  #timer.warn { color: var(--threat); animation: pulse 1s infinite; }
-  #streak { color: var(--signal); }
-  .integrity { max-width: 1160px; margin: 8px auto 0; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
-  .integrity .q { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
-  .bar { height: 8px; border-radius: 99px; background: var(--panel-2); overflow: hidden; }
-  .bar > i { display: block; height: 100%; width: 100%; background: var(--safe); transition: width .5s, background .5s; }
-  .chip { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; padding: 3px 9px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
-  .chip.secure { color: var(--safe); } .chip.probed { color: var(--signal); } .chip.attack, .chip.breached { color: var(--threat); } .chip.breached { background: var(--threat-dim); }
+  /* ---------- Top bar ---------- */
+  .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin-inline: -16px; padding: 10px 16px; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .top-row { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .brand { font-family: var(--display); font-weight: 800; font-size: 17px; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; margin-right: auto; }
+  .brand .h { color: var(--hacker); } .brand .y { color: var(--you); } .brand .vs { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .role-chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+  .timer { font-family: var(--mono); font-weight: 600; font-size: 18px; padding: 4px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+  .timer.warn { color: var(--hacker); border-color: var(--hacker); animation: pulse 1s infinite; }
+  .board { display: flex; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+  .board div { padding: 4px 12px; display: flex; flex-direction: column; line-height: 1.15; }
+  .board small { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .board .you small { color: var(--you); } .board .hk small { color: var(--hacker); }
+  .board b { font-family: var(--mono); font-size: 16px; font-weight: 600; }
+  .board .hk { border-left: 1px solid var(--line); }
+  .streak { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--warn); }
+  .meter-row { max-width: 1180px; margin: 8px auto 0; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+  .meter-row .q { font-family: var(--display); font-weight: 700; font-size: 13px; }
+  .track { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .track > i { display: block; height: 100%; width: 100%; background: var(--you); border-radius: 99px; transition: width .5s, background .5s; }
+  .status { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+  .status.secure { color: var(--you); background: var(--you-soft); }
+  .status.probed { color: var(--warn); background: var(--warn-soft); }
+  .status.attack, .status.breached { color: var(--hacker); background: var(--hacker-soft); }
 
-  /* ---------- Start / end ---------- */
-  .hero { padding-block: 34px 12px; display: grid; gap: 30px; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); align-items: center; }
-  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--signal); }
-  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(36px, 5vw, 60px); line-height: .95; letter-spacing: -.01em; margin: 10px 0 16px; text-wrap: balance; }
-  h1 .red { color: var(--threat); }
-  .lede { color: var(--muted); font-size: 17px; max-width: 56ch; margin: 0 0 22px; }
-  .rules { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
-  .rules li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; font-size: 14px; }
-  .rules b { font-family: var(--mono); font-size: 12px; color: var(--signal); padding-top: 2px; }
-  kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--signal); }
-  .cta-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-  .btn-go { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: .06em; text-transform: uppercase; background: var(--signal); color: #1a1204; border: 0; border-radius: var(--r); padding: 14px 26px; box-shadow: 0 8px 30px rgba(242,169,59,.25); }
-  .btn-go:hover { filter: brightness(1.08); }
-  .toggle { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; }
-  .toggle input { accent-color: var(--signal); width: 16px; height: 16px; }
-  .best { font-family: var(--mono); font-size: 13px; color: var(--muted); }
-  .teaser { position: relative; display: grid; gap: 14px; }
-  .teaser .tv { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 16/11; box-shadow: 0 30px 80px rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.08); }
-  .teaser .tphone { position: absolute; right: -6px; bottom: -26px; width: 42%; border-radius: 22px; background: #05080a; padding: 6px; box-shadow: 0 20px 60px rgba(0,0,0,.6); border: 1px solid #2a3a44; }
-  .teaser .tphone .inner { border-radius: 17px; background: #0b161c; padding: 10px 8px; display: grid; gap: 6px; font-size: 11px; }
-  .teaser .tb { background: #1d2f38; border-radius: 12px 12px 12px 4px; padding: 6px 8px; }
-  .teaser .tb.me { background: #1f6f5c; border-radius: 12px 12px 4px 12px; justify-self: end; }
+  /* ---------- Start ---------- */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 40px; align-items: center; padding-block: 36px 20px; }
+  .kicker { font-size: 13px; font-weight: 700; color: var(--hacker); letter-spacing: .02em; }
+  h1 { font-family: var(--display); font-weight: 800; font-size: clamp(38px, 5.4vw, 64px); line-height: 1; letter-spacing: -.035em; margin: 10px 0 16px; text-wrap: balance; }
+  h1 .h { color: var(--hacker); }
+  .lede { font-size: 17px; color: var(--muted); max-width: 52ch; margin: 0 0 20px; }
+  .toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--you); }
+  .roles { display: grid; gap: 12px; }
+  .role { text-align: left; display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); transition: transform .15s, border-color .15s; }
+  .role:hover { transform: translateY(-2px); border-color: var(--text); }
+  .role .ic { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; }
+  .role .ic svg { width: 28px; height: 28px; }
+  .role b { display: block; font-family: var(--display); font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+  .role > span > span { display: block; font-size: 14px; color: var(--muted); }
+  .role b { color: var(--text); }
+  .role em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .role .go { font-weight: 700; font-size: 14px; color: var(--you); white-space: nowrap; }
+  .how { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+  .how div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
+  .how b { display: block; font-family: var(--mono); font-size: 15px; color: var(--text); margin-bottom: 2px; }
+  .best { font-size: 13px; color: var(--muted); margin-top: 14px; }
 
   /* ---------- Game layout ---------- */
-  .vox { margin-block: 14px; font-family: var(--mono); font-size: 13px; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
-  .vox b { color: var(--threat); letter-spacing: .1em; font-weight: 600; white-space: nowrap; }
-  .scene { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: var(--signal-dim); color: var(--signal); margin-left: auto; white-space: nowrap; }
-  .stage { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); gap: 18px; align-items: start; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; }
-  .devcol { position: relative; min-height: 520px; }
+  .hackerline { display: flex; gap: 10px; align-items: center; margin: 16px 0 14px; font-size: 14px; }
+  .hackerline .av { width: 28px; height: 28px; border-radius: 50%; background: #111; display: grid; place-items: center; flex: none; }
+  .hackerline .av svg { width: 16px; height: 16px; }
+  .hackerline .bubble { background: var(--surface); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 6px 12px; }
+  .hackerline .bubble b { color: var(--hacker); font-weight: 700; margin-right: 6px; }
+  .scene { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .game { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 28px; align-items: start; justify-content: center; }
+  .phonecol { display: grid; gap: 14px; justify-items: center; }
+  .verdicts { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .verdict { border: 0; border-radius: 16px; padding: 14px 10px; font-family: var(--display); font-weight: 800; font-size: 16px; display: flex; flex-direction: column; align-items: center; gap: 1px; box-shadow: var(--shadow); }
+  .verdict small { font-family: var(--sys); font-weight: 500; font-size: 12px; opacity: .85; }
+  .v-scam { background: var(--hacker); color: #fff; }
+  .v-legit { background: var(--you); color: #fff; }
+  .verdict:hover:not(:disabled) { filter: brightness(1.06); }
+  .hint { font-size: 12.5px; color: var(--muted); text-align: center; max-width: 400px; margin: 0; }
 
-  /* Video call app */
-  .vcall { border-radius: 18px; overflow: hidden; background: #070b0e; border: 1px solid rgba(255,255,255,.07); box-shadow: 0 30px 80px rgba(0,0,0,.5); }
-  .vfeed { position: relative; aspect-ratio: 16/11; width: 100%; overflow: hidden; background: #111; }
-  .room { position: absolute; inset: -20px; filter: blur(14px) saturate(1.05); transform: scale(1.05); }
+  /* ---------- The phone ---------- */
+  .phone { position: relative; width: min(392px, 100%); background: #0b0b0c; border-radius: 54px; padding: 12px; box-shadow: 0 0 0 2px #2b2e33, 0 30px 70px rgba(15,23,32,.28), inset 0 0 0 1px #3a3d42; }
+  .screen { position: relative; border-radius: 42px; overflow: hidden; height: min(720px, calc(100vh - 250px)); min-height: 580px; background: #fff; color: #000; font-family: var(--sys); isolation: isolate; }
+  .sbar { position: absolute; top: 0; left: 0; right: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; padding: 14px 30px 0; font-size: 15px; font-weight: 600; pointer-events: none; }
+  .sbar .island { width: 110px; height: 32px; background: #000; border-radius: 20px; }
+  .sbar .ic { display: flex; gap: 6px; align-items: center; }
+  .sbar.light { color: #fff; }
+  .view { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  .homebar { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; border-radius: 3px; background: rgba(0,0,0,.85); z-index: 20; pointer-events: none; }
+  .homebar.light { background: rgba(255,255,255,.85); }
+
+  /* Lock screen */
+  .lock { background: linear-gradient(165deg, #3b5670 0%, #1c2938 45%, #43304a 100%); color: #fff; align-items: center; padding-top: 70px; }
+  .lock::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(255,190,140,.35), transparent 45%), radial-gradient(circle at 80% 75%, rgba(120,160,255,.3), transparent 50%); }
+  .lock > * { position: relative; }
+  .lock .date { font-size: 18px; font-weight: 600; opacity: .9; }
+  .lock .time { font-size: 86px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .notif { margin-top: 26px; width: calc(100% - 24px); text-align: left; border: 0; border-radius: 22px; padding: 12px 14px; background: rgba(245,245,247,.72); backdrop-filter: blur(24px) saturate(1.6); color: #000; display: grid; grid-template-columns: 38px 1fr; gap: 10px; animation: drop .45s cubic-bezier(.2,.9,.3,1.2); }
+  .notif .nav { width: 38px; height: 38px; border-radius: 10px; overflow: hidden; }
+  .notif .nav img, .notif .nav svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .notif .top1 { display: flex; justify-content: space-between; font-size: 13px; color: #3c3c43; }
+  .notif .nt { font-weight: 600; font-size: 15px; }
+  .notif .np { font-size: 14.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .lock .tap { position: absolute; bottom: 44px; font-size: 13px; opacity: .8; }
+
+  /* Incoming video call */
+  .incoming { color: #fff; align-items: center; background: #111; }
+  .incoming .bg { position: absolute; inset: -40px; filter: blur(26px) brightness(.55) saturate(1.1); background-size: cover; background-position: center; }
+  .incoming .bg img { width: 100%; height: 100%; object-fit: cover; }
+  .incoming .who { position: relative; margin-top: 110px; text-align: center; display: grid; gap: 6px; justify-items: center; padding-inline: 20px; }
+  .incoming .lbl { font-size: 15px; opacity: .85; }
+  .incoming .nm { font-size: 34px; font-weight: 600; letter-spacing: -.01em; line-height: 1.1; }
+  .incoming .dt { font-size: 14px; opacity: .8; max-width: 30ch; }
+  .incoming .ava { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; margin-top: 18px; box-shadow: 0 0 0 0 rgba(255,255,255,.5); animation: ringpulse 1.6s infinite; }
+  .incoming .ava img, .incoming .ava svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .incoming .btns { position: absolute; bottom: 70px; left: 0; right: 0; display: flex; justify-content: space-around; }
+  .cbtn { display: grid; justify-items: center; gap: 8px; font-size: 13px; background: none; border: 0; color: #fff; }
+  .cbtn i { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; }
+  .cbtn svg { width: 30px; height: 30px; }
+  .cbtn.dec i { background: #ff3b30; } .cbtn.acc i { background: #34c759; }
+
+  /* In-call */
+  .call { background: #000; color: #fff; }
+  .vfeed { position: absolute; inset: 0; overflow: hidden; }
+  .room { position: absolute; inset: -20px; filter: blur(14px); transform: scale(1.05); }
   .room i { position: absolute; display: block; }
-  .face { position: absolute; left: 50%; bottom: -2%; width: 62%; max-width: 420px; transform: translateX(-50%); }
+  .face { position: absolute; left: 50%; bottom: 14%; width: 96%; transform: translateX(-50%); }
   .face svg { width: 100%; display: block; overflow: visible; }
   .vphoto, .vclip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .vphoto { animation: breathe 7s ease-in-out infinite; transform-origin: 50% 70%; }
+  .vphoto { animation: breathe 7s ease-in-out infinite; transform-origin: 50% 60%; }
   .vclip { opacity: 0; transition: opacity .16s; }
   .vclip.on { opacity: 1; }
-  .vfeed.lowbw .vphoto, .vfeed.lowbw .vclip { filter: blur(.8px) contrast(1.06) saturate(.85); }
+  .vfeed.lowbw .vphoto, .vfeed.lowbw .vclip, .vfeed.lowbw .face svg { filter: blur(.9px) contrast(1.06) saturate(.85); }
   .vfeed.glitch .vphoto, .vfeed.glitch .vclip { filter: drop-shadow(4px 0 rgba(0,255,255,.6)) drop-shadow(-4px 0 rgba(255,0,90,.6)); transform: skewX(3deg) translateX(4px); }
-  .pav img, .rav img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .grain { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: .35; }
-  .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.55)); }
-  .vfeed.lowbw .face svg { filter: blur(.6px) contrast(1.08) saturate(.85); }
-  .vfeed.lowbw .grain { opacity: .55; }
-  .vtop { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .glass { background: rgba(10,14,18,.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 6px 10px; }
-  .vname b { display: block; font-size: 14px; font-weight: 600; }
-  .vname span { font-size: 12px; color: #c3d2d7; }
-  .vmeta { font-family: var(--mono); font-size: 12px; display: flex; gap: 10px; align-items: center; }
-  .sig { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; }
-  .sig i { width: 3px; background: #e8f0f2; border-radius: 1px; }
-  .sig i.off { opacity: .25; }
-  .enc { position: absolute; top: 60px; left: 12px; font-size: 11px; color: #d6e2e6; }
-  .bwtag { position: absolute; bottom: 64px; left: 12px; font-family: var(--mono); font-size: 11px; color: var(--signal); }
-  .pip { position: absolute; right: 12px; bottom: 12px; width: 21%; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.25); background: linear-gradient(160deg, #3a4a55, #1a242b); box-shadow: 0 6px 20px rgba(0,0,0,.5); }
-  .pip svg { width: 100%; height: 100%; display: block; }
-  .pip span { position: absolute; left: 6px; bottom: 4px; font-size: 10px; color: #e8f0f2; }
-  .caption { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(72%, 520px); background: rgba(0,0,0,.66); border-radius: 8px; padding: 7px 12px; font-size: 14px; text-align: center; line-height: 1.35; }
-  .share { position: absolute; top: 58px; right: 12px; width: min(52%, 300px); background: #f4f6f8; color: #14202a; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; box-shadow: 0 12px 30px rgba(0,0,0,.45); animation: pop .25s ease-out; }
-  .share b { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #5b6b75; margin-bottom: 4px; }
-  .vctrl { display: flex; justify-content: center; gap: 14px; padding: 12px; background: #0b1115; }
-  .vbtn { width: 46px; height: 46px; border-radius: 50%; border: 0; background: #26343c; display: grid; place-items: center; }
-  .vbtn svg { width: 20px; height: 20px; }
-  .vbtn.end { background: #e5484d; width: 58px; }
-  .vbtn.end:hover { background: #ff5a5f; }
-  .vtrans { border-top: 1px solid rgba(255,255,255,.06); background: #0c151a; }
-  .vtrans .thread { max-height: 190px; }
+  .grain { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: overlay; opacity: .28; pointer-events: none; }
+  .shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 22%, transparent 55%, rgba(0,0,0,.75) 100%); }
+  .ctop { position: absolute; top: 56px; left: 0; right: 0; text-align: center; }
+  .ctop b { display: block; font-size: 20px; font-weight: 600; }
+  .ctop span { font-size: 13px; opacity: .85; }
+  .ctop .enc { display: inline-block; margin-top: 4px; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,.16); }
+  .ctop .enc.bad { background: rgba(255,159,10,.3); }
+  .pip { position: absolute; right: 14px; top: 130px; width: 92px; height: 128px; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, #56646e, #262f35); box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+  .pip svg { width: 100%; height: 100%; }
+  .share { position: absolute; left: 14px; top: 130px; width: 62%; background: #fff; color: #111; border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.35; box-shadow: 0 10px 30px rgba(0,0,0,.45); animation: pop .25s ease-out; }
+  .share b { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #6b7280; margin-bottom: 3px; }
+  .caption { position: absolute; left: 14px; right: 14px; bottom: 150px; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); border-radius: 10px; padding: 7px 11px; font-size: 14px; line-height: 1.35; text-align: center; }
+  .ctoast { position: absolute; left: 14px; right: 14px; top: 130px; background: rgba(28,28,30,.85); backdrop-filter: blur(10px); border-radius: 14px; padding: 10px 12px; font-size: 13px; line-height: 1.35; animation: drop .3s ease-out; }
+  .csheet { position: absolute; left: 10px; right: 10px; bottom: 108px; display: grid; gap: 6px; }
+  .cctrl { position: absolute; bottom: 26px; left: 0; right: 0; display: flex; justify-content: center; gap: 18px; }
+  .cctrl button { width: 58px; height: 58px; border-radius: 50%; border: 0; display: grid; place-items: center; background: rgba(255,255,255,.2); backdrop-filter: blur(10px); }
+  .cctrl button.off { background: #fff; }
+  .cctrl button.off svg { stroke: #000; }
+  .cctrl .end { background: #ff3b30; }
+  .cctrl svg { width: 24px; height: 24px; }
+  .bw { position: absolute; left: 14px; bottom: 150px; transform: translateY(-46px); font-size: 11px; padding: 3px 8px; border-radius: 99px; background: rgba(255,159,10,.85); color: #000; font-weight: 600; }
+  .call .reply { font-size: 13px; padding: 7px 11px; background: rgba(255,255,255,.18); backdrop-filter: blur(14px); color: #fff; border: 1px solid rgba(255,255,255,.25); }
 
-  /* Phone messaging app */
-  .phone { width: 100%; max-width: 392px; margin: 0 auto; background: #040708; border-radius: 44px; padding: 11px; border: 1px solid #2b3c46; box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 0 0 2px #121b20; }
-  .pscreen { position: relative; border-radius: 34px; overflow: hidden; display: flex; flex-direction: column; height: min(690px, 78vh); min-height: 520px;
-    background: #0b1418 radial-gradient(circle at 20% 10%, rgba(65,214,160,.05), transparent 40%), radial-gradient(circle at 90% 80%, rgba(242,169,59,.05), transparent 40%); }
-  .pstatus { display: flex; justify-content: space-between; align-items: center; padding: 12px 26px 4px; font-size: 13px; font-weight: 600; }
-  .pstatus .island { width: 96px; height: 26px; background: #000; border-radius: 20px; }
-  .pstatus .icons { display: flex; gap: 5px; align-items: center; }
-  .phead { display: flex; gap: 10px; align-items: center; padding: 8px 14px 10px; background: rgba(20,36,44,.85); border-bottom: 1px solid rgba(255,255,255,.06); }
-  .phead .back { color: #4fb8ff; font-size: 22px; line-height: 1; }
-  .pav { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex: none; }
-  .pav svg { width: 100%; height: 100%; display: block; }
-  .pname { font-weight: 600; font-size: 15px; display: flex; gap: 5px; align-items: center; }
-  .pname .tick { color: #4fb8ff; font-size: 13px; }
-  .pstat { font-size: 12px; color: var(--muted); }
-  .pstat.on { color: var(--safe); }
-  .pthread { flex: 1; overflow-y: auto; }
-  .preplies { padding: 8px 10px 4px; display: flex; flex-direction: column; gap: 6px; }
-  .pcompose { margin: 6px 10px 14px; padding: 10px 16px; border-radius: 22px; background: #16262e; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; }
+  /* Chat */
+  .chat { background: #fff; }
+  .chead { padding: 54px 12px 8px; display: grid; grid-template-columns: 26px 1fr 26px; align-items: center; background: rgba(249,249,249,.94); border-bottom: 1px solid #e5e5ea; }
+  .chead .back { color: #0a84ff; font-size: 30px; line-height: .8; }
+  .chead .mid { display: grid; justify-items: center; gap: 2px; }
+  .cav { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; }
+  .cav img, .cav svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cname { font-size: 12px; font-weight: 500; display: flex; gap: 4px; align-items: center; }
+  .cname .tick { width: 13px; height: 13px; border-radius: 50%; background: #0a84ff; color: #fff; font-size: 8px; display: grid; place-items: center; }
+  .cstat { font-size: 11px; color: #8e8e93; }
+  .cstat.on { color: #34c759; }
+  .cbody { flex: 1; overflow-y: auto; background: #fff; }
+  .creplies { padding: 6px 10px 2px; display: grid; gap: 6px; }
+  .ccomp { display: flex; gap: 8px; align-items: center; padding: 6px 12px 30px; }
+  .ccomp .plus { width: 32px; height: 32px; border-radius: 50%; background: #e9e9eb; display: grid; place-items: center; color: #8e8e93; font-size: 22px; }
+  .ccomp .field { flex: 1; border: 1px solid #d1d1d6; border-radius: 18px; padding: 7px 14px; color: #c7c7cc; font-size: 15px; }
 
-  /* Thread bubbles (shared) */
-  .thread { padding: 14px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-  .msg { max-width: 84%; padding: 8px 12px; border-radius: 18px; font-size: 14.5px; line-height: 1.42; position: relative; }
-  .msg.them { align-self: flex-start; background: #1d2f38; border-bottom-left-radius: 5px; }
-  .msg.you { align-self: flex-end; background: #1f6f5c; border-bottom-right-radius: 5px; color: #eafff7; }
-  .msg .ts { display: block; text-align: right; font-size: 10.5px; color: rgba(220,235,238,.55); margin-top: 2px; }
-  .msg.sys { align-self: center; max-width: 94%; background: rgba(255,255,255,.04); color: var(--muted); font-size: 12.5px; text-align: center; border-radius: 10px; }
-  .vtrans .msg.them { background: transparent; padding: 2px 0; max-width: 100%; border-radius: 0; }
-  .vtrans .msg.them::before { content: attr(data-who) "  "; font-family: var(--mono); font-size: 11px; color: var(--signal); }
-  .vtrans .msg.you { background: transparent; color: var(--safe); padding: 2px 0; max-width: 100%; align-self: flex-start; border-radius: 0; }
-  .vtrans .msg.you::before { content: "YOU  "; font-family: var(--mono); font-size: 11px; }
-  .paycard { align-self: flex-start; max-width: 88%; background: #f4f6f8; color: #14202a; border-radius: 14px; padding: 10px 12px; font-size: 13.5px; }
-  .paycard::before { content: "PAYMENT DETAILS"; display: block; font-size: 10px; letter-spacing: .12em; color: #5b6b75; margin-bottom: 3px; }
-  .paycard .seg:hover { background: rgba(0,0,0,.06); }
-  .vn { display: grid; gap: 6px; min-width: 230px; }
-  .vn-row { display: flex; align-items: center; gap: 9px; }
-  .vn-play { width: 32px; height: 32px; border-radius: 50%; border: 0; background: #4fb8ff; color: #04121c; display: grid; place-items: center; font-size: 12px; flex: none; }
-  .vn-bars { display: flex; gap: 2px; align-items: center; height: 26px; flex: 1; }
-  .vn-bars i { width: 3px; border-radius: 2px; background: #5c7883; }
-  .vn-bars i.on { background: #4fb8ff; }
-  .vn-dur { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-  .vn-t { font-size: 13px; color: #b8cad0; border-top: 1px solid rgba(255,255,255,.07); padding-top: 5px; }
-  .seg { border-radius: 4px; cursor: pointer; transition: background .15s; }
-  .seg:hover { background: rgba(255,255,255,.07); }
-  .seg.flagged { background: var(--threat-dim); box-shadow: inset 0 -2px 0 var(--threat); }
-  .seg.flagged::before { content: "⚑ "; color: var(--threat); }
-  .locked .seg { cursor: default; }
-  .speaking .w { opacity: .45; } .speaking .w.lit { opacity: 1; }
-  .w.hot { color: var(--signal) !important; }
-  .paycard .w.hot { color: #b56a00 !important; }
-  .typing { align-self: flex-start; background: #1d2f38; border-radius: 18px; padding: 10px 14px; display: flex; gap: 4px; }
-  .typing i { width: 7px; height: 7px; border-radius: 50%; background: #8aa3ac; animation: dots 1s infinite; }
+  /* Mail */
+  .mail { background: #fff; }
+  .mhead { padding: 54px 16px 10px; display: flex; justify-content: space-between; color: #0a84ff; font-size: 16px; border-bottom: 1px solid #e5e5ea; }
+  .mbody { flex: 1; overflow-y: auto; padding: 0 16px; }
+  .msender { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 14px 0 8px; }
+  .msender .cav { width: 40px; height: 40px; }
+  .msender b { font-size: 15px; display: block; }
+  .msender > span > span { display: block; font-size: 12.5px; color: #8e8e93; overflow-wrap: anywhere; }
+  .msender b { color: #000; }
+  .msender time { font-size: 12.5px; color: #8e8e93; align-self: start; }
+  .msubj { font-size: 20px; font-weight: 700; letter-spacing: -.01em; padding-bottom: 10px; border-bottom: 1px solid #e5e5ea; }
+  .mreplies { padding: 6px 12px; display: grid; gap: 6px; border-top: 1px solid #e5e5ea; }
+  .mbar { display: flex; justify-content: space-around; padding: 8px 0 30px; color: #0a84ff; font-size: 13px; }
+
+  /* Thread content (shared) */
+  .thread { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .msg { max-width: 78%; padding: 8px 13px; border-radius: 19px; font-size: 15.5px; line-height: 1.35; position: relative; }
+  .msg.them { align-self: flex-start; background: #e9e9eb; color: #000; border-bottom-left-radius: 6px; }
+  .msg.you { align-self: flex-end; background: #0a84ff; color: #fff; border-bottom-right-radius: 6px; }
+  .msg .ts { display: block; font-size: 10.5px; opacity: .55; margin-top: 2px; text-align: right; }
+  .msg.sys { align-self: center; max-width: 92%; background: none; color: #8e8e93; font-size: 12px; text-align: center; padding: 4px 8px; }
+  .typing { align-self: flex-start; background: #e9e9eb; border-radius: 19px; padding: 11px 14px; display: flex; gap: 4px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: #8e8e93; animation: dots 1s infinite; }
   .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
-
+  .paycard { align-self: flex-start; max-width: 86%; background: #fff; color: #000; border: 1px solid #e5e5ea; border-radius: 16px; padding: 10px 12px; font-size: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  .paycard::before { content: "Payment details"; display: block; font-size: 11px; font-weight: 600; color: #8e8e93; margin-bottom: 3px; }
+  .vn { display: grid; gap: 6px; min-width: 220px; }
+  .vn-row { display: flex; align-items: center; gap: 9px; }
+  .vn-play { width: 30px; height: 30px; border-radius: 50%; border: 0; background: #0a84ff; color: #fff; display: grid; place-items: center; font-size: 11px; flex: none; }
+  .vn-bars { display: flex; gap: 2px; align-items: center; height: 24px; flex: 1; }
+  .vn-bars i { width: 3px; border-radius: 2px; background: #aeaeb2; }
+  .vn-bars i.on { background: #0a84ff; }
+  .vn-dur { font-size: 11px; color: #8e8e93; font-variant-numeric: tabular-nums; }
+  .vn-t { font-size: 13px; color: #3c3c43; border-top: 1px solid rgba(0,0,0,.08); padding-top: 5px; }
+  /* Mail flavour */
+  .mail .thread { padding: 12px 0; gap: 12px; }
+  .mail .msg.them { background: none; max-width: 100%; padding: 0; border-radius: 0; font-size: 15.5px; line-height: 1.5; }
+  .mail .msg.you { max-width: 100%; align-self: stretch; background: #f2f2f7; color: #000; border-radius: 12px; font-size: 14px; }
+  .mail .msg.you::before { content: "You replied"; display: block; font-size: 11px; font-weight: 600; color: #8e8e93; }
+  .mail .msg.sys { align-self: stretch; text-align: left; border-top: 1px solid #e5e5ea; padding: 10px 0 0; }
+  /* Flagging */
+  .seg { border-radius: 4px; cursor: pointer; transition: background .15s; }
+  .seg:hover { background: rgba(10,132,255,.1); }
+  .msg.you .seg:hover { background: rgba(255,255,255,.2); }
+  .seg.flagged { background: rgba(255,59,48,.16); box-shadow: inset 0 -2px 0 #ff3b30; }
+  .seg.flagged::before { content: "⚑ "; color: #ff3b30; }
+  .locked .seg { cursor: default; }
+  .speaking .w { opacity: .4; } .speaking .w.lit { opacity: 1; }
+  .w.hot { color: #c2410c; font-weight: 600; }
   /* Replies */
-  .replies { display: grid; gap: 7px; }
-  .vreplies { padding: 12px; background: #0c151a; border-top: 1px solid rgba(255,255,255,.06); grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-  .reply { text-align: left; background: rgba(79,184,255,.08); border: 1px solid rgba(79,184,255,.4); border-radius: 16px; padding: 8px 12px; font-size: 13.5px; display: flex; gap: 8px; align-items: flex-start; color: #dff2ff; }
-  .reply:hover:not(:disabled) { background: rgba(79,184,255,.18); }
-  .reply kbd { color: #4fb8ff; border-color: rgba(79,184,255,.4); flex: none; }
-  .reply-hint { font-size: 12px; color: var(--muted); text-align: center; padding: 4px; }
+  .reply { text-align: left; border: 1px solid #0a84ff; color: #0a84ff; background: #fff; border-radius: 18px; padding: 8px 12px; font-size: 14px; line-height: 1.3; display: flex; gap: 8px; }
+  .reply:hover:not(:disabled) { background: #eef5ff; }
+  .reply kbd { font-family: var(--mono); font-size: 11px; opacity: .7; }
+  .reply-hint { font-size: 12.5px; color: #8e8e93; text-align: center; padding: 4px; }
+  .call .reply-hint { color: rgba(255,255,255,.8); }
 
-  /* Incoming overlay */
-  .ring { position: absolute; inset: 0; z-index: 5; border-radius: 18px; overflow: hidden; display: grid; place-items: center; text-align: center; }
-  .ring .blurbg { position: absolute; inset: -30px; filter: blur(30px) brightness(.55); }
-  .ring .content { position: relative; display: grid; justify-items: center; gap: 10px; padding: 20px; }
-  .ring .rav { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 0 rgba(65,214,160,.5); animation: ringpulse 1.4s infinite; }
-  .ring .rav svg { width: 100%; height: 100%; }
-  .ring .rl { font-size: 13px; color: #cfe0e5; letter-spacing: .04em; }
-  .ring .rn { font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
-  .ring .rd { font-size: 13px; color: #b8cad0; max-width: 34ch; }
-  .notif { width: min(360px, 92%); text-align: left; border-radius: 20px; padding: 12px 14px; background: rgba(40,52,60,.72); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.12); display: grid; grid-template-columns: 40px 1fr; gap: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.5); animation: drop .4s ease-out; }
-  .notif .pav { width: 40px; height: 40px; }
-  .notif .app { font-size: 11px; color: #b8cad0; display: flex; justify-content: space-between; }
-  .notif .nt { font-weight: 600; font-size: 14px; }
-  .notif .np { font-size: 13.5px; color: #dde8eb; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .lock-time { font-size: 64px; font-weight: 300; letter-spacing: -.02em; line-height: 1; }
-  .lock-date { font-size: 15px; color: #d6e2e6; margin-bottom: 14px; }
-  .btn-answer { background: var(--safe); color: #04241a; border: 0; border-radius: 99px; padding: 12px 34px; font-weight: 700; font-size: 16px; letter-spacing: .02em; box-shadow: 0 10px 30px rgba(65,214,160,.35); }
-
-  /* Analysis panel */
-  .analysis { padding: 16px; display: flex; flex-direction: column; gap: 13px; }
-  .a-title { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-weight: 600; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
-  .a-title small { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: none; font-weight: 400; }
-  canvas#wave { width: 100%; height: 76px; display: block; background: #08121a; border-radius: 8px; border: 1px solid var(--line); }
-  .meters { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
-  .meter { background: var(--panel-2); border-radius: 8px; padding: 8px 10px; }
-  .meter .k { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-  .meter .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 600; }
-  .meter .v small { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 3px; }
-  .meter .bar { height: 4px; margin-top: 4px; }
-  .meter.alert .v { color: var(--threat); }
+  /* ---------- Scam Radar ---------- */
+  .radar { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 18px; box-shadow: var(--shadow); display: grid; gap: 14px; }
+  .rhead { display: flex; align-items: center; gap: 10px; }
+  .rhead .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--you-soft); display: grid; place-items: center; }
+  .rhead .logo svg { width: 20px; height: 20px; }
+  .rhead b { font-family: var(--display); font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+  .rhead > span > span { display: block; font-size: 12px; color: var(--muted); }
+  .rhead b { color: var(--text); }
+  .rhead .live { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--hacker); display: flex; align-items: center; gap: 5px; }
+  .rhead .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--hacker); animation: pulse 1.2s infinite; }
+  .sec-t { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .transcript { background: var(--surface-2); border-radius: 14px; max-height: 210px; overflow-y: auto; }
+  .transcript .thread { padding: 10px 12px; gap: 8px; }
+  .transcript .msg { max-width: 100%; background: none; padding: 0; border-radius: 0; color: var(--text); font-size: 14px; }
+  .transcript .msg.them::before { content: attr(data-who); display: block; font-size: 11px; font-weight: 700; color: var(--muted); }
+  .transcript .msg.you { color: #0a84ff; align-self: flex-start; }
+  .transcript .msg.you::before { content: "You"; display: block; font-size: 11px; font-weight: 700; }
+  .transcript .msg.sys { align-self: flex-start; text-align: left; color: var(--muted); padding: 0; }
+  .transcript .paycard { background: var(--surface); color: var(--text); border-color: var(--line); }
+  .transcript .w.hot { color: var(--warn); }
+  .transcript .seg:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+  canvas#wave { width: 100%; height: 64px; display: block; border-radius: 12px; background: var(--surface-2); }
+  .meters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .mt { background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+  .mt .k { font-size: 10.5px; font-weight: 600; color: var(--muted); line-height: 1.2; min-height: 2.4em; }
+  .mt .v { font-family: var(--mono); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mt .v small { font-size: 10px; color: var(--muted); margin-left: 2px; }
+  .mt .track { height: 4px; margin-top: 4px; }
+  .mt.alert .v { color: var(--hacker); }
   .rows { display: grid; }
-  .row { display: grid; grid-template-columns: 100px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(34,66,79,.6); align-items: start; }
-  .row .k { color: var(--muted); font-size: 12px; }
-  .row .v { font-family: var(--mono); font-size: 12px; display: flex; gap: 8px; align-items: flex-start; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 4px; background: var(--muted); }
-  .dot.ok { background: var(--safe); } .dot.warn { background: var(--signal); } .dot.bad { background: var(--threat); }
+  .row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: start; font-size: 13px; }
+  .row:last-child { border-bottom: 0; }
+  .row .k { color: var(--muted); font-size: 12.5px; }
+  .row .v { display: flex; gap: 8px; align-items: flex-start; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin-top: 5px; background: var(--line); }
+  .dot.ok { background: var(--you); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--hacker); }
   .row.pending .v { color: var(--muted); }
   .caveat { font-size: 12px; color: var(--muted); margin: 0; }
-  .mic { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+  .mic { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; font-size: 12.5px; color: var(--muted); }
   .mic-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .btn-ghost { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; }
-  .btn-ghost:hover { border-color: var(--muted); }
-  .mic .note { font-size: 12px; color: var(--muted); }
-  .mic .heard { font-family: var(--mono); font-size: 12px; color: var(--signal); }
+  .ghost { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+  .heard { font-family: var(--mono); color: var(--warn); }
 
-  .controls { margin-top: 18px; display: grid; gap: 8px; }
-  .label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-  .verdicts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .verdict { border: 0; border-radius: 12px; padding: 15px; font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: .06em; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .verdict small { font-family: var(--body); font-weight: 500; font-size: 12px; letter-spacing: 0; text-transform: none; opacity: .85; }
-  .v-scam { background: var(--threat); color: #2a0409; } .v-legit { background: var(--safe); color: #04241a; }
-  .verdict:hover:not(:disabled) { filter: brightness(1.08); }
-  .hint { font-size: 13px; color: var(--muted); margin: 0; }
-
-  /* Overlays */
-  .modal { position: fixed; inset: 0; z-index: 40; background: rgba(4,9,13,.8); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
-  .card { width: min(600px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
-  .answer { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1.05; }
-  .answer.yes { color: var(--threat); } .answer.no { color: var(--safe); }
-  .verdict-line { font-family: var(--mono); font-size: 13px; }
-  .pts { display: grid; gap: 4px; font-family: var(--mono); font-size: 13px; }
-  .pts div { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding-block: 3px; }
-  .pts .pos { color: var(--safe); } .pts .neg { color: var(--threat); }
+  /* ---------- Debrief & end ---------- */
+  .modal { position: fixed; inset: 0; z-index: 50; background: rgba(8,12,16,.55); backdrop-filter: blur(6px); display: grid; place-items: end center; padding: 16px; overflow-y: auto; }
+  @media (min-width: 700px) { .modal { place-items: center; } }
+  .sheet { width: min(560px, 100%); background: var(--surface); color: var(--text); border-radius: 26px; padding: 22px; display: grid; gap: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.35); animation: rise .3s cubic-bezier(.2,.9,.3,1.1); }
+  .pill { justify-self: start; font-size: 12px; font-weight: 800; letter-spacing: .06em; padding: 4px 10px; border-radius: 99px; }
+  .pill.scam { background: var(--hacker-soft); color: var(--hacker); } .pill.real { background: var(--you-soft); color: var(--you); }
+  .sheet h2 { font-family: var(--display); font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin: 0; }
+  .vline { font-weight: 700; font-size: 14px; }
+  .hit { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--hacker-soft); color: var(--hacker); font-weight: 600; font-size: 14px; }
+  .pts { display: grid; gap: 2px; font-size: 13.5px; }
+  .pts div { display: flex; justify-content: space-between; padding-block: 4px; border-bottom: 1px solid var(--line); }
+  .pts .pos { color: var(--you); font-family: var(--mono); } .pts .neg { color: var(--hacker); font-family: var(--mono); }
   .tells { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
-  .tells q { color: var(--signal); }
-  .tells .miss { color: var(--muted); font-size: 12px; font-family: var(--mono); }
-  .lesson { font-size: 14px; background: var(--panel-2); border-radius: 8px; padding: 10px 12px; margin: 0; }
-  .hit { font-size: 14px; color: var(--threat); font-weight: 600; margin: 0; }
-  .glitch { position: fixed; inset: 0; z-index: 60; pointer-events: none; display: grid; place-items: center; background: rgba(255,84,104,.22); }
-  .glitch::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,84,104,.25) 0 2px, transparent 2px 6px); animation: scan .25s linear infinite; }
-  .glitch span { position: relative; font-family: var(--mono); font-weight: 600; font-size: clamp(28px, 7vw, 64px); color: var(--threat); letter-spacing: .12em; text-shadow: 3px 0 #fff3, -3px 0 #0ff5; animation: jitter .12s infinite; text-align: center; }
-  body.shake .wrap { animation: shake .4s 3; }
-
-  .end-score { font-family: var(--display); font-size: clamp(56px, 12vw, 110px); font-weight: 700; line-height: 1; color: var(--signal); font-variant-numeric: tabular-nums; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
-  .stats b { display: block; font-family: var(--mono); font-size: 22px; font-variant-numeric: tabular-nums; }
+  .tells q { font-weight: 600; }
+  .tells .got { font-size: 12px; color: var(--you); font-weight: 600; }
+  .lesson { margin: 0; font-size: 14px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+  .btn { border: 0; border-radius: 14px; padding: 14px 20px; font-family: var(--display); font-weight: 800; font-size: 16px; background: var(--text); color: var(--bg); }
+  .btn.alt { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+  .end { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; padding-block: 34px; }
+  .end h1 { margin-bottom: 8px; }
+  .score2 { display: flex; gap: 12px; margin: 18px 0; flex-wrap: wrap; }
+  .score2 div { flex: 1; min-width: 150px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .score2 small { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .score2 .y small { color: var(--you); } .score2 .h small { color: var(--hacker); }
+  .score2 b { display: block; font-family: var(--mono); font-size: 34px; font-weight: 600; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .stats div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+  .stats b { display: block; font-family: var(--mono); font-size: 20px; }
   .stats span { font-size: 12px; color: var(--muted); }
   .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  .log li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
-  .log .ic { font-family: var(--mono); font-weight: 600; } .log .ok { color: var(--safe); } .log .bad { color: var(--threat); }
-  .log .p { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .end-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; padding-block: 30px; }
+  .log li { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; font-size: 14px; }
+  .log .ic { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; }
+  .log .ok { background: var(--you); } .log .bad { background: var(--hacker); }
+  .log .p { font-family: var(--mono); font-size: 13px; }
+  .row2 { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 
-  @keyframes pulse { 50% { opacity: .45; } }
-  @keyframes breathe { 50% { transform: scale(1.018) translateY(-2px); } }
-  @keyframes ringpulse { 0% { box-shadow: 0 0 0 0 rgba(65,214,160,.55); } 100% { box-shadow: 0 0 0 28px rgba(65,214,160,0); } }
-  @keyframes scan { to { transform: translateY(6px); } }
-  @keyframes jitter { 0% { transform: translate(0,0); } 33% { transform: translate(-3px,1px); } 66% { transform: translate(2px,-2px); } }
-  @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-  @keyframes dots { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+  .breach { position: fixed; inset: 0; z-index: 60; pointer-events: none; display: grid; place-items: center; background: rgba(217,45,58,.28); }
+  .breach::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(217,45,58,.22) 0 2px, transparent 2px 6px); animation: scan .25s linear infinite; }
+  .breach div { position: relative; text-align: center; color: #fff; background: #111; border-radius: 22px; padding: 20px 28px; box-shadow: 0 20px 60px rgba(0,0,0,.5); animation: jitter .15s infinite; }
+  .breach b { display: block; font-family: var(--display); font-size: 30px; font-weight: 800; color: #ff5c68; }
+  .breach span { font-family: var(--mono); font-size: 16px; }
+  body.shake .wrap { animation: shake .4s 3; }
+
+  @keyframes pulse { 50% { opacity: .4; } }
+  @keyframes ringpulse { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,.45); } 100% { box-shadow: 0 0 0 26px rgba(255,255,255,0); } }
+  @keyframes dots { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+  @keyframes drop { from { opacity: 0; transform: translateY(-14px) scale(.97); } }
   @keyframes pop { from { opacity: 0; transform: scale(.94); } }
-  @keyframes drop { from { opacity: 0; transform: translateY(-16px); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(20px); } }
+  @keyframes breathe { 50% { transform: scale(1.018) translateY(-2px); } }
+  @keyframes scan { to { transform: translateY(6px); } }
+  @keyframes jitter { 33% { transform: translate(-2px, 1px); } 66% { transform: translate(2px, -1px); } }
+  @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
-  @media (max-width: 900px) {
-    .stage, .hero, .end-grid { grid-template-columns: minmax(0,1fr); }
-    .teaser { margin-bottom: 24px; }
+  @media (max-width: 960px) {
+    .hero, .end { grid-template-columns: minmax(0, 1fr); }
+    .game { grid-template-columns: minmax(0, 1fr); }
+    .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 520px) {
     .brand { width: 100%; }
-    .stat .v { font-size: 17px; }
-    .integrity { grid-template-columns: 1fr auto; }
-    .integrity .bar { grid-column: 1 / -1; grid-row: 2; }
-    .row { grid-template-columns: 88px 1fr; }
-    .verdict { font-size: 17px; padding: 13px 8px; }
-    .face { width: 78%; }
-    .caption { width: 88%; font-size: 13px; bottom: 10px; }
-    .share { width: 62%; }
-    .pip { width: 24%; bottom: auto; top: 58px; }
-    .phone { padding: 8px; border-radius: 38px; }
+    .meters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .phone { padding: 8px; border-radius: 46px; }
+    .screen { border-radius: 38px; height: min(720px, calc(100vh - 230px)); min-height: 560px; }
+    .role { grid-template-columns: 44px 1fr; }
+    .role .ic { width: 44px; height: 44px; }
+    .role .go { grid-column: 2; }
+    .scene { display: none; }
   }
 </style>
 </head>
 <body>
 
-<header class="hud">
-  <div class="hud-row">
-    <div class="brand"><span class="r">Hacker</span><span class="vs">vs</span>You</div>
-    <div class="stat"><span class="k">Time</span><span class="v" id="timer">5:00</span></div>
-    <div class="stat"><span class="k">Score</span><span class="v" id="score">0</span></div>
-    <div class="stat"><span class="k">Streak</span><span class="v" id="streak">×1.0</span></div>
-    <div class="stat"><span class="k">Contact</span><span class="v" id="roundNo">0/10</span></div>
+<header class="top">
+  <div class="top-row">
+    <div class="brand"><span class="h">Hacker</span><span class="vs">vs</span><span class="y">You</span></div>
+    <span class="role-chip" id="roleChip">Pick a role</span>
+    <span class="timer" id="timer">5:00</span>
+    <div class="board"><div class="you"><small>You</small><b id="score">0</b></div><div class="hk"><small>Hacker</small><b id="stolen">£0</b></div></div>
+    <span class="streak" id="streak">×1.0</span>
   </div>
-  <div class="integrity">
+  <div class="meter-row">
     <span class="q">Am I being hacked?</span>
-    <div class="bar" title="System integrity"><i id="integrityBar"></i></div>
-    <span class="chip secure" id="statusChip">SECURE · 100%</span>
+    <div class="track" title="Your security"><i id="integrityBar"></i></div>
+    <span class="status secure" id="statusChip">Secure · 100%</span>
   </div>
 </header>
 
@@ -328,171 +403,183 @@
   <section id="screenStart">
     <div class="hero">
       <div>
-        <div class="eyebrow">Cyber awareness drill · 5 minutes</div>
-        <h1>Book a trip. Make a payment. <span class="red">Someone's lying.</span></h1>
-        <p class="lede">Ten people will video call you or message you while you book travel and pay for things. Some are genuine. Some are VOX, a hacker using deepfakes, fake payment details and pressure. Watch them, listen to them, reply, then decide: scam or legit.</p>
-        <div class="cta-row">
-          <button class="btn-go" id="btnStart">Start: am I being hacked?</button>
-          <label class="toggle"><input type="checkbox" id="optVoice" checked> Characters speak out loud</label>
-        </div>
-        <ul class="rules">
-          <li><b>+100</b><span>Right call. Up to +50 for speed, and a streak multiplies it up to ×3.</span></li>
-          <li><b>+20 ⚑</b><span>Tap a sentence in the transcript or chat to flag it as a red flag. Wrong flags cost 10.</span></li>
-          <li><b>+25</b><span>Safe replies: verify on a channel you trust, refuse, pay by protected methods.</span></li>
-          <li><b>−150</b><span>Send the money, the code or the card details to the hacker and you're breached.</span></li>
-          <li><b>KEYS</b><span><kbd>S</kbd> scam · <kbd>L</kbd> legit · <kbd>1</kbd>–<kbd>3</kbd> reply · <kbd>Enter</kbd> answer / next</span></li>
-        </ul>
-        <p class="best" id="bestLine" style="margin-top:16px"></p>
+        <div class="kicker">Cyber awareness · 5 minutes</div>
+        <h1>A hacker is in your phone's contacts. <span class="h">Can you spot them?</span></h1>
+        <p class="lede">Pick who you are today. Your phone will ring, buzz and ping with video calls, chats and emails. Some are real people. Some are the hacker, using deepfakes, fake payment details and pressure. Reply, then decide: scam or legit. Stop them stealing your money.</p>
+        <label class="toggle"><input type="checkbox" id="optVoice" checked> Play voices out loud</label>
+        <p class="best" id="bestLine"></p>
       </div>
-      <div class="teaser" aria-hidden="true">
-        <div class="tv" id="teaserVideo"></div>
-        <div class="tphone"><div class="inner">
-          <div class="tb">Staybook takes 15%. Pay me direct and I'll knock €120 off 😊</div>
-          <div class="tb">🎤 ▶ ▂▅▇▃▆▂▅▇▃ 0:07</div>
-          <div class="tb me">I'd rather pay through Staybook</div>
-        </div></div>
+      <div class="roles">
+        <button class="role" data-role="travel">
+          <span class="ic" style="background:#e6f0ff"><svg viewBox="0 0 24 24" fill="none" stroke="#0a60d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-6-2-3-8 2-5-6-2 1 3 6-5 1-2-2-1 1z"/><path d="M3 21h18"/></svg></span>
+          <span><b>The traveller</b><span>You're booking a summer trip: villa, flights, hotel, a city break. The travel "deals" start arriving.</span><em>5 contacts · 5 min</em></span>
+          <span class="go">Play →</span>
+        </button>
+        <button class="role" data-role="pay">
+          <span class="ic" style="background:#e5f6ee"><svg viewBox="0 0 24 24" fill="none" stroke="#0d8f6a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg></span>
+          <span><b>The payer</b><span>You handle payments at work and sell a few things online. Your boss, suppliers and buyers all want money moved.</span><em>5 contacts · 5 min</em></span>
+          <span class="go">Play →</span>
+        </button>
+        <button class="role" data-role="all">
+          <span class="ic" style="background:#fde8ea"><svg viewBox="0 0 24 24" fill="none" stroke="#d92d3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <span><b>Full day</b><span>Both roles at once. Ten contacts, same five minutes. For people who think they can't be fooled.</span><em>10 contacts · 5 min</em></span>
+          <span class="go">Play →</span>
+        </button>
       </div>
+    </div>
+    <div class="how">
+      <div><b>+100</b>Right call, scam or legit. Faster calls and streaks score more.</div>
+      <div><b>+20 ⚑</b>Tap any sentence that's a red flag. Wrong flags cost 10.</div>
+      <div><b>+25</b>Safe replies: check through a channel you trust, pay the protected way.</div>
+      <div><b>−150</b>Pay the hacker or hand over a code and they steal the money.</div>
     </div>
   </section>
 
   <!-- GAME -->
   <section id="screenGame" hidden>
-    <p class="vox"><b>VOX ▸</b><span id="voxLine">Connecting…</span><span class="scene" id="sceneTag">Travel</span></p>
-    <div class="stage">
-      <div class="devcol" id="devcol">
+    <div class="hackerline">
+      <span class="av"><svg viewBox="0 0 24 24" fill="#ff5c68"><path d="M12 2a7 7 0 0 0-7 7v3l-2 3h18l-2-3V9a7 7 0 0 0-7-7zM8 18a4 4 0 0 0 8 0z"/></svg></span>
+      <span class="bubble"><b>Hacker</b><span id="hackerLine">Let's play.</span></span>
+      <span class="scene" id="sceneTag"></span>
+    </div>
+    <div class="game">
+      <div class="phonecol">
+        <div class="phone" id="phone">
+          <div class="screen">
+            <div class="sbar" id="sbar"><span id="sClock">9:41</span><span class="island"></span><span class="ic"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><rect x="23.5" y="4" width="1.8" height="4" rx=".9" fill="currentColor" opacity=".45"/></svg></span></div>
 
-        <!-- Video call -->
-        <div class="vcall" id="vcall" hidden>
-          <div class="vfeed" id="vfeed">
-            <div class="room" id="room"></div>
-            <div class="face" id="face"></div>
-            <img class="vphoto" id="vPhoto" alt="" hidden>
-            <video class="vclip" id="vClip" muted playsinline loop preload="auto"></video>
-            <canvas class="grain" id="grain" width="160" height="110"></canvas>
-            <div class="vignette"></div>
-            <div class="vtop">
-              <div class="glass vname"><b id="vName">—</b><span id="vOrg">—</span></div>
-              <div class="glass vmeta"><span class="sig" id="vSig"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:12px"></i></span><span id="vClock">00:00</span></div>
+            <!-- Lock screen -->
+            <div class="view lock" id="v-lock" hidden>
+              <div class="date" id="lockDate"></div>
+              <div class="time" id="lockTime">9:41</div>
+              <button class="notif" id="notif"><span class="nav" id="nAv"></span><span><span class="top1"><span id="nApp">MESSAGES</span><span>now</span></span><span class="nt" id="nTitle"></span><span class="np" id="nPrev"></span></span></button>
+              <div class="tap">Tap the notification to open</div>
             </div>
-            <div class="glass enc" id="vEnc">🔒 End-to-end encrypted</div>
-            <div class="share" id="share" hidden><b>Shared screen</b><span id="shareText"></span></div>
-            <div class="bwtag glass" id="bwTag" hidden>⚠ Low bandwidth · video quality reduced</div>
-            <div class="caption" id="caption" hidden></div>
-            <div class="pip"><svg viewBox="0 0 90 120" aria-hidden="true"><defs><linearGradient id="pipg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8aa3ac"/><stop offset="1" stop-color="#4a5f68"/></linearGradient></defs><circle cx="45" cy="50" r="18" fill="url(#pipg)"/><path d="M12 120 C14 88 30 78 45 78 C60 78 76 88 78 120Z" fill="url(#pipg)"/></svg><span>You</span></div>
-          </div>
-          <div class="vctrl">
-            <button class="vbtn" id="vMute" title="Mute" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="#e8f0f2" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
-            <button class="vbtn" id="vCam" title="Camera" aria-label="Camera"><svg viewBox="0 0 24 24" fill="none" stroke="#e8f0f2" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg></button>
-            <button class="vbtn end" id="vEnd" title="Hang up and report as a scam" aria-label="Hang up and report as a scam"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 9c-3.2 0-6.2.9-8.6 2.6-.6.4-.8 1.2-.4 1.8l1.6 2.4c.4.6 1.2.8 1.8.5l2.3-1.2c.5-.3.8-.8.7-1.4l-.2-1.4c1.9-.5 3.9-.5 5.8 0l-.2 1.4c-.1.6.2 1.1.7 1.4l2.3 1.2c.6.3 1.4.1 1.8-.5l1.6-2.4c.4-.6.2-1.4-.4-1.8C18.2 9.9 15.2 9 12 9z"/></svg></button>
-          </div>
-          <div class="vtrans">
-            <div id="vThreadSlot"></div>
-          </div>
-          <div class="replies vreplies" id="vReplySlot"></div>
-        </div>
 
-        <!-- Phone -->
-        <div class="phone" id="phone" hidden>
-          <div class="pscreen">
-            <div class="pstatus"><span id="pClock">9:41</span><span class="island"></span><span class="icons">▂▄▆ <svg width="24" height="12" viewBox="0 0 24 12"><rect x=".5" y=".5" width="20" height="11" rx="3" fill="none" stroke="#dcebee"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#dcebee"/><rect x="21.5" y="4" width="2" height="4" rx="1" fill="#dcebee"/></svg></span></div>
-            <div class="phead">
-              <span class="back">‹</span>
-              <div class="pav" id="pAv"></div>
-              <div><div class="pname"><span id="pName">—</span><span class="tick" id="pTick" hidden>✔</span></div><div class="pstat" id="pStat">—</div></div>
+            <!-- Incoming video call -->
+            <div class="view incoming" id="v-incoming" hidden>
+              <div class="bg" id="inBg"></div>
+              <div class="who"><span class="lbl">Video call…</span><span class="nm" id="inName"></span><span class="dt" id="inDetail"></span><span class="ava" id="inAv"></span></div>
+              <div class="btns">
+                <button class="cbtn dec" id="btnDecline"><i><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 9c-3.2 0-6.2.9-8.6 2.6-.6.4-.8 1.2-.4 1.8l1.6 2.4c.4.6 1.2.8 1.8.5l2.3-1.2c.5-.3.8-.8.7-1.4l-.2-1.4c1.9-.5 3.9-.5 5.8 0l-.2 1.4c-.1.6.2 1.1.7 1.4l2.3 1.2c.6.3 1.4.1 1.8-.5l1.6-2.4c.4-.6.2-1.4-.4-1.8C18.2 9.9 15.2 9 12 9z"/></svg></i>Decline</button>
+                <button class="cbtn acc" id="btnAnswer"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="M16 10l6-3v10l-6-3z"/></svg></i>Accept</button>
+              </div>
             </div>
-            <div class="pthread" id="pThreadSlot"></div>
-            <div class="replies preplies" id="pReplySlot"></div>
-            <div class="pcompose"><span>Message</span><span>🎤</span></div>
+
+            <!-- In a video call -->
+            <div class="view call" id="v-call" hidden>
+              <div class="vfeed" id="vfeed">
+                <div class="room" id="room"></div>
+                <div class="face" id="face"></div>
+                <img class="vphoto" id="vPhoto" alt="" hidden>
+                <video class="vclip" id="vClip" muted playsinline loop preload="auto"></video>
+                <canvas class="grain" id="grain" width="120" height="240"></canvas>
+                <div class="shade"></div>
+              </div>
+              <div class="ctop"><b id="vName"></b><span id="vClock">00:00</span><br><span class="enc" id="vEnc">End-to-end encrypted</span></div>
+              <div class="pip"><svg viewBox="0 0 90 120" aria-hidden="true"><circle cx="45" cy="50" r="18" fill="#9fb0b9"/><path d="M12 120 C14 88 30 78 45 78 C60 78 76 88 78 120Z" fill="#9fb0b9"/></svg></div>
+              <div class="share" id="share" hidden><b>Shared screen</b><span id="shareText"></span></div>
+              <div class="ctoast" id="callToast" hidden></div>
+              <span class="bw" id="bwTag" hidden>Poor connection</span>
+              <div class="caption" id="caption" hidden></div>
+              <div class="csheet" id="callSheet"></div>
+              <div class="cctrl">
+                <button id="cMute" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+                <button id="cCam" aria-label="Camera"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="M16 10l6-3v10l-6-3z"/></svg></button>
+                <button class="end" id="cEnd" aria-label="Hang up and report as a scam"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 9c-3.2 0-6.2.9-8.6 2.6-.6.4-.8 1.2-.4 1.8l1.6 2.4c.4.6 1.2.8 1.8.5l2.3-1.2c.5-.3.8-.8.7-1.4l-.2-1.4c1.9-.5 3.9-.5 5.8 0l-.2 1.4c-.1.6.2 1.1.7 1.4l2.3 1.2c.6.3 1.4.1 1.8-.5l1.6-2.4c.4-.6.2-1.4-.4-1.8C18.2 9.9 15.2 9 12 9z"/></svg></button>
+              </div>
+            </div>
+
+            <!-- Chat -->
+            <div class="view chat" id="v-chat" hidden>
+              <div class="chead"><span class="back">‹</span><div class="mid"><span class="cav" id="chAv"></span><span class="cname"><span id="chName"></span><span class="tick" id="chTick" hidden>✓</span></span><span class="cstat" id="chatStatus"></span></div><span></span></div>
+              <div class="cbody" id="chatBody"></div>
+              <div class="creplies" id="chatReplies"></div>
+              <div class="ccomp"><span class="plus">+</span><span class="field">Message</span></div>
+            </div>
+
+            <!-- Mail -->
+            <div class="view mail" id="v-mail" hidden>
+              <div class="mhead"><span>‹ Inbox</span><span>⋯</span></div>
+              <div class="mbody" id="mailBody">
+                <div class="msender"><span class="cav" id="mAv"></span><span><b id="mName"></b><span id="mAddr"></span></span><time id="mTime"></time></div>
+                <div class="msubj" id="mSubj"></div>
+                <div id="mailThreadSlot"></div>
+              </div>
+              <div class="mreplies" id="mailReplies"></div>
+              <div class="mbar"><span>Reply</span><span>Forward</span><span>Report junk</span></div>
+            </div>
+
+            <div class="homebar" id="homebar"></div>
           </div>
         </div>
-
-        <!-- Shared thread + replies, moved into whichever device is active -->
-        <div class="thread" id="thread" aria-live="polite"></div>
-        <div class="replies" id="replies"></div>
-
-        <!-- Incoming -->
-        <div class="ring" id="ring" hidden>
-          <div class="blurbg" id="ringBg"></div>
-          <div class="content" id="ringContent"></div>
+        <div class="verdicts">
+          <button class="verdict v-scam" id="btnScam" disabled>It's a scam<small id="scamSub">Hang up and report</small></button>
+          <button class="verdict v-legit" id="btnLegit" disabled>It's legit<small id="legitSub">Carry on</small></button>
         </div>
+        <p class="hint">Tap any sentence to flag it as a red flag ⚑. Call it as soon as you're sure.</p>
       </div>
 
-      <aside class="panel analysis">
-        <div class="a-title"><span id="aTitle">Deepfake & voice analysis</span><small id="aSub">live</small></div>
-        <canvas id="wave" width="600" height="150" aria-label="Voice waveform"></canvas>
-        <div class="meters">
-          <div class="meter" id="m1"><div class="k" id="m1k">Voice stress</div><div class="v" id="m1v">—</div><div class="bar"><i id="m1bar" style="width:0"></i></div></div>
-          <div class="meter" id="m2"><div class="k" id="m2k">Lip-sync offset</div><div class="v" id="m2v">—</div></div>
-          <div class="meter" id="m3"><div class="k" id="m3k">Blinks / min</div><div class="v" id="m3v">—</div></div>
-          <div class="meter"><div class="k">Pressure words</div><div class="v" id="m4v">0</div></div>
+      <aside class="radar">
+        <div class="rhead">
+          <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--you)"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></svg></span>
+          <span><b>Scam Radar</b><span id="aSub">Checks the call and the messages as they come in</span></span>
+          <span class="live">LIVE</span>
         </div>
-        <div class="rows" id="signals"></div>
-        <p class="caveat">Signals are probabilistic. Real people get stressed and real numbers can be spoofed. Weigh what they're asking you to do.</p>
+        <div id="transcriptWrap"><div class="sec-t">Live transcript</div><div class="transcript" id="transcriptBox"></div></div>
+        <div><div class="sec-t" id="waveT">Caller's voice</div><canvas id="wave" width="600" height="120" aria-label="Voice waveform"></canvas></div>
+        <div class="meters">
+          <div class="mt" id="m1"><div class="k" id="m1k">Voice stress</div><div class="v" id="m1v">—</div><div class="track"><i id="m1bar" style="width:0"></i></div></div>
+          <div class="mt" id="m2"><div class="k" id="m2k">Lip-sync delay</div><div class="v" id="m2v">—</div></div>
+          <div class="mt" id="m3"><div class="k" id="m3k">Blinks per min</div><div class="v" id="m3v">—</div></div>
+          <div class="mt"><div class="k">Pressure words</div><div class="v" id="m4v">0</div></div>
+        </div>
+        <div><div class="sec-t">What we know</div><div class="rows" id="signals"></div></div>
+        <p class="caveat">These are clues, not proof. Scammers can fake caller ID and real people can sound stressed. What matters most is what they ask you to do.</p>
         <div class="mic">
-          <div class="mic-row"><button class="btn-ghost" id="btnMic">Answer by voice (optional)</button><span class="heard" id="micHeard"></span></div>
-          <div class="mic-row" id="micMeters" hidden>
-            <div class="meter" style="flex:1"><div class="k">Your voice level</div><div class="bar"><i id="micLevel" style="width:0"></i></div></div>
-            <div class="meter" style="flex:1"><div class="k">Your composure</div><div class="v" id="micCalm">—</div></div>
-          </div>
-          <div class="note" id="micNote">Say "reply one/two/three", "scam" or "legit". Tapping works everywhere.</div>
+          <div class="mic-row"><button class="ghost" id="btnMic">Answer by voice (optional)</button><span class="heard" id="micHeard"></span></div>
+          <div id="micNote">Say "reply one", "two" or "three", then "scam" or "legit". Tapping works everywhere.</div>
         </div>
       </aside>
     </div>
-
-    <div class="controls">
-      <div class="label">Am I being scammed?</div>
-      <div class="verdicts">
-        <button class="verdict v-scam" id="btnScam" disabled>Scam<small id="scamSub">Hang up · report</small></button>
-        <button class="verdict v-legit" id="btnLegit" disabled>Legit<small id="legitSub">Trust them</small></button>
-      </div>
-      <p class="hint">Tap sentences in the transcript or chat to flag red flags ⚑. You can call it at any point after they've made their pitch.</p>
-    </div>
+    <div id="thread" class="thread" aria-live="polite"></div>
+    <div id="replies"></div>
   </section>
 
   <!-- END -->
   <section id="screenEnd" hidden>
-    <div class="end-grid">
+    <div class="end">
       <div>
-        <div class="eyebrow" id="endReason">Time's up</div>
-        <h1 id="rankName" style="margin-bottom:6px">Human Firewall</h1>
-        <div class="end-score" id="endScore">0</div>
-        <p class="lede" id="endLine" style="margin-top:12px"></p>
+        <div class="kicker" id="endReason">Time's up</div>
+        <h1 id="endTitle">You beat the hacker</h1>
+        <p class="lede" id="endLine"></p>
+        <div class="score2"><div class="y"><small>You scored</small><b id="endScore">0</b></div><div class="h"><small>Hacker stole</small><b id="endStolen">£0</b></div></div>
         <div class="stats" id="endStats"></div>
-        <div class="cta-row" style="margin-top:18px"><button class="btn-go" id="btnAgain">Play again</button></div>
+        <div class="row2"><button class="btn" id="btnAgain">Play again</button><button class="btn alt" id="btnRoles">Change role</button></div>
       </div>
-      <div>
-        <div class="label" style="margin-bottom:8px">Contact log</div>
-        <ul class="log" id="endLog"></ul>
-      </div>
+      <div><div class="sec-t">What happened</div><ul class="log" id="endLog"></ul></div>
     </div>
   </section>
 </div>
 
 <div class="modal" id="debrief" hidden>
-  <div class="card" role="dialog" aria-modal="true" aria-labelledby="dbAnswer">
-    <div class="eyebrow">Am I being hacked?</div>
-    <div class="answer" id="dbAnswer"></div>
-    <div class="verdict-line" id="dbVerdict"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dbAnswer">
+    <span class="pill" id="dbPill"></span>
+    <h2 id="dbAnswer"></h2>
+    <div class="vline" id="dbVerdict"></div>
     <p class="hit" id="dbHit" hidden></p>
     <div class="pts" id="dbPts"></div>
-    <div><div class="label" style="margin-bottom:6px" id="dbTellsLabel">The tells</div><ul class="tells" id="dbTells"></ul></div>
+    <div><div class="sec-t" id="dbTellsLabel">Red flags</div><ul class="tells" id="dbTells"></ul></div>
     <p class="lesson" id="dbLesson"></p>
-    <button class="btn-go" id="btnNext">Next contact</button>
+    <button class="btn" id="btnNext">Next</button>
   </div>
 </div>
 
-<div class="glitch" id="glitch" hidden><span>ACCESS GRANTED<br>YOU'VE BEEN HACKED</span></div>
+<div class="breach" id="breach" hidden><div><b>The hacker got in</b><span id="breachAmt"></span></div></div>
 
 <script>
 (() => {
 "use strict";
-
-/* =========================================================================
-   Scenarios. Branching conversations: nodes → say[] → options[] → next node.
-   Line markup:  [[flagged phrase|why]]  ·  "~ " system note  ·  "🎤 " voice note  ·  "$ " payment details
-   Option kinds: safe (+25) · risky · neutral · breach (the attacker wins)
-   Signals: [label, value, level, revealAtNode?]
-   ========================================================================= */
 const SCENARIOS = [
   {
     id: "villa", mode: "video", theme: "Travel", scam: true,
@@ -898,35 +985,41 @@ function fixAvatars(root, cur) {
   root.querySelectorAll('img[data-fallback]').forEach((img) => { img.onerror = () => { img.outerHTML = portrait(cur.face, true); }; });
 }
 
+
+const ROLES = {
+  travel: { label: "The traveller", themes: ["Travel"] },
+  pay: { label: "The payer", themes: ["Payment"] },
+  all: { label: "Full day", themes: ["Travel", "Payment"] },
+};
+const LOSS = { villa: 1450, "airline-dm": 1900, "rental-host": 580, "cfo-deepfake": 240000, invoice: 8340, buyer: 450 };
 const TAUNTS_START = [
   "Let's see how much you trust a friendly face.",
-  "Not every contact is mine. That's the fun part.",
+  "Not every message is from me. That's the fun part.",
   "I only need you to be wrong once.",
-  "You're busy booking things. Busy people click.",
+  "You're busy. Busy people click.",
   "This one's clean. Or is it?",
   "Video used to be proof. Not any more.",
   "Relax. Some of these are real people.",
 ];
-const TAUNTS_WIN = ["Lucky.", "Fine. Next one's harder.", "You won't catch them all.", "Noted. Adjusting approach."];
-const TAUNTS_LOSE = ["Thanks for the money.", "Too easy.", "I'll take that.", "Every system has a human in it."];
-
+const TAUNTS_WIN = ["Lucky.", "Fine. The next one's harder.", "You won't catch them all.", "Noted. Changing tactics."];
+const TAUNTS_LOSE = ["Thanks for the money.", "Too easy.", "I'll take that.", "There's always a human in the system."];
 const PRESSURE = new Set(("urgent urgently immediately now today code verify suspended arrest police gift secret quiet hurry quickly " +
-  "nda confidential transfer fee fees quick deadline minutes skip left commit gift only fast").split(" "));
+  "nda confidential transfer fee fees quick deadline minutes skip left commit only fast").split(" "));
+const CHANNEL = { video: "Video call" };
 
-/* ========================================================================= */
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const money = (n) => "£" + Math.round(n).toLocaleString("en-GB");
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* unavailable */ } },
 };
-
 const state = {
-  phase: "idle", time: 300, score: 0, streak: 0, integrity: 100,
+  phase: "idle", time: 300, score: 0, streak: 0, integrity: 100, stolen: 0, role: "all",
   order: [], idx: -1, cur: null, token: 0, readyAt: 0, moves: [], pressure: 0,
-  speaking: false, voiceNote: false, results: [], voiceOn: true, callStart: 0,
+  speaking: false, voiceNote: false, realAudio: false, results: [], voiceOn: true, callStart: 0, photo: false,
 };
 
 /* ---------------- Realistic-ish portrait (SVG, shaded, animated) ---------------- */
@@ -1231,27 +1324,45 @@ function segsInto(el, segs, interactive) {
   });
   return words;
 }
+
+/* ---------------- Device views ---------------- */
+const isMail = (cur) => /^Email/.test(cur.org);
 function clockStr() { const d = new Date(); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); }
-function scrollThread() { const sc = state.cur.mode === "video" ? $("thread") : $("pThreadSlot"); sc.scrollTop = sc.scrollHeight; }
+function showView(v) {
+  ["lock", "incoming", "call", "chat", "mail"].forEach((x) => { $("v-" + x).hidden = x !== v; });
+  const dark = v === "lock" || v === "incoming" || v === "call";
+  $("sbar").classList.toggle("light", dark);
+  $("homebar").classList.toggle("light", dark);
+}
+function placeThread(cur) {
+  const th = $("thread"), rp = $("replies");
+  if (cur.mode === "video") { $("transcriptBox").appendChild(th); $("callSheet").appendChild(rp); }
+  else if (isMail(cur)) { $("mailThreadSlot").appendChild(th); $("mailReplies").appendChild(rp); }
+  else { $("chatBody").appendChild(th); $("chatReplies").appendChild(rp); }
+  rp.className = "replies";
+  $("transcriptWrap").hidden = cur.mode !== "video";
+}
+function scrollThread() { const b = $("thread").parentElement; if (b) b.scrollTop = b.scrollHeight; if (isMail(state.cur)) $("mailBody").scrollTop = $("mailBody").scrollHeight; }
 function addMsg(cls) {
   const d = document.createElement("div"); d.className = "msg " + cls;
-  if (state.cur.mode === "video" && cls.includes("them")) d.dataset.who = state.cur.name.split(" ")[0].toUpperCase();
+  if (cls.includes("them")) d.dataset.who = state.cur.name.split(/[ ·]/)[0];
   $("thread").appendChild(d); scrollThread();
   return d;
 }
-function stamp(el) { if (state.cur.mode === "message") { const t = document.createElement("span"); t.className = "ts"; t.textContent = clockStr(); el.appendChild(t); } }
-
-function setStatus(txt, on) { const s = $("pStat"); s.textContent = txt; s.classList.toggle("on", !!on); }
+function stamp(el) { if (state.cur.mode === "message" && !isMail(state.cur)) { const t = document.createElement("span"); t.className = "ts"; t.textContent = clockStr(); el.appendChild(t); } }
+function setStatus(txt, on) { $("chatStatus").textContent = txt; $("chatStatus").classList.toggle("on", !!on); }
+function toast(text) { const t = $("callToast"); t.textContent = text; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 4200); }
 
 async function playLines(lines, token, nodeId) {
-  const cur = state.cur, video = cur.mode === "video";
+  const cur = state.cur, video = cur.mode === "video", mail = isMail(cur);
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li], src = audioOf(cur, nodeId, li);
     if (token !== state.token) return false;
     const { kind, segs } = parse(line);
     if (kind === "sys") {
       const b = addMsg("sys"); segsInto(b, segs, false);
-      await sleep(1100); continue;
+      if (video) toast(segs.map((s) => s.t).join(" "));
+      await sleep(1200); continue;
     }
     if (kind === "pay") {
       const b = document.createElement("div"); b.className = "paycard"; $("thread").appendChild(b);
@@ -1265,36 +1376,33 @@ async function playLines(lines, token, nodeId) {
       const b = addMsg("them");
       const words = segsInto(b, segs, true); b.classList.add("speaking");
       const cap = $("caption"); cap.hidden = false; cap.textContent = "";
-      const full = segs.map((s) => s.t).join(" ");
-      await speakLine(full, words, token, (p) => { const ws = full.split(/\s+/); cap.textContent = ws.slice(Math.max(0, Math.floor(p * ws.length) - 14), Math.floor(p * ws.length)).join(" "); }, src);
+      const full = segs.map((s) => s.t).join(" "), ws = full.split(/\s+/);
+      await speakLine(full, words, token, (p) => { const k = Math.floor(p * ws.length); cap.textContent = ws.slice(Math.max(0, k - 12), k).join(" "); }, src);
       b.classList.remove("speaking"); scrollThread();
-      await sleep(250);
-      continue;
+      await sleep(250); continue;
     }
-    // Messaging
     if (kind === "voice") {
-      setStatus("recording audio…", true);
-      await sleep(900);
+      if (!mail) { setStatus("recording audio…", true); await sleep(900); }
       if (token !== state.token) return false;
       const b = addMsg("them");
       const vn = document.createElement("div"); vn.className = "vn";
-      vn.innerHTML = `<div class="vn-row"><button class="vn-play" aria-label="Play voice note">▶</button><div class="vn-bars"></div><span class="vn-dur"></span></div><div class="vn-t"></div>`;
+      vn.innerHTML = `<div class="vn-row"><button class="vn-play" aria-label="Play voice message">▶</button><div class="vn-bars"></div><span class="vn-dur"></span></div><div class="vn-t"></div>`;
       b.appendChild(vn);
       const bars = vn.querySelector(".vn-bars");
-      for (let i = 0; i < 34; i++) { const bi = document.createElement("i"); bi.style.height = (4 + Math.abs(Math.sin(i * 1.7) * 16) + Math.random() * 6).toFixed(0) + "px"; bars.appendChild(bi); }
+      for (let i = 0; i < 30; i++) { const bi = document.createElement("i"); bi.style.height = (4 + Math.abs(Math.sin(i * 1.7) * 15) + Math.random() * 5).toFixed(0) + "px"; bars.appendChild(bi); }
       const words = segsInto(vn.querySelector(".vn-t"), segs, true);
-      const secs = Math.max(2, Math.round(words.length / (165 * cur.voice.rate) * 60));
+      const secs = Math.max(2, Math.round(words.length / (165 * (cur.voice ? cur.voice.rate : 1)) * 60));
       vn.querySelector(".vn-dur").textContent = "0:" + String(secs).padStart(2, "0");
       stamp(b); vn.querySelector(".vn-t").classList.add("speaking");
       const full = segs.map((s) => s.t).join(" ");
       vn.querySelector(".vn-play").addEventListener("click", () => {
         if (state.speaking || !state.voiceOn) return;
-        if (src) { const a = new Audio(src); a.play().catch(() => {}); return; }
+        if (src) { new Audio(src).play().catch(() => {}); return; }
         if (!("speechSynthesis" in window)) return;
         const u = new SpeechSynthesisUtterance(full); const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
         u.pitch = cur.voice.pitch; u.rate = cur.voice.rate; speechSynthesis.speak(u);
       });
-      setStatus("online", true);
+      if (!mail) setStatus("online", true);
       state.voiceNote = true;
       const barEls = [...bars.children];
       await speakLine(full, words, token, (p) => barEls.forEach((bi, i) => bi.classList.toggle("on", i / barEls.length < p)), src);
@@ -1302,48 +1410,50 @@ async function playLines(lines, token, nodeId) {
       vn.querySelector(".vn-t").classList.remove("speaking");
       await sleep(300); continue;
     }
-    setStatus("typing…", true);
-    const t = document.createElement("div"); t.className = "typing"; t.innerHTML = "<i></i><i></i><i></i>";
-    $("thread").appendChild(t); scrollThread();
-    await sleep(Math.min(1500, 500 + line.length * 7));
-    t.remove();
-    if (token !== state.token) return false;
-    setStatus("online", true);
+    if (!mail) {
+      setStatus("typing…", true);
+      const t = document.createElement("div"); t.className = "typing"; t.innerHTML = "<i></i><i></i><i></i>";
+      $("thread").appendChild(t); scrollThread();
+      await sleep(Math.min(1500, 500 + line.length * 7));
+      t.remove();
+      if (token !== state.token) return false;
+      setStatus("online", true);
+    } else await sleep(250);
     const b = addMsg("them");
     const words = segsInto(b, segs, true);
     words.forEach((w) => { w.classList.add("lit"); if (w.dataset.hot) { w.classList.add("hot"); state.pressure++; } });
     $("m4v").textContent = state.pressure;
     stamp(b); tone([1180], .05, "sine", .03);
-    await sleep(350);
+    await sleep(mail ? 200 : 350);
   }
   return token === state.token;
 }
 
-/* Flagging */
-$("devcol").addEventListener("click", (e) => {
-  const seg = e.target.closest(".seg");
+/* Flagging: tap any sentence in the chat, email or live transcript */
+document.addEventListener("click", (e) => {
+  const seg = e.target.closest && e.target.closest("#thread .seg");
   if (!seg || !["live", "playing"].includes(state.phase)) return;
   seg.classList.toggle("flagged");
   seg.setAttribute("aria-pressed", seg.classList.contains("flagged"));
 });
-$("devcol").addEventListener("keydown", (e) => {
+document.addEventListener("keydown", (e) => {
   if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("seg")) { e.preventDefault(); e.stopPropagation(); e.target.click(); }
-});
+}, true);
 
 /* ---------------- HUD & loop ---------------- */
 const fmt = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const mult = () => 1 + Math.min(state.streak, 4) * 0.5;
 function hud() {
   $("timer").textContent = fmt(state.time);
-  $("timer").classList.toggle("warn", state.time <= 30 && state.phase !== "over");
+  $("timer").classList.toggle("warn", state.time <= 30 && state.phase !== "over" && state.phase !== "idle");
   $("score").textContent = state.score;
-  $("streak").textContent = "×" + mult().toFixed(1);
-  $("roundNo").textContent = Math.max(0, state.idx + 1) + "/" + SCENARIOS.length;
+  $("stolen").textContent = money(state.stolen);
+  $("streak").textContent = "×" + mult().toFixed(1) + " streak";
   const i = Math.max(0, state.integrity), bar = $("integrityBar");
   bar.style.width = i + "%";
-  bar.style.background = i >= 80 ? "var(--safe)" : i >= 50 ? "var(--signal)" : "var(--threat)";
-  const [cls, label] = i <= 0 ? ["breached", "BREACHED"] : i < 50 ? ["attack", "UNDER ATTACK"] : i < 80 ? ["probed", "PROBED"] : ["secure", "SECURE"];
-  $("statusChip").className = "chip " + cls; $("statusChip").textContent = label + " · " + i + "%";
+  bar.style.background = i >= 80 ? "var(--you)" : i >= 50 ? "var(--warn)" : "var(--hacker)";
+  const [cls, label] = i <= 0 ? ["breached", "Hacked"] : i < 50 ? ["attack", "Under attack"] : i < 80 ? ["probed", "Being probed"] : ["secure", "Secure"];
+  $("statusChip").className = "status " + cls; $("statusChip").textContent = label + " · " + i + "%";
 }
 
 let face = null, lastTick = 0, grainT = 0, shownStress = 0;
@@ -1355,14 +1465,12 @@ function loop(ts) {
   }
   lastTick = ts;
   if (active || state.phase === "debrief") hud();
+  if (!state.clockT || ts - state.clockT > 5000) { state.clockT = ts; $("sClock").textContent = clockStr(); }
   const cur = state.cur;
   if (cur && !$("screenGame").hidden) {
-    if (cur.mode === "video" && cur.deepfake && state.photo) {
-      if (Math.random() < 0.006) state.glitchUntil = ts + 120;
-      $("vfeed").classList.toggle("glitch", ts < (state.glitchUntil || 0));
-    }
-    if (cur.mode === "video" && face) {
-      if (!state.photo) face.frame(ts, state.speaking);
+    if (cur.mode === "video") {
+      if (cur.deepfake && state.photo) { if (Math.random() < 0.006) state.glitchUntil = ts + 120; $("vfeed").classList.toggle("glitch", ts < (state.glitchUntil || 0)); }
+      if (face && !state.photo) face.frame(ts, state.speaking);
       if (ts - grainT > 70) { drawGrain(); grainT = ts; }
       if (state.callStart && active) { const s = Math.floor((ts - state.callStart) / 1000); $("vClock").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
     }
@@ -1373,31 +1481,31 @@ function loop(ts) {
 }
 
 const canvas = $("wave"), g = canvas.getContext("2d");
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function drawWave(ts) {
   const W = canvas.width, H = canvas.height, cur = state.cur;
   g.clearRect(0, 0, W, H);
-  g.strokeStyle = "rgba(34,66,79,.8)"; g.lineWidth = 1;
-  for (let y = H / 4; y < H; y += H / 4) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const lineCol = cssVar("--line") || "#ddd";
+  g.strokeStyle = lineCol; g.lineWidth = 1; g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.stroke();
   const speaking = state.speaking;
   const synth = (cur.synthetic || 0) / 100, stress = (cur.stress || 0) / 100;
+  const col = stress > 0.55 ? (cssVar("--hacker") || "#d92d3a") : (cssVar("--you") || "#0d8f6a");
   if (speaking && state.realAudio && analyser) {
     analyser.getFloatTimeDomainData(anBuf);
     let sum = 0; for (let i = 0; i < anBuf.length; i++) sum += anBuf[i] * anBuf[i];
     state.rms = Math.sqrt(sum / anBuf.length);
-    g.strokeStyle = stress > 0.55 ? "#ff5468" : "#f2a93b"; g.lineWidth = 2; g.beginPath();
+    g.strokeStyle = col; g.lineWidth = 2; g.beginPath();
     const step = anBuf.length / W;
     for (let x = 0; x <= W; x += 2) { const y = H / 2 + anBuf[Math.floor(x * step)] * H * 1.6; x === 0 ? g.moveTo(x, y) : g.lineTo(x, y); }
-    g.stroke();
-    return;
+    g.stroke(); return;
   }
-  const amp = speaking ? H * (0.22 + 0.18 * stress) : H * 0.02;
-  g.strokeStyle = speaking ? (stress > 0.55 ? "#ff5468" : "#f2a93b") : "#3b5a66";
-  g.lineWidth = 2; g.beginPath();
+  const amp = speaking ? H * (0.2 + 0.18 * stress) : H * 0.015;
+  g.strokeStyle = speaking ? col : lineCol; g.lineWidth = 2; g.beginPath();
   const t = ts / 1000;
   for (let x = 0; x <= W; x += 3) {
     const env = Math.sin((x / W) * Math.PI);
     const syll = speaking ? 0.55 + 0.45 * Math.sin(t * (6 + stress * 5) + x * 0.012) : 1;
-    const jitter = (1 - synth) * (Math.random() - 0.5) * 0.9; // synthetic voices look suspiciously smooth
+    const jitter = (1 - synth) * (Math.random() - 0.5) * 0.9;
     const y = H / 2 + amp * env * syll * (Math.sin(x * 0.09 + t * 18) * 0.6 + Math.sin(x * 0.23 - t * 9) * 0.3 + jitter);
     x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
   }
@@ -1406,32 +1514,30 @@ function drawWave(ts) {
 function setMeter(n, v, alert) { $(n + "v").innerHTML = v; $(n).classList.toggle("alert", !!alert); }
 function liveMeters(ts) {
   const cur = state.cur, speaking = state.speaking;
-  const hasVoice = cur.mode === "video" || state.voiceNote;
-  if (hasVoice) {
+  if (cur.mode === "video" || state.voiceNote) {
     const live = state.realAudio && state.rms ? Math.max(-12, Math.min(12, (state.rms - 0.06) * 160)) : rand(-7, 7);
     const target = speaking ? cur.stress + live : Math.max(6, shownStress * 0.985);
     shownStress += (target - shownStress) * 0.08;
     const s = Math.round(Math.max(0, Math.min(100, shownStress)));
     $("m1v").textContent = s; $("m1bar").style.width = s + "%";
-    $("m1bar").style.background = s > 60 ? "var(--threat)" : s > 40 ? "var(--signal)" : "var(--safe)";
+    $("m1bar").style.background = s > 60 ? "var(--hacker)" : s > 40 ? "var(--warn)" : "var(--you)";
   }
   if (Math.random() > 0.06) return;
   if (cur.mode === "video") {
     if (speaking) { const off = cur.deepfake ? Math.round(rand(280, 360)) : Math.round(rand(18, 70)); setMeter("m2", off + "<small>ms</small>", off > 150); }
     const secs = (ts - state.callStart) / 1000;
-    if (state.callStart && secs > 8) { const bpm = face && !state.photo ? Math.round(face.blinks / (secs / 60)) : Math.round(cur.deepfake ? rand(1, 4) : rand(13, 19)); setMeter("m3", bpm + "<small>/min</small>", bpm < 8); }
+    if (state.callStart && secs > 8) { const bpm = face && !state.photo ? Math.round(face.blinks / (secs / 60)) : Math.round(cur.deepfake ? rand(1, 4) : rand(13, 19)); setMeter("m3", bpm, bpm < 8); }
   } else if (state.voiceNote && speaking) {
-    const ai = Math.round(cur.synthetic + rand(-4, 4)); setMeter("m3", Math.max(0, ai) + "<small>%</small>", ai > 50);
+    const ai = Math.max(0, Math.round(cur.synthetic + rand(-4, 4))); setMeter("m3", ai + "<small>%</small>", ai > 50);
   }
 }
-
 function setupAnalysis(cur) {
   const video = cur.mode === "video";
-  $("aTitle").textContent = video ? "Deepfake & voice analysis" : "Message forensics";
-  $("aSub").textContent = video ? "video + audio · live" : "sender, links, voice notes";
+  $("aSub").textContent = video ? "Watching the video and listening to the voice" : isMail(cur) ? "Checking the sender, links and attachments" : "Checking the sender, links and voice notes";
+  $("waveT").textContent = video ? "Caller's voice" : "Voice notes";
   $("m1k").textContent = video ? "Voice stress" : "Voice-note stress";
-  $("m2k").textContent = video ? "Lip-sync offset" : "Urgency";
-  $("m3k").textContent = video ? "Blinks / min" : "Voice-note AI";
+  $("m2k").textContent = video ? "Lip-sync delay" : "Urgency";
+  $("m3k").textContent = video ? "Blinks per min" : "AI voice chance";
   ["m1", "m2", "m3"].forEach((m) => setMeter(m, "—", false));
   $("m1bar").style.width = "0"; $("m4v").textContent = "0"; shownStress = 0;
   const box = $("signals"); box.innerHTML = "";
@@ -1439,7 +1545,7 @@ function setupAnalysis(cur) {
     const r = document.createElement("div"); r.className = "row pending";
     r.innerHTML = '<span class="k"></span><span class="v"><span class="dot"></span><span></span></span>';
     r.querySelector(".k").textContent = k;
-    r.querySelector(".v span:last-child").textContent = at ? "waiting for data" : "analysing…";
+    r.querySelector(".v span:last-child").textContent = at ? "Waiting…" : "Checking…";
     box.appendChild(r);
   });
 }
@@ -1467,21 +1573,12 @@ function textUrgency() {
 }
 
 /* ---------------- Round flow ---------------- */
-function mountDevice(mode) {
-  const video = mode === "video";
-  $("vcall").hidden = !video; $("phone").hidden = video;
-  (video ? $("vThreadSlot") : $("pThreadSlot")).appendChild($("thread"));
-  (video ? $("vReplySlot") : $("pReplySlot")).appendChild($("replies"));
-  $("vReplySlot").hidden = !video;
-  $("scamSub").textContent = video ? "Hang up · report" : "Block · report";
-  $("legitSub").textContent = video ? "Trust them" : "It's genuine";
-}
 function setVerdicts(on) { $("btnScam").disabled = !on; $("btnLegit").disabled = !on; }
 function renderReplies(options) {
   const box = $("replies"); box.innerHTML = "";
   if (!options || !options.length) {
     const h = document.createElement("div"); h.className = "reply-hint";
-    h.textContent = "Conversation over. Make your call: scam or legit?";
+    h.textContent = "That's all they said. Scam or legit?";
     box.appendChild(h); return;
   }
   options.forEach((o, i) => {
@@ -1495,79 +1592,91 @@ function renderReplies(options) {
 
 function nextRound() {
   state.idx++;
-  if (state.idx >= state.order.length) return endGame("You faced every contact");
+  if (state.idx >= state.order.length) return endGame("You got through every contact");
   const cur = state.cur = state.order[state.idx];
   state.token++; state.moves = []; state.pressure = 0; state.node = null; state.options = null; state.callStart = 0;
   $("thread").innerHTML = ""; $("replies").innerHTML = "";
-  $("devcol").classList.remove("locked");
-  mountDevice(cur.mode);
-  $("sceneTag").textContent = cur.theme === "Travel" ? "✈ Booking travel" : "£ Making a payment";
-  $("voxLine").textContent = pick(TAUNTS_START);
+  $("phone").classList.remove("locked");
+  placeThread(cur);
+  $("sceneTag").textContent = (cur.theme === "Travel" ? "Booking travel" : "Making a payment") + " · contact " + (state.idx + 1) + " of " + state.order.length;
+  $("hackerLine").textContent = pick(TAUNTS_START);
   setupAnalysis(cur);
   setVerdicts(false);
+  $("scamSub").textContent = cur.mode === "video" ? "Hang up and report" : "Block and report";
+  const ph = photoOf(cur);
 
   if (cur.mode === "video") {
     paintRoom($("room"), cur.face.room);
     face = new Face($("face"), cur.face, { deepfake: cur.deepfake });
-    const ph = photoOf(cur), vp = $("vPhoto"), vc = $("vClip");
+    const vp = $("vPhoto"), vc = $("vClip");
     state.photo = !!ph;
-    $("face").hidden = !!ph; vp.hidden = !ph;
+    $("face").hidden = !!ph; $("room").hidden = !!ph; vp.hidden = !ph;
     vc.classList.remove("on"); vc.pause();
     if (ph) {
-      vp.onerror = () => { vp.hidden = true; $("face").hidden = false; state.photo = false; vc.removeAttribute("src"); };
+      vp.onerror = () => { vp.hidden = true; $("face").hidden = false; $("room").hidden = false; state.photo = false; vc.removeAttribute("src"); };
       vp.src = ph;
       const cl = clipOf(cur);
       if (cl) { vc.onerror = () => vc.removeAttribute("src"); vc.src = cl; vc.load(); } else vc.removeAttribute("src");
     } else vc.removeAttribute("src");
-    $("vName").textContent = cur.name; $("vOrg").textContent = cur.org;
+    $("vName").textContent = cur.name;
     $("vfeed").classList.toggle("lowbw", !!cur.lowbw);
-    $("bwTag").hidden = !cur.lowbw;
-    $("vEnc").hidden = !!cur.lowbw;
-    [...$("vSig").children].forEach((b, i) => b.classList.toggle("off", cur.lowbw && i > 1));
-    $("share").hidden = true; $("caption").hidden = true; $("vClock").textContent = "00:00";
+    $("bwTag").hidden = true;
+    $("vEnc").textContent = cur.lowbw ? "Not verified · video quality reduced" : "End-to-end encrypted";
+    $("vEnc").classList.toggle("bad", !!cur.lowbw);
+    $("share").hidden = true; $("caption").hidden = true; $("callToast").hidden = true; $("vClock").textContent = "00:00";
+    // Incoming screen
+    const bg = $("inBg");
+    if (ph) { bg.innerHTML = `<img src="${ph}" alt="">`; bg.querySelector("img").onerror = () => { bg.innerHTML = ""; paintRoom(bg, cur.face.room); }; bg.style.background = "#222"; }
+    else { bg.innerHTML = ""; paintRoom(bg, cur.face.room); }
+    $("inName").textContent = cur.name; $("inDetail").textContent = cur.org + " · " + cur.detail;
+    $("inAv").innerHTML = avatarHTML(cur); fixAvatars($("inAv"), cur);
+    showView("incoming");
+    setTimeout(() => $("btnAnswer").focus(), 50);
   } else {
-    face = null;
-    $("pAv").innerHTML = avatarHTML(cur); fixAvatars($("pAv"), cur);
-    $("pName").textContent = cur.name; $("pTick").hidden = !cur.verified;
-    setStatus(cur.org, false); $("pClock").textContent = clockStr();
-  }
-
-  // Incoming screen
-  const bg = $("ringBg");
-  if (cur.mode === "video" && photoOf(cur)) { bg.innerHTML = `<img src="${photoOf(cur)}" alt="" style="width:100%;height:100%;object-fit:cover">`; bg.style.background = "#111"; }
-  else if (cur.mode === "video") paintRoom(bg, cur.face.room); else { bg.style.background = "linear-gradient(160deg,#253b52,#0d1822 60%,#2a1d2e)"; bg.innerHTML = ""; }
-  const rc = $("ringContent");
-  const firstLine = cur.nodes.start.say.find((l) => !l.startsWith("~ "));
-  const preview = firstLine.startsWith("🎤 ") ? "🎤 Voice message" : plainText(firstLine);
-  if (cur.mode === "video") {
-    rc.innerHTML = `<div class="rav">${avatarHTML(cur)}</div><div class="rl">Incoming video call…</div><div class="rn"></div><div class="rd"></div><button class="btn-answer" id="btnAnswer">Answer</button>`;
-  } else {
+    face = null; state.photo = false;
+    if (isMail(cur)) {
+      $("mAv").innerHTML = avatarHTML(cur); fixAvatars($("mAv"), cur);
+      $("mName").textContent = cur.name.split(" · ")[0];
+      $("mAddr").textContent = "From: " + cur.org.replace(/^Email · /, "") + " · to me";
+      $("mTime").textContent = clockStr();
+      $("mSubj").textContent = "Invoice INV-4471: new bank details";
+    } else {
+      $("chAv").innerHTML = avatarHTML(cur); fixAvatars($("chAv"), cur);
+      $("chName").textContent = cur.name; $("chTick").hidden = !cur.verified;
+      setStatus(cur.org, false);
+    }
     const d = new Date();
-    rc.innerHTML = `<div class="lock-time">${clockStr()}</div><div class="lock-date">${d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
-      <div class="notif"><div class="pav">${avatarHTML(cur)}</div><div><div class="app"><span>${/Email/.test(cur.org) ? "MAIL" : "MESSAGES"}</span><span>now</span></div><div class="nt"></div><div class="np"></div></div></div>
-      <button class="btn-answer" id="btnAnswer" style="margin-top:14px">Open</button>`;
-    rc.querySelector(".np").textContent = preview;
+    $("lockDate").textContent = d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+    $("lockTime").textContent = clockStr();
+    $("nAv").innerHTML = avatarHTML(cur); fixAvatars($("nAv"), cur);
+    $("nApp").textContent = isMail(cur) ? "MAIL" : /WhatsApp/.test(cur.org) ? "WHATSAPP" : "MESSAGES";
+    $("nTitle").textContent = isMail(cur) ? cur.name.split(" · ")[0] : cur.name;
+    const firstLine = cur.nodes.start.say.find((l) => !l.startsWith("~ "));
+    $("nPrev").textContent = isMail(cur) ? $("mSubj").textContent : firstLine.startsWith("🎤 ") ? "🎤 Voice message" : plainText(firstLine);
+    showView("lock");
+    setTimeout(() => $("notif").focus(), 50);
   }
-  fixAvatars(rc, cur);
-  (rc.querySelector(".rn") || rc.querySelector(".nt")).textContent = cur.name;
-  if (rc.querySelector(".rd")) rc.querySelector(".rd").textContent = cur.org + " · " + cur.detail;
-  $("btnAnswer").addEventListener("click", answer);
-  $("ring").hidden = false;
   state.phase = "ringing";
   startRing(cur.mode);
   hud();
-  setTimeout(() => $("btnAnswer") && $("btnAnswer").focus(), 50);
 }
 
 async function answer() {
   if (state.phase !== "ringing") return;
   stopRing(); audio();
-  $("ring").hidden = true;
+  const cur = state.cur;
+  showView(cur.mode === "video" ? "call" : isMail(cur) ? "mail" : "chat");
   state.callStart = performance.now();
-  if (state.cur.mode === "video") tone([523, 784], .12, "sine", .05);
+  if (cur.mode === "video") tone([523, 784], .12, "sine", .05);
   const token = state.token;
   revealSignals(token);
   await playNode("start", token);
+}
+function decline() {
+  if (state.phase !== "ringing") return;
+  stopRing();
+  state.readyAt = performance.now() - 30000; // no speed bonus for a blind decline
+  verdict(true, true);
 }
 
 async function playNode(id, token) {
@@ -1576,11 +1685,12 @@ async function playNode(id, token) {
   $("replies").innerHTML = "";
   revealAt(id);
   if (id !== "start" && cur.mode === "video") $("share").hidden = true;
+  if (id !== "start" && isMail(cur) && !node.say[0].startsWith("~ ")) { const s = addMsg("sys"); s.textContent = "Reply from " + cur.name.split(" · ")[0] + " · " + clockStr(); }
   const ok = await playLines(node.say, token, id);
   if (!ok) return;
   if (cur.mode === "video") $("caption").hidden = true;
   textUrgency();
-  if (!state.readyAt || id === "start") state.readyAt = performance.now();
+  if (id === "start") state.readyAt = performance.now();
   state.phase = "live";
   state.options = node.options || [];
   renderReplies(state.options);
@@ -1593,7 +1703,7 @@ async function takeOption(i) {
   state.moves.push(o.k);
   $("replies").innerHTML = "";
   const you = addMsg("you"); you.appendChild(document.createTextNode(o.t)); stamp(you);
-  if (cur.mode === "message") { const tk = document.createElement("span"); tk.className = "ts"; tk.textContent = "✓✓"; tk.style.color = "#4fb8ff"; you.appendChild(tk); }
+  if (cur.mode === "video") toast("You: " + o.t);
   if (o.k === "breach" && cur.scam) return breach();
   if (o.k === "safe") goodSound();
   await sleep(500);
@@ -1604,20 +1714,20 @@ function collectFlags() {
   const segs = [...$("thread").querySelectorAll(".seg")];
   const flagged = segs.filter((s) => s.classList.contains("flagged"));
   const hits = flagged.filter((s) => s.dataset.flag);
-  return { hits, wrong: flagged.length - hits.length, all: segs.filter((s) => s.dataset.flag) };
+  return { hits, wrong: flagged.length - hits.length };
 }
 function movePoints(lines) {
   const cur = state.cur; let pts = 0;
   const safe = state.moves.filter((k) => k === "safe").length;
   const risky = state.moves.filter((k) => k === "risky").length;
   if (safe) { pts += safe * 25; lines.push(["Safe replies ×" + safe, safe * 25, "pos"]); }
-  if (risky && cur.scam) { state.integrity -= 5 * risky; lines.push(["You engaged the attacker ×" + risky, "−" + 5 * risky + "% integrity", "neg"]); }
-  if (risky && !cur.scam) { pts -= 25 * risky; lines.push(["Overshared with a genuine contact", -25 * risky, "neg"]); }
+  if (risky && cur.scam) { state.integrity -= 5 * risky; lines.push(["You played along with the hacker", "−" + 5 * risky + "% security", "neg"]); }
+  if (risky && !cur.scam) { pts -= 25 * risky; lines.push(["Overshared with a real person", -25 * risky, "neg"]); }
   return pts;
 }
 
-function verdict(saysScam) {
-  if (!["live", "playing"].includes(state.phase) || $("btnScam").disabled) return;
+function verdict(saysScam, fromDecline) {
+  if (!fromDecline && (!["live", "playing"].includes(state.phase) || $("btnScam").disabled)) return;
   const cur = state.cur;
   state.token++; stopSpeech();
   const lines = [], correct = saysScam === cur.scam, f = collectFlags();
@@ -1626,16 +1736,19 @@ function verdict(saysScam) {
     const speed = Math.max(0, Math.round(50 - ((performance.now() - state.readyAt) / 1000) * 2));
     const m = mult(), base = Math.round((100 + speed) * m);
     pts += base;
-    lines.push(["Correct call", 100, "pos"]);
+    lines.push(["Right call", 100, "pos"]);
     if (speed) lines.push(["Speed bonus", speed, "pos"]);
     if (m > 1) lines.push(["Streak ×" + m.toFixed(1), base - 100 - speed, "pos"]);
     state.streak++; goodSound();
   } else if (cur.scam) {
     pts -= 75; state.integrity -= 20; state.streak = 0;
-    lines.push(["You trusted an attacker", -75, "neg"], ["Integrity", "−20%", "neg"]); badSound();
+    const loss = LOSS[cur.id] || 0; state.stolen += loss;
+    lines.push(["You trusted the hacker", -75, "neg"], ["Security", "−20%", "neg"]);
+    if (loss) lines.push(["Hacker walks off with", money(loss), "neg"]);
+    badSound();
   } else {
     pts -= 25; state.streak = 0;
-    lines.push(["False alarm on a genuine contact", -25, "neg"]); badSound();
+    lines.push([fromDecline ? "You hung up on a real person" : "False alarm on a real person", -25, "neg"]); badSound();
   }
   pts += movePoints(lines);
   if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
@@ -1650,27 +1763,30 @@ function breach() {
   state.token++; stopSpeech();
   state.phase = "debrief"; setVerdicts(false);
   state.integrity -= 35; state.streak = 0;
+  const loss = LOSS[cur.id] || 0; state.stolen += loss;
   const f = collectFlags();
   let pts = -150;
-  const lines = [["Breached by the hacker", -150, "neg"], ["Integrity", "−35%", "neg"]];
+  const lines = [["The hacker got in", -150, "neg"], ["Security", "−35%", "neg"]];
+  if (loss) lines.push(["Stolen", money(loss), "neg"]);
   if (f.hits.length) { pts += f.hits.length * 20; lines.push(["Red flags spotted ×" + f.hits.length, f.hits.length * 20, "pos"]); }
   state.score += pts;
   state.results.push({ cur, outcome: "breached", pts, flags: f.hits.length });
   breachSound();
-  $("glitch").hidden = false; document.body.classList.add("shake"); hud();
-  setTimeout(() => { $("glitch").hidden = true; document.body.classList.remove("shake"); showDebrief({ correct: false, lines, pts, f, breached: true }); }, 1500);
+  $("breachAmt").textContent = loss ? money(loss) + " gone" : "Account taken over";
+  $("breach").hidden = false; document.body.classList.add("shake"); hud();
+  setTimeout(() => { $("breach").hidden = true; document.body.classList.remove("shake"); showDebrief({ correct: false, lines, pts, f, breached: true }); }, 1500);
 }
 
 function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
   const cur = state.cur;
   state.phase = "debrief";
-  $("devcol").classList.add("locked"); setVerdicts(false); $("replies").innerHTML = "";
+  $("phone").classList.add("locked"); setVerdicts(false); $("replies").innerHTML = "";
   hud();
-  const ans = $("dbAnswer");
-  ans.textContent = cur.scam ? "Yes. It was an attack." : "No. It was genuine.";
-  ans.className = "answer " + (cur.scam ? "yes" : "no");
-  $("dbVerdict").textContent = breached ? "☠ You paid up. Compromised." : (correct ? "✔ You called it right: " : "✘ You said: ") + (saysScam ? "SCAM" : "LEGIT");
-  $("dbVerdict").style.color = breached || !correct ? "var(--threat)" : "var(--safe)";
+  $("dbPill").textContent = cur.scam ? "HACKER" : "REAL PERSON";
+  $("dbPill").className = "pill " + (cur.scam ? "scam" : "real");
+  $("dbAnswer").textContent = cur.scam ? "Yes, you were being hacked." : "No, this one was genuine.";
+  $("dbVerdict").textContent = breached ? "You gave the hacker what they wanted." : (correct ? "✓ You called it right: " : "✗ You said: ") + (saysScam ? "scam" : "legit");
+  $("dbVerdict").style.color = breached || !correct ? "var(--hacker)" : "var(--you)";
   $("dbHit").hidden = !breached; $("dbHit").textContent = breached ? cur.hit : "";
   const pb = $("dbPts"); pb.innerHTML = "";
   lines.forEach(([k, v, cls]) => {
@@ -1679,19 +1795,18 @@ function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
     d.children[1].textContent = typeof v === "number" ? (v > 0 ? "+" + v : String(v).replace("-", "−")) : v;
     d.children[1].className = cls; pb.appendChild(d);
   });
-  const tot = document.createElement("div"); tot.innerHTML = "<b>Round total</b><b></b>";
+  const tot = document.createElement("div"); tot.innerHTML = "<b>This round</b><b></b>";
   tot.children[1].textContent = (pts > 0 ? "+" : "") + String(pts).replace("-", "−");
   tot.children[1].className = pts >= 0 ? "pos" : "neg"; pb.appendChild(tot);
-
   const tl = $("dbTells"); tl.innerHTML = "";
   if (cur.scam) {
     $("dbTellsLabel").textContent = "The red flags";
     const got = new Set(f.hits.map((s) => s.textContent)), seen = new Set();
     Object.values(cur.nodes).forEach((n) => n.say.forEach((l) => parse(l).segs.forEach((s) => {
       if (!s.flag || seen.has(s.t)) return; seen.add(s.t);
-      const li = document.createElement("li"); li.innerHTML = "<q></q> <span></span> <span class='miss'></span>";
+      const li = document.createElement("li"); li.innerHTML = "<q></q> <span></span> <span class='got'></span>";
       li.children[0].textContent = s.t; li.children[1].textContent = s.why;
-      li.children[2].textContent = got.has(s.t) ? "⚑ you flagged this" : "";
+      li.children[2].textContent = got.has(s.t) ? "⚑ You spotted this" : "";
       tl.appendChild(li);
     })));
   } else {
@@ -1699,30 +1814,32 @@ function showDebrief({ correct, saysScam, lines, pts, f, breached }) {
     (cur.greens || []).forEach((t) => { const li = document.createElement("li"); li.textContent = t; tl.appendChild(li); });
   }
   $("dbLesson").textContent = cur.lesson;
-  $("voxLine").textContent = breached || !correct ? pick(TAUNTS_LOSE) : pick(TAUNTS_WIN);
+  $("hackerLine").textContent = breached || !correct ? pick(TAUNTS_LOSE) : pick(TAUNTS_WIN);
   const last = state.integrity <= 0 || state.idx >= state.order.length - 1 || state.time <= 0;
-  $("btnNext").textContent = last ? "See results" : "Next contact";
+  $("btnNext").textContent = last ? "See how you did" : "Next contact";
   $("debrief").hidden = false;
   setTimeout(() => $("btnNext").focus(), 50);
 }
 function closeDebrief() {
   if (state.phase !== "debrief" || $("debrief").hidden) return;
   $("debrief").hidden = true;
-  if (state.integrity <= 0) return endGame("System breached");
+  if (state.integrity <= 0) return endGame("Your security hit zero");
   if (state.time <= 0) return endGame("Time's up");
   nextRound();
 }
 
 /* ---------------- Start / end ---------------- */
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-function startGame() {
+function startGame(role) {
   audio();
-  Object.assign(state, { time: 300, score: 0, streak: 0, integrity: 100, idx: -1, results: [], readyAt: 0, voiceOn: $("optVoice").checked, phase: "idle" });
-  // Open with a video scam so the first contact shows off the call
-  const order = shuffle(SCENARIOS);
+  state.role = role || state.role;
+  Object.assign(state, { time: 300, score: 0, streak: 0, integrity: 100, stolen: 0, idx: -1, results: [], readyAt: 0, voiceOn: $("optVoice").checked, phase: "idle" });
+  const themes = ROLES[state.role].themes;
+  const order = shuffle(SCENARIOS.filter((s) => themes.includes(s.theme)));
   const first = order.findIndex((s) => s.scam && s.mode === "video");
-  [order[0], order[first]] = [order[first], order[0]];
+  if (first > 0) [order[0], order[first]] = [order[first], order[0]];
   state.order = order;
+  $("roleChip").textContent = ROLES[state.role].label;
   $("screenStart").hidden = true; $("screenEnd").hidden = true; $("screenGame").hidden = false;
   window.scrollTo(0, 0);
   nextRound();
@@ -1731,7 +1848,7 @@ function endGame(reason) {
   if (state.phase === "over") return;
   state.phase = "over"; state.token++;
   stopSpeech(); stopRing();
-  $("debrief").hidden = true; $("ring").hidden = true;
+  $("debrief").hidden = true;
   $("screenGame").hidden = true; $("screenEnd").hidden = false;
   window.scrollTo(0, 0);
   const R = state.results;
@@ -1741,25 +1858,26 @@ function endGame(reason) {
   const falseAlarms = legits.filter((r) => r.outcome !== "correct").length;
   const acc = R.length ? Math.round((R.filter((r) => r.outcome === "correct").length / R.length) * 100) : 0;
   const flags = R.reduce((a, r) => a + r.flags, 0), s = state.score;
-  const rank = state.integrity <= 0 ? ["Owned", "The hacker walked straight in. Slow down, verify, and never pay a new account under pressure."]
-    : s < 250 ? ["Easy Mark", "You'd make VOX's week. Watch for pressure, secrecy, bank transfers and people moving you off official channels."]
-    : s < 600 ? ["Getting Suspicious", "Good instincts. Flag more of the tells and call it faster to climb the ranks."]
-    : s < 1000 ? ["Human Firewall", "You spot the tricks and still trust the right people. Hard to fool."]
-    : ["Red Team's Nightmare", "VOX has filed a complaint. Outstanding."];
-  $("endReason").textContent = reason; $("rankName").textContent = rank[0];
-  $("endScore").textContent = s; $("endLine").textContent = rank[1];
-  const best = Math.max(s, Number(store.get("rtvy-best") || 0)); store.set("rtvy-best", String(best));
-  const stats = [[acc + "%", "Accuracy"], [caught + "/" + scams.length, "Scams caught"], [breaches, "Times breached"], [falseAlarms, "False alarms"], [flags, "Red flags spotted"], [Math.max(0, state.integrity) + "%", "Integrity left"], [best, "Your best score"]];
+  const won = state.stolen === 0 && state.integrity > 0 && R.length > 0 && caught === scams.length;
+  const close = !won && state.integrity > 0 && caught >= Math.ceil(scams.length * 0.6);
+  $("endReason").textContent = reason;
+  $("endTitle").textContent = won ? "You beat the hacker." : close ? "Close. The hacker got something." : "The hacker won this time.";
+  $("endLine").textContent = won ? "You caught every attack and still trusted the real people. That's exactly the balance you want."
+    : close ? "You stopped most attacks. Look at the ones that got through: the red flags are listed below each one."
+    : "Slow down, check through a channel you already trust, and never move money or share codes because someone is rushing you.";
+  $("endScore").textContent = s; $("endStolen").textContent = money(state.stolen);
+  const best = Math.max(s, Number(store.get("hvy-best") || 0)); store.set("hvy-best", String(best));
+  const stats = [[acc + "%", "Accuracy"], [caught + "/" + scams.length, "Hackers caught"], [breaches, "Times hacked"], [falseAlarms, "Real people you doubted"], [flags, "Red flags spotted"], [best, "Your best score"]];
   $("endStats").innerHTML = "";
   stats.forEach(([v, k]) => { const d = document.createElement("div"); d.innerHTML = "<b></b><span></span>"; d.children[0].textContent = v; d.children[1].textContent = k; $("endStats").appendChild(d); });
   const log = $("endLog"); log.innerHTML = "";
-  if (!R.length) { const li = document.createElement("li"); li.innerHTML = "<span></span><span>No contacts judged.</span><span></span>"; log.appendChild(li); }
+  if (!R.length) { const li = document.createElement("li"); li.innerHTML = "<span></span><span>No contacts answered.</span><span></span>"; log.appendChild(li); }
   R.forEach((r) => {
     const li = document.createElement("li");
-    const ic = r.outcome === "correct" ? ["✔", "ok"] : r.outcome === "breached" ? ["☠", "bad"] : ["✘", "bad"];
+    const ok = r.outcome === "correct";
     li.innerHTML = "<span class='ic'></span><span></span><span class='p'></span>";
-    li.children[0].textContent = ic[0]; li.children[0].classList.add(ic[1]);
-    li.children[1].textContent = (r.cur.mode === "video" ? "Video · " : "Message · ") + r.cur.name + " — " + (r.cur.scam ? "scam" : "genuine");
+    li.children[0].textContent = ok ? "✓" : "✗"; li.children[0].classList.add(ok ? "ok" : "bad");
+    li.children[1].textContent = (r.cur.mode === "video" ? "Video call · " : isMail(r.cur) ? "Email · " : "Chat · ") + r.cur.name.split(" · ")[0] + (r.cur.scam ? " (hacker)" : " (real)") + (r.outcome === "breached" ? " · you paid" : "");
     li.children[2].textContent = (r.pts > 0 ? "+" : "") + r.pts;
     log.appendChild(li);
   });
@@ -1771,40 +1889,19 @@ let micOn = false, rec = null;
 async function enableMic() {
   if (micOn) return;
   const note = $("micNote");
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const c = audio(), an = c.createAnalyser(); an.fftSize = 1024;
-    c.createMediaStreamSource(stream).connect(an);
-    const buf = new Float32Array(an.fftSize), hist = [];
-    micOn = true; $("micMeters").hidden = false; $("btnMic").textContent = "Mic on"; $("btnMic").disabled = true;
-    const tick = () => {
-      an.getFloatTimeDomainData(buf);
-      let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
-      const lvl = Math.min(100, Math.round(Math.sqrt(sum / buf.length) * 400));
-      $("micLevel").style.width = lvl + "%";
-      if (lvl > 4) { hist.push(lvl); if (hist.length > 90) hist.shift(); }
-      if (hist.length > 20) {
-        const mean = hist.reduce((a, b) => a + b, 0) / hist.length;
-        const sd = Math.sqrt(hist.reduce((a, b) => a + (b - mean) ** 2, 0) / hist.length);
-        const calm = Math.max(0, Math.min(100, Math.round(100 - sd * 2.2 - Math.max(0, mean - 45))));
-        $("micCalm").textContent = calm + (calm >= 70 ? " steady" : calm >= 45 ? " tense" : " rattled");
-      }
-      requestAnimationFrame(tick);
-    };
-    tick();
-  } catch {
-    note.textContent = "The microphone isn't available here, so tap your replies. To answer by voice, open the game file directly in Chrome or Edge.";
-    return;
-  }
+  try { const st = await navigator.mediaDevices.getUserMedia({ audio: true }); st.getTracks().forEach((t) => t.stop()); }
+  catch { note.textContent = "The microphone isn't available here, so tap your replies. To answer by voice, open the game file directly in Chrome or Edge."; return; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { note.textContent = "Voice level is on. This browser has no speech recognition, so tap your replies."; return; }
+  if (!SR) { note.textContent = "This browser has no speech recognition, so tap your replies."; return; }
+  micOn = true; $("btnMic").textContent = "Listening"; $("btnMic").disabled = true;
   rec = new SR(); rec.lang = "en-GB"; rec.continuous = true; rec.interimResults = false;
   rec.onresult = (e) => {
     const said = e.results[e.results.length - 1][0].transcript.toLowerCase().trim();
     $("micHeard").textContent = "heard: \"" + said + "\"";
-    if (state.phase === "ringing" && /answer|open|pick up/.test(said)) return answer();
+    if (state.phase === "ringing" && /answer|accept|open|pick up/.test(said)) return answer();
+    if (state.phase === "ringing" && /decline|reject/.test(said)) return decline();
     if (state.phase === "debrief" && /next|continue/.test(said)) return closeDebrief();
-    const n = /\b(reply |option )?(one|1)\b/.test(said) ? 0 : /\b(reply |option )?(two|2)\b/.test(said) ? 1 : /\b(reply |option )?(three|3)\b/.test(said) ? 2 : -1;
+    const n = /\b(one|1)\b/.test(said) ? 0 : /\b(two|2)\b/.test(said) ? 1 : /\b(three|3)\b/.test(said) ? 2 : -1;
     if (n >= 0 && state.phase === "live") return takeOption(n);
     if (/\b(scam|fake|fraud|hang up|block)\b/.test(said)) return verdict(true);
     if (/\b(legit|genuine|real|trust)\b/.test(said)) return verdict(false);
@@ -1814,19 +1911,24 @@ async function enableMic() {
 }
 
 /* ---------------- Wiring ---------------- */
-$("btnStart").addEventListener("click", startGame);
-$("btnAgain").addEventListener("click", startGame);
+document.querySelectorAll(".role").forEach((b) => b.addEventListener("click", () => startGame(b.dataset.role)));
+$("btnAgain").addEventListener("click", () => startGame());
+$("btnRoles").addEventListener("click", () => { $("screenEnd").hidden = true; $("screenStart").hidden = false; state.phase = "idle"; $("roleChip").textContent = "Pick a role"; window.scrollTo(0, 0); });
+$("btnAnswer").addEventListener("click", answer);
+$("btnDecline").addEventListener("click", decline);
+$("notif").addEventListener("click", answer);
 $("btnScam").addEventListener("click", () => verdict(true));
 $("btnLegit").addEventListener("click", () => verdict(false));
-$("vEnd").addEventListener("click", () => verdict(true));
-$("vMute").addEventListener("click", (e) => e.currentTarget.style.background = e.currentTarget.style.background ? "" : "#5a2a2e");
-$("vCam").addEventListener("click", (e) => e.currentTarget.style.background = e.currentTarget.style.background ? "" : "#5a2a2e");
+$("cEnd").addEventListener("click", () => verdict(true));
+$("cMute").addEventListener("click", (e) => e.currentTarget.classList.toggle("off"));
+$("cCam").addEventListener("click", (e) => e.currentTarget.classList.toggle("off"));
 $("btnNext").addEventListener("click", closeDebrief);
 $("btnMic").addEventListener("click", enableMic);
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (state.phase === "ringing" && (k === "enter" || k === " ")) { e.preventDefault(); return answer(); }
+  if (state.phase === "ringing" && k === "d") return decline();
   if (state.phase === "debrief" && !$("debrief").hidden && k === "enter") { e.preventDefault(); return closeDebrief(); }
   if (state.phase === "live" || state.phase === "playing") {
     if (k === "s") return verdict(true);
@@ -1835,27 +1937,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// Start-screen teaser: a live, blinking caller
-(() => {
-  const tv = $("teaserVideo");
-  tv.innerHTML = `<div class="room" id="tRoom"></div><div class="face" id="tFace" style="width:58%"></div><div class="vignette"></div>
-    <div class="vtop"><div class="glass vname"><b>Richard Hale</b><span>CFO · Hale Group</span></div><div class="glass vmeta">● 02:14</div></div>
-    <div class="caption">…send two hundred and forty thousand before four.</div>`;
-  paintRoom($("tRoom"), "boardroom");
-  const tv2 = document.createElement("video");
-  tv2.className = "vclip on"; tv2.muted = true; tv2.loop = true; tv2.autoplay = true; tv2.playsInline = true;
-  tv2.src = "media/v_richard.mp4";
-  tv2.onerror = () => tv2.remove();
-  tv2.onloadeddata = () => { $("tFace").hidden = true; };
-  tv.insertBefore(tv2, tv.querySelector(".vignette"));
-  const tf = new Face($("tFace"), SCENARIOS.find((s) => s.id === "cfo-deepfake").face, { deepfake: true });
-  let talk = false; setInterval(() => { talk = !talk; }, 2600);
-  const anim = (ts) => { if (!$("screenStart").hidden) tf.frame(ts, talk); requestAnimationFrame(anim); };
-  requestAnimationFrame(anim);
-})();
-
-const best = store.get("rtvy-best");
-$("bestLine").textContent = best ? "Your best score on this device: " + best : "10 contacts. Some are attacks. Some are real. Nobody tells you which.";
+const best = store.get("hvy-best");
+$("bestLine").textContent = best ? "Your best score on this device: " + best : "Use headphones for the full effect.";
 hud();
 requestAnimationFrame(loop);
 })();
