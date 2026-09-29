@@ -307,6 +307,20 @@
   .check button { border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 13px; background: var(--text); color: var(--bg); white-space: nowrap; }
   .dclock { font-family: var(--mono); font-weight: 600; font-size: 13px; color: var(--muted); margin: 0; }
   .dclock.urgent { color: var(--hacker); }
+  /* Briefing */
+  .brief { padding-block: 28px; display: grid; gap: 20px; }
+  .brief-head { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: end; }
+  .brief-head h1 { margin-bottom: 8px; }
+  .brief-head .lede { margin: 0; }
+  .brief-timer { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); }
+  .brief-timer .num { font-size: 32px; font-weight: 600; }
+  .brief-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  .bcard { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .bcard h3 { font-family: var(--display); font-size: 16px; font-weight: 800; margin: 0 0 10px; }
+  .bcard ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14.5px; }
+  .bcard.pub { border-color: var(--hacker); }
+  .bcard.pub h3 { color: var(--hacker); }
+  .bcard .who { font-size: 13px; color: var(--muted); margin: -4px 0 10px; }
   /* Analysis report */
   .report { display: grid; gap: 18px; margin-top: 8px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; box-shadow: var(--shadow); }
@@ -403,6 +417,7 @@
     .game { grid-template-columns: minmax(0, 1fr); }
     .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .brief-head, .brief-grid { grid-template-columns: minmax(0, 1fr); }
     .tact-row { grid-template-columns: 1fr 80px; } .tact-row span:last-child { grid-column: 1 / -1; }
   }
   @media (max-width: 520px) {
@@ -470,6 +485,18 @@
       <div><b>+20 ⚑</b>Tap any sentence that's a red flag. Wrong flags cost 10.</div>
       <div><b>3 checks</b>Scam Radar only works when you spend a check. Checking with someone directly costs 20 seconds.</div>
       <div><b>−150</b>Pay the hacker or hand over a code and they steal the money.</div>
+    </div>
+  </section>
+
+  <!-- BRIEFING -->
+  <section id="screenBrief" hidden>
+    <div class="brief">
+      <div class="brief-head">
+        <div><div class="kicker">Your briefing · memorise it</div><h1 id="bTitle">This is you.</h1>
+        <p class="lede">Real contacts will match these details. The hacker only knows what's public, and will use it to sound convincing. You won't see this again.</p></div>
+        <div class="brief-timer"><span class="num" id="bClock">0:45</span><div class="track"><i id="bBar"></i></div><button class="btn" id="btnReady">I'm ready</button></div>
+      </div>
+      <div class="brief-grid" id="bGrid"></div>
     </div>
   </section>
 
@@ -689,7 +716,7 @@ const SCENARIOS = [
     ],
     nodes: {
       start: { say: [
-        "~ Earlier today you posted on social media that your SkyBridge flight to Lisbon was cancelled.",
+        "~ WhatsApp · message from a number you don't have saved",
         "Hi, this is Alex from SkyBridge Airways customer care 👋 We saw your post, so sorry about flight SB 214.",
         "🎤 We can get you on tonight's seven-forty flight instead. [[The seats are going fast though, so we need to lock it in within fifteen minutes.|A deadline to stop you checking.]]",
       ], options: [
@@ -716,7 +743,7 @@ const SCENARIOS = [
         { t: "I'll check with the airline directly", k: "safe", next: "web" },
       ] },
       web: { say: [
-        "~ SkyBridge's official line: \"You've already been rebooked free of charge onto tomorrow's 08:10. We never contact customers on WhatsApp.\"",
+        "~ SkyBridge's own helpline: \"You were already rebooked free of charge onto the 21:35, landing 00:50. We never contact customers on WhatsApp.\"",
       ] },
     },
     hit: "Your card was used for £1,900 of flights for other people within the hour.",
@@ -918,7 +945,7 @@ const SCENARIOS = [
     ],
     nodes: {
       start: { say: [
-        "~ You just tried to pay £4,800 to a builder for your new kitchen. The Northgate app asked you to join a quick video check.",
+        "~ You tap Pay on the builder's invoice. The Northgate app asks you to join a quick video check.",
         "Hi, I'm Aisha from Northgate's payments team. Thanks for joining. This is a routine check on larger payments to new payees.",
         "Who is the payment to, and how did you get their bank details?",
       ], options: [
@@ -954,7 +981,7 @@ const SCENARIOS = [
     ],
     nodes: {
       start: { say: [
-        "~ You listed your camera for £400 on a marketplace app.",
+        "~ Marketplace app · new message about your listing",
         "Hi! Still available? I'll take it at full price, no need to meet, my courier will collect 👍",
         "[[I've paid £450 to cover the courier too, so you just send £50 on to the courier's account.|An overpayment you're asked to send on.]]",
       ], options: [
@@ -1047,7 +1074,64 @@ const ADVICE = {
   invoice: "When a supplier's bank details change by email, call them on the number you already hold before paying a penny.",
   buyer: "Trust the balance in your real payment app, never a 'payment received' email. No real buyer needs you to pay them first.",
 };
-const DECIDE_SECS = 40, CHECK_SECS = 20;
+const DECIDE_SECS = 40, CHECK_SECS = 20, BRIEF_SECS = 45;
+/* Who you are. Real contacts match your private details; the hacker only knows what's public. */
+const BRIEF = {
+  you: "Jordan Hayes · 31 · Manchester",
+  travel: {
+    job: "Taking a few trips this autumn",
+    week: [
+      "<b>Lisbon, 14–16 Oct.</b> Hotel Lumen, booking ref <b>LX-88213</b>, already paid on Staybook.",
+      "Your Lisbon flight <b>SB 214</b> was cancelled. SkyBridge emailed: you're rebooked free onto the <b>21:35</b>, landing <b>00:50</b>.",
+      "<b>Rome, 22 Oct.</b> SkyBridge flight <b>SB 516</b>, seat <b>17C</b>, booked three weeks ago.",
+      "You've asked Staybook about the <b>Old Town Loft in Prague</b>. Staybook's rule: all payments go through the app.",
+      "You're browsing <b>Santorini villas for August</b>. The going rate is £3,500–£4,500 a week.",
+    ],
+    people: [
+      "<b>SkyBridge Airways</b> · verified account ✓ in your chats · helpline on skybridge.com",
+      "<b>Hotel Lumen</b> · contacts you through its own app",
+    ],
+    public: [
+      "Your angry post about <b>SB 214 being cancelled</b>",
+      "Liking lots of <b>Santorini villa ads</b> on Instagram",
+      "A story saying <b>\"Prague next month!\"</b>",
+    ],
+  },
+  pay: {
+    job: "Finance assistant at Hale Group",
+    week: [
+      "Brightline Print invoice <b>INV-4471 for £8,340</b> is due Friday. Nothing has changed about how you pay them.",
+      "Company rule: payments over <b>£10,000 need two approvers</b>, however senior the person asking.",
+      "At home you're paying your builder <b>£4,800</b> for the kitchen today, from your Northgate account.",
+      "You're selling your <b>camera for £400</b> on a marketplace app.",
+      "Sam is booking an <b>Edinburgh weekend</b> for three of you. The flat is about <b>£360</b>.",
+    ],
+    people: [
+      "<b>Richard Hale</b> · CFO, your boss · r.hale@<b>halegroup.co.uk</b> · on annual leave this week",
+      "<b>Dan Price</b> · Brightline accounts · dan.price@<b>brightlineprint.co.uk</b> · 0161 496 0321",
+      "<b>Sam Okafor</b> · friend · saved in your contacts",
+      "<b>Northgate Bank</b> · only ever contacts you inside its app",
+    ],
+    public: [
+      "Your LinkedIn: <b>finance assistant at Hale Group</b>",
+      "Richard's LinkedIn: <b>\"Off to Spain, back on the 20th!\"</b>",
+      "Your marketplace listing: <b>camera, £400</b>",
+      "Richard's conference talk on YouTube, <b>40 minutes of his voice</b>",
+    ],
+  },
+};
+const HOOK = {
+  villa: ["Your Instagram likes on villa ads", "£1,450 is far below the £3,500–£4,500 going rate you'd seen."],
+  "airline-dm": ["Your public post about SB 214", "You'd already been rebooked free onto the 21:35. SkyBridge talks to you through its verified account."],
+  "rental-host": ["Your \"Prague next month!\" story and your Staybook enquiry", "Staybook's rule: all payments go through the app."],
+  "cfo-deepfake": ["Richard's YouTube talk (to clone his voice), his holiday post and your job title", "Richard is on leave, his real email is @halegroup.co.uk, and over £10,000 needs two approvers."],
+  invoice: ["Brightline's hacked mailbox, with a real invoice and amount", "Dan's real address is @brightlineprint.co.uk, and nothing had changed about how you pay them."],
+  buyer: ["Your public marketplace listing", "A real payment shows in your app. No buyer needs you to pay them first."],
+  hotel: [null, "Booking ref LX-88213 and your new 00:50 landing time both matched your briefing."],
+  "gate-change": [null, "SB 516, seat 17C and the verified account all matched your briefing."],
+  "bank-video": [null, "You'd just paid your builder £4,800, and Northgate contacts you inside its app."],
+  "friend-split": [null, "Sam is a saved contact and £120 is a third of the £360 flat."],
+};
 const LOSS = { villa: 1450, "airline-dm": 1900, "rental-host": 580, "cfo-deepfake": 240000, invoice: 8340, buyer: 450 };
 const TAUNTS_START = [
   "Let's see how much you trust a friendly face.",
@@ -1945,7 +2029,35 @@ function startGame(role) {
   if (first > 0) [order[0], order[first]] = [order[first], order[0]];
   state.order = order;
   $("roleChip").textContent = ROLES[state.role].label;
-  $("screenStart").hidden = true; $("screenEnd").hidden = true; $("screenGame").hidden = false;
+  showBrief();
+}
+let briefTimer = null;
+function showBrief() {
+  $("screenStart").hidden = true; $("screenEnd").hidden = true; $("screenGame").hidden = true; $("screenBrief").hidden = false;
+  window.scrollTo(0, 0);
+  const parts = state.role === "all" ? ["travel", "pay"] : [state.role];
+  const week = [], people = [], pub = [];
+  parts.forEach((k) => { week.push(...BRIEF[k].week); people.push(...BRIEF[k].people); pub.push(...BRIEF[k].public); });
+  $("bTitle").textContent = "You are Jordan Hayes.";
+  const card = (title, sub, items, cls) => `<div class="bcard ${cls || ""}"><h3>${title}</h3>${sub ? `<div class="who">${sub}</div>` : ""}<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul></div>`;
+  $("bGrid").innerHTML = card("This week", BRIEF.you + " · " + parts.map((k) => BRIEF[k].job).join(" · "), week)
+    + card("People and companies you know", "Only you know these details", people)
+    + card("What's public about you", "The hacker can see all of this", pub, "pub");
+  let left = state.role === "all" ? BRIEF_SECS + 15 : BRIEF_SECS;
+  const total = left;
+  const tick = () => {
+    $("bClock").textContent = fmt(left);
+    $("bBar").style.width = (left / total) * 100 + "%";
+    if (left <= 0) return beginGame();
+    left--;
+  };
+  clearInterval(briefTimer); tick(); briefTimer = setInterval(tick, 1000);
+  setTimeout(() => $("btnReady").focus(), 50);
+}
+function beginGame() {
+  clearInterval(briefTimer);
+  if ($("screenBrief").hidden) return;
+  $("screenBrief").hidden = true; $("screenGame").hidden = false;
   window.scrollTo(0, 0);
   nextRound();
 }
@@ -2031,7 +2143,8 @@ function endGame(reason) {
     const row = el("div", "tact-row");
     const ok = r.outcome === "correct";
     const label = r.outcome === "breached" ? "Paid" : r.outcome === "timeout" ? "Too slow" : ok ? (r.cur.scam ? "Caught" : "Trusted") : (r.cur.scam ? "Fooled" : "Doubted");
-    const why = r.cur.scam ? (ok ? "Spotted " + r.flags + " of " + r.flagsTotal + " red flags" + (r.verified ? " and verified first" : "") : "Missed it" + (r.flags ? " despite flagging " + r.flags : "") + ". " + (ADVICE[r.cur.id] || ""))
+    const hk = HOOK[r.cur.id] || [];
+    const why = r.cur.scam && !ok && hk[1] ? "Your briefing had the answer: " + hk[1] : r.cur.scam ? (ok ? "Spotted " + r.flags + " of " + r.flagsTotal + " red flags" + (r.verified ? " and verified first" : "") : "Missed it" + (r.flags ? " despite flagging " + r.flags : "") + ". " + (ADVICE[r.cur.id] || ""))
       : (ok ? "Right to trust them" + (r.verified ? ", and you checked first" : "") : "They were genuine. " + (r.cur.greens || []).join(". ") + ".");
     row.append(el("b", null, TACTIC[r.cur.id] || r.cur.name), el("span", "res " + (ok ? "ok" : r.outcome === "timeout" ? "mid" : "bad"), label), el("span", null, why));
     tw.appendChild(row);
@@ -2078,6 +2191,11 @@ function endGame(reason) {
     det.appendChild(sum);
     const body = el("div", "body");
     body.appendChild(el("div", null, r.cur.lesson));
+    const hk = HOOK[r.cur.id];
+    if (hk) {
+      if (hk[0]) { const d1 = el("div"); d1.append(el("b", null, "What the hacker used: "), document.createTextNode(hk[0])); body.appendChild(d1); }
+      const d2 = el("div"); d2.append(el("b", null, "What your briefing told you: "), document.createTextNode(hk[1])); body.appendChild(d2);
+    }
     if (r.cur.scam) {
       body.appendChild(el("div", "sec-t", "Red flags"));
       const fl = el("ul"), seen = new Set();
@@ -2140,9 +2258,11 @@ $("cCam").addEventListener("click", (e) => e.currentTarget.classList.toggle("off
 $("btnNext").addEventListener("click", closeDebrief);
 $("btnMic").addEventListener("click", enableMic);
 $("btnCheck").addEventListener("click", runCheck);
+$("btnReady").addEventListener("click", beginGame);
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
+  if (!$("screenBrief").hidden && k === "enter") { e.preventDefault(); return beginGame(); }
   if (state.phase === "ringing" && (k === "enter" || k === " ")) { e.preventDefault(); return answer(); }
   if (state.phase === "ringing" && k === "d") return decline();
   if (state.phase === "debrief" && !$("debrief").hidden && k === "enter") { e.preventDefault(); return closeDebrief(); }
