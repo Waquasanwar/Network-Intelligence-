@@ -398,6 +398,24 @@
   .dtimer-txt small { font-size: 12px; color: var(--muted); }
   .dnote { margin: 0; font-size: 14px; color: var(--muted); max-width: 90ch; }
   .dnote b { color: var(--text); }
+  .mission { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .mcard { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; box-shadow: var(--shadow); }
+  .mcard .tag2 { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; margin-bottom: 10px; }
+  .mcard p { margin: 0 0 8px; font-size: 14.5px; line-height: 1.55; }
+  .mcard p:last-child { margin-bottom: 0; }
+  .mcard.story { background: linear-gradient(160deg, #10263f, #1d3557); color: #e9f0f8; border-color: transparent; }
+  .mcard.story .tag2 { background: rgba(255,255,255,.14); color: #fff; }
+  .mcard.story b { color: #fff; }
+  .mcard.threat { border-color: var(--hacker); }
+  .mcard.threat .tag2 { background: var(--hacker-soft); color: var(--hacker); }
+  .mcard.goal2 .tag2 { background: var(--you-soft); color: var(--you); }
+  .mcard ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+  .expect { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .expect li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 14px; align-items: start; }
+  .expect li i { width: 22px; height: 22px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--line); display: grid; place-items: center; }
+  .expect li i svg { width: 13px; height: 13px; color: var(--muted); }
+  .expect small { display: block; color: var(--muted); font-size: 12.5px; }
+  .expect-foot { margin: 10px 0 0; font-size: 13px; color: var(--hacker); font-weight: 600; }
   .dgrid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, .95fr); gap: 16px; align-items: start; }
   .dcol { display: grid; gap: 16px; }
   .dcard { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px 18px; box-shadow: var(--shadow); }
@@ -541,13 +559,16 @@
     .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .mission { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .mission .story { grid-column: 1 / -1; }
     .dgrid .dcol:last-child { grid-column: 1 / -1; }
     .tact-row { grid-template-columns: 1fr 80px; } .tact-row span:last-child { grid-column: 1 / -1; }
   }
   @media (max-width: 520px) {
     .brand { width: 100%; }
     .goal { display: none; }
-    .dhead, .dgrid { grid-template-columns: minmax(0, 1fr); }
+    .dhead, .dgrid, .mission { grid-template-columns: minmax(0, 1fr); }
+    .mission .story { grid-column: auto; }
     .dgrid .dcol:last-child { grid-column: auto; }
     .idav { width: 60px; height: 60px; font-size: 22px; border-radius: 18px; }
     .meters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -586,7 +607,7 @@
         <div class="cta"><button class="btn big" id="btnStart">Start my day</button><label class="toggle"><input type="checkbox" id="optVoice" checked> Play voices out loud</label></div>
       </div>
       <ol class="steps">
-        <li><div><b>Read your briefing</b><span>60 seconds to learn who you are, what's happening today and what's public about you. Then it's gone.</span></div></li>
+        <li><div><b>Read your briefing</b><span>90 seconds to learn who you are, what's happening today and what's public about you. Then it's gone.</span></div></li>
         <li><div><b>Live your day</b><span>Video calls, chats and emails arrive one at a time. Reply, pay, hang up or block, just as you would on a normal busy day.</span></div></li>
         <li><div><b>Nobody warns you</b><span>There are no hints and no "is this a scam?" button. Checking with someone takes time out of your day, so choose when it matters.</span></div></li>
         <li><div><b>Find out the truth</b><span>When your day ends you'll see exactly when you were hacked, what gave it away, and who you let down by mistake.</span></div></li>
@@ -608,11 +629,12 @@
         </div>
         <div class="dtimer">
           <svg viewBox="0 0 64 64" class="ring" aria-hidden="true"><circle cx="32" cy="32" r="28" class="ring-bg"/><circle cx="32" cy="32" r="28" class="ring-fg" id="bRing"/></svg>
-          <div class="dtimer-txt"><span class="num" id="bClock">1:00</span><small>until your day starts</small></div>
+          <div class="dtimer-txt"><span class="num" id="bClock">1:30</span><small>until your day starts</small></div>
           <button class="btn" id="btnReady">I'm ready</button>
         </div>
       </div>
-      <p class="dnote"><b>How to use this:</b> real people will match the private details in the first three columns. The hacker only knows what's in the red column, and will use it to sound convincing. Once your day starts, you can't come back here.</p>
+      <p class="dnote"><b>Read this like your own life.</b> Real people will match the private details below. The hacker only knows what's in the red column, and will use it to sound convincing. Once your day starts, you can't come back here.</p>
+      <div class="mission" id="bMission"></div>
       <div class="dgrid" id="bGrid"></div>
     </div>
   </section>
@@ -1346,7 +1368,7 @@ const ADVICE = {
   invoice: "When a supplier's bank details change by email, call them on the number you already hold before paying a penny.",
   buyer: "Trust the balance in your real payment app, never a 'payment received' email. No real buyer needs you to pay them first.",
 };
-const DECIDE_SECS = 40, CHECK_SECS = 20, BRIEF_SECS = 60, DAY_SECS = 300, CHECKS = 3;
+const DECIDE_SECS = 40, CHECK_SECS = 20, BRIEF_SECS = 90, DAY_SECS = 300, CHECKS = 3;
 const DAY_LABEL = "Tuesday 14 October";
 /* One day, in order. Times are the in-game clock. */
 const DAY = [
@@ -1361,6 +1383,29 @@ const CONSEQ = {
   "friend-split": "That really was Sam. Now Sam is covering your share of the flat and wondering why you blocked them.",
 };
 /* Who you are. Real contacts match your private details; the hacker only knows what's public. */
+const MISSION = {
+  story: [
+    "It's <b>Tuesday 14 October</b>. You're <b>Jordan Hayes</b>, a finance assistant at <b>Hale Group</b> in Manchester. You can set up and approve company payments, which makes you worth targeting.",
+    "Your boss <b>Richard Hale</b> is on holiday in Spain until the 20th, so you're keeping an eye on payments while he's away.",
+    "This morning SkyBridge cancelled your Lisbon flight. You complained about it online, and the airline has already rebooked you onto tonight's <b>21:35</b>. You're working until five, paying your builder at lunchtime, then heading to the airport.",
+  ],
+  threat: [
+    "IT sent everyone a warning this morning: a criminal group is targeting <b>finance teams and travellers</b> this month.",
+    "They study social media, copy real companies, clone voices from online videos and push for fast payments.",
+    "<b>They won't look like hackers.</b> They'll look like the people and companies you deal with.",
+  ],
+  goal: "Get through all ten contacts today without paying, clicking or handing anything to the hacker, and without letting down the real people who need you.",
+  can: ["Reply in your own words", "Pay, or back out at the payment screen", "Hang up, close or archive", "Block and report", "Check with someone directly (it takes time out of your day)"],
+  expect: [
+    ["mail", "Brightline Print", "about invoice INV-4471, due Friday"],
+    ["video", "Northgate Bank", "they sometimes check large payments in their app"],
+    ["video", "Hotel Lumen", "you're landing after their front desk closes"],
+    ["chat", "SkyBridge Airways", "about your flights"],
+    ["chat", "Sam", "sorting out the money for Edinburgh"],
+    ["chat", "Buyers", "about the camera you're selling"],
+    ["chat", "The Prague host", "about your Staybook enquiry"],
+  ],
+};
 const BRIEF = {
   today: [
     ["08:30", "Start work", "Hale Group finance team, Manchester"],
@@ -2325,7 +2370,12 @@ function showBrief() {
   const rules = `<div class="dcard"><h3>Your rules</h3><ul class="rules">${BRIEF.rules.map((r) => `<li><i>${tick}</i><span>${r}</span></li>`).join("")}</ul></div>`;
   const pub = `<div class="dcard pub"><h3>What the hacker can see <small>public</small></h3><div class="feed">${BRIEF.public.map(([pl, who, when, txt]) =>
     `<div class="post"><div class="ph"><span><span class="plat">${pl}</span> · <b>${who}</b></span><span>${when}</span></div><p>${txt}</p></div>`).join("")}</div></div>`;
-  $("bGrid").innerHTML = `<div class="dcol">${today}${later}</div><div class="dcol">${people}${rules}</div><div class="dcol">${pub}</div>`;
+  const expect = `<div class="dcard"><h3>Expect to hear from <small>and why</small></h3><ul class="expect">${MISSION.expect.map(([k, w, why]) =>
+    `<li><i>${ICON[k]}</i><span><b>${w}</b><small>${why}</small></span></li>`).join("")}</ul><p class="expect-foot">You may also hear from people you weren't expecting.</p></div>`;
+  $("bMission").innerHTML = `<div class="mcard story"><span class="tag2">The situation</span>${MISSION.story.map((x) => `<p>${x}</p>`).join("")}</div>`
+    + `<div class="mcard threat"><span class="tag2">The threat</span>${MISSION.threat.map((x) => `<p>${x}</p>`).join("")}</div>`
+    + `<div class="mcard goal2"><span class="tag2">Your objective</span><p>${MISSION.goal}</p><p style="margin-top:10px"><b>What you can do</b></p><ul>${MISSION.can.map((x) => `<li>${x}</li>`).join("")}</ul></div>`;
+  $("bGrid").innerHTML = `<div class="dcol">${today}${later}</div><div class="dcol">${expect}${people}${rules}</div><div class="dcol">${pub}</div>`;
   let left = BRIEF_SECS;
   const C = 2 * Math.PI * 28;
   const tickFn = () => {
