@@ -1695,9 +1695,26 @@ function speakLine(text, wordEls, token, onProgress, src) {
         const starts = []; let pos = 0;
         wordEls.forEach((el) => { const i = text.indexOf(el.textContent, pos); starts.push(i < 0 ? pos : i); pos = (i < 0 ? pos : i) + el.textContent.length; });
         u.onboundary = (e) => { if (e.name && e.name !== "word") return; boundaryDriven = true; let k = 0; while (k < n && starts[k] <= e.charIndex) k++; light(k); };
+        let started = false;
+        u.onstart = () => { started = true; };
         u.onend = finish; u.onerror = finish;
-        speechSynthesis.speak(u);
-        safety = setTimeout(finish, dur * 2 + 4000);
+        try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch { /* speech unavailable */ }
+        // If the device never starts speaking (blocked or no voices), carry on at reading pace.
+        // If it is speaking, give it a little longer, then move on regardless.
+        const hardStop = performance.now() + dur * 2 + 3000;
+        const watch = () => {
+          if (done) return;
+          if (!started || !speechSynthesis.speaking || performance.now() > hardStop) return finish();
+          safety = setTimeout(watch, 400);
+        };
+        safety = setTimeout(watch, dur + 900);
+        // No sound after 1.5s: switch to a brisk reading pace instead of waiting.
+        setTimeout(() => {
+          if (done || started) return;
+          clearInterval(tick); clearTimeout(safety);
+          const fast = Math.max(120, (n / 260) * 60000 / Math.max(n, 1));
+          tick = setInterval(() => { if (token !== state.token) return finish(); light(lit + 1); if (lit >= n) { clearInterval(tick); safety = setTimeout(finish, 700); } }, fast);
+        }, 1500);
       } else safety = setTimeout(finish, dur);
     };
 
