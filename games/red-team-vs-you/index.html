@@ -611,7 +611,7 @@
       <div>
         <div class="kicker">Cyber awareness · 5 minutes</div>
         <h1>Get through today <span class="h">without getting hacked.</span></h1>
-        <p class="lede">It's Tuesday 14 October in Dubai. You're a finance officer at Dunes Capital in Business Bay: at work until five, then flying to Istanbul tonight. Ten calls, chats, emails and texts will arrive through your day. Some are real people. Some are the hacker, using deepfakes, fake payment details and pressure. You have one goal: don't let them in.</p>
+        <p class="lede">It's Tuesday 14 October in Dubai. You're a finance officer at Dunes Capital in Business Bay: at work until five, then flying to Istanbul tonight. Six calls, chats and emails will arrive through your day. Some are real people. The rest are one hacker who has picked you, coming back from a different angle each time. You have one goal: don't let them in.</p>
         <div class="persona" role="radiogroup" aria-label="Who do you want to play?"><span>Play as</span>
           <button class="pchip on" data-p="f" role="radio" aria-checked="true"><b>LR</b>Layla Rahman</button>
           <button class="pchip" data-p="m" role="radio" aria-checked="false"><b>YR</b>Yousef Rahman</button>
@@ -818,87 +818,6 @@
 "use strict";
 const SCENARIOS = [
   {
-    id: "villa", mode: "video", theme: "Travel", scam: true,
-    name: "Nadia Farouk", org: "Reservations · Azure Escapes", detail: "Video link from an Instagram ad",
-    face: { g: "f" }, voice: { pitch: 1.1, rate: 1.08 }, stress: 55, synthetic: 9,
-    signals: [["Contact", "Instagram ad, then a video link", "n"]],
-    nodes: {
-      start: { say: [
-        "Hi {FIRST}! Nadia from Azure Escapes, thanks for jumping on a quick video call.",
-        "So, the Maldives water villa you liked. Five nights over the long weekend, private pool, breakfast included. [[It's normally sixteen thousand dirhams, but I can do it for fifty-nine hundred today only.|A price far below the going rate is the bait.]]",
-        "[[I've only got this one left, and two other families from Abu Dhabi are looking at it right now.|Fake scarcity to rush you.]]",
-      ], options: [
-        { t: "Sounds amazing. Can I pay on my credit card?", k: "safe", next: "card" },
-        { t: "Are you a licensed travel agency here in the UAE?", k: "safe", next: "licence" },
-        { t: "Wow, OK. What do you need from me to book it?", k: "risky", next: "pay" },
-        { t: "Could you send me a few more photos first?", k: "neutral", next: "photos" },
-      ] },
-      photos: { say: [
-        "Of course, I'll send the full gallery once it's secured. [[Honestly, at this price it won't last the afternoon.|Pressure to commit before you can check anything.]]",
-      ], options: [
-        { t: "Fair enough. How do I secure it?", k: "risky", next: "pay" },
-        { t: "Can I put it on my credit card?", k: "safe", next: "card" },
-        { t: "Which resort is it? I'll look it up.", k: "neutral", next: "address" },
-      ] },
-      address: { say: [
-        "It's a private island resort in Baa Atoll, it's all on our page. [[Shall I hold it for you while you look? I just need the deposit today.|Any real resort can be copied from another listing.]]",
-      ], options: [
-        { t: "OK, send me the deposit details.", k: "risky", next: "pay" },
-        { t: "Let me think about it and get back to you.", k: "safe", next: "pressure" },
-      ] },
-      card: { say: [
-        "Ah, [[our card machine is down this week. Bank transfer gets you another five percent off anyway.|Avoiding cards removes your chargeback protection.]]",
-      ], options: [
-        { t: "Five percent off? Go on then, bank transfer.", k: "risky", next: "pay" },
-        { t: "Sorry, I only book holidays on a card.", k: "safe", next: "pressure" },
-        { t: "When will the card machine be back?", k: "neutral", next: "machine" },
-      ] },
-      machine: { say: [
-        "[[Not till next week, and the villa will be long gone by then. Transfer's honestly easier.|Stalling until you give up on the protected option.]]",
-      ], options: [
-        { t: "Alright, I'll transfer it.", k: "risky", next: "pay" },
-        { t: "I'll wait. If it's gone, it's gone.", k: "safe", next: "pressure" },
-      ] },
-      licence: { say: [
-        "Of course, it's all on our website, don't worry. [[We're a small boutique agency, we mostly work through Instagram.|No trade licence, no office, nothing you can verify.]]",
-      ], options: [
-        { t: "I'd want to see your trade licence before paying anything.", k: "safe", next: "nolicence" },
-        { t: "The page does look professional. OK, what's next?", k: "risky", next: "pay" },
-        { t: "Do you have reviews anywhere?", k: "neutral", next: "reviews" },
-      ] },
-      reviews: { say: [
-        "Loads on our Instagram! [[Everyone who's stayed has loved it.|Reviews you can't independently check prove nothing.]]",
-      ], options: [
-        { t: "Great, let's do it.", k: "risky", next: "pay" },
-        { t: "I'll have a think and get back to you.", k: "safe", next: "pressure" },
-      ] },
-      pay: { say: [
-        "Perfect! I'll pop the details on screen now.",
-        "$ [[Bank transfer · Beneficiary: Mohammed Rafiq · Personal account · AED 5,900|The payee is a private person, not the company.]]",
-        "[[Put the reference as family support, so your bank doesn't hold it up.|Mislabelling a payment is a way to dodge your bank's fraud checks.]]",
-      ], options: [
-        { t: "Done. Sending it now so I don't lose it.", k: "breach" },
-        { t: "Why's it going to a personal account?", k: "risky", next: "personal" },
-        { t: "I'm not sending money today, sorry.", k: "safe", next: "pressure" },
-      ] },
-      personal: { say: [
-        "Mr Rafiq is our partner in the Maldives, we pay the resort through him. [[It's completely normal for deals like this.|A plausible story to make a personal account feel normal.]]",
-      ], options: [
-        { t: "Makes sense. Sending it now.", k: "breach" },
-        { t: "I'm not comfortable paying a personal account.", k: "safe", next: "pressure" },
-      ] },
-      pressure: { say: ["[[Look, if you can't commit now I'll have to give it to the next family. Your choice.|Pressure the moment you push back.]]"] },
-      nolicence: { say: [
-        "[[It's being renewed at the moment, but honestly, we've been doing this for years.|No licence you can check.]]",
-      ], options: [
-        { t: "OK, fair enough. What's next?", k: "risky", next: "pay" },
-        { t: "Then I'll wait until it's renewed.", k: "safe", next: "pressure" },
-      ] },
-    },
-    hit: "AED 5,900 gone. The resort has never heard of you, and Azure Escapes' Instagram has disappeared.",
-    lesson: "Holiday booking fraud: an unbelievable price, time pressure and a push to bank transfer. Book with a licensed agency you can verify, and pay by credit card, never to a personal account.",
-  },
-  {
     id: "airline-dm", mode: "message", theme: "Travel", scam: true,
     name: "SkyBridge Air Care", org: "WhatsApp · +971 56 381 2290", detail: "Not a verified business",
     face: { g: "m" }, voice: { pitch: 1.0, rate: 1.06 }, stress: 50, synthetic: 14,
@@ -956,90 +875,6 @@ const SCENARIOS = [
     },
     hit: "Your card details were captured on the fake page. AED 7,200 of flights for other people went on your card within the hour.",
     lesson: "Scammers watch for public complaints to airlines and pose as support. Rebooking after a cancellation is free and happens in the airline's own app or website.",
-  },
-  {
-    id: "hotel", mode: "video", theme: "Travel", scam: false,
-    name: "Emre Yilmaz", org: "Front desk · Hotel Lumen, Istanbul", detail: "Video call in the Hotel Lumen app · booking LX-88213",
-    face: { g: "m" }, voice: { pitch: 0.95, rate: 1.02 }, stress: 24, synthetic: 4,
-    signals: [["Contact", "Video call inside the Hotel Lumen app", "n"]],
-    nodes: {
-      start: { say: [
-        "Hello! Emre from Hotel Lumen in Istanbul. I'm calling about your booking, reference L X 8 8 2 1 3.",
-        "Your flight's changed, so you'll land after one in the morning. Our desk closes at midnight, so I'd like to set up a late check-in.",
-        "There's no charge. Would you like a key code by text, or shall our night porter meet you?",
-      ], options: [
-        { t: "A key code by text would be great, thanks.", k: "neutral", next: "code" },
-        { t: "Could the night porter meet me?", k: "neutral", next: "porter" },
-        { t: "Sorry, can you just confirm my booking details?", k: "safe", next: "confirm" },
-        { t: "Do you need a card to hold the room?", k: "risky", next: "nocard" },
-      ] },
-      confirm: { say: [
-        "Of course. Two nights, the fourteenth and fifteenth, double room with breakfast, already paid through Staybook. You don't owe us anything.",
-      ], options: [
-        { t: "Perfect. Key code by text, please.", k: "neutral", next: "code" },
-        { t: "Great. Would you like my card details just in case?", k: "risky", next: "nocard" },
-      ] },
-      code: { say: ["Perfect. The code comes by text from Hotel Lumen at six p.m. Istanbul time, and it'll be in the app too. Safe travels!"] },
-      porter: { say: ["Great, Burak will be at the door. If anything changes, call the number on your booking confirmation. Have a safe flight!"] },
-      nocard: { say: ["Oh, no need! Please don't share card numbers on calls. The room's paid and guaranteed."], options: [
-        { t: "Great. A key code by text, please.", k: "neutral", next: "code" },
-        { t: "OK. Could the night porter meet me?", k: "neutral", next: "porter" },
-      ] },
-    },
-    lesson: "Genuine: the call came through the hotel's own app, the details match your booking, and they asked for nothing but a preference.",
-    greens: ["Came through the hotel's own app, with your booking", "Booking reference and arrival time matched", "Asked for no money or card details"],
-  },
-  {
-    id: "rental-host", mode: "message", theme: "Travel", scam: true,
-    name: "Faisal (Owner)", org: "WhatsApp · +971 52 448 1907", detail: "Moved you off Propfinder",
-    face: { g: "m" }, voice: { pitch: 0.95, rate: 1.05 }, stress: 46, synthetic: 11,
-    signals: [["Channel", "Started on Propfinder, now WhatsApp", "n"]],
-    nodes: {
-      start: { say: [
-        "Hi {FIRST}, Faisal here, owner of the 1-bed in Dubai Marina you asked about on Propfinder 😊",
-        "I'm working in Riyadh at the moment so I can't do viewings. [[If you pay the 5% deposit today I'll take it off the market and courier you the keys.|Paying before you've seen the flat or signed anything is the trap.]]",
-      ], options: [
-        { t: "Great, how do I pay the deposit?", k: "risky", next: "pay" },
-        { t: "Can we go through a registered agent and do it properly?", k: "safe", next: "push" },
-        { t: "Could someone show me the flat first, or do a video tour?", k: "safe", next: "video" },
-        { t: "Why can't anyone do a viewing?", k: "neutral", next: "fees" },
-      ] },
-      fees: { say: [
-        "[[I'm away for work, everything is done online these days. My last tenant never even visited 😊|Normalising renting without a viewing.]]",
-      ], options: [
-        { t: "Fair. Send me your details.", k: "risky", next: "pay" },
-        { t: "I'd still want an agent and a proper contract.", k: "safe", next: "push" },
-      ] },
-      pay: { say: [
-        "$ [[Bank transfer · Beneficiary: Faisal Al Amri · Personal account · AED 4,750|A deposit to a private account before any viewing or contract.]]",
-        "🎤 [[Please send it today if you can, I've got three other people wanting it.|Urgency.]]",
-      ], options: [
-        { t: "Done, I'll send it now.", k: "breach" },
-        { t: "Could I pay half now and half when I get the keys?", k: "risky", next: "half" },
-        { t: "Actually, I'd rather go through an agent.", k: "safe", next: "push" },
-      ] },
-      half: { say: [
-        "[[OK, AED 2,375 now to hold it, the rest when you get the keys. Same account 😊|Any amount sent to this account is unprotected.]]",
-      ], options: [
-        { t: "Great, sending the AED 2,375 now.", k: "breach", amount: "AED 2,375.00", loss: 2375 },
-        { t: "On second thoughts, I'll wait until I can see it.", k: "safe", next: "walk" },
-      ] },
-      push: { say: [
-        "[[Agents just add fees, honestly. Direct with the owner is safer, trust me!|Undermining the protections that come with a proper contract.]]",
-      ], options: [
-        { t: "OK, you're right. Sending the deposit directly.", k: "breach" },
-        { t: "I'm not paying anything without a viewing.", k: "safe", next: "walk" },
-      ] },
-      video: { say: [
-        "🎤 [[Ah, my cousin has the keys but he's travelling, sorry! All the photos are on the listing.|Refuses the one check that would prove the flat exists.]]",
-      ], options: [
-        { t: "No worries. How do I pay?", k: "risky", next: "pay" },
-        { t: "I'm not paying anything without a viewing.", k: "safe", next: "walk" },
-      ] },
-      walk: { say: ["[[Your loss. Someone else will take it today 🙄|Pressure when you hold firm.]]"] },
-    },
-    hit: "AED 4,750 sent. The flat belongs to someone else, and 'Faisal' has blocked your number.",
-    lesson: "Rental deposit fraud: an 'owner' abroad who can't do viewings, a deposit before you've seen anything, and a personal account. Only pay after a viewing, through a registered agent, with a signed and registered tenancy contract.",
   },
   {
     id: "gate-change", mode: "message", theme: "Travel", scam: false, verified: true,
@@ -1196,37 +1031,6 @@ const SCENARIOS = [
     greens: ["You started the call inside the bank's app", "Only asked about your own payment", "Told you they'd never ask for PIN, password or OTP"],
   },
   {
-    id: "fine", mode: "message", theme: "Payment", scam: true,
-    name: "TrafficFines-UAE", org: "SMS · +971 56 702 3391", detail: "Text message",
-    face: { logo: "TF", color: "#475569" },
-    signals: [["Sender", "+971 56 702 3391", "n"]],
-    nodes: {
-      start: { say: [
-        "~ Text message",
-        "UAE Traffic: An unpaid fine of AED 400 is registered against vehicle Dubai L 48213 (speeding, Sheikh Zayed Road).",
-        "[[Pay within 24 hours to avoid 4 black points and impoundment of your vehicle:|A short deadline and a frightening consequence.]] [[uae-finepay.services/L48213|Not the official government app or website.]]",
-      ], options: [
-        { t: "Ugh. Open the link and pay it now", k: "breach" },
-        { t: "Ignore it for now", k: "safe", next: "ignore" },
-        { t: "Reply asking which camera caught it", k: "risky", next: "reply" },
-        { t: "Wait, how do they have my plate number?", k: "neutral", next: "plate" },
-      ] },
-      plate: { say: ["~ You remember: your plate is clearly visible in the photo of your new car on Instagram."], options: [
-        { t: "Fair enough, they'd have it anyway. Pay on the link", k: "breach" },
-        { t: "Ignore it for now", k: "safe", next: "ignore" },
-      ] },
-      reply: { say: [
-        "UAE Traffic: Fine ref TF-88213 · Camera 214, Sheikh Zayed Road · 09:41 on 12 Oct. [[Payment window closes in 23 hours.|Pressure again, from the same sender.]]",
-      ], options: [
-        { t: "OK, it looks official. Pay on the link", k: "breach" },
-        { t: "Ignore it for now", k: "safe", next: "ignore" },
-      ] },
-      ignore: { say: ["~ You leave the text unanswered."] },
-    },
-    hit: "Your card details were captured on a fake payment page. AED 6,350 was spent online overnight.",
-    lesson: "Fake fine texts copy official wording and use public details like your plate number. Fines are only checked and paid in the official government app or website, never through a link in a text.",
-  },
-  {
     id: "friend-split", mode: "message", theme: "Payment", scam: false,
     name: "Priya Nair", org: "Saved contact", detail: "4 years of messages",
     face: { g: "f" }, voice: { pitch: 1.05, rate: 1.05 }, stress: 18, synthetic: 4,
@@ -1261,7 +1065,7 @@ const SCENARIOS = [
 /* Pre-generated media (one-off, baked into the game: no runtime API, no ongoing cost).
    Missing files fall back to the drawn character and the browser's own voice. */
 const MEDIA = {
-  villa: ["jade", true], "airline-dm": ["alex"], hotel: ["marco", true], "rental-host": ["elena"],
+  "airline-dm": ["alex"],
   "cfo-deepfake": ["richard", true], invoice: ["dan"], "bank-video": ["aisha", true], buyer: ["chris"], "friend-split": ["sam"],
 };
 const AUDIO_KEYS = new Set([
@@ -1293,28 +1097,23 @@ function fixAvatars(root, cur) {
 }
 
 const TACTIC = {
-  villa: "Too-good-to-be-true holiday", "airline-dm": "Fake airline support", "rental-host": "Fake landlord deposit",
-  "cfo-deepfake": "Deepfake boss on video", invoice: "Changed bank details", fine: "Fake traffic fine",
-  hotel: "Genuine: hotel", "gate-change": "Genuine: airline", "bank-video": "Genuine: bank check", "friend-split": "Genuine: friend",
+  "airline-dm": "Fake airline support", "cfo-deepfake": "Deepfake boss on video", invoice: "Changed bank details",
+  "gate-change": "Genuine: airline", "bank-video": "Genuine: bank check", "friend-split": "Genuine: friend",
 };
 const ADVICE = {
-  villa: "If the price is far below everyone else's, it's bait. Book with a licensed agency you can look up, and pay by credit card, never to a personal account.",
   "airline-dm": "Airlines don't message you on WhatsApp after you complain online, and rebooking a cancelled flight is free. Use the airline's own app.",
-  "rental-host": "Never pay a rental deposit before a viewing and a signed, registered contract, and always through a registered agent.",
   "cfo-deepfake": "A face and voice on video are no longer proof. Big, urgent, secret payments must be confirmed on a separate channel you already know.",
   invoice: "When a supplier's bank details change by email, call them on the number you already hold before paying a single dirham.",
-  fine: "Fines are only checked and paid in the official government app or website. A link in a text message is never the way.",
 };
 const DECIDE_SECS = 40, CHECK_SECS = 25, BRIEF_SECS = 90, DAY_SECS = 300, CHECKS = 3;
 const DAY_LABEL = "Tuesday 14 October";
 /* One day, in order. Times are the in-game clock (Dubai). */
 const DAY = [
-  ["cfo-deepfake", "08:52"], ["friend-split", "09:20"], ["invoice", "09:45"], ["gate-change", "10:30"], ["airline-dm", "11:15"],
-  ["bank-video", "12:20"], ["fine", "13:05"], ["villa", "14:10"], ["hotel", "15:30"], ["rental-host", "16:40"],
+  ["friend-split", "09:10"], ["invoice", "09:45"], ["airline-dm", "11:15"],
+  ["bank-video", "12:20"], ["gate-change", "13:05"], ["cfo-deepfake", "14:10"],
 ];
 /* What happens when you block or abandon a real person. */
 const CONSEQ = {
-  hotel: "Emre was genuine. With no late check-in arranged, you'll land at 01:15 to a locked front desk.",
   "gate-change": "That was your real airline. Ignore genuine messages and you'll miss the ones that matter.",
   "bank-video": "That really was your bank. Your contractor's AED 18,000 is on hold until you call them back.",
   "friend-split": "That really was Priya. Now she's covering your share of the chalet and wondering why you ignored her.",
@@ -1322,13 +1121,9 @@ const CONSEQ = {
 /* The check you can make outside the conversation: it ends the contact, costs time, and shows you the truth. */
 const VERIFY = {
   "cfo-deepfake": ["Hang up and call Omar", "You call Omar on the mobile number in the company directory. He's in London: \"I haven't been on any call. Don't send anything.\""],
-  villa: ["Hang up and check their licence", "There's no trade licence for Azure Escapes. A reverse image search finds the villa photos on a real resort's own website."],
   "airline-dm": ["Call the SkyBridge helpline", "SkyBridge's own helpline: \"You were already rebooked free of charge onto the 21:35. We never contact customers on WhatsApp.\""],
-  "rental-host": ["Ask Propfinder about this", "Propfinder: \"This listing used stolen photos and has been removed. Never pay a deposit before a viewing and a signed contract.\""],
   "gate-change": ["Check in the SkyBridge app", "The SkyBridge app shows SB 516 to Baku on 22 Oct, seat 17C. It matches."],
   invoice: ["Call Al Waha's office", "Al Waha's office, on the number you already had: \"We haven't changed banks. Someone has got into our email. Thank you for calling.\""],
-  fine: ["Check the official government app", "The official government app shows no fines on your vehicle."],
-  hotel: ["Hang up and call the hotel back", "You call the number on your booking confirmation: \"Yes, that was Emre at our front desk. I've set up your late check-in, the code comes by text at six.\""],
   "bank-video": ["Hang up and call the number on your card", "You call the number on the back of your card: \"Yes, that check was us. Your AED 18,000 payment has been released.\""],
   "friend-split": ["Call Priya", "Priya picks up: \"Yes, that's me! Pay whenever.\" You pay the AED 600 in the app."],
 };
@@ -1348,19 +1143,17 @@ const MISSION = {
     "This morning SkyBridge cancelled your flight to Istanbul. You complained about it online, and the airline has already rebooked you onto tonight's <b>21:35</b>. You're working until five, paying your contractor at lunchtime, then heading to DXB.",
   ],
   threat: [
-    "IT sent everyone a warning this morning: a criminal group is targeting <b>finance teams and travellers in the UAE</b> this month.",
-    "They study social media, copy real companies, clone voices from online videos, send fake fine and delivery texts, and push for fast payments.",
-    "<b>They won't look like hackers.</b> They'll look like the people and companies you deal with.",
+    "<b>One attacker has picked you.</b> You can approve company payments, and your public posts make you easy to research.",
+    "They've spent a week reading what you, Omar and your suppliers share online. Today they'll try more than once, and each attempt will use something they've learned.",
+    "<b>They won't look like a hacker.</b> They'll look like the people and companies you deal with every day.",
   ],
-  goal: "Get through all ten contacts today without paying, clicking or handing anything to the hacker, and without letting down the real people who need you.",
+  goal: "Get through all six contacts today without paying, clicking or handing anything to the hacker, and without letting down the real people who need you.",
   can: ["Talk to them and see how they react", "Pay, or back out at the payment screen", "Hang up, close or archive", "Check with the real person or service (it takes time out of your day)", "Block and report"],
   expect: [
     ["mail", "Al Waha Printing", "about invoice INV-4471, due Thursday"],
     ["video", "Gulfstar Bank", "they sometimes check large payments in their app"],
-    ["video", "Hotel Lumen, Istanbul", "you're landing after their front desk closes"],
     ["chat", "SkyBridge Airways", "about your flights"],
     ["chat", "Priya", "sorting out the money for the RAK chalet"],
-    ["chat", "Landlords and agents", "about the Dubai Marina flat"],
   ],
 };
 const BRIEF = {
@@ -1375,9 +1168,6 @@ const BRIEF = {
     ["Thursday", "Al Waha Printing invoice due", "<span class='fact'>INV-4471</span> · <span class='fact'>AED 31,500</span> · paid the usual way, nothing has changed"],
     ["22 Oct", "Baku", "SkyBridge <span class='fact'>SB 516</span> · seat <span class='fact'>17C</span>"],
     ["Weekend", "Ras Al Khaimah with Priya", "Chalet for 3 people, about <span class='fact'>AED 1,800</span>"],
-    ["Next month", "New flat", "You've asked on Propfinder about a 1-bed in Dubai Marina, <span class='fact'>AED 95,000</span> a year"],
-    ["Long weekend", "Maldives", "Water villas go for <span class='fact'>AED 14,000–18,000</span>"],
-    ["Your car", "Dubai L 48213", "No fines when you last checked the official app"],
   ],
   people: [
     { n: "Omar Saeed", r: "CFO · your boss", d: "o.saeed@dunescapital.ae", note: "In London until the 20th" },
@@ -1385,36 +1175,33 @@ const BRIEF = {
     { n: "Priya Nair", r: "Friend", d: "Saved in your contacts" },
     { n: "Gulfstar Bank", r: "Your bank", d: "Only ever contacts you inside its app", logo: "GB", c: "#0f766e" },
     { n: "SkyBridge Airways", r: "Airline", d: "Verified ✓ chat · helpline on skybridge.com", logo: "SB", c: "#2563c9" },
-    { n: "Hotel Lumen", r: "Your Istanbul hotel", d: "Contacts you through its own app", logo: "HL", c: "#a16207" },
   ],
   rules: [
+    "Supplier bank details are only changed after a call to the <b>number already on file</b>.",
     "Payments over <b>AED 40,000</b> need two approvers, whoever is asking.",
-    "Rent deposits only <b>after a viewing</b>, through a registered agent, with a signed contract.",
-    "You check and pay fines only in the <b>official government app</b>.",
   ],
   public: [
     ["Post", "@{HANDLE}", "2h", "Thanks @SkyBridge for cancelling SB 214 🙃 Istanbul tonight, apparently."],
-    ["Instagram", "You liked", "this week", "12 ads for Maldives water villas"],
-    ["Instagram", "{HANDLE}", "last week", "New ride 🚗 (your number plate is visible)"],
-    ["Story", "{HANDLE}", "yesterday", "Flat hunting in Dubai Marina 🏙️ any tips?"],
     ["LinkedIn", "{NAME}", "profile", "Finance officer at Dunes Capital"],
     ["LinkedIn", "Omar Saeed", "3d", "London for a week, back on the 20th! 🇬🇧"],
     ["YouTube", "Omar Saeed", "2024", "Gulf Finance Forum talk · 38:20 of his voice"],
   ],
 };
 const HOOK = {
-  villa: ["Your Instagram likes on Maldives villa ads", "AED 5,900 is far below the AED 14,000–18,000 going rate you'd seen."],
   "airline-dm": ["Your public post about SB 214", "You'd already been rebooked free onto the 21:35. SkyBridge talks to you through its verified account."],
-  "rental-host": ["Your 'flat hunting in Dubai Marina' story and your Propfinder enquiry", "Your rule: deposits only after a viewing, through a registered agent, with a signed contract."],
   "cfo-deepfake": ["Omar's YouTube talk (to clone his voice), his London post and your job title", "Omar is away, his real email is @dunescapital.ae, and over AED 40,000 needs two approvers."],
   invoice: ["Al Waha's hacked mailbox, with a real invoice and amount", "Imran's real address is @alwahaprinting.ae, the office number is +971 4 284 3170, and nothing had changed about how you pay them."],
-  fine: ["Your Instagram photo of your new car, with the plate visible", "You only check fines in the official government app, and the last check showed none."],
-  hotel: [null, "Booking ref LX-88213 and your 01:15 arrival both matched your briefing."],
   "gate-change": [null, "SB 516 to Baku, seat 17C and the verified account all matched your briefing."],
   "bank-video": [null, "You'd just paid your contractor AED 18,000, and Gulfstar contacts you inside its app."],
   "friend-split": [null, "Priya is a saved contact and AED 600 is a third of the AED 1,800 chalet."],
 };
-const LOSS = { villa: 5900, "airline-dm": 7200, "rental-host": 4750, "cfo-deepfake": 880000, invoice: 31500, fine: 6350 };
+/* The hacker's side of the day, shown in the report. */
+const PLAN = {
+  invoice: "Got into Al Waha Printing's mailbox, found your real invoice, and sent new bank details from a look-alike address.",
+  "airline-dm": "Saw your public complaint about SB 214 and posed as SkyBridge support on WhatsApp to get your card details.",
+  "cfo-deepfake": "Cloned Omar's voice from his YouTube talk, waited until his London post said he was away, and went for the big one.",
+};
+const LOSS = { "airline-dm": 7200, "cfo-deepfake": 880000, invoice: 31500 };
 const TAUNTS_START = [
   "Let's see how much you trust a friendly face.",
   "Not every message is from me. That's the fun part.",
@@ -2056,23 +1843,17 @@ function renderReplies(options) {
 }
 
 /* A real contact is "handled" once the conversation reaches one of these points. */
-const COMPLETE = { hotel: ["code", "porter"], "bank-video": ["ok"], "friend-split": ["paid"], "gate-change": ["*"] };
+const COMPLETE = { "bank-video": ["ok"], "friend-split": ["paid"], "gate-change": ["*"] };
 /* What the payment step looks like when you go ahead. The bank's name check is the only warning, as in real life. */
 const PAY = {
-  villa: { kind: "bank", app: "Gulfstar Bank", payee: "Mohammed Rafiq", acct: "Personal account · IBAN AE08 0330 0000 1928 4471 002", amount: "AED 5,900.00", ref: "family support", cop: ["Beneficiary name returned: MOHAMMED RAFIQ", "ok"] },
-  "rental-host": { kind: "bank", app: "Gulfstar Bank", payee: "Faisal Al Amri", acct: "Personal account · IBAN AE61 0400 0000 0233 7741 019", amount: "AED 4,750.00", ref: "Marina deposit", cop: ["Beneficiary name returned: F AL AMRI", "ok"] },
   "cfo-deepfake": { kind: "bank", app: "Dunes Capital · Corporate banking", payee: "Al Barsha Legal Consultants – Escrow", acct: "New beneficiary · IBAN AE47 0260 0010 1559 8833 102", amount: "AED 880,000.00", ref: "Project Atlas", cop: ["Beneficiary name returned: AL BARSHA LEGAL SERVICES", "warn"], note: "Marked urgent · second approval skipped" },
   invoice: { kind: "bank", app: "Dunes Capital · Corporate banking", payee: "Al Waha Printing LLC", acct: "Details updated today · IBAN AE21 0350 0000 0098 4410 337", amount: "AED 31,500.00", ref: "INV-4471", cop: ["Beneficiary name returned: R K GENERAL TRADING", "bad"] },
   "airline-dm": { kind: "web", url: "skybridge-rebook.help/SB214", title: "Confirm your new flight", sub: "SB 214 replacement · Dubai → Istanbul · tonight 19:40", label: "Rebooking fee", amount: "AED 180.00" },
-  fine: { kind: "web", url: "uae-finepay.services/L48213", title: "Pay traffic fine", sub: "Vehicle Dubai L 48213 · Fine ref TF-88213", label: "Fine amount", amount: "AED 400.00" },
 };
 const AFTER_PAY = {
-  villa: "Lovely, that's come through! I'll email your booking confirmation tonight. Enjoy the Maldives!",
-  "rental-host": "Got it, thank you! 😊 I'll arrange the keys and send you the contract.",
   "cfo-deepfake": "Thank you. I'll tell the lawyers it's on its way. Remember, not a word to anyone.",
   invoice: "~ Payment of AED 31,500.00 to Al Waha Printing LLC scheduled for today.",
   "airline-dm": "All done ✅ Your new boarding pass will arrive by email shortly.",
-  fine: "~ UAE Traffic: Payment received. Your fine has been settled. Thank you.",
 };
 const ICON = {
   video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="M16 10l6-3v10l-6-3z"/></svg>',
@@ -2222,7 +2003,7 @@ function showPaySheet(o) {
   const sh = $("paySheet"), body = $("payBody");
   if (P.kind === "web") {
     body.innerHTML = `<div class="web"><div class="urlbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>${P.url}</span></div>
-      <div class="webpage"><div class="wlogo">${P.kind === "web" && cur.id === "fine" ? "UAE Traffic Fines" : "SkyBridge"}</div><h4>${P.title}</h4><p>${P.sub}</p>
+      <div class="webpage"><div class="wlogo">${"SkyBridge"}</div><h4>${P.title}</h4><p>${P.sub}</p>
       <div class="field"><label>Name on card</label><div>${state.persona.name.toUpperCase()}</div></div>
       <div class="field"><label>Card number</label><div>•••• •••• •••• 4821</div></div>
       <div class="field two"><div><label>Expiry</label><div>09/28</div></div><div><label>CVC</label><div>•••</div></div></div>
@@ -2395,7 +2176,7 @@ function endGame(reason) {
   $("endLine").textContent = !R.length ? "Start again and work through your day."
     : hacked === 0 && blocked + unresolved === 0 && unseen === 0 ? "Every attack failed and every real person was looked after. A perfect day."
     : hacked === 0 ? "No money lost. " + (blocked + unresolved ? "But " + (blocked + unresolved) + " real " + (blocked + unresolved > 1 ? "people were" : "person was") + " left worse off. " : "") + (unseen ? unseen + " contact" + (unseen > 1 ? "s" : "") + " never got answered." : "")
-    : "It started at " + firstHack.cur.at + ", when you said: “" + firstHack.breachText + "”. Nobody told you at the time, and that's how real hacks work.";
+    : "It started at " + firstHack.cur.at + ", when you said: “" + firstHack.breachText.replace(/[.!?]$/, "") + "”. Nobody told you at the time, and that's how real hacks work.";
   const tiles = [["Times hacked", hacked, "h"], ["Money lost", money(state.stolen), "h"], ["Attacks that failed", kept + "/" + scams.length, "y"], ["Real people let down", (blocked + unresolved) + "/" + reals.length, "w"]];
   $("endTiles").innerHTML = "";
   tiles.forEach(([k, v, c]) => { const d = el("div", c); d.append(el("small", null, k), el("b", null, String(v))); $("endTiles").appendChild(d); });
@@ -2431,6 +2212,16 @@ function endGame(reason) {
     [String(unseen), "Contacts never answered", unseen ? "your day ran out" : "you got to everyone"],
   ].forEach(([v, l, sm]) => { const d = el("div", "kpi"); d.append(el("b", null, v), el("span", null, l), el("small", null, sm)); kp.appendChild(d); });
   k.appendChild(kp); rep.appendChild(k);
+
+  const plan = el("div", "card"); plan.appendChild(el("h3", null, "The hacker's plan"));
+  const pw = el("div", "tact");
+  state.order.filter((c) => PLAN[c.id]).forEach((c, i) => {
+    const r = R.find((x) => x.cur === c), o = r ? OUTCOME[r.outcome] : null;
+    const row = el("div", "tact-row");
+    row.append(el("b", null, "Attempt " + (i + 1) + " · " + c.at), o ? el("span", "res " + o[1], o[2]) : el("span", "res", "Not reached"), el("span", null, PLAN[c.id]));
+    pw.appendChild(row);
+  });
+  plan.appendChild(pw); rep.appendChild(plan);
 
   const t = el("div", "card"); t.appendChild(el("h3", null, "What really happened"));
   const tw = el("div", "tact");
