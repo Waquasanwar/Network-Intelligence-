@@ -116,7 +116,7 @@
   .hackerline .bubble { background: var(--surface); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 6px 12px; }
   .hackerline .bubble b { color: var(--hacker); font-weight: 700; margin-right: 6px; }
   .scene { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
-  .game { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 28px; align-items: start; justify-content: center; }
+  .game { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 360px); gap: 28px; align-items: start; justify-content: center; }
   .phonecol { display: grid; gap: 14px; justify-items: center; }
   .verdicts { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .verdict { border: 0; border-radius: 16px; padding: 14px 10px; font-family: var(--display); font-weight: 800; font-size: 16px; display: flex; flex-direction: column; align-items: center; gap: 1px; box-shadow: var(--shadow); }
@@ -180,7 +180,7 @@
   .vclip.on { opacity: 1; }
   .vfeed.lowbw .vphoto, .vfeed.lowbw .vclip, .vfeed.lowbw .face svg { filter: blur(.9px) contrast(1.06) saturate(.85); }
   .vfeed.glitch .vphoto, .vfeed.glitch .vclip { filter: drop-shadow(4px 0 rgba(0,255,255,.6)) drop-shadow(-4px 0 rgba(255,0,90,.6)); transform: skewX(3deg) translateX(4px); }
-  .camoff { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; background: radial-gradient(circle at 50% 38%, #44525f, #10161b 72%); color: #fff; }
+  .camoff { position: absolute; inset: 0; padding-bottom: 170px; display: grid; place-content: center; justify-items: center; gap: 12px; background: radial-gradient(circle at 50% 38%, #44525f, #10161b 72%); color: #fff; }
   .camoff .bigav { width: 132px; height: 132px; border-radius: 50%; overflow: hidden; }
   .camoff.talking .bigav { animation: talkring 1s infinite; }
   .camoff small { font-size: 13px; opacity: .7; }
@@ -207,6 +207,7 @@
   .cctrl .end { background: #ff3b30; }
   .cctrl svg { width: 24px; height: 24px; }
   .bw { position: absolute; left: 14px; bottom: 150px; transform: translateY(-46px); font-size: 11px; padding: 3px 8px; border-radius: 99px; background: rgba(255,159,10,.85); color: #000; font-weight: 600; }
+  .call .reply:hover:not(:disabled) { background: rgba(255,255,255,.3); }
   .call .reply { font-size: 13px; padding: 7px 11px; background: rgba(255,255,255,.18); backdrop-filter: blur(14px); color: #fff; border: 1px solid rgba(255,255,255,.25); }
 
   /* Chat */
@@ -268,8 +269,7 @@
   .mail .msg.you::before { content: "You replied"; display: block; font-size: 11px; font-weight: 600; color: #8e8e93; }
   .mail .msg.sys { align-self: stretch; text-align: left; border-top: 1px solid #e5e5ea; padding: 10px 0 0; }
   /* Flagging */
-  .seg { border-radius: 4px; cursor: pointer; transition: background .15s; }
-  .seg:hover { background: rgba(10,132,255,.1); }
+  .seg { border-radius: 4px; }
   .msg.you .seg:hover { background: rgba(255,255,255,.2); }
   .seg.flagged { background: rgba(255,59,48,.16); box-shadow: inset 0 -2px 0 #ff3b30; }
   .seg.flagged::before { content: "⚑ "; color: #ff3b30; }
@@ -283,7 +283,61 @@
   .reply-hint { font-size: 12.5px; color: #8e8e93; text-align: center; padding: 4px; }
   .call .reply-hint { color: rgba(255,255,255,.8); }
 
-  /* ---------- Scam Radar ---------- */
+  /* ---------- Actions, side panel, lock messages, payment sheet ---------- */
+  .actions { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .act { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 14px; padding: 13px 10px; font-weight: 700; font-size: 14.5px; box-shadow: var(--shadow); }
+  .act.danger { color: var(--hacker); }
+  .act:hover:not(:disabled) { border-color: var(--text); }
+  .side { display: grid; gap: 16px; align-content: start; }
+  .sidecard { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .sidecard.quiet { font-size: 13.5px; color: var(--muted); display: grid; gap: 8px; }
+  .sidecard.quiet b { color: var(--text); font-family: var(--display); font-size: 15px; }
+  .sidecard.quiet p { margin: 0; }
+  .daylog { display: grid; gap: 2px; }
+  .dl-row { display: grid; grid-template-columns: 46px 22px 1fr auto; gap: 10px; align-items: center; padding: 8px 6px; border-radius: 10px; font-size: 14px; }
+  .dl-time { font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .dl-ic svg { width: 18px; height: 18px; display: block; color: var(--muted); }
+  .dl-st { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+  .dl-row.now { background: var(--surface-2); }
+  .dl-row.now .dl-time, .dl-row.now .dl-ic svg { color: var(--text); }
+  .dl-row.now .dl-st { color: #0a84ff; }
+  .dl-row.next { opacity: .45; }
+  .lockmsg { margin-top: 40px; background: rgba(245,245,247,.75); color: #000; backdrop-filter: blur(20px); border-radius: 99px; padding: 8px 16px; font-size: 14px; font-weight: 600; animation: drop .3s ease-out; }
+  .lockacts { display: flex; gap: 10px; margin-top: 12px; }
+  .lbtn { border: 0; border-radius: 99px; padding: 9px 18px; font-size: 14px; font-weight: 600; background: rgba(255,255,255,.18); color: #fff; backdrop-filter: blur(10px); }
+  .lbtn.main { background: #fff; color: #000; }
+  .paysheet { position: absolute; inset: 0; z-index: 15; background: rgba(0,0,0,.35); display: flex; align-items: flex-end; }
+  .psheet { width: 100%; background: #f2f2f7; color: #000; border-radius: 22px 22px 0 0; padding: 8px 16px 34px; animation: rise .3s cubic-bezier(.2,.9,.3,1.1); max-height: 90%; overflow-y: auto; }
+  .grab { width: 38px; height: 5px; border-radius: 3px; background: #c7c7cc; margin: 0 auto 12px; }
+  .bank h4, .webpage h4 { margin: 2px 0 12px; font-size: 22px; font-weight: 700; }
+  .bank-top { font-size: 12px; font-weight: 700; color: #6b7280; letter-spacing: .04em; text-transform: uppercase; }
+  .brow { background: #fff; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; display: grid; }
+  .brow span { font-size: 11.5px; color: #8e8e93; }
+  .brow b { font-size: 16px; }
+  .brow b.amt { font-size: 26px; }
+  .brow small { font-size: 12px; color: #6b7280; }
+  .cop { font-size: 13px; font-weight: 600; border-radius: 10px; padding: 8px 10px; margin: -2px 0 8px; }
+  .cop.ok { background: #e3f5ec; color: #0b7a55; } .cop.warn { background: #fff4dc; color: #8a5a00; } .cop.bad { background: #fde8ea; color: #b42330; }
+  .bank-warn { font-size: 12px; color: #6b7280; margin: 6px 2px 0; }
+  .pbtns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 12px; }
+  .pbtn { border: 0; border-radius: 14px; padding: 14px; font-size: 16px; font-weight: 700; }
+  .pbtn.ghost { background: #e5e5ea; color: #000; }
+  .pbtn.go { background: #0a84ff; color: #fff; }
+  .web { background: #fff; border-radius: 14px; overflow: hidden; }
+  .urlbar { display: flex; gap: 6px; align-items: center; justify-content: center; background: #e9e9ee; padding: 8px; font-size: 13px; color: #3c3c43; }
+  .urlbar svg { width: 12px; height: 12px; }
+  .webpage { padding: 14px; }
+  .wlogo { font-weight: 800; color: #2563c9; letter-spacing: -.01em; }
+  .webpage p { font-size: 13px; color: #6b7280; margin: -6px 0 12px; }
+  .field { border: 1px solid #d1d1d6; border-radius: 10px; padding: 6px 10px; margin-bottom: 8px; font-size: 15px; }
+  .field label { display: block; font-size: 11px; color: #8e8e93; }
+  .field.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 0; padding: 0; }
+  .field.two > div { border: 1px solid #d1d1d6; border-radius: 10px; padding: 6px 10px; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-size: 14px; }
+  .total b { font-size: 20px; }
+  .paid { display: grid; justify-items: center; gap: 10px; padding: 40px 0 20px; font-size: 18px; }
+  .tickc { width: 64px; height: 64px; border-radius: 50%; background: #34c759; color: #fff; display: grid; place-items: center; font-size: 34px; font-weight: 800; animation: pop .3s ease-out; }
+  /* ---------- Scam Radar (not shown) ---------- */
   .radar { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 18px; box-shadow: var(--shadow); display: grid; gap: 14px; }
   .rhead { display: flex; align-items: center; gap: 10px; }
   .rhead .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--you-soft); display: grid; place-items: center; }
@@ -512,11 +566,11 @@
 <header class="top">
   <div class="top-row">
     <div class="brand"><span class="h">Hacker</span><span class="vs">vs</span><span class="y">You</span></div>
-    <span class="goal">Goal: don't get hacked</span>
+    <span class="goal">Goal: get through the day without being hacked</span>
     <span class="pillstat" id="contactNo">Contact 0/10</span>
     <span class="timer" id="timer" title="Time left in your day">5:00</span>
-    <span class="status ok" id="statusChip">Not hacked</span>
-    <span class="lost" id="stolen">£0 lost</span>
+    <span class="status ok" id="statusChip" hidden>Not hacked</span>
+    <span class="lost" id="stolen" hidden>£0 lost</span>
   </div>
 </header>
 
@@ -533,9 +587,9 @@
       </div>
       <ol class="steps">
         <li><div><b>Read your briefing</b><span>60 seconds to learn who you are, what's happening today and what's public about you. Then it's gone.</span></div></li>
-        <li><div><b>Answer each contact</b><span>Video calls, chats and emails arrive one at a time on your phone.</span></div></li>
-        <li><div><b>Test them</b><span>Reply to see how they react, or use one of your 3 security checks. Checking with someone directly costs 20 seconds of your day.</span></div></li>
-        <li><div><b>Decide: hacker or real person</b><span>You get 40 seconds once they've made their pitch. Trust the hacker and they take your money. Block a real person and your day suffers.</span></div></li>
+        <li><div><b>Live your day</b><span>Video calls, chats and emails arrive one at a time. Reply, pay, hang up or block, just as you would on a normal busy day.</span></div></li>
+        <li><div><b>Nobody warns you</b><span>There are no hints and no "is this a scam?" button. Checking with someone takes time out of your day, so choose when it matters.</span></div></li>
+        <li><div><b>Find out the truth</b><span>When your day ends you'll see exactly when you were hacked, what gave it away, and who you let down by mistake.</span></div></li>
       </ol>
     </div>
   </section>
@@ -565,7 +619,7 @@
 
   <!-- GAME -->
   <section id="screenGame" hidden>
-    <div class="hackerline">
+    <div class="hackerline" hidden>
       <span class="av"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-4.2 0-6.8 3.4-6.8 7.6v10.4c1.9-.8 4.3-1.3 6.8-1.3s4.9.5 6.8 1.3V10.1c0-4.2-2.6-7.6-6.8-7.6z" fill="#4a5059"/><ellipse cx="12" cy="11.6" rx="4.4" ry="5.2" fill="#0b0d10"/><path d="M9.4 11.2l1.9.5M14.6 11.2l-1.9.5" stroke="#ff5c68" stroke-width="1.5" stroke-linecap="round"/></svg></span>
       <span class="bubble"><b>Hacker</b><span id="hackerLine">Let's play.</span></span>
       <span class="scene" id="sceneTag"></span>
@@ -581,7 +635,8 @@
               <div class="date" id="lockDate"></div>
               <div class="time" id="lockTime">9:41</div>
               <button class="notif" id="notif"><span class="nav" id="nAv"></span><span><span class="top1"><span id="nApp">MESSAGES</span><span>now</span></span><span class="nt" id="nTitle"></span><span class="np" id="nPrev"></span></span></button>
-              <div class="tap">Tap the notification to open</div>
+              <div class="lockmsg" id="lockMsg" hidden></div>
+              <div class="lockacts" id="lockActs"><button class="lbtn" id="lockIgnore">Dismiss</button><button class="lbtn main" id="lockOpen">Open</button></div>
             </div>
 
             <!-- Incoming video call -->
@@ -639,18 +694,32 @@
               <div class="mbar"><span>Reply</span><span>Forward</span><span>Report junk</span></div>
             </div>
 
+            <div class="paysheet" id="paySheet" hidden>
+              <div class="psheet"><div class="grab"></div><div id="payBody"></div>
+                <div class="pbtns"><button class="pbtn ghost" id="payCancel">Cancel</button><button class="pbtn go" id="payGo">Send</button></div></div>
+            </div>
             <div class="homebar" id="homebar"></div>
           </div>
         </div>
-        <div class="verdicts">
-          <button class="verdict v-scam" id="btnScam" disabled>Hacker<small id="scamSub">Hang up and report</small></button>
-          <button class="verdict v-legit" id="btnLegit" disabled>Real person<small id="legitSub">Trust them</small></button>
+        <div class="actions">
+          <button class="act" id="btnLeave" disabled>Hang up</button>
+          <button class="act danger" id="btnBlock" disabled>Block and report</button>
         </div>
-        <p class="dclock" id="dclock"></p>
-        <p class="hint">Tap anything that seems off to mark it ⚑. Your marks appear in your report.</p>
+        <p class="dclock" id="dclock" hidden></p>
       </div>
 
-      <aside class="radar">
+      <aside class="side">
+        <div class="sidecard">
+          <div class="sec-t">Your day · <span id="sideDate">Tuesday 14 October</span></div>
+          <div class="daylog" id="daylog"></div>
+        </div>
+        <div class="sidecard quiet">
+          <b>How this works</b>
+          <p>Answer, reply and act as you would on a normal busy day. Pay, hang up, close the chat or block: it's your call. Nobody will tell you who the hacker is until your day is over.</p>
+          <label class="toggle"><input type="checkbox" id="optVoice2" checked> Voices on</label>
+        </div>
+      </aside>
+      <aside class="radar" hidden>
         <div class="rhead">
           <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--you)"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></svg></span>
           <span><b>Scam Radar</b><span id="aSub">Checks the call and the messages as they come in</span></span>
@@ -671,7 +740,7 @@
         <p class="caveat">A check gives you facts, not a verdict. You decide what they mean.</p>
         <div class="mic">
           <div class="mic-row"><button class="ghost" id="btnMic">Answer by voice (optional)</button><span class="heard" id="micHeard"></span></div>
-          <div id="micNote">Say "reply one", "two" or "three", then "hacker" or "real". Tapping works everywhere.</div>
+          <div id="micNote">Say "one", "two" or "three" to reply, "hang up" to leave, or "block".</div>
         </div>
       </aside>
     </div>
@@ -896,7 +965,10 @@ const SCENARIOS = [
       ] },
       code: { say: ["Perfect. The code comes by text from Hotel Lumen at six p.m. on the day, and it'll be in the app too. Safe travels!"] },
       porter: { say: ["Great, Rui will be at the door. If anything changes, call the number on your booking confirmation. Boa viagem!"] },
-      nocard: { say: ["Oh, no need! Please don't share card numbers on calls. The room's paid and guaranteed."] },
+      nocard: { say: ["Oh, no need! Please don't share card numbers on calls. The room's paid and guaranteed."], options: [
+        { t: "Great. A key code by text, please.", k: "neutral", next: "code" },
+        { t: "OK. Could the night porter meet me?", k: "neutral", next: "porter" },
+      ] },
     },
     lesson: "Genuine: the call came through an app you already use, the details match your confirmation, and they asked for nothing but a preference.",
     greens: ["Came through the hotel's own app, with your booking", "Knew real details you can check", "Asked for no money or card details"],
@@ -939,7 +1011,7 @@ const SCENARIOS = [
       half: { say: [
         "[[Sure, €340 now to hold it and the rest on arrival. Same account 😊|Any amount sent to this account is unprotected.]]",
       ], options: [
-        { t: "Great, sending the €340 now.", k: "breach" },
+        { t: "Great, sending the €340 now.", k: "breach", amount: "€340.00", loss: 290 },
         { t: "On second thoughts, I'll report this to Staybook.", k: "safe", next: "report" },
       ] },
       push: { say: [
@@ -1211,10 +1283,16 @@ const SCENARIOS = [
         { t: "Is this definitely you?", k: "neutral", next: "sure" },
         { t: "Can I just bank transfer you instead?", k: "neutral", next: "bank" },
       ] },
-      sure: { say: ["lol yes it's me 😂 same number for 4 years. the request's from my account on the app"] },
-      bank: { say: ["easier through the app tbh, it's already there 🙂 no rush"] },
+      sure: { say: ["lol yes it's me 😂 same number for 4 years. the request's from my account on the app"], options: [
+        { t: "Ha, sorry! Paying now 👍", k: "neutral", next: "paid" },
+      ] },
+      bank: { say: ["easier through the app tbh, it's already there 🙂 no rush"], options: [
+        { t: "OK, paying it in the app now", k: "neutral", next: "paid" },
+      ] },
       paid: { say: ["legend, thank you! 🙌 see you in 3 weeks"] },
-      conf: { say: ["sure 👍", "~ Screenshot: Old Town flat, Edinburgh · 3 guests · £360 total · booked by Sam Okafor."] },
+      conf: { say: ["sure 👍", "~ Screenshot: Old Town flat, Edinburgh · 3 guests · £360 total · booked by Sam Okafor."], options: [
+        { t: "Perfect, paying now 👍", k: "neutral", next: "paid" },
+      ] },
     },
     lesson: "Genuine: a saved contact with years of history, a request inside your payments app, and an amount that matches what you agreed.",
     greens: ["Saved contact with long history", "Request inside your real payments app", "No pressure, amount matches the plan"],
@@ -1531,12 +1609,23 @@ function loadVoices() {
 if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 const FEMALE = /female|libby|sonia|hazel|susan|serena|kate|samantha|karen|moira|tessa|fiona|zira|aria|jenny|mia|emma|olivia|natasha|victoria/i;
 const MALE = /\bmale|ryan|george|daniel|arthur|oliver|thomas|alex|fred|david|mark|guy|william|james|brian|christopher/i;
+function voiceScore(v) {
+  const n = v.name; let sc = 0;
+  if (/natural|neural/i.test(n)) sc += 8;
+  if (/premium|enhanced/i.test(n)) sc += 6;
+  if (/online/i.test(n)) sc += 3;
+  if (/google/i.test(n)) sc += 3;
+  if (/en-GB/i.test(v.lang)) sc += 2;
+  if (/compact|espeak|robot/i.test(n)) sc -= 6;
+  return sc;
+}
 function voiceFor(g, seed) {
   if (!voices.length) return null;
   const want = voices.filter((v) => (g === "f" ? FEMALE.test(v.name) : MALE.test(v.name) && !FEMALE.test(v.name)));
-  const gb = want.filter((v) => /GB|IE|AU/i.test(v.lang));
-  const pool = gb.length ? gb : want.length ? want : voices;
-  return pool[seed % pool.length];
+  const pool = (want.length ? want : voices).slice().sort((x, y) => voiceScore(y) - voiceScore(x));
+  const best = voiceScore(pool[0]);
+  const top = pool.filter((v) => voiceScore(v) >= best - 2);
+  return top[seed % top.length];
 }
 const voiceEl = new Audio(); voiceEl.preload = "auto";
 let analyser = null, anBuf = null;
@@ -1602,7 +1691,7 @@ function speakLine(text, wordEls, token, onProgress, src) {
       if (state.voiceOn && "speechSynthesis" in window) {
         const u = new SpeechSynthesisUtterance(text);
         const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
-        u.pitch = prof.pitch; u.rate = prof.rate;
+        u.pitch = 1 + (prof.pitch - 1) * 0.25; u.rate = Math.min(1.06, Math.max(0.94, prof.rate));
         const starts = []; let pos = 0;
         wordEls.forEach((el) => { const i = text.indexOf(el.textContent, pos); starts.push(i < 0 ? pos : i); pos = (i < 0 ? pos : i) + el.textContent.length; });
         u.onboundary = (e) => { if (e.name && e.name !== "word") return; boundaryDriven = true; let k = 0; while (k < n && starts[k] <= e.charIndex) k++; light(k); };
@@ -1742,7 +1831,7 @@ async function playLines(lines, token, nodeId) {
         if (src) { new Audio(src).play().catch(() => {}); return; }
         if (!("speechSynthesis" in window)) return;
         const u = new SpeechSynthesisUtterance(full); const v = voiceFor(cur.face.g, SCENARIOS.indexOf(cur)); if (v) u.voice = v;
-        u.pitch = cur.voice.pitch; u.rate = cur.voice.rate; speechSynthesis.speak(u);
+        u.pitch = 1 + (cur.voice.pitch - 1) * 0.25; u.rate = Math.min(1.06, Math.max(0.94, cur.voice.rate)); speechSynthesis.speak(u);
       });
       if (!mail) setStatus("online", true);
       state.voiceNote = true;
@@ -1774,7 +1863,7 @@ async function playLines(lines, token, nodeId) {
 /* Flagging: tap any sentence in the chat, email or live transcript */
 document.addEventListener("click", (e) => {
   const seg = e.target.closest && e.target.closest("#thread .seg");
-  if (!seg || !["live", "playing"].includes(state.phase)) return;
+  if (!seg || true) return;
   seg.classList.toggle("flagged");
   seg.setAttribute("aria-pressed", seg.classList.contains("flagged"));
 });
@@ -1821,8 +1910,6 @@ function loop(ts) {
       if (ts - grainT > 70) { drawGrain(); grainT = ts; }
       if (state.callStart && active) { const s = Math.floor((ts - state.callStart) / 1000); $("vClock").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
     }
-    drawWave(ts);
-    liveMeters(ts);
   }
   requestAnimationFrame(loop);
 }
@@ -1935,39 +2022,76 @@ function textUrgency() {
   setMeter("m2", u + "<small>/100</small>", u > 60);
 }
 
-/* ---------------- Round flow ---------------- */
+/* ---------------- Round flow: you act, nobody tells you who the hacker is ---------------- */
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-function setVerdicts(on) { $("btnScam").disabled = !on; $("btnLegit").disabled = !on; }
 function renderReplies(options) {
   const box = $("replies"); box.innerHTML = "";
-  if (!options || !options.length) {
-    const h = document.createElement("div"); h.className = "reply-hint";
-    h.textContent = "That's everything they said. Hacker or real person?";
-    box.appendChild(h); return;
-  }
-  options.forEach((o, i) => {
+  (options || []).forEach((o, i) => {
     const b = document.createElement("button"); b.className = "reply";
-    b.innerHTML = "<kbd>" + (i + 1) + "</kbd><span></span>";
-    b.querySelector("span").textContent = o.t;
+    b.textContent = o.t;
     b.addEventListener("click", () => takeOption(i));
     box.appendChild(b);
   });
+}
+
+/* A real contact is "handled" once the conversation reaches one of these points. */
+const COMPLETE = { hotel: ["code", "porter"], "bank-video": ["ok"], "friend-split": ["paid"], "gate-change": ["*"] };
+/* What the payment step looks like when you go ahead. The bank's name check is the only warning, as in real life. */
+const PAY = {
+  villa: { kind: "bank", app: "Northgate", payee: "M. Kowalski", acct: "Personal account · 20-44-91 · 63019482", amount: "£1,450.00", ref: "family gift", cop: ["Name matches the account", "ok"] },
+  "rental-host": { kind: "bank", app: "Northgate", payee: "E. Novak", acct: "IBAN CZ65 0800 0000 1920 0014 5399", amount: "€680.00", ref: "Prague", cop: ["International payment. The name can't be checked.", "warn"] },
+  "cfo-deepfake": { kind: "bank", app: "Hale Group · Business banking", payee: "Kinsley Legal Escrow Ltd", acct: "New payee · 40-11-62 · 81736025", amount: "£240,000.00", ref: "Project Atlas", cop: ["Close match: the account is held by 'Kinsley Legal Services'", "warn"], note: "Marked urgent · second approval skipped" },
+  invoice: { kind: "bank", app: "Hale Group · Business banking", payee: "Brightline Print Ltd", acct: "Details updated today · 60-83-71 · 20449183", amount: "£8,340.00", ref: "INV-4471", cop: ["No match: this account is in a different name", "bad"] },
+  buyer: { kind: "bank", app: "Northgate", payee: "Swift Courier Services", acct: "04-00-75 · 19283746", amount: "£50.00", ref: "Courier fee", cop: ["Name matches the account", "ok"] },
+  "airline-dm": { kind: "web", url: "skybridge-rebook.help/SB214", title: "Confirm your new flight", amount: "£45.00" },
+};
+const AFTER_PAY = {
+  villa: "Lovely, that's come through! I'll email your booking confirmation tonight. Enjoy Santorini!",
+  "rental-host": "Got it, thank you! 😊 See you in Prague",
+  "cfo-deepfake": "Thank you. I'll tell the lawyers it's on its way. Remember, not a word to anyone.",
+  invoice: "~ Payment of £8,340.00 to Brightline Print Ltd scheduled for today.",
+  buyer: "Perfect, courier's on the way 👍",
+  "airline-dm": "All done ✅ Your new boarding pass will arrive by email shortly.",
+};
+const ICON = {
+  video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="M16 10l6-3v10l-6-3z"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+};
+const kindOf = (cur) => cur.mode === "video" ? "video" : isMail(cur) ? "mail" : "chat";
+
+function renderDayLog() {
+  const box = $("daylog"); box.innerHTML = "";
+  state.order.forEach((c, i) => {
+    const row = document.createElement("div");
+    const st = i < state.idx || (i === state.idx && state.phase === "between") ? "done" : i === state.idx ? "now" : "next";
+    row.className = "dl-row " + st;
+    row.innerHTML = `<span class="dl-time">${c.at}</span><span class="dl-ic">${ICON[kindOf(c)]}</span><span class="dl-who"></span><span class="dl-st"></span>`;
+    row.querySelector(".dl-who").textContent = st === "next" ? "" : c.name.split(" · ")[0];
+    row.querySelector(".dl-st").textContent = st === "now" ? "Now" : st === "done" ? "Done" : "";
+    box.appendChild(row);
+  });
+}
+function setActions(on) {
+  const cur = state.cur, k = kindOf(cur);
+  $("btnLeave").textContent = k === "video" ? "Hang up" : k === "mail" ? "Archive" : "Close chat";
+  $("btnBlock").textContent = k === "video" ? "Hang up and block" : k === "mail" ? "Report as phishing" : "Block and report";
+  $("btnLeave").disabled = !on; $("btnBlock").disabled = !on;
 }
 
 function nextRound() {
   state.idx++;
   if (state.idx >= state.order.length) return endGame("Your day is done");
   const cur = state.cur = state.order[state.idx];
-  state.token++; state.moves = []; state.pressure = 0; state.node = null; state.options = null; state.callStart = 0;
-  state.readyAt = 0; state.decideLeft = DECIDE_SECS; state.verified = false;
+  state.token++; state.moves = []; state.replies = []; state.path = []; state.options = null; state.callStart = 0;
+  state.readyAt = 0; state.verified = false; state.breached = false; state.breachText = ""; state.lossThis = 0;
+  state.contactStart = performance.now();
   $("thread").innerHTML = ""; $("replies").innerHTML = "";
   $("phone").classList.remove("locked");
+  $("paySheet").hidden = true; $("lockMsg").hidden = true;
   placeThread(cur);
-  $("sceneTag").textContent = cur.at + " · contact " + (state.idx + 1) + " of " + state.order.length;
-  $("hackerLine").textContent = pick(TAUNTS_START);
   setupAnalysis(cur);
-  setVerdicts(false);
-  $("scamSub").textContent = cur.mode === "video" ? "Hang up and report" : "Block and report";
+  setActions(false);
   $("sClock").textContent = cur.at;
   face = null;
   const ph = photoOf(cur);
@@ -2011,6 +2135,7 @@ function nextRound() {
     }
     $("lockDate").textContent = DAY_LABEL;
     $("lockTime").textContent = cur.at;
+    $("lockMsg").hidden = true; $("notif").hidden = false; $("lockActs").hidden = false;
     $("nAv").innerHTML = avatarHTML(cur); fixAvatars($("nAv"), cur);
     $("nApp").textContent = isMail(cur) ? "MAIL" : /WhatsApp/.test(cur.org) ? "WHATSAPP" : "MESSAGES";
     $("nTitle").textContent = isMail(cur) ? cur.name.split(" · ")[0] : cur.name;
@@ -2020,6 +2145,7 @@ function nextRound() {
     setTimeout(() => $("notif").focus(), 50);
   }
   state.phase = "ringing";
+  renderDayLog();
   startRing(cur.mode);
   hud();
 }
@@ -2031,160 +2157,140 @@ async function answer() {
   showView(cur.mode === "video" ? "call" : isMail(cur) ? "mail" : "chat");
   state.callStart = performance.now();
   if (cur.mode === "video") tone([523, 784], .12, "sine", .05);
-  const token = state.token;
-  updateChecks();
-  await playNode("start", token);
-}
-function decline() {
-  if (state.phase !== "ringing") return;
-  stopRing();
-  verdict(true, true);
+  setActions(true);
+  await playNode("start", state.token);
 }
 
 async function playNode(id, token) {
   const cur = state.cur, node = cur.nodes[id];
-  state.node = id; state.phase = "playing"; state.options = null;
+  state.path.push(id); state.phase = "playing"; state.options = null;
   $("replies").innerHTML = "";
-  revealAt(id);
   if (id !== "start" && cur.mode === "video") $("share").hidden = true;
   if (id !== "start" && isMail(cur) && !node.say[0].startsWith("~ ")) { const s = addMsg("sys"); s.textContent = "Reply from " + cur.name.split(" · ")[0]; }
   const ok = await playLines(node.say, token, id);
   if (!ok) return;
   if (cur.mode === "video") $("caption").hidden = true;
-  textUrgency();
   if (id === "start") state.readyAt = performance.now();
-  updateChecks();
   state.phase = "live";
   state.options = shuffle(node.options || []);
+  if (!state.options.length) { await sleep(1600); if (token === state.token && state.phase === "live") exitContact("end"); return; }
   renderReplies(state.options);
-  setVerdicts(true);
 }
 
 async function takeOption(i) {
   if (state.phase !== "live" || !state.options || !state.options[i]) return;
   const cur = state.cur, o = state.options[i];
-  state.moves.push(o.k);
+  if (o.k === "breach" && cur.scam && PAY[cur.id]) return showPaySheet(o);
+  state.moves.push(o.k); state.replies.push(o.t);
   $("replies").innerHTML = "";
   const you = addMsg("you"); you.appendChild(document.createTextNode(o.t)); stamp(you);
   if (cur.mode === "video") toast("You: " + o.t);
-  if (o.k === "breach" && cur.scam) return breach();
   tone([900], .05, "sine", .03);
   const nx = o.next && cur.nodes[o.next];
   if (nx && nx.say[0].startsWith("~ ")) {
-    // Checking with someone directly takes real time out of your day.
+    // Checking with someone takes real time out of your day.
     state.time = Math.max(1, state.time - CHECK_SECS);
-    const note = addMsg("sys"); note.textContent = "You take " + CHECK_SECS + " seconds to check…";
-    if (cur.mode === "video") toast("You take " + CHECK_SECS + " seconds to check…");
+    const note = addMsg("sys"); note.textContent = "A few minutes later…";
     if (o.k === "safe") state.verified = true;
     await sleep(900);
   } else await sleep(500);
   if (o.next) await playNode(o.next, state.token);
 }
 
-function collectFlags() {
-  const segs = [...$("thread").querySelectorAll(".seg")];
-  const flagged = segs.filter((s) => s.classList.contains("flagged"));
-  const hits = flagged.filter((s) => s.dataset.flag);
-  return { hits, wrong: flagged.length - hits.length };
+/* ---------------- Paying: a real-looking banking or web checkout ---------------- */
+function showPaySheet(o) {
+  const cur = state.cur, P = Object.assign({}, PAY[cur.id], o.amount ? { amount: o.amount } : {});
+  state.phase = "paying";
+  stopSpeech();
+  const sh = $("paySheet"), body = $("payBody");
+  if (P.kind === "web") {
+    body.innerHTML = `<div class="web"><div class="urlbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>${P.url}</span></div>
+      <div class="webpage"><div class="wlogo">SkyBridge</div><h4>${P.title}</h4><p>SB 214 replacement · Manchester → Lisbon · tonight 19:40</p>
+      <div class="field"><label>Name on card</label><div>JORDAN HAYES</div></div>
+      <div class="field"><label>Card number</label><div>•••• •••• •••• 4821</div></div>
+      <div class="field two"><div><label>Expiry</label><div>09/28</div></div><div><label>CVC</label><div>•••</div></div></div>
+      <div class="total"><span>Rebooking fee</span><b>${P.amount}</b></div></div></div>`;
+    $("payGo").textContent = "Pay " + P.amount;
+  } else {
+    body.innerHTML = `<div class="bank"><div class="bank-top">${P.app}</div><h4>Send money</h4>
+      <div class="brow"><span>To</span><b>${P.payee}</b><small>${P.acct}</small></div>
+      <div class="cop ${P.cop[1]}">${P.cop[0]}</div>
+      <div class="brow"><span>Amount</span><b class="amt">${P.amount}</b></div>
+      <div class="brow"><span>Reference</span><b>${P.ref}</b></div>
+      ${P.note ? `<div class="brow"><span>Note</span><b>${P.note}</b></div>` : ""}
+      <p class="bank-warn">Payments can't be reversed once sent. Make sure you know and trust who you're paying.</p></div>`;
+    $("payGo").textContent = "Send " + P.amount;
+  }
+  sh.hidden = false;
+  $("payGo").onclick = () => confirmPay(o);
+  $("payCancel").onclick = () => { sh.hidden = true; state.phase = "live"; state.moves.push("cancelled"); };
 }
-function record(outcome, f, opts = {}) {
+async function confirmPay(o) {
+  const cur = state.cur, token = state.token;
+  state.moves.push("breach"); state.replies.push(o.t);
+  state.breached = true; state.breachText = o.t;
+  const loss = o.loss != null ? o.loss : (LOSS[cur.id] || 0);
+  state.lossThis = loss; state.hacked++; state.stolen += loss;
+  $("payBody").innerHTML = `<div class="paid"><span class="tickc">✓</span><b>${PAY[cur.id].kind === "web" ? "Payment complete" : "Payment sent"}</b></div>`;
+  $("payGo").onclick = null;
+  tone([660], .1, "triangle", .06); tone([990], .14, "triangle", .06, .1);
+  await sleep(1300);
+  if (token !== state.token) return;
+  $("paySheet").hidden = true;
+  state.phase = "playing";
+  const ok = await playLines([AFTER_PAY[cur.id]], token, "after");
+  if (!ok) return;
+  state.phase = "live";
+  await sleep(1500);
+  if (token === state.token) exitContact("end");
+}
+
+/* ---------------- Ending a contact ---------------- */
+function completed(cur) {
+  const list = COMPLETE[cur.id];
+  if (!list || list[0] === "*") return true;
+  return state.path.some((n) => list.includes(n));
+}
+function exitContact(kind) {
+  if (!["ringing", "playing", "live", "paying"].includes(state.phase)) return;
   const cur = state.cur;
-  const total = new Set();
-  Object.values(cur.nodes).forEach((n) => n.say.forEach((l) => parse(l).segs.forEach((s) => { if (s.flag) total.add(s.t); })));
+  if (kind === "declined" && state.phase !== "ringing") kind = "leave";
+  state.token++; stopSpeech(); stopRing();
+  $("paySheet").hidden = true;
+  let outcome;
+  if (state.breached) outcome = "hacked";
+  else if (cur.scam) outcome = kind === "block" ? "reported" : "stopped";
+  else if (kind === "block") { outcome = "blocked"; state.blocked++; }
+  else outcome = completed(cur) ? "trusted" : "unresolved";
+  record(outcome, kind);
+  state.phase = "between";
+  setActions(false); $("replies").innerHTML = "";
+  renderDayLog();
+  const msg = kind === "block" ? (cur.mode === "video" ? "Number blocked" : isMail(cur) ? "Reported as phishing" : "Blocked and reported")
+    : kind === "declined" ? (cur.mode === "video" ? "Call declined" : "Notification dismissed")
+    : cur.mode === "video" ? "Call ended" : isMail(cur) ? "Archived" : "Chat closed";
+  $("lockTime").textContent = cur.at; $("lockDate").textContent = DAY_LABEL;
+  $("notif").hidden = true; $("lockActs").hidden = true;
+  $("lockMsg").textContent = msg; $("lockMsg").hidden = false;
+  showView("lock");
+  hud();
+  const t = state.token;
+  setTimeout(() => { if (state.token !== t || state.phase !== "between") return; if (state.time <= 0) endGame("Your day ran out"); else nextRound(); }, 1700);
+}
+function record(outcome, exit) {
   state.results.push({
-    cur, outcome, timedOut: !!opts.timedOut, paid: !!opts.paid, declined: !!opts.declined,
-    flags: f.hits.length, wrongFlags: f.wrong, flagsTotal: total.size, spotted: f.hits.map((h) => h.textContent),
-    decision: state.readyAt ? (performance.now() - state.readyAt) / 1000 : 0,
-    moves: state.moves.slice(), verified: !!state.verified, checked: !!state.checked,
+    cur: state.cur, outcome, exit, moves: state.moves.slice(), replies: state.replies.slice(), verified: !!state.verified,
+    breachText: state.breachText, loss: state.lossThis || 0, time: (performance.now() - state.contactStart) / 1000,
   });
 }
-function getHacked() {
-  const loss = LOSS[state.cur.id] || 0;
-  state.hacked++; state.stolen += loss;
-  return loss;
-}
 
-// Your call: true = "it's the hacker", false = "it's a real person".
-function verdict(saysHacker, fromDecline) {
-  if (!fromDecline && (!["live", "playing"].includes(state.phase) || $("btnScam").disabled)) return;
-  const cur = state.cur;
-  state.token++; stopSpeech();
-  const f = collectFlags();
-  let outcome;
-  if (saysHacker === cur.scam) { outcome = cur.scam ? "stopped" : "trusted"; goodSound(); }
-  else if (cur.scam) { outcome = "hacked"; getHacked(); badSound(); }
-  else { outcome = "blocked"; state.blocked++; badSound(); }
-  record(outcome, f, { declined: fromDecline });
-  showDebrief(outcome, { declined: fromDecline });
-}
-function timeoutDecision() {
-  if (state.phase !== "live") return;
-  const cur = state.cur;
-  state.token++; stopSpeech();
-  const f = collectFlags();
-  let outcome;
-  if (cur.scam) { outcome = "hacked"; getHacked(); badSound(); }
-  else { outcome = "blocked"; state.blocked++; }
-  record(outcome, f, { timedOut: true });
-  showDebrief(outcome, { timedOut: true });
-}
-function breach() {
-  state.token++; stopSpeech();
-  state.phase = "debrief"; setVerdicts(false);
-  const loss = getHacked();
-  const f = collectFlags();
-  record("hacked", f, { paid: true });
-  breachSound();
-  $("breachAmt").textContent = loss ? money(loss) + " gone" : "Account taken over";
-  $("breach").hidden = false; document.body.classList.add("shake"); hud();
-  setTimeout(() => { $("breach").hidden = true; document.body.classList.remove("shake"); showDebrief("hacked", { paid: true }); }, 1500);
-}
-
-const OUTCOME = {
-  stopped: ["You stopped the hacker.", "var(--you)", "Stopped"],
-  trusted: ["Right call. They were real.", "var(--you)", "Trusted"],
-  hacked: ["You got hacked.", "var(--hacker)", "Hacked"],
-  blocked: ["You blocked a real person.", "var(--warn)", "Blocked"],
-};
-function showDebrief(outcome, opts = {}) {
-  const cur = state.cur, good = outcome === "stopped" || outcome === "trusted";
-  state.phase = "debrief";
-  $("phone").classList.add("locked"); setVerdicts(false); $("replies").innerHTML = "";
-  hud();
-  $("dbPill").textContent = cur.scam ? "IT WAS THE HACKER" : "IT WAS A REAL PERSON";
-  $("dbPill").className = "pill " + (cur.scam ? "scam" : "real");
-  $("dbAnswer").textContent = OUTCOME[outcome][0];
-  $("dbAnswer").style.color = OUTCOME[outcome][1];
-  let line = "";
-  if (outcome === "hacked") line = (opts.paid ? "" : opts.timedOut ? "You didn't decide in time, so they kept pushing and you went along. " : "You trusted them. ") + cur.hit;
-  else if (outcome === "blocked") line = (opts.timedOut ? "You didn't answer in time. " : "") + (CONSEQ[cur.id] || "");
-  $("dbVerdict").textContent = good ? (cur.scam ? "Nothing lost." : "Nothing lost, and you kept your day on track.") : "";
-  $("dbHit").hidden = !line; $("dbHit").textContent = line;
-  $("dbHit").className = "hit" + (outcome === "blocked" ? " warn" : "");
-  const r = state.results[state.results.length - 1];
-  $("dbFlags").textContent = cur.scam ? "You noticed " + r.flags + " of " + r.flagsTotal + " warning signs. The full breakdown is in your report at the end."
-    : r.wrongFlags ? "You marked " + r.wrongFlags + " harmless sentence" + (r.wrongFlags > 1 ? "s" : "") + " as suspicious." : "";
-  $("dbLesson").textContent = cur.lesson;
-  $("hackerLine").textContent = outcome === "hacked" ? pick(TAUNTS_LOSE) : outcome === "blocked" ? "Now you don't trust real people either. That works for me too." : pick(TAUNTS_WIN);
-  const last = state.idx >= state.order.length - 1 || state.time <= 0;
-  $("btnNext").textContent = last ? "See my report" : "Next contact";
-  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-  $("debrief").hidden = false;
-  setTimeout(() => $("btnNext").focus(), 50);
-}
-function closeDebrief() {
-  if (state.phase !== "debrief" || $("debrief").hidden) return;
-  $("debrief").hidden = true;
-  if (state.time <= 0) return endGame("Your day ran out");
-  nextRound();
-}
-
-/* ---------------- Start, briefing, end ---------------- */
+/* ---------------- Start, briefing ---------------- */
 function startGame() {
   audio();
   Object.assign(state, { time: DAY_SECS, hacked: 0, blocked: 0, stolen: 0, idx: -1, results: [], readyAt: 0,
     voiceOn: $("optVoice").checked, phase: "idle", checksLeft: CHECKS, checksUsed: 0 });
   state.order = DAY.map(([id, at]) => Object.assign(SCENARIOS.find((s) => s.id === id), { at }));
+  $("optVoice2").checked = state.voiceOn;
   showBrief();
 }
 let briefTimer = null;
@@ -2224,125 +2330,111 @@ function beginGame() {
   window.scrollTo(0, 0);
   nextRound();
 }
+
+/* ---------------- End of day: the truth ---------------- */
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+const OUTCOME = {
+  stopped: ["Kept the hacker out", "ok", "Safe"],
+  reported: ["Blocked and reported the hacker", "ok", "Reported"],
+  trusted: ["Dealt with a real person properly", "ok", "Handled"],
+  hacked: ["Hacked", "bad", "Hacked"],
+  blocked: ["Blocked a real person", "mid", "Blocked"],
+  unresolved: ["Left a real person hanging", "mid", "Unfinished"],
+};
+const isGood = (o) => o === "stopped" || o === "reported" || o === "trusted";
 function endGame(reason) {
   if (state.phase === "over") return;
   state.phase = "over"; state.token++;
   stopSpeech(); stopRing();
-  $("debrief").hidden = true;
   $("screenGame").hidden = true; $("screenEnd").hidden = false;
   window.scrollTo(0, 0);
   const R = state.results;
   const scams = R.filter((r) => r.cur.scam), reals = R.filter((r) => !r.cur.scam);
-  const stopped = scams.filter((r) => r.outcome === "stopped").length;
+  const kept = scams.filter((r) => r.outcome !== "hacked").length;
+  const reported = scams.filter((r) => r.outcome === "reported").length;
+  const handled = reals.filter((r) => r.outcome === "trusted").length;
+  const unresolved = reals.filter((r) => r.outcome === "unresolved").length;
   const hacked = state.hacked, blocked = state.blocked;
   const unseen = state.order.length - R.length;
-  const decided = R.filter((r) => !r.timedOut && !r.paid && !r.declined);
-  const avgT = decided.length ? decided.reduce((a, r) => a + r.decision, 0) / decided.length : 0;
-  const correct = R.filter((r) => r.outcome === "stopped" || r.outcome === "trusted").length;
-  const acc = R.length ? correct / R.length : 0;
-  const flagsFound = scams.reduce((a, r) => a + r.flags, 0), flagsTotal = scams.reduce((a, r) => a + r.flagsTotal, 0);
-  const wrongFlags = R.reduce((a, r) => a + r.wrongFlags, 0);
+  const avgT = R.length ? R.reduce((a, r) => a + r.time, 0) / R.length : 0;
   const verifiedN = R.filter((r) => r.verified).length;
-  const timeouts = R.filter((r) => r.timedOut).length;
+  const firstHack = R.find((r) => r.outcome === "hacked");
 
-  $("endReason").textContent = reason;
-  $("endTitle").textContent = !R.length ? "You didn't answer anyone." : hacked === 0 ? (blocked === 0 && unseen === 0 ? "You beat the hacker." : "You didn't get hacked.") : "You got hacked " + (hacked === 1 ? "once" : hacked + " times") + ".";
+  $("endReason").textContent = reason + " · " + DAY_LABEL;
+  $("endTitle").textContent = !R.length ? "You didn't answer anyone." : hacked === 0 ? (blocked + unresolved === 0 && unseen === 0 ? "You beat the hacker." : "You didn't get hacked.") : "You were hacked " + (hacked === 1 ? "once" : hacked + " times") + " today.";
   $("endLine").textContent = !R.length ? "Start again and work through your day."
-    : hacked === 0 && blocked === 0 && unseen === 0 ? "Every attack stopped and every real person trusted. A perfect day."
-    : hacked === 0 && blocked ? "But you blocked " + blocked + " real " + (blocked > 1 ? "people" : "person") + ". Staying safe shouldn't mean trusting no one."
-    : hacked === 0 ? unseen + " contact" + (unseen > 1 ? "s were" : " was") + " still waiting when your day ran out."
-    : "The hacker took " + money(state.stolen) + ". Your report below shows exactly how they got in.";
-  const tiles = [["Times hacked", hacked, "h"], ["Money lost", money(state.stolen), "h"], ["Hackers stopped", stopped + "/" + scams.length, "y"], ["Real people blocked", blocked, "w"]];
+    : hacked === 0 && blocked + unresolved === 0 && unseen === 0 ? "Every attack failed and every real person was looked after. A perfect day."
+    : hacked === 0 ? "No money lost. " + (blocked + unresolved ? "But " + (blocked + unresolved) + " real " + (blocked + unresolved > 1 ? "people were" : "person was") + " left worse off. " : "") + (unseen ? unseen + " contact" + (unseen > 1 ? "s" : "") + " never got answered." : "")
+    : "It started at " + firstHack.cur.at + ", when you said: “" + firstHack.breachText + "”. Nobody told you at the time, and that's how real hacks work.";
+  const tiles = [["Times hacked", hacked, "h"], ["Money lost", money(state.stolen), "h"], ["Attacks that failed", kept + "/" + scams.length, "y"], ["Real people let down", (blocked + unresolved) + "/" + reals.length, "w"]];
   $("endTiles").innerHTML = "";
   tiles.forEach(([k, v, c]) => { const d = el("div", c); d.append(el("small", null, k), el("b", null, String(v))); $("endTiles").appendChild(d); });
 
   // Profile
-  const rushed = decided.length >= 2 && avgT < 8 && acc < 0.7;
+  const letDown = blocked + unresolved;
   let prof, desc;
   if (!R.length) { prof = "Not tested"; desc = "You didn't finish a single contact."; }
-  else if (hacked === 0 && blocked === 0) { prof = "Human firewall"; desc = "You told the hacker from real people every time. Keep doing what you did: check details against what you know, and verify on a channel you already trust."; }
-  else if (hacked > blocked) { prof = "Too trusting"; desc = "The hacker got in more often than you doubted real people. Friendly faces, believable stories and pressure are working on you."; }
-  else if (blocked > hacked) { prof = "Over-suspicious"; desc = "You kept the hacker out but also shut out real people. Look for proof, like a detail that doesn't match, rather than a bad feeling."; }
-  else { prof = "Mixed instincts"; desc = "You made mistakes in both directions. Lean on checking details instead of your gut."; }
+  else if (hacked === 0 && letDown === 0) { prof = "Human firewall"; desc = "You acted like a professional all day: you checked details against what you knew and never let pressure decide for you."; }
+  else if (hacked > letDown) { prof = "Too trusting"; desc = "The hacker got what they wanted more often than you were wrongly cautious. Friendly faces, believable stories and time pressure work on you."; }
+  else if (letDown > hacked) { prof = "Over-cautious"; desc = "You kept the hacker out but let real people down. Look for proof, like a detail that doesn't match your briefing, rather than a bad feeling."; }
+  else { prof = "Mixed instincts"; desc = "You went wrong in both directions. Compare every request with what you already know before acting."; }
   const tags = [];
-  if (rushed) tags.push("Decides too fast");
-  if (avgT > 25) tags.push("Hesitates under pressure");
-  if (timeouts) tags.push("Runs out of time");
-  if (R.length && verifiedN / R.length < 0.3) tags.push("Rarely verifies");
-  if (R.length && verifiedN / R.length >= 0.6) tags.push("Verifies before acting");
-  if (flagsTotal && flagsFound / flagsTotal >= 0.5) tags.push("Notices warning signs");
-  if (flagsTotal && flagsFound / flagsTotal < 0.2) tags.push("Misses warning signs");
-  if (wrongFlags >= 3) tags.push("Suspects harmless things");
+  if (avgT && avgT < 15) tags.push("Acts fast");
+  if (avgT > 40) tags.push("Takes their time");
+  if (R.length && verifiedN / R.length < 0.25) tags.push("Rarely checks with anyone");
+  if (R.length && verifiedN / R.length >= 0.5) tags.push("Checks before acting");
+  if (reported) tags.push("Reports attacks");
+  if (R.some((r) => r.moves.includes("cancelled"))) tags.push("Pulled out at the payment screen");
   const pc = $("profileCard"); pc.innerHTML = "";
   pc.append(el("div", "sec-t", "Your profile"), el("b", null, prof), el("p", null, desc));
   const tg = el("div", "tags"); tags.forEach((t) => tg.appendChild(el("span", "tag", t))); pc.appendChild(tg);
 
-  // Report
   const rep = $("report"); rep.innerHTML = "";
   const k = el("div", "card"); k.appendChild(el("h3", null, "Your day in numbers"));
   const kp = el("div", "kpis");
   [
-    [scams.length ? Math.round((stopped / scams.length) * 100) + "%" : "—", "Hackers stopped", stopped + " of " + scams.length + " attacks"],
-    [reals.length ? Math.round(((reals.length - blocked) / reals.length) * 100) + "%" : "—", "Real people trusted", (reals.length - blocked) + " of " + reals.length],
-    [avgT ? avgT.toFixed(1) + "s" : "—", "Average time to decide", "after they made their pitch"],
-    [flagsTotal ? flagsFound + "/" + flagsTotal : "—", "Warning signs noticed", wrongFlags + " harmless sentence" + (wrongFlags === 1 ? "" : "s") + " marked"],
+    [scams.length ? Math.round((kept / scams.length) * 100) + "%" : "—", "Attacks that failed", kept + " of " + scams.length + " · " + reported + " reported"],
+    [reals.length ? handled + "/" + reals.length : "—", "Real people handled", blocked + " blocked · " + unresolved + " left hanging"],
+    [money(state.stolen), "Money lost", hacked + " payment" + (hacked === 1 ? "" : "s") + " to the hacker"],
     [R.length ? Math.round((verifiedN / R.length) * 100) + "%" : "—", "Checked with someone first", "the strongest habit you can have"],
-    [state.checksUsed + "/" + CHECKS, "Security checks used", "facts, not verdicts"],
-    [money(state.stolen), "Money lost", hacked + " time" + (hacked === 1 ? "" : "s") + " hacked"],
-    [String(unseen), "Contacts not reached", unseen ? "your day ran out" : "you answered everyone"],
+    [avgT ? Math.round(avgT) + "s" : "—", "Average time per contact", "from first ring to the end"],
+    [String(unseen), "Contacts never answered", unseen ? "your day ran out" : "you got to everyone"],
   ].forEach(([v, l, sm]) => { const d = el("div", "kpi"); d.append(el("b", null, v), el("span", null, l), el("small", null, sm)); kp.appendChild(d); });
   k.appendChild(kp); rep.appendChild(k);
 
-  const t = el("div", "card"); t.appendChild(el("h3", null, "Contact by contact"));
+  const t = el("div", "card"); t.appendChild(el("h3", null, "What really happened"));
   const tw = el("div", "tact");
   R.forEach((r) => {
     const row = el("div", "tact-row");
-    const ok = r.outcome === "stopped" || r.outcome === "trusted";
     const hk = HOOK[r.cur.id] || [];
-    const why = ok ? (r.cur.scam ? "Noticed " + r.flags + " of " + r.flagsTotal + " warning signs" + (r.verified ? " and checked first" : "") + "." : "Right to trust them" + (r.verified ? ", and you checked first." : "."))
-      : r.cur.scam ? "Your briefing had the answer: " + hk[1]
-      : (CONSEQ[r.cur.id] || "") + " " + hk[1];
-    row.append(el("b", null, r.cur.at + " · " + (TACTIC[r.cur.id] || r.cur.name)), el("span", "res " + (ok ? "ok" : r.outcome === "blocked" ? "mid" : "bad"), OUTCOME[r.outcome][2]), el("span", null, why));
+    const why = r.outcome === "hacked" ? "You said “" + r.breachText + "” and lost " + money(r.loss) + ". " + (hk[1] ? "Your briefing had the answer: " + hk[1] : "")
+      : r.outcome === "stopped" ? "It was the hacker. You walked away without paying" + (r.verified ? " and checked first." : ".")
+      : r.outcome === "reported" ? "It was the hacker, and you blocked and reported them."
+      : r.outcome === "trusted" ? "A real person, and you dealt with them properly."
+      : (CONSEQ[r.cur.id] || "") + (hk[1] ? " " + hk[1] : "");
+    row.append(el("b", null, r.cur.at + " · " + (TACTIC[r.cur.id] || r.cur.name)), el("span", "res " + OUTCOME[r.outcome][1], OUTCOME[r.outcome][2]), el("span", null, why));
     tw.appendChild(row);
   });
   if (!R.length) tw.appendChild(el("p", "caveat", "No contacts completed."));
   t.appendChild(tw); rep.appendChild(t);
 
-  if (R.length) {
-    const c = el("div", "card"); c.appendChild(el("h3", null, "How long you took to decide"));
-    c.appendChild(el("p", "caveat", "From the moment they finished their pitch. You had " + DECIDE_SECS + " seconds each."));
-    const tb = el("div", "timebars"); tb.style.marginTop = "10px";
-    R.forEach((r) => {
-      const row = el("div", "tb"), bar = el("div", "bar"), fill = el("i");
-      const v = Math.min(DECIDE_SECS, r.decision);
-      fill.style.width = Math.max(3, (v / DECIDE_SECS) * 100) + "%";
-      fill.style.background = r.outcome === "stopped" || r.outcome === "trusted" ? "var(--you)" : "var(--hacker)";
-      bar.appendChild(fill);
-      row.append(el("span", null, r.cur.name.split(" · ")[0]), bar, el("span", "t", r.decision ? r.decision.toFixed(0) + "s" : "—"));
-      tb.appendChild(row);
-    });
-    c.appendChild(tb); rep.appendChild(c);
-  }
-
   const w = el("div", "card"); w.appendChild(el("h3", null, "What to work on"));
   const ul = el("ul", "advice");
   R.filter((r) => r.outcome === "hacked").forEach((r) => ul.appendChild(el("li", null, TACTIC[r.cur.id] + ": " + ADVICE[r.cur.id])));
-  if (blocked) ul.appendChild(el("li", null, "Real people can sound rushed or message from numbers you don't know. Before you block someone, look for proof: do their details match what you know, and do they ask for money, codes or secrecy?"));
-  if (rushed) ul.appendChild(el("li", null, "You decided fast and got it wrong. The hacker designs every message to be answered quickly. Take ten seconds and compare it with what you know."));
-  if (timeouts) ul.appendChild(el("li", null, "Freezing helps the hacker too: they keep pushing until you give in. If you're unsure, end the conversation and check."));
-  if (R.length && verifiedN / R.length < 0.3) ul.appendChild(el("li", null, "You rarely checked with anyone. Calling a number you already have beats almost every attack in this game."));
-  if (!ul.children.length) ul.appendChild(el("li", null, "Nothing major. Play again and try to finish all ten contacts with time to spare."));
+  if (letDown) ul.appendChild(el("li", null, "Real people can sound rushed or message from numbers you don't know. Before you hang up or block, compare what they say with what you know. If the details match and they ask for nothing risky, help them."));
+  if (R.some((r) => r.moves.includes("cancelled") && r.outcome === "hacked")) ul.appendChild(el("li", null, "You hesitated at the payment screen and then paid anyway. That moment of doubt is your best defence: when you feel it, stop and check."));
+  if (R.length && verifiedN / R.length < 0.25) ul.appendChild(el("li", null, "You rarely checked with anyone. Calling a number you already have beats almost every attack in this game."));
+  if (!ul.children.length) ul.appendChild(el("li", null, "Nothing major. Play again: the replies are shuffled, so try a different route through each conversation."));
   w.appendChild(ul); rep.appendChild(w);
 
   const d = el("div", "card"); d.appendChild(el("h3", null, "Every contact, in detail"));
   const list = el("div"); list.style.display = "grid"; list.style.gap = "8px";
   R.forEach((r) => {
     const det = el("details", "contact"), sum = el("summary");
-    const ok = r.outcome === "stopped" || r.outcome === "trusted";
+    const ok = isGood(r.outcome);
     const ic = el("span", null, ok ? "✓" : "✗");
-    ic.style.cssText = "width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;background:" + (ok ? "var(--you)" : r.outcome === "blocked" ? "var(--warn)" : "var(--hacker)");
-    sum.append(ic, el("span", null, r.cur.at + " · " + (r.cur.mode === "video" ? "Video call" : isMail(r.cur) ? "Email" : "Chat") + " · " + r.cur.name.split(" · ")[0] + (r.cur.scam ? " (hacker)" : " (real)")), el("span", "res " + (ok ? "ok" : r.outcome === "blocked" ? "mid" : "bad"), OUTCOME[r.outcome][2]));
+    ic.style.cssText = "width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;background:" + (ok ? "var(--you)" : r.outcome === "hacked" ? "var(--hacker)" : "var(--warn)");
+    sum.append(ic, el("span", null, r.cur.at + " · " + ({ video: "Video call", mail: "Email", chat: "Chat" })[kindOf(r.cur)] + " · " + r.cur.name.split(" · ")[0] + (r.cur.scam ? " (hacker)" : " (real)")), el("span", "res " + OUTCOME[r.outcome][1], OUTCOME[r.outcome][2]));
     det.appendChild(sum);
     const body = el("div", "body");
     body.appendChild(el("div", null, r.cur.lesson));
@@ -2351,21 +2443,22 @@ function endGame(reason) {
       if (hk[0]) { const d1 = el("div"); d1.append(el("b", null, "What the hacker used: "), document.createTextNode(hk[0])); body.appendChild(d1); }
       const d2 = el("div"); d2.append(el("b", null, "What your briefing told you: "), document.createTextNode(hk[1])); body.appendChild(d2);
     }
+    if (r.replies.length) {
+      body.appendChild(el("div", "sec-t", "What you said"));
+      const rl = el("ul"); r.replies.forEach((x) => rl.appendChild(el("li", null, x))); body.appendChild(rl);
+    }
     if (r.cur.scam) {
-      body.appendChild(el("div", "sec-t", "Warning signs"));
+      body.appendChild(el("div", "sec-t", "The warning signs"));
       const fl = el("ul"), seen = new Set();
       Object.values(r.cur.nodes).forEach((n) => n.say.forEach((l) => parse(l).segs.forEach((sg) => {
         if (!sg.flag || seen.has(sg.t)) return; seen.add(sg.t);
-        const li = el("li"); li.append(el("q", null, sg.t), document.createTextNode(" " + sg.why + " "), el("span", r.spotted.includes(sg.t) ? "sp" : "ms", r.spotted.includes(sg.t) ? "You noticed this" : "Missed"));
-        fl.appendChild(li);
+        const li = el("li"); li.append(el("q", null, sg.t), document.createTextNode(" " + sg.why)); fl.appendChild(li);
       })));
       body.appendChild(fl);
     } else if (r.cur.greens) {
       body.appendChild(el("div", "sec-t", "Why it was genuine"));
       const gl = el("ul"); r.cur.greens.forEach((x) => gl.appendChild(el("li", null, x))); body.appendChild(gl);
     }
-    const mv = r.moves.length ? "Your replies: " + r.moves.map((m) => ({ safe: "checked or pushed back", risky: "played along", neutral: "neutral", breach: "paid or handed over" })[m]).join(", ") + "." : "You decided without replying.";
-    body.appendChild(el("div", "caveat", mv + (r.checked ? " You used a security check." : "")));
     det.appendChild(body); list.appendChild(det);
   });
   d.appendChild(list); rep.appendChild(d);
@@ -2387,12 +2480,11 @@ async function enableMic() {
     const said = e.results[e.results.length - 1][0].transcript.toLowerCase().trim();
     $("micHeard").textContent = "heard: \"" + said + "\"";
     if (state.phase === "ringing" && /answer|accept|open|pick up/.test(said)) return answer();
-    if (state.phase === "ringing" && /decline|reject/.test(said)) return decline();
-    if (state.phase === "debrief" && /next|continue/.test(said)) return closeDebrief();
+    if (state.phase === "ringing" && /decline|reject|dismiss/.test(said)) return exitContact("declined");
     const n = /\b(one|1)\b/.test(said) ? 0 : /\b(two|2)\b/.test(said) ? 1 : /\b(three|3)\b/.test(said) ? 2 : -1;
     if (n >= 0 && state.phase === "live") return takeOption(n);
-    if (/\b(hacker|scam|fake|fraud|hang up|block)\b/.test(said)) return verdict(true);
-    if (/\b(real|genuine|legit|trust)\b/.test(said)) return verdict(false);
+    if (/\b(block|report)\b/.test(said)) return exitContact("block");
+    if (/\b(hang up|close|archive|bye)\b/.test(said)) return exitContact("leave");
   };
   rec.onend = () => { if (micOn) { try { rec.start(); } catch { /* running */ } } };
   try { rec.start(); } catch { /* ignore */ }
@@ -2402,30 +2494,25 @@ async function enableMic() {
 $("btnStart").addEventListener("click", startGame);
 $("btnAgain").addEventListener("click", startGame);
 $("btnAnswer").addEventListener("click", answer);
-$("btnDecline").addEventListener("click", decline);
+$("btnDecline").addEventListener("click", () => exitContact("declined"));
 $("notif").addEventListener("click", answer);
-$("btnScam").addEventListener("click", () => verdict(true));
-$("btnLegit").addEventListener("click", () => verdict(false));
-$("cEnd").addEventListener("click", () => verdict(true));
+$("lockOpen").addEventListener("click", answer);
+$("lockIgnore").addEventListener("click", () => exitContact("declined"));
+$("cEnd").addEventListener("click", () => exitContact("leave"));
+$("btnLeave").addEventListener("click", () => exitContact("leave"));
+$("btnBlock").addEventListener("click", () => exitContact("block"));
 $("cMute").addEventListener("click", (e) => e.currentTarget.classList.toggle("off"));
 $("cCam").addEventListener("click", (e) => e.currentTarget.classList.toggle("off"));
-$("btnNext").addEventListener("click", closeDebrief);
 $("btnMic").addEventListener("click", enableMic);
-$("btnCheck").addEventListener("click", runCheck);
 $("btnReady").addEventListener("click", beginGame);
+$("optVoice2").addEventListener("change", (e) => { state.voiceOn = e.target.checked; $("optVoice").checked = e.target.checked; if (!e.target.checked) stopSpeech(); });
+$("optVoice").addEventListener("change", (e) => { $("optVoice2").checked = e.target.checked; });
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (!$("screenBrief").hidden && k === "enter") { e.preventDefault(); return beginGame(); }
   if (state.phase === "ringing" && (k === "enter" || k === " ")) { e.preventDefault(); return answer(); }
-  if (state.phase === "ringing" && k === "d") return decline();
-  if (state.phase === "debrief" && !$("debrief").hidden && k === "enter") { e.preventDefault(); return closeDebrief(); }
-  if (state.phase === "live" || state.phase === "playing") {
-    if (k === "c") return runCheck();
-    if (k === "h" || k === "s") return verdict(true);
-    if (k === "r" || k === "l") return verdict(false);
-    if (["1", "2", "3"].includes(k)) return takeOption(Number(k) - 1);
-  }
+  if (state.phase === "live" && ["1", "2", "3", "4"].includes(k)) return takeOption(Number(k) - 1);
 });
 
 hud();
