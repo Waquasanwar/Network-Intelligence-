@@ -325,21 +325,70 @@
   .check button { border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 13px; background: var(--text); color: var(--bg); white-space: nowrap; }
   .dclock { font-family: var(--mono); font-weight: 600; font-size: 13px; color: var(--muted); margin: 0; }
   .dclock.urgent { color: var(--hacker); }
-  /* Briefing */
-  .brief { padding-block: 28px; display: grid; gap: 20px; }
-  .brief-head { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: end; }
-  .brief-head h1 { margin-bottom: 8px; }
-  .brief-head .lede { margin: 0; }
-  .brief-timer { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); }
-  .brief-timer .num { font-size: 32px; font-weight: 600; }
-  .brief-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
-  .bcard { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; box-shadow: var(--shadow); }
-  .bcard h3 { font-family: var(--display); font-size: 16px; font-weight: 800; margin: 0 0 10px; }
-  .bcard ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14.5px; }
-  .bcard.pub { border-color: var(--hacker); }
-  .bcard.pub h3 { color: var(--hacker); }
-  .bcard .who { font-size: 13px; color: var(--muted); margin: -4px 0 10px; }
-  /* Analysis report */
+  /* Briefing dossier */
+  .dossier { padding-block: 26px; display: grid; gap: 18px; }
+  .dhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; }
+  .idcard { display: flex; gap: 18px; align-items: center; }
+  .idav { width: 76px; height: 76px; border-radius: 22px; flex: none; display: grid; place-items: center; background: linear-gradient(145deg, #2f6fed, #1e3fa8); color: #fff; font-family: var(--display); font-weight: 800; font-size: 28px; box-shadow: var(--shadow); }
+  .idname { font-size: clamp(34px, 5vw, 54px); margin: 4px 0 8px; }
+  .idmeta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .idmeta span { font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); }
+  .dtimer { display: grid; grid-template-columns: 64px auto; gap: 6px 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .dtimer .btn { grid-column: 1 / -1; }
+  .ring { width: 64px; height: 64px; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 6; }
+  .ring-bg { stroke: var(--line); }
+  .ring-fg { stroke: var(--you); stroke-linecap: round; stroke-dasharray: 175.9; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke .3s; }
+  .ring-fg.low { stroke: var(--hacker); }
+  .dtimer-txt .num { display: block; font-size: 28px; font-weight: 600; line-height: 1; }
+  .dtimer-txt small { font-size: 12px; color: var(--muted); }
+  .dnote { margin: 0; font-size: 14px; color: var(--muted); max-width: 90ch; }
+  .dnote b { color: var(--text); }
+  .dgrid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, .95fr); gap: 16px; align-items: start; }
+  .dcol { display: grid; gap: 16px; }
+  .dcard { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .dcard h3 { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-size: 15px; font-weight: 800; margin: 0 0 12px; letter-spacing: -.005em; }
+  .dcard h3 small { font-family: var(--sys); font-size: 12px; font-weight: 600; color: var(--muted); }
+  /* Timeline */
+  .tl { position: relative; display: grid; gap: 14px; }
+  .tl::before { content: ""; position: absolute; left: 51px; top: 6px; bottom: 6px; width: 2px; background: var(--line); border-radius: 2px; }
+  .tl-row { display: grid; grid-template-columns: 44px 16px 1fr; gap: 0 8px; align-items: start; }
+  .tl-time { font-family: var(--mono); font-size: 13px; font-weight: 600; padding-top: 1px; }
+  .tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 3px solid var(--text); margin-top: 3px; position: relative; z-index: 1; }
+  .tl-row.key .tl-dot { border-color: #2f6fed; }
+  .tl-row b { display: block; font-size: 14.5px; }
+  .tl-row > div > span { display: block; font-size: 13px; color: var(--muted); }
+  .fact { display: inline-block; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; margin: 1px 0; }
+  .later { display: grid; gap: 10px; }
+  .later-row { display: grid; grid-template-columns: 74px 1fr; gap: 10px; align-items: start; }
+  .later-row .when { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-top: 2px; }
+  .later-row b { display: block; font-size: 14px; }
+  .later-row > div > span { display: block; font-size: 13px; color: var(--muted); }
+  /* Contacts */
+  .people { display: grid; gap: 4px; }
+  .person { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .person:last-child { border-bottom: 0; }
+  .person .pav { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; }
+  .person .pav .ini { font-size: 14px; }
+  .person .pav.sq { border-radius: 11px; }
+  .person b { display: block; font-size: 14.5px; }
+  .person .prole { font-size: 12.5px; font-weight: 500; color: var(--muted); }
+  .person .det { display: block; font-size: 12.5px; margin-top: 1px; overflow-wrap: anywhere; }
+  .person .note { display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--warn); background: var(--warn-soft); border-radius: 99px; padding: 1px 8px; margin-top: 3px; }
+  .rules { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .rules li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; font-size: 14px; }
+  .rules li i { width: 28px; height: 28px; border-radius: 9px; background: var(--you-soft); display: grid; place-items: center; }
+  .rules li i svg { width: 16px; height: 16px; }
+  /* Public feed */
+  .dcard.pub { border-color: var(--hacker); background: linear-gradient(180deg, var(--hacker-soft), var(--surface) 140px); }
+  .dcard.pub h3 { color: var(--hacker); }
+  .feed { display: grid; gap: 8px; }
+  .post { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 9px 11px; }
+  .post .ph { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--muted); margin-bottom: 2px; }
+  .post .ph b { color: var(--text); font-size: 12.5px; }
+  .post .plat { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 10.5px; }
+  .post p { margin: 0; font-size: 13.5px; line-height: 1.4; }
+  /* Analysis report */  /* Analysis report */
   .report { display: grid; gap: 18px; margin-top: 8px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; box-shadow: var(--shadow); }
   .card h3 { font-family: var(--display); font-size: 18px; font-weight: 800; margin: 0 0 10px; letter-spacing: -.01em; }
@@ -437,12 +486,16 @@
     .game { grid-template-columns: minmax(0, 1fr); }
     .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .brief-head, .brief-grid { grid-template-columns: minmax(0, 1fr); }
+    .dgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .dgrid .dcol:last-child { grid-column: 1 / -1; }
     .tact-row { grid-template-columns: 1fr 80px; } .tact-row span:last-child { grid-column: 1 / -1; }
   }
   @media (max-width: 520px) {
     .brand { width: 100%; }
     .goal { display: none; }
+    .dhead, .dgrid { grid-template-columns: minmax(0, 1fr); }
+    .dgrid .dcol:last-child { grid-column: auto; }
+    .idav { width: 60px; height: 60px; font-size: 22px; border-radius: 18px; }
     .meters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .phone { padding: 8px; border-radius: 46px; }
@@ -479,7 +532,7 @@
         <div class="cta"><button class="btn big" id="btnStart">Start my day</button><label class="toggle"><input type="checkbox" id="optVoice" checked> Play voices out loud</label></div>
       </div>
       <ol class="steps">
-        <li><div><b>Read your briefing</b><span>45 seconds to learn who you are, what's happening today and what's public about you. Then it's gone.</span></div></li>
+        <li><div><b>Read your briefing</b><span>60 seconds to learn who you are, what's happening today and what's public about you. Then it's gone.</span></div></li>
         <li><div><b>Answer each contact</b><span>Video calls, chats and emails arrive one at a time on your phone.</span></div></li>
         <li><div><b>Test them</b><span>Reply to see how they react, or use one of your 3 security checks. Checking with someone directly costs 20 seconds of your day.</span></div></li>
         <li><div><b>Decide: hacker or real person</b><span>You get 40 seconds once they've made their pitch. Trust the hacker and they take your money. Block a real person and your day suffers.</span></div></li>
@@ -489,13 +542,24 @@
 
   <!-- BRIEFING -->
   <section id="screenBrief" hidden>
-    <div class="brief">
-      <div class="brief-head">
-        <div><div class="kicker">Your briefing · memorise it</div><h1 id="bTitle">This is you.</h1>
-        <p class="lede">Real people will match these details. The hacker only knows what's public, and will use it to sound convincing. You won't see this again.</p></div>
-        <div class="brief-timer"><span class="num" id="bClock">0:45</span><div class="track"><i id="bBar"></i></div><button class="btn" id="btnReady">I'm ready</button></div>
+    <div class="dossier">
+      <div class="dhead">
+        <div class="idcard">
+          <span class="idav">JH</span>
+          <div>
+            <div class="kicker">Your briefing · memorise it</div>
+            <h1 class="idname">Jordan Hayes</h1>
+            <div class="idmeta"><span>31</span><span>Manchester</span><span>Finance assistant, Hale Group</span></div>
+          </div>
+        </div>
+        <div class="dtimer">
+          <svg viewBox="0 0 64 64" class="ring" aria-hidden="true"><circle cx="32" cy="32" r="28" class="ring-bg"/><circle cx="32" cy="32" r="28" class="ring-fg" id="bRing"/></svg>
+          <div class="dtimer-txt"><span class="num" id="bClock">1:00</span><small>until your day starts</small></div>
+          <button class="btn" id="btnReady">I'm ready</button>
+        </div>
       </div>
-      <div class="brief-grid" id="bGrid"></div>
+      <p class="dnote"><b>How to use this:</b> real people will match the private details in the first three columns. The hacker only knows what's in the red column, and will use it to sound convincing. Once your day starts, you can't come back here.</p>
+      <div class="dgrid" id="bGrid"></div>
     </div>
   </section>
 
@@ -1204,7 +1268,7 @@ const ADVICE = {
   invoice: "When a supplier's bank details change by email, call them on the number you already hold before paying a penny.",
   buyer: "Trust the balance in your real payment app, never a 'payment received' email. No real buyer needs you to pay them first.",
 };
-const DECIDE_SECS = 40, CHECK_SECS = 20, BRIEF_SECS = 45, DAY_SECS = 300, CHECKS = 3;
+const DECIDE_SECS = 40, CHECK_SECS = 20, BRIEF_SECS = 60, DAY_SECS = 300, CHECKS = 3;
 const DAY_LABEL = "Tuesday 14 October";
 /* One day, in order. Times are the in-game clock. */
 const DAY = [
@@ -1220,38 +1284,41 @@ const CONSEQ = {
 };
 /* Who you are. Real contacts match your private details; the hacker only knows what's public. */
 const BRIEF = {
-  you: "Jordan Hayes · 31 · finance assistant at Hale Group, Manchester",
   today: [
-    "You're at work until 17:00, then flying to <b>Lisbon tonight</b>.",
-    "Your flight <b>SB 214</b> was cancelled this morning. SkyBridge emailed: you're rebooked free onto the <b>21:35</b>, landing <b>00:50</b>.",
-    "<b>Hotel Lumen, Lisbon</b>, tonight and tomorrow. Booking ref <b>LX-88213</b>, already paid on Staybook.",
-    "Next trip: <b>Rome on 22 Oct</b>, SkyBridge <b>SB 516</b>, seat <b>17C</b>.",
-    "You've asked Staybook about the <b>Old Town Loft in Prague</b>. Staybook's rule: all payments go through the app.",
-    "You've been looking at <b>Santorini villas for August</b>. The going rate is £3,500–£4,500 a week.",
+    ["08:30", "Start work", "Hale Group finance team, Manchester"],
+    ["12:00", "Pay your builder", "<span class='fact'>£4,800</span> for the kitchen, from your Northgate account", 1],
+    ["17:00", "Leave for the airport", "Your Lisbon flight <span class='fact'>SB 214</span> was cancelled this morning"],
+    ["21:35", "Fly to Lisbon", "SkyBridge rebooked you free onto the <span class='fact'>21:35</span>, landing <span class='fact'>00:50</span>", 1],
+    ["00:50", "Hotel Lumen, Lisbon", "Ref <span class='fact'>LX-88213</span> · 14–15 Oct · already paid on Staybook", 1],
   ],
-  money: [
-    "Brightline Print invoice <b>INV-4471 for £8,340</b> is due Friday. Nothing has changed about how you pay them.",
-    "Company rule: payments over <b>£10,000 need two approvers</b>, however senior the person asking.",
-    "At lunchtime you're paying your builder <b>£4,800</b> from your Northgate account.",
-    "You're selling your <b>camera for £400</b> on a marketplace app.",
-    "Sam is booking an <b>Edinburgh weekend</b> for the three of you. The flat is about <b>£360</b>.",
+  later: [
+    ["Friday", "Brightline Print invoice due", "<span class='fact'>INV-4471</span> · <span class='fact'>£8,340</span> · paid the usual way, nothing has changed"],
+    ["22 Oct", "Rome", "SkyBridge <span class='fact'>SB 516</span> · seat <span class='fact'>17C</span>"],
+    ["Weekend", "Edinburgh with Sam", "Flat for 3 people, about <span class='fact'>£360</span>"],
+    ["Planning", "Prague", "Enquiry about the Old Town Loft on Staybook"],
+    ["August", "Santorini villa", "Going rate <span class='fact'>£3,500–£4,500</span> a week"],
+    ["Selling", "Your camera", "<span class='fact'>£400</span> on a marketplace app"],
   ],
   people: [
-    "<b>Richard Hale</b> · CFO, your boss · r.hale@<b>halegroup.co.uk</b> · on annual leave this week",
-    "<b>Dan Price</b> · Brightline accounts · dan.price@<b>brightlineprint.co.uk</b> · 0161 496 0321",
-    "<b>Sam Okafor</b> · friend · saved in your contacts",
-    "<b>Northgate Bank</b> · only ever contacts you inside its app",
-    "<b>SkyBridge Airways</b> · verified account ✓ in your chats · helpline on skybridge.com",
-    "<b>Hotel Lumen</b> · contacts you through its own app",
+    { n: "Richard Hale", r: "CFO · your boss", d: "r.hale@halegroup.co.uk", note: "On leave until the 20th" },
+    { n: "Dan Price", r: "Accounts · Brightline Print", d: "dan.price@brightlineprint.co.uk · 0161 496 0321" },
+    { n: "Sam Okafor", r: "Friend", d: "Saved in your contacts" },
+    { n: "Northgate Bank", r: "Your bank", d: "Only ever contacts you inside its app", logo: "NB", c: "#0f766e" },
+    { n: "SkyBridge Airways", r: "Airline", d: "Verified ✓ chat · helpline on skybridge.com", logo: "SB", c: "#2563c9" },
+    { n: "Hotel Lumen", r: "Your Lisbon hotel", d: "Contacts you through its own app", logo: "HL", c: "#a16207" },
+  ],
+  rules: [
+    "Payments over <b>£10,000</b> need two approvers, whoever is asking.",
+    "Staybook bookings are only ever paid <b>inside the Staybook app</b>.",
   ],
   public: [
-    "Your angry post about <b>SB 214 being cancelled</b>",
-    "Liking lots of <b>Santorini villa ads</b> on Instagram",
-    "A story saying <b>\"Prague next month!\"</b>",
-    "Your LinkedIn: <b>finance assistant at Hale Group</b>",
-    "Richard's LinkedIn: <b>\"Off to Spain, back on the 20th!\"</b>",
-    "Richard's conference talk on YouTube: <b>40 minutes of his voice</b>",
-    "Your marketplace listing: <b>camera, £400</b>",
+    ["Post", "@jordanhayes", "2h", "Cheers @SkyBridge for cancelling SB 214 🙃 Lisbon tonight, apparently."],
+    ["Instagram", "You liked", "this week", "14 ads for Santorini villas"],
+    ["Story", "jordan.hayes", "yesterday", "Prague next month! 🇨🇿"],
+    ["LinkedIn", "Jordan Hayes", "profile", "Finance assistant at Hale Group"],
+    ["LinkedIn", "Richard Hale", "3d", "Off to Spain, back on the 20th! ☀️"],
+    ["YouTube", "Richard Hale", "2023", "Finance Leaders Summit talk · 40:12 of his voice"],
+    ["Marketplace", "Your listing", "today", "Camera, good condition · £400 · Manchester"],
   ],
 };
 const HOOK = {
@@ -2124,19 +2191,29 @@ let briefTimer = null;
 function showBrief() {
   $("screenStart").hidden = true; $("screenEnd").hidden = true; $("screenGame").hidden = true; $("screenBrief").hidden = false;
   window.scrollTo(0, 0);
-  const card = (title, sub, items, cls) => `<div class="bcard ${cls || ""}"><h3>${title}</h3>${sub ? `<div class="who">${sub}</div>` : ""}<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul></div>`;
-  $("bGrid").innerHTML = card("Today, " + DAY_LABEL, BRIEF.you, BRIEF.today)
-    + card("Work and money", "Things only you know", BRIEF.money)
-    + card("People and companies you know", "Their real details", BRIEF.people)
-    + card("What's public about you", "The hacker can see all of this", BRIEF.public, "pub");
+  const ini = (n) => n.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const tick = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--you)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>';
+  const today = `<div class="dcard"><h3>Today <small>${DAY_LABEL}</small></h3><div class="tl">${BRIEF.today.map(([t, h, d, k]) =>
+    `<div class="tl-row${k ? " key" : ""}"><span class="tl-time">${t}</span><span class="tl-dot"></span><div><b>${h}</b><span>${d}</span></div></div>`).join("")}</div></div>`;
+  const later = `<div class="dcard"><h3>Coming up</h3><div class="later">${BRIEF.later.map(([w, h, d]) =>
+    `<div class="later-row"><span class="when">${w}</span><div><b>${h}</b><span>${d}</span></div></div>`).join("")}</div></div>`;
+  const people = `<div class="dcard"><h3>Who's who <small>their real details</small></h3><div class="people">${BRIEF.people.map((p) =>
+    `<div class="person"><span class="pav${p.logo ? " sq" : ""}"><span class="ini" style="background:${p.c || AV_COLORS[p.n.length % AV_COLORS.length]}">${p.logo || ini(p.n)}</span></span><div><b>${p.n} <span class="prole">· ${p.r}</span></b><span class="det">${p.d}</span>${p.note ? `<span class="note">${p.note}</span>` : ""}</div></div>`).join("")}</div></div>`;
+  const rules = `<div class="dcard"><h3>Your rules</h3><ul class="rules">${BRIEF.rules.map((r) => `<li><i>${tick}</i><span>${r}</span></li>`).join("")}</ul></div>`;
+  const pub = `<div class="dcard pub"><h3>What the hacker can see <small>public</small></h3><div class="feed">${BRIEF.public.map(([pl, who, when, txt]) =>
+    `<div class="post"><div class="ph"><span><span class="plat">${pl}</span> · <b>${who}</b></span><span>${when}</span></div><p>${txt}</p></div>`).join("")}</div></div>`;
+  $("bGrid").innerHTML = `<div class="dcol">${today}${later}</div><div class="dcol">${people}${rules}</div><div class="dcol">${pub}</div>`;
   let left = BRIEF_SECS;
-  const tick = () => {
+  const C = 2 * Math.PI * 28;
+  const tickFn = () => {
     $("bClock").textContent = fmt(left);
-    $("bBar").style.width = (left / BRIEF_SECS) * 100 + "%";
+    const ring = $("bRing");
+    ring.style.strokeDashoffset = (C * (1 - left / BRIEF_SECS)).toFixed(1);
+    ring.classList.toggle("low", left <= 10);
     if (left <= 0) return beginGame();
     left--;
   };
-  clearInterval(briefTimer); tick(); briefTimer = setInterval(tick, 1000);
+  clearInterval(briefTimer); tickFn(); briefTimer = setInterval(tickFn, 1000);
   hud();
   setTimeout(() => $("btnReady").focus(), 50);
 }
