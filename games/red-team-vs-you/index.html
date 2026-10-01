@@ -235,6 +235,7 @@
   .msender b { font-size: 15px; display: block; }
   .msender > span > span { display: block; font-size: 12.5px; color: #8e8e93; overflow-wrap: anywhere; }
   .msender b { color: #000; }
+  .msender .cav .ini { display: grid; color: #fff; font-size: 15px; }
   .msender time { font-size: 12.5px; color: #8e8e93; align-self: start; }
   .msubj { font-size: 20px; font-weight: 700; letter-spacing: -.01em; padding-bottom: 10px; border-bottom: 1px solid #e5e5ea; }
   .mreplies { padding: 6px 12px; display: grid; gap: 6px; border-top: 1px solid #e5e5ea; }
@@ -665,30 +666,64 @@ const SCENARIOS = [
         "So, the Santorini villa you liked. Seven nights in August, sea view, private pool. [[It's normally three thousand nine hundred pounds, but I can do it for fourteen fifty today only.|A price far below market value is the bait.]]",
         "[[I've only got this one left, and two other families are looking at it right now.|Fake scarcity to rush you.]]",
       ], options: [
-        { t: "Great. Can I pay by credit card?", k: "safe", next: "card" },
-        { t: "What's your ABTA or ATOL number?", k: "safe", next: "abta" },
-        { t: "I'll take it! Send me the details.", k: "risky", next: "pay" },
+        { t: "Sounds lovely. Can I pay on my credit card?", k: "safe", next: "card" },
+        { t: "Are you ABTA registered?", k: "safe", next: "abta" },
+        { t: "Wow, OK. What do you need from me to book it?", k: "risky", next: "pay" },
+        { t: "Could you send me a few more photos first?", k: "neutral", next: "photos" },
+      ] },
+      photos: { say: [
+        "Of course, I'll send the full gallery once it's secured. [[Honestly, at this price it won't last the afternoon.|Pressure to commit before you can check anything.]]",
+      ], options: [
+        { t: "Fair enough. How do I secure it?", k: "risky", next: "pay" },
+        { t: "Can I put it on my credit card?", k: "safe", next: "card" },
+        { t: "What's the address? I'll have a look on Maps.", k: "neutral", next: "address" },
+      ] },
+      address: { say: [
+        "It's Villa Eleni, just outside Oia. You'll see the pool from the road. [[Shall I hold it for you while you look? I just need the deposit today.|Any real address can be copied from another listing.]]",
+      ], options: [
+        { t: "OK, send me the deposit details.", k: "risky", next: "pay" },
+        { t: "I'll look you up properly and come back to you.", k: "safe", next: "lookup" },
       ] },
       card: { say: [
         "Ah, [[our card machine is down this week. Bank transfer gets you another five percent off anyway.|Avoiding cards removes your chargeback protection.]]",
       ], options: [
-        { t: "OK, I'll do a bank transfer", k: "risky", next: "pay" },
-        { t: "I'll only pay by card", k: "safe", next: "pressure" },
+        { t: "Five percent off? Go on then, bank transfer.", k: "risky", next: "pay" },
+        { t: "Sorry, I only book holidays on a card.", k: "safe", next: "pressure" },
+        { t: "When will the card machine be back?", k: "neutral", next: "machine" },
+      ] },
+      machine: { say: [
+        "[[Not till next week, and the villa will be long gone by then. Transfer's honestly easier.|Stalling until you give up on the protected option.]]",
+      ], options: [
+        { t: "Alright, I'll transfer it.", k: "risky", next: "pay" },
+        { t: "I'll wait. If it's gone, it's gone.", k: "safe", next: "pressure" },
       ] },
       abta: { say: [
         "Oh, it's all on the website, don't worry. [[We're a small family business, we don't really bother with all that paperwork.|No trade-body protection and nothing you can verify.]]",
       ], options: [
-        { t: "End the call and check the ABTA register", k: "safe", next: "lookup" },
-        { t: "Fine, send the payment details", k: "risky", next: "pay" },
+        { t: "I'll check the ABTA register before I pay anything.", k: "safe", next: "lookup" },
+        { t: "The website does look professional. OK, what's next?", k: "risky", next: "pay" },
+        { t: "Do you have reviews anywhere?", k: "neutral", next: "reviews" },
+      ] },
+      reviews: { say: [
+        "Loads on our Instagram! [[Everyone who's stayed has loved it.|Reviews you can't independently check prove nothing.]]",
+      ], options: [
+        { t: "Great, let's do it.", k: "risky", next: "pay" },
+        { t: "I'll do a bit of digging and call you back.", k: "safe", next: "lookup" },
       ] },
       pay: { say: [
         "Perfect! I'll pop the details on screen now.",
         "$ [[Bank transfer · Payee: M. Kowalski · Personal current account · £1,450|The payee is a private person, not the company.]]",
         "[[Put the reference as family gift, so your bank doesn't hold it up.|Asking you to mislabel a payment is to dodge your bank's fraud checks.]]",
       ], options: [
-        { t: "Send the £1,450 now", k: "breach" },
-        { t: "Why is it a personal account?", k: "risky", next: "pressure" },
-        { t: "Hang on, I'll check the company first", k: "safe", next: "lookup" },
+        { t: "Done. Sending it now so I don't lose it.", k: "breach" },
+        { t: "Why's it going to a personal account?", k: "risky", next: "personal" },
+        { t: "Let me check a couple of things and I'll come back to you.", k: "safe", next: "lookup" },
+      ] },
+      personal: { say: [
+        "Mr Kowalski is the owner, we just manage it for him. [[It's completely normal for private villas.|A plausible story to make a personal account feel normal.]]",
+      ], options: [
+        { t: "Makes sense. Sending it now.", k: "breach" },
+        { t: "I'll check the company out first.", k: "safe", next: "lookup" },
       ] },
       pressure: { say: [
         "[[Look, if you can't commit now I'll have to give it to the next family. Your choice.|Pressure the moment you push back.]]",
@@ -717,27 +752,48 @@ const SCENARIOS = [
         "Hi, this is Alex from SkyBridge Airways customer care 👋 We saw your post, so sorry about flight SB 214.",
         "🎤 We can get you on tonight's seven-forty flight instead. [[The seats are going fast though, so we need to lock it in within fifteen minutes.|A deadline to stop you checking.]]",
       ], options: [
-        { t: "Yes please, rebook me", k: "risky", next: "link" },
-        { t: "Can I do this in the SkyBridge app?", k: "safe", next: "app" },
-        { t: "What's your staff ID?", k: "neutral", next: "id" },
+        { t: "Oh brilliant, yes please! Earlier is better.", k: "risky", next: "link" },
+        { t: "I thought I'd already been rebooked on the 21:35?", k: "safe", next: "rebooked" },
+        { t: "Can I just sort it in the SkyBridge app?", k: "safe", next: "app" },
+        { t: "Sorry, who is this exactly?", k: "neutral", next: "id" },
+      ] },
+      rebooked: { say: [
+        "[[That rebooking didn't go through, our system shows you without a seat. That's why we've reached out.|It contradicts the email SkyBridge actually sent you.]]",
+      ], options: [
+        { t: "Oh no. OK, what do I need to do?", k: "risky", next: "link" },
+        { t: "I'll call SkyBridge myself to check.", k: "safe", next: "web" },
       ] },
       link: { say: [
         "Great! [[Just pay the £45 rebooking fee and enter your card to confirm: skybridge-rebook.help/SB214|Airlines rebook cancelled flights for free, and that isn't their website.]]",
       ], options: [
-        { t: "Pay the £45 on the link", k: "breach" },
-        { t: "I'll call the number on SkyBridge's website", k: "safe", next: "web" },
+        { t: "£45 is fine to get home earlier. Paying now.", k: "breach" },
+        { t: "Can I call you on this number to pay instead?", k: "risky", next: "fakecall" },
+        { t: "I'll ring the helpline on skybridge.com first.", k: "safe", next: "web" },
+      ] },
+      fakecall: { say: [
+        "~ You call the WhatsApp number. \"SkyBridge Care, Alex speaking. Yes, that link's our secure payment page. It's completely safe to use.\"",
+      ], options: [
+        { t: "OK, that's reassuring. Paying on the link.", k: "breach" },
+        { t: "I'll still check with the helpline on skybridge.com.", k: "safe", next: "web" },
       ] },
       app: { say: [
         "🎤 [[The app won't show these seats, it's a special allocation for social media customers.|An excuse to keep you away from official channels.]]",
       ], options: [
-        { t: "OK, send me the link", k: "risky", next: "link" },
-        { t: "I'll call the number on SkyBridge's website", k: "safe", next: "web" },
+        { t: "Ah, makes sense. Go on then, send the link.", k: "risky", next: "link" },
+        { t: "I'll ring SkyBridge on the number on their website.", k: "safe", next: "web" },
       ] },
       id: { say: [
-        "Sure, it's SB-CC-0419 🙂 [[Now, the fee is just £45, shall I send the link?|Friendly, but straight back to payment.]]",
+        "Alex from customer care, staff ID SB-CC-0419 🙂 [[Shall I send the rebooking link? Seats are going.|Friendly, but straight back to payment.]]",
       ], options: [
-        { t: "Send the link", k: "risky", next: "link" },
-        { t: "I'll check with the airline directly", k: "safe", next: "web" },
+        { t: "Thanks Alex. Yes, send it.", k: "risky", next: "link" },
+        { t: "Why are you messaging me on WhatsApp?", k: "neutral", next: "whatsapp" },
+        { t: "I'll check with the airline directly.", k: "safe", next: "web" },
+      ] },
+      whatsapp: { say: [
+        "[[We reply on whichever channel the customer used, and you posted publicly. It's quicker than email!|It only knows about you because your post was public.]]",
+      ], options: [
+        { t: "Fair enough. Send the link.", k: "risky", next: "link" },
+        { t: "I'll call the helpline on skybridge.com.", k: "safe", next: "web" },
       ] },
       web: { say: [
         "~ SkyBridge's own helpline: \"You were already rebooked free of charge onto the 21:35, landing 00:50. We never contact customers on WhatsApp.\"",
@@ -763,15 +819,16 @@ const SCENARIOS = [
         "Your flight's changed, so you'll land around one in the morning. Our desk closes at midnight, so I'd like to set up a late check-in.",
         "There's no charge. Would you like a key code by text, or shall our night porter meet you?",
       ], options: [
-        { t: "A key code by text, please", k: "neutral", next: "code" },
-        { t: "The night porter, please", k: "neutral", next: "porter" },
-        { t: "Can you confirm my booking details first?", k: "safe", next: "confirm" },
+        { t: "A key code by text would be great, thanks.", k: "neutral", next: "code" },
+        { t: "Could the night porter meet me?", k: "neutral", next: "porter" },
+        { t: "Sorry, can you just confirm my booking details?", k: "safe", next: "confirm" },
+        { t: "Do you need a card to hold the room?", k: "risky", next: "nocard" },
       ] },
       confirm: { say: [
         "Of course. Two nights, the fourteenth and fifteenth, double room with breakfast, already paid through Staybook. You don't owe us anything.",
       ], options: [
-        { t: "Key code by text, please", k: "neutral", next: "code" },
-        { t: "Should I give you a card to guarantee the room?", k: "risky", next: "nocard" },
+        { t: "Perfect. Key code by text, please.", k: "neutral", next: "code" },
+        { t: "Great. Would you like my card details just in case?", k: "risky", next: "nocard" },
       ] },
       code: { say: ["Perfect. The code comes by text from Hotel Lumen at six p.m. on the day, and it'll be in the app too. Safe travels!"] },
       porter: { say: ["Great, Rui will be at the door. If anything changes, call the number on your booking confirmation. Boa viagem!"] },
@@ -796,28 +853,42 @@ const SCENARIOS = [
         "Hi! Elena here, host of the Old Town Loft in Prague 😊 Thanks for your booking request!",
         "[[Staybook takes 15% from both of us. If you pay me directly I'll knock €120 off.|Paying outside the platform throws away all its protection.]]",
       ], options: [
-        { t: "Sounds good, how do I pay?", k: "risky", next: "pay" },
-        { t: "I'd rather pay through Staybook", k: "safe", next: "push" },
-        { t: "Can we video call so I can see the flat?", k: "safe", next: "video" },
+        { t: "Oh nice, €120 is a lot. How do I pay you?", k: "risky", next: "pay" },
+        { t: "Thanks, but I'd rather keep it on Staybook.", k: "safe", next: "push" },
+        { t: "Could we do a quick video call so I can see the flat?", k: "safe", next: "video" },
+        { t: "Why does Staybook take so much?", k: "neutral", next: "fees" },
+      ] },
+      fees: { say: [
+        "[[They're crooks, honestly. Loads of hosts do direct bookings now, it's totally normal.|Normalising paying outside the platform.]]",
+      ], options: [
+        { t: "Fair. Send me your details.", k: "risky", next: "pay" },
+        { t: "I'll stick with Staybook all the same.", k: "safe", next: "push" },
       ] },
       pay: { say: [
         "$ [[Bank transfer · Payee: E. Novak · IBAN CZ65 0800 0000 1920 0014 5399 · €680|A private account with no buyer protection.]]",
         "🎤 [[Please send it today if you can, I've got other guests asking about these dates.|Urgency.]]",
       ], options: [
-        { t: "Send the €680", k: "breach" },
-        { t: "I'll only pay on Staybook", k: "safe", next: "push" },
+        { t: "Done, I'll send it tonight.", k: "breach" },
+        { t: "Could I pay half now and half when I arrive?", k: "risky", next: "half" },
+        { t: "Actually, I'll pay through Staybook.", k: "safe", next: "push" },
+      ] },
+      half: { say: [
+        "[[Sure, €340 now to hold it and the rest on arrival. Same account 😊|Any amount sent to this account is unprotected.]]",
+      ], options: [
+        { t: "Great, sending the €340 now.", k: "breach" },
+        { t: "On second thoughts, I'll report this to Staybook.", k: "safe", next: "report" },
       ] },
       push: { say: [
         "[[Staybook is so slow, my last guests lost the booking that way. Direct is safer, trust me!|Undermining the platform that protects you.]]",
       ], options: [
-        { t: "OK, sending the €680 directly", k: "breach" },
-        { t: "Report the listing to Staybook", k: "safe", next: "report" },
+        { t: "OK, you know best. Sending it directly.", k: "breach" },
+        { t: "I'll report the listing to Staybook.", k: "safe", next: "report" },
       ] },
       video: { say: [
         "🎤 [[Ah, my camera's broken on this phone, sorry! But all the photos are on the listing.|Refuses the one check that would prove the flat exists.]]",
       ], options: [
-        { t: "OK, how do I pay?", k: "risky", next: "pay" },
-        { t: "Report the listing to Staybook", k: "safe", next: "report" },
+        { t: "No worries. How do I pay?", k: "risky", next: "pay" },
+        { t: "I'll report the listing to Staybook.", k: "safe", next: "report" },
       ] },
       report: { say: ["~ Staybook: \"Thanks. This listing used stolen photos and has been removed. Never pay outside the platform.\""] },
     },
@@ -840,10 +911,12 @@ const SCENARIOS = [
         "Your trip to Rome is coming up: flight SB 516 on 22 Oct, seat 17C.",
         "Online check-in opens 24 hours before departure in the SkyBridge app. There's nothing to pay and nothing you need to do now.",
       ], options: [
-        { t: "Open the SkyBridge app and look at the booking", k: "safe", next: "app" },
-        { t: "Reply \"Thanks!\"", k: "neutral", next: "thanks" },
-        { t: "Send your passport number so they have it ready", k: "risky", next: "passport" },
+        { t: "Thanks!", k: "neutral", next: "thanks" },
+        { t: "Let me check that in the SkyBridge app.", k: "safe", next: "app" },
+        { t: "Want my passport number now to save time later?", k: "risky", next: "passport" },
+        { t: "Can I change my seat?", k: "neutral", next: "seat" },
       ] },
+      seat: { say: ["You can change your seat any time under Manage booking in the app. Some seats have a fee."] },
       app: { say: ["~ The app shows SB 516 to Rome on 22 Oct, seat 17C. It matches."] },
       thanks: { say: ["You're welcome. Enjoy Rome! ✈️"] },
       passport: { say: ["Please don't share passport details in chat. We already have everything we need for your booking."] },
@@ -868,29 +941,56 @@ const SCENARIOS = [
         "We're closing a confidential acquisition this afternoon. [[I need you to send two hundred and forty thousand pounds to our lawyers' escrow account before four.|An urgent, large, unusual payment.]]",
         "[[This is under NDA. Don't discuss it with anyone else in finance, including your manager.|Secrecy cuts out the normal approval checks.]]",
       ], options: [
-        { t: "I'll call you back on your usual mobile to confirm", k: "safe", next: "callback" },
-        { t: "Quick check: what did you say at last month's team dinner?", k: "safe", next: "question" },
-        { t: "OK, what are the account details?", k: "risky", next: "details" },
+        { t: "Of course. Can I just ring you on your mobile first?", k: "safe", next: "callback" },
+        { t: "Sure. Just so I know it's you, what's my job title?", k: "risky", next: "public" },
+        { t: "Before anything: what did you say at last month's team dinner?", k: "safe", next: "question" },
+        { t: "No problem. What are the account details?", k: "risky", next: "details" },
+      ] },
+      public: { say: [
+        "Ha, very good. You're our finance assistant, and you've been brilliant this year. [[Now please, the details, we're short on time.|Your job title is on LinkedIn. A public fact proves nothing.]]",
+      ], options: [
+        { t: "Sorry, just being careful. Go ahead.", k: "risky", next: "details" },
+        { t: "I'll still need to ring you on your mobile.", k: "safe", next: "callback" },
       ] },
       callback: { say: [
         "[[I'm in back-to-back meetings with the other side, I can't take calls. Just use this meeting.|Refusing to be verified on a separate channel.]]",
       ], options: [
-        { t: "Follow the dual-approval process anyway", k: "safe", next: "process" },
-        { t: "OK, send me the account details", k: "risky", next: "details" },
+        { t: "Understood. Send me the details.", k: "risky", next: "details" },
+        { t: "Could you email it from your work address?", k: "neutral", next: "email" },
+        { t: "I'll ring the mobile number from the staff list.", k: "safe", next: "process" },
+      ] },
+      email: { say: [
+        "[[My work email won't load over here, that's why we're on this call. Please, we're losing time.|An excuse to avoid the one channel you could check.]]",
+      ], options: [
+        { t: "OK, go ahead with the details.", k: "risky", next: "details" },
+        { t: "I'll ring the mobile number from the staff list.", k: "safe", next: "process" },
       ] },
       question: { say: [
         "[[Sorry, you're breaking up. Let's focus please, time is short.|Dodging a question only the real Richard could answer.]]",
       ], options: [
-        { t: "Follow the dual-approval process anyway", k: "safe", next: "process" },
-        { t: "OK, send me the account details", k: "risky", next: "details" },
+        { t: "Sorry. Go ahead, what are the details?", k: "risky", next: "details" },
+        { t: "I'll ring the mobile number from the staff list.", k: "safe", next: "process" },
       ] },
       details: { say: [
         "I'm sharing the details now.",
         "$ [[Faster Payment · Payee: Kinsley Legal Escrow Ltd · New payee · £240,000|A brand-new payee for a huge sum, under time pressure.]]",
         "[[Mark it urgent and skip the second approver. I've authorised it.|Bypassing controls is the whole point.]]",
       ], options: [
-        { t: "Send the £240,000", k: "breach" },
-        { t: "Follow the dual-approval process", k: "safe", next: "process" },
+        { t: "OK. Setting it up now, you'll have it before four.", k: "breach" },
+        { t: "I'll put it through, but it needs a second approver.", k: "safe", next: "second" },
+        { t: "Can I check with Finance Ops first?", k: "safe", next: "ops" },
+      ] },
+      second: { say: [
+        "[[There's no time. If this misses four o'clock the deal collapses, and that will be on you.|Pressure and blame to make you skip controls.]]",
+      ], options: [
+        { t: "OK, OK. Sending it now.", k: "breach" },
+        { t: "I'm sorry, I'll ring your mobile from the staff list.", k: "safe", next: "process" },
+      ] },
+      ops: { say: [
+        "[[No. I told you, this is under NDA. Nobody else can know until it's announced.|Secrecy again, to stop anyone checking.]]",
+      ], options: [
+        { t: "Understood. Sending it now.", k: "breach" },
+        { t: "I'll ring your mobile from the staff list.", k: "safe", next: "process" },
       ] },
       process: { say: ["~ You call Richard on his number from the staff directory. He's on holiday in Spain: \"I haven't been on any call. Don't send anything.\""] },
     },
@@ -913,16 +1013,25 @@ const SCENARIOS = [
         "Hi, hope you're well! Quick one on invoice INV-4471 for £8,340, the brochure print run.",
         "[[We've moved banks, so please pay our new account from today. Updated details below.|Bank details changing by email is the top sign of invoice fraud.]]",
         "$ [[New account · Brightline Print Ltd · Sort 60-83-71 · Acc 20449183|New details you can't verify from the email itself.]]",
+        "Thanks, Dan · Accounts, Brightline Print · [[0161 496 0999|Not the number you have for Brightline.]]",
       ], options: [
-        { t: "Update the details and pay", k: "breach" },
+        { t: "Update Brightline's bank details and schedule the payment", k: "breach" },
+        { t: "Reply to Dan asking him to confirm the change", k: "risky", next: "reply" },
+        { t: "Call Dan on the number in his email signature", k: "risky", next: "sigcall" },
         { t: "Call Brightline on the number in your supplier file", k: "safe", next: "call" },
-        { t: "Reply asking them to confirm the change", k: "risky", next: "reply" },
       ] },
       reply: { say: [
         "🎤 [[Yes, all confirmed, no problem! Could you pay it today please, our auditors need it closed this week.|A reply from the same attacker proves nothing.]]",
       ], options: [
         { t: "Pay the new account", k: "breach" },
+        { t: "Call the number in Dan's signature to be sure", k: "risky", next: "sigcall" },
         { t: "Call the number in your supplier file", k: "safe", next: "call" },
+      ] },
+      sigcall: { say: [
+        "~ You call 0161 496 0999. \"Brightline accounts, Dan speaking. Yes, that's right, we switched banks last month. Thanks for checking!\"",
+      ], options: [
+        { t: "Great, that's confirmed. Pay the new account", k: "breach" },
+        { t: "Call the number in your supplier file as well", k: "safe", next: "call" },
       ] },
       call: { say: ["~ Brightline's accounts team, on the number you already had: \"We haven't changed banks. Someone's got into our email. Thanks for calling.\""] },
     },
@@ -946,19 +1055,23 @@ const SCENARIOS = [
         "Hi, I'm Aisha from Northgate's payments team. Thanks for joining. This is a routine check on larger payments to new payees.",
         "Who is the payment to, and how did you get their bank details?",
       ], options: [
-        { t: "It's my builder's invoice. I checked the name matched.", k: "safe", next: "ok" },
+        { t: "It's my builder for the kitchen. The name check matched.", k: "neutral", next: "ok" },
         { t: "How do I know you're really from the bank?", k: "safe", next: "prove" },
-        { t: "Want my online banking password to speed this up?", k: "risky", next: "pw" },
+        { t: "Do you need my online banking password to speed it up?", k: "risky", next: "pw" },
+        { t: "Can I call you back on the number on my card?", k: "safe", next: "callback" },
+      ] },
+      callback: { say: ["~ You call the number on the back of your card. \"Yes, that video check is from us. I can see your £4,800 payment waiting.\""], options: [
+        { t: "It's my builder for the kitchen. The name check matched.", k: "neutral", next: "ok" },
       ] },
       prove: { say: [
         "Good instinct. You started this call from inside the Northgate app, so you know it's us. I'll never ask for your PIN, passwords or codes.",
       ], options: [
-        { t: "It's my builder's invoice. The name matched.", k: "safe", next: "ok" },
+        { t: "Fair enough. It's my builder's invoice and the name matched.", k: "neutral", next: "ok" },
       ] },
       pw: { say: [
         "Please don't share that with anyone, including me. I only need to know about the payment.",
       ], options: [
-        { t: "It's my builder's invoice. The name matched.", k: "safe", next: "ok" },
+        { t: "Sorry! It's my builder's invoice and the name matched.", k: "neutral", next: "ok" },
       ] },
       ok: { say: ["Thanks, that all sounds right and the name check matched too. I'll release the payment now. It should arrive within two hours."] },
     },
@@ -982,16 +1095,30 @@ const SCENARIOS = [
         "Hi! Still available? I'll take it at full price, no need to meet, my courier will collect 👍",
         "[[I've paid £450 to cover the courier too, so you just send £50 on to the courier's account.|An overpayment you're asked to send on.]]",
       ], options: [
-        { t: "Check your actual balance in the payment app", k: "safe", next: "balance" },
-        { t: "Where's the payment confirmation?", k: "risky", next: "email" },
-        { t: "Send the £50 courier fee", k: "breach" },
+        { t: "No problem! Send me the courier's details and I'll pay the £50.", k: "breach" },
+        { t: "Great, I'll check the payment's arrived first.", k: "safe", next: "balance" },
+        { t: "Can you send me the payment confirmation?", k: "risky", next: "email" },
+        { t: "Could you just pay cash when the courier collects?", k: "neutral", next: "cash" },
+      ] },
+      cash: { say: [
+        "[[Can't, I'm working away. Payment's already sent, just check your email 👍|Steers you to a fake confirmation instead of your real balance.]]",
+      ], options: [
+        { t: "OK, I'll look for the email.", k: "risky", next: "email" },
+        { t: "I'll check my payment app.", k: "safe", next: "balance" },
       ] },
       email: { say: [
         "$ [[Email from 'PayQuick Secure' <alerts@payments-secure-mail.com>: Funds of £450 held until seller sends courier fee.|Payment firms never hold money until you pay someone else.]]",
         "🎤 [[Please be quick, the courier's already on the way to you!|Rushing you.]]",
       ], options: [
-        { t: "Send the £50", k: "breach" },
-        { t: "Check your actual balance in the app", k: "safe", next: "balance" },
+        { t: "Looks official. Sending the £50.", k: "breach" },
+        { t: "Reply to the PayQuick email to ask about it", k: "risky", next: "pqreply" },
+        { t: "Check the balance in my payment app", k: "safe", next: "balance" },
+      ] },
+      pqreply: { say: [
+        "~ Instant reply from \"PayQuick Secure\": Funds are held pending the shipping fee of £50. Ref PQ-55120. Do not reply to this message.",
+      ], options: [
+        { t: "OK, it's genuine. Sending the £50.", k: "breach" },
+        { t: "Check the balance in my payment app", k: "safe", next: "balance" },
       ] },
       balance: { say: ["~ Your payment app shows £0 received. No pending payments."] },
     },
@@ -1015,13 +1142,15 @@ const SCENARIOS = [
         "🎤 It came to three hundred and sixty for the weekend, so a hundred and twenty each. I've sent you a request on the usual payments app, no rush, whenever you're paid.",
         "~ Your payments app shows a £120 request from Sam Okafor.",
       ], options: [
-        { t: "Pay the £120 request in the app", k: "safe", next: "paid" },
-        { t: "Can you send the booking confirmation?", k: "safe", next: "conf" },
-        { t: "Call Sam to double-check", k: "neutral", next: "call" },
+        { t: "Paying it now 👍", k: "neutral", next: "paid" },
+        { t: "Send me the booking confirmation?", k: "safe", next: "conf" },
+        { t: "Is this definitely you?", k: "neutral", next: "sure" },
+        { t: "Can I just bank transfer you instead?", k: "neutral", next: "bank" },
       ] },
+      sure: { say: ["lol yes it's me 😂 same number for 4 years. the request's from my account on the app"] },
+      bank: { say: ["easier through the app tbh, it's already there 🙂 no rush"] },
       paid: { say: ["legend, thank you! 🙌 see you in 3 weeks"] },
       conf: { say: ["sure 👍", "~ Screenshot: Old Town flat, Edinburgh · 3 guests · £360 total · booked by Sam Okafor."] },
-      call: { say: ["~ Sam picks up: \"Yeah, that's me! Pay whenever.\""] },
     },
     lesson: "Genuine: a saved contact with years of history, a request inside your payments app, and an amount that matches what you agreed.",
     greens: ["Saved contact with long history", "Request inside your real payments app", "No pressure, amount matches the plan"],
@@ -1130,7 +1259,7 @@ const HOOK = {
   "airline-dm": ["Your public post about SB 214", "You'd already been rebooked free onto the 21:35. SkyBridge talks to you through its verified account."],
   "rental-host": ["Your \"Prague next month!\" story and your Staybook enquiry", "Staybook's rule: all payments go through the app."],
   "cfo-deepfake": ["Richard's YouTube talk (to clone his voice), his holiday post and your job title", "Richard is on leave, his real email is @halegroup.co.uk, and over £10,000 needs two approvers."],
-  invoice: ["Brightline's hacked mailbox, with a real invoice and amount", "Dan's real address is @brightlineprint.co.uk, and nothing had changed about how you pay them."],
+  invoice: ["Brightline's hacked mailbox, with a real invoice and amount", "Dan's real address is @brightlineprint.co.uk, his real number ends 0321 (not 0999), and nothing had changed about how you pay them."],
   buyer: ["Your public marketplace listing", "A real payment shows in your app. No buyer needs you to pay them first."],
   hotel: [null, "Booking ref LX-88213 and your new 00:50 landing time both matched your briefing."],
   "gate-change": [null, "SB 516, seat 17C and the verified account all matched your briefing."],
@@ -1740,6 +1869,7 @@ function textUrgency() {
 }
 
 /* ---------------- Round flow ---------------- */
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function setVerdicts(on) { $("btnScam").disabled = !on; $("btnLegit").disabled = !on; }
 function renderReplies(options) {
   const box = $("replies"); box.innerHTML = "";
@@ -1858,7 +1988,7 @@ async function playNode(id, token) {
   if (id === "start") state.readyAt = performance.now();
   updateChecks();
   state.phase = "live";
-  state.options = node.options || [];
+  state.options = shuffle(node.options || []);
   renderReplies(state.options);
   setVerdicts(true);
 }
@@ -1878,7 +2008,7 @@ async function takeOption(i) {
     state.time = Math.max(1, state.time - CHECK_SECS);
     const note = addMsg("sys"); note.textContent = "You take " + CHECK_SECS + " seconds to check…";
     if (cur.mode === "video") toast("You take " + CHECK_SECS + " seconds to check…");
-    state.verified = true;
+    if (o.k === "safe") state.verified = true;
     await sleep(900);
   } else await sleep(500);
   if (o.next) await playNode(o.next, state.token);
@@ -2157,7 +2287,7 @@ function endGame(reason) {
       body.appendChild(el("div", "sec-t", "Why it was genuine"));
       const gl = el("ul"); r.cur.greens.forEach((x) => gl.appendChild(el("li", null, x))); body.appendChild(gl);
     }
-    const mv = r.moves.length ? "Your replies: " + r.moves.map((m) => ({ safe: "cautious", risky: "played along", neutral: "neutral", breach: "paid or handed over" })[m]).join(", ") + "." : "You decided without replying.";
+    const mv = r.moves.length ? "Your replies: " + r.moves.map((m) => ({ safe: "checked or pushed back", risky: "played along", neutral: "neutral", breach: "paid or handed over" })[m]).join(", ") + "." : "You decided without replying.";
     body.appendChild(el("div", "caveat", mv + (r.checked ? " You used a security check." : "")));
     det.appendChild(body); list.appendChild(det);
   });
