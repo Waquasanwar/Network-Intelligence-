@@ -87,6 +87,7 @@
   .lede { font-size: 17px; color: var(--muted); max-width: 52ch; margin: 0 0 20px; }
   .toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
   .toggle input { width: 16px; height: 16px; accent-color: var(--you); }
+  .howto { margin: 16px 0 0; max-width: 46ch; font-size: 14px; color: var(--muted); }
   .persona { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 16px; font-size: 14px; color: var(--muted); }
   .pchip { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 14px 6px 6px; font-weight: 600; font-size: 14px; color: var(--text); }
   .pchip b { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: #fff; background: #94a3b8; }
@@ -596,8 +597,8 @@
   <div class="top-row">
     <div class="brand"><span class="h">Hacker</span><span class="vs">vs</span><span class="y">You</span></div>
     <span class="goal">Goal: get through the day without being hacked</span>
-    <span class="pillstat" id="contactNo">Contact 0/10</span>
-    <span class="timer" id="timer" title="Time left in your day">5:00</span>
+    <span class="pillstat" id="contactNo">Contact 0/2</span>
+    <span class="timer" id="timer" title="Time left in this part of your day">2:30</span>
     <span class="status ok" id="statusChip" hidden>Not hacked</span>
     <span class="lost" id="stolen" hidden>AED 0 lost</span>
   </div>
@@ -609,20 +610,20 @@
   <section id="screenStart">
     <div class="hero">
       <div>
-        <div class="kicker">Cyber awareness · 5 minutes</div>
+        <div class="kicker">Cyber awareness · 3 short parts</div>
         <h1>Get through today <span class="h">without getting hacked.</span></h1>
-        <p class="lede">It's Tuesday 14 October in Dubai. You're a finance officer at Dunes Capital in Business Bay: at work until five, then flying to Istanbul tonight. Six calls, chats and emails will arrive through your day. Some are real people. The rest are one hacker who has picked you, coming back from a different angle each time. You have one goal: don't let them in.</p>
+        <p class="lede">It's Tuesday 14 October in Dubai. You're a finance officer at Dunes Capital in Business Bay: at work until five, then flying to Istanbul tonight. One hacker has picked you, and they'll try again at each part of your day. In every part, one contact is them and one is a real person. You have one goal: don't let them in.</p>
         <div class="persona" role="radiogroup" aria-label="Who do you want to play?"><span>Play as</span>
           <button class="pchip on" data-p="f" role="radio" aria-checked="true"><b>LR</b>Layla Rahman</button>
           <button class="pchip" data-p="m" role="radio" aria-checked="false"><b>YR</b>Yousef Rahman</button>
         </div>
         <div class="cta"><button class="btn big" id="btnStart">Start my day</button><label class="toggle"><input type="checkbox" id="optVoice" checked> Play voices out loud</label></div>
+        <p class="howto">No hints and no "is this a scam?" button. Reply, pay, hang up, check or block, as you would on a busy day. Checking with someone takes time. After each part you'll see what really happened.</p>
       </div>
-      <ol class="steps">
-        <li><div><b>Read your briefing</b><span>90 seconds to learn who you are, what's happening today and what's public about you. Then it's gone.</span></div></li>
-        <li><div><b>Live your day</b><span>Video calls, chats and emails arrive one at a time. Reply, pay, hang up or block, just as you would on a normal busy day.</span></div></li>
-        <li><div><b>Nobody warns you</b><span>There are no hints and no "is this a scam?" button. Checking with someone takes time out of your day, so choose when it matters.</span></div></li>
-        <li><div><b>Find out the truth</b><span>When your day ends you'll see exactly when you were hacked, what gave it away, and who you let down by mistake.</span></div></li>
+      <ol class="steps parts">
+        <li><div><b>Morning at your desk</b><span>09:00 – 10:00 · your inbox, your suppliers and a friend</span></div></li>
+        <li><div><b>Midday: your flight</b><span>11:00 – 13:00 · a cancelled flight and a public complaint</span></div></li>
+        <li><div><b>Afternoon: the boss is away</b><span>13:00 – 15:00 · Omar is in London and you're watching the payments</span></div></li>
       </ol>
     </div>
   </section>
@@ -634,14 +635,14 @@
         <div class="idcard">
           <span class="idav" id="bIni">LR</span>
           <div>
-            <div class="kicker">Your briefing · memorise it</div>
+            <div class="kicker"><span id="bPart">Part 1</span> · your briefing</div>
             <h1 class="idname" id="bName">Layla Rahman</h1>
             <div class="idmeta"><span>31</span><span>Dubai</span><span>Finance officer, Dunes Capital</span></div>
           </div>
         </div>
         <div class="dtimer">
           <svg viewBox="0 0 64 64" class="ring" aria-hidden="true"><circle cx="32" cy="32" r="28" class="ring-bg"/><circle cx="32" cy="32" r="28" class="ring-fg" id="bRing"/></svg>
-          <div class="dtimer-txt"><span class="num" id="bClock">1:30</span><small>until your day starts</small></div>
+          <div class="dtimer-txt"><span class="num" id="bClock">1:00</span><small>until this part starts</small></div>
           <button class="btn" id="btnReady">I'm ready</button>
         </div>
       </div>
@@ -791,7 +792,7 @@
         <h1 id="endTitle"></h1>
         <p class="lede" id="endLine"></p>
         <div class="score2" id="endTiles"></div>
-        <div class="row2"><button class="btn" id="btnAgain">Play again</button></div>
+        <div class="row2"><button class="btn" id="btnNext" hidden>Next part</button><button class="btn alt" id="btnAgain">Play again</button></div>
       </div>
       <div class="card profile" id="profileCard"></div>
     </div>
@@ -1105,13 +1106,8 @@ const ADVICE = {
   "cfo-deepfake": "A face and voice on video are no longer proof. Big, urgent, secret payments must be confirmed on a separate channel you already know.",
   invoice: "When a supplier's bank details change by email, call them on the number you already hold before paying a single dirham.",
 };
-const DECIDE_SECS = 40, CHECK_SECS = 25, BRIEF_SECS = 90, DAY_SECS = 300, CHECKS = 3;
+const DECIDE_SECS = 40, CHECK_SECS = 25, BRIEF_SECS = 60, CHECKS = 3;
 const DAY_LABEL = "Tuesday 14 October";
-/* One day, in order. Times are the in-game clock (Dubai). */
-const DAY = [
-  ["friend-split", "09:10"], ["invoice", "09:45"], ["airline-dm", "11:15"],
-  ["bank-video", "12:20"], ["gate-change", "13:05"], ["cfo-deepfake", "14:10"],
-];
 /* What happens when you block or abandon a real person. */
 const CONSEQ = {
   "gate-change": "That was your real airline. Ignore genuine messages and you'll miss the ones that matter.",
@@ -1136,57 +1132,83 @@ function P(t) {
   const p = (state && state.persona) || PERSONAS.f;
   return String(t).replace(/\{FIRST\}/g, p.first).replace(/\{NAME\}/g, p.name).replace(/\{HANDLE\}/g, p.handle).replace(/\{INI\}/g, p.ini);
 }
-const MISSION = {
-  story: [
-    "It's <b>Tuesday 14 October</b> in Dubai. You're <b>{NAME}</b>, a finance officer at <b>Dunes Capital</b> in Business Bay. You can set up and approve company payments, which makes you worth targeting.",
-    "Your boss <b>Omar Saeed</b> is in London until the 20th, so you're keeping an eye on payments while he's away.",
-    "This morning SkyBridge cancelled your flight to Istanbul. You complained about it online, and the airline has already rebooked you onto tonight's <b>21:35</b>. You're working until five, paying your contractor at lunchtime, then heading to DXB.",
-  ],
-  threat: [
-    "<b>One attacker has picked you.</b> You can approve company payments, and your public posts make you easy to research.",
-    "They've spent a week reading what you, Omar and your suppliers share online. Today they'll try more than once, and each attempt will use something they've learned.",
-    "<b>They won't look like a hacker.</b> They'll look like the people and companies you deal with every day.",
-  ],
-  goal: "Get through all six contacts today without paying, clicking or handing anything to the hacker, and without letting down the real people who need you.",
-  can: ["Talk to them and see how they react", "Pay, or back out at the payment screen", "Hang up, close or archive", "Check with the real person or service (it takes time out of your day)", "Block and report"],
-  expect: [
-    ["mail", "Al Waha Printing", "about invoice INV-4471, due Thursday"],
-    ["video", "Gulfstar Bank", "they sometimes check large payments in their app"],
-    ["chat", "SkyBridge Airways", "about your flights"],
-    ["chat", "Priya", "sorting out the money for the RAK chalet"],
-  ],
-};
-const BRIEF = {
-  today: [
-    ["08:30", "Start work", "Dunes Capital finance team, Business Bay"],
-    ["12:00", "Pay your contractor", "<span class='fact'>AED 18,000</span> for the kitchen, from your Gulfstar account", 1],
-    ["17:00", "Leave for DXB", "Your Istanbul flight <span class='fact'>SB 214</span> was cancelled this morning"],
-    ["21:35", "Fly to Istanbul", "SkyBridge rebooked you free onto the <span class='fact'>21:35</span>, landing <span class='fact'>01:15</span> local time", 1],
-    ["01:15", "Hotel Lumen, Istanbul", "Ref <span class='fact'>LX-88213</span> · 14–15 Oct · already paid on Staybook", 1],
-  ],
-  later: [
-    ["Thursday", "Al Waha Printing invoice due", "<span class='fact'>INV-4471</span> · <span class='fact'>AED 31,500</span> · paid the usual way, nothing has changed"],
-    ["22 Oct", "Baku", "SkyBridge <span class='fact'>SB 516</span> · seat <span class='fact'>17C</span>"],
-    ["Weekend", "Ras Al Khaimah with Priya", "Chalet for 3 people, about <span class='fact'>AED 1,800</span>"],
-  ],
-  people: [
-    { n: "Omar Saeed", r: "CFO · your boss", d: "o.saeed@dunescapital.ae", note: "In London until the 20th" },
-    { n: "Imran Qureshi", r: "Accounts · Al Waha Printing", d: "imran@alwahaprinting.ae · office +971 4 284 3170" },
-    { n: "Priya Nair", r: "Friend", d: "Saved in your contacts" },
-    { n: "Gulfstar Bank", r: "Your bank", d: "Only ever contacts you inside its app", logo: "GB", c: "#0f766e" },
-    { n: "SkyBridge Airways", r: "Airline", d: "Verified ✓ chat · helpline on skybridge.com", logo: "SB", c: "#2563c9" },
-  ],
-  rules: [
-    "Supplier bank details are only changed after a call to the <b>number already on file</b>.",
-    "Payments over <b>AED 40,000</b> need two approvers, whoever is asking.",
-  ],
-  public: [
-    ["Post", "@{HANDLE}", "2h", "Thanks @SkyBridge for cancelling SB 214 🙃 Istanbul tonight, apparently."],
-    ["LinkedIn", "{NAME}", "profile", "Finance officer at Dunes Capital"],
-    ["LinkedIn", "Omar Saeed", "3d", "London for a week, back on the 20th! 🇬🇧"],
-    ["YouTube", "Omar Saeed", "2024", "Gulf Finance Forum talk · 38:20 of his voice"],
-  ],
-};
+/* The day comes in three short parts. One hacker runs through all of them. */
+const PART_SECS = 150;
+const SITUATION = "It's <b>Tuesday 14 October</b> in Dubai. You're <b>{NAME}</b>, a finance officer at <b>Dunes Capital</b> in Business Bay. You can set up and approve company payments, which makes you worth targeting.";
+const CAN = ["Talk to them and see how they react", "Pay, or back out at the payment screen", "Hang up, close or archive", "Check with the real person or service (it takes time)", "Block and report"];
+const PARTS = [
+  {
+    title: "Morning at your desk", when: "09:00 – 10:00", blurb: "Your inbox, your suppliers and a friend sorting out the weekend.",
+    scenes: [["friend-split", "09:10"], ["invoice", "09:45"]],
+    story: [
+      "You're at your desk clearing the morning's messages. Thursday's supplier payments are on your list.",
+      "Al Waha Printing's invoice for the annual report is due Thursday. You've paid them the same way for three years.",
+    ],
+    threat: "<b>One attacker has picked you.</b> They've spent a week reading what you and your suppliers share online. Today they'll try more than once.",
+    expect: [["mail", "Al Waha Printing", "about invoice INV-4471, due Thursday"], ["chat", "Priya", "sorting out the money for the RAK chalet"]],
+    today: [
+      ["08:30", "Start work", "Dunes Capital finance team, Business Bay"],
+      ["10:00", "Supplier run", "Check Thursday's payments before they're approved", 1],
+    ],
+    later: [
+      ["Thursday", "Al Waha Printing invoice due", "<span class='fact'>INV-4471</span> · <span class='fact'>AED 31,500</span> · paid the usual way, nothing has changed"],
+      ["Weekend", "Ras Al Khaimah with Priya", "Chalet for 3 people, <span class='fact'>AED 1,800</span>, split three ways"],
+    ],
+    people: [
+      { n: "Imran Qureshi", r: "Accounts · Al Waha Printing", d: "imran@alwahaprinting.ae · office +971 4 284 3170" },
+      { n: "Priya Nair", r: "Friend", d: "Saved in your contacts" },
+    ],
+    rules: ["Supplier bank details are only changed after a call to the <b>number already on file</b>."],
+    public: [
+      ["LinkedIn", "{NAME}", "profile", "Finance officer at Dunes Capital · supplier payments"],
+      ["Website", "Al Waha Printing", "clients", "Proud to print annual reports for Dunes Capital"],
+    ],
+  },
+  {
+    title: "Midday: your flight", when: "11:00 – 13:00", blurb: "Your flight was cancelled and you complained about it online.",
+    scenes: [["airline-dm", "11:15"], ["gate-change", "12:40"]],
+    story: [
+      "This morning SkyBridge cancelled <b>SB 214</b>, your flight to Istanbul tonight. You complained about it publicly.",
+      "SkyBridge has already rebooked you, free, onto tonight's <b>21:35</b>. You also fly to Baku next week.",
+    ],
+    threat: "<b>Same attacker, new angle.</b> They watch for people complaining to companies in public, then pose as the company.",
+    expect: [["chat", "SkyBridge Airways", "about your flights"]],
+    today: [
+      ["11:00", "Lunch break", "Sorting out tonight's trip on your phone"],
+      ["17:00", "Leave for DXB", "Your Istanbul flight <span class='fact'>SB 214</span> was cancelled this morning"],
+      ["21:35", "Fly to Istanbul", "SkyBridge rebooked you free onto the <span class='fact'>21:35</span>, landing <span class='fact'>01:15</span> local time", 1],
+    ],
+    later: [["22 Oct", "Baku", "SkyBridge <span class='fact'>SB 516</span> · seat <span class='fact'>17C</span>"]],
+    people: [{ n: "SkyBridge Airways", r: "Airline", d: "Verified ✓ chat · helpline on skybridge.com", logo: "SB", c: "#2563c9" }],
+    rules: ["Flight changes are only made in the <b>SkyBridge app</b> or on skybridge.com."],
+    public: [["Post", "@{HANDLE}", "2h", "Thanks @SkyBridge for cancelling SB 214 🙃 Istanbul tonight, apparently."]],
+  },
+  {
+    title: "Afternoon: the boss is away", when: "13:00 – 15:00", blurb: "Omar is in London and you're watching the payments.",
+    scenes: [["bank-video", "13:20"], ["cfo-deepfake", "14:10"]],
+    story: [
+      "Your boss <b>Omar Saeed</b> is in London until the 20th, so you're keeping an eye on company payments.",
+      "At 13:00 you paid your kitchen contractor <b>AED 18,000</b> from your own Gulfstar account.",
+    ],
+    threat: "<b>The attacker is going for the big one.</b> They've studied Omar's posts and his public talks.",
+    expect: [["video", "Gulfstar Bank", "they sometimes check large payments in their app"]],
+    today: [
+      ["13:00", "Pay your contractor", "<span class='fact'>AED 18,000</span> for the kitchen, from your Gulfstar account", 1],
+      ["15:00", "Payments cut-off", "Anything not approved by three goes tomorrow"],
+    ],
+    later: [["20 Oct", "Omar back in Dubai", "Until then he's on email at <span class='fact'>o.saeed@dunescapital.ae</span>"]],
+    people: [
+      { n: "Omar Saeed", r: "CFO · your boss", d: "o.saeed@dunescapital.ae · mobile in the company directory", note: "In London until the 20th" },
+      { n: "Gulfstar Bank", r: "Your bank", d: "Only ever contacts you inside its app", logo: "GB", c: "#0f766e" },
+    ],
+    rules: ["Payments over <b>AED 40,000</b> need two approvers, whoever is asking."],
+    public: [
+      ["LinkedIn", "Omar Saeed", "3d", "London for a week, back on the 20th! 🇬🇧"],
+      ["YouTube", "Omar Saeed", "2024", "Gulf Finance Forum talk · 38:20 of his voice"],
+      ["LinkedIn", "{NAME}", "profile", "Finance officer at Dunes Capital"],
+    ],
+  },
+];
 const HOOK = {
   "airline-dm": ["Your public post about SB 214", "You'd already been rebooked free onto the 21:35. SkyBridge talks to you through its verified account."],
   "cfo-deepfake": ["Omar's YouTube talk (to clone his voice), his London post and your job title", "Omar is away, his real email is @dunescapital.ae, and over AED 40,000 needs two approvers."],
@@ -1227,7 +1249,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* unavailable */ } },
 };
 const state = {
-  phase: "idle", time: 300, hacked: 0, blocked: 0, stolen: 0,
+  phase: "idle", time: 150, hacked: 0, blocked: 0, stolen: 0,
   order: [], idx: -1, cur: null, token: 0, readyAt: 0, moves: [], pressure: 0,
   speaking: false, voiceNote: false, realAudio: false, results: [], voiceOn: true, callStart: 0, photo: false,
 };
@@ -1684,7 +1706,7 @@ const fmt = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + 
 function hud() {
   $("timer").textContent = fmt(state.time);
   $("timer").classList.toggle("warn", state.time <= 30 && ["ringing", "playing", "live", "debrief"].includes(state.phase));
-  const n = state.order.length || DAY.length;
+  const n = state.order.length || 2;
   $("contactNo").textContent = "Contact " + Math.max(0, Math.min(state.idx + 1, n)) + "/" + n;
   const h = state.hacked || 0;
   $("statusChip").className = "status " + (h ? "bad" : "ok");
@@ -1885,7 +1907,7 @@ function setActions(on) {
 
 function nextRound() {
   state.idx++;
-  if (state.idx >= state.order.length) return endGame("Your day is done");
+  if (state.idx >= state.order.length) return endGame(PARTS[state.part + 1] ? "Part done" : "Your day is done");
   const cur = state.cur = state.order[state.idx];
   state.token++; state.moves = []; state.replies = []; state.path = []; state.options = null; state.callStart = 0;
   state.readyAt = 0; state.verified = false; state.breached = false; state.breachText = ""; state.lossThis = 0;
@@ -2087,38 +2109,53 @@ function record(outcome, exit) {
 }
 
 /* ---------------- Start, briefing ---------------- */
-function startGame() {
+function startGame(partIdx) {
   audio();
-  state.persona = PERSONAS[state.pick || "f"];
-  Object.assign(state, { time: DAY_SECS, hacked: 0, blocked: 0, stolen: 0, idx: -1, results: [], readyAt: 0,
+  if (typeof partIdx !== "number") partIdx = state.partPick || 0;
+  if (partIdx === 0 || !state.persona) { state.persona = PERSONAS[state.pick || "f"]; state.history = {}; }
+  state.part = partIdx; state.partPick = partIdx;
+  const part = PARTS[partIdx];
+  Object.assign(state, { time: PART_SECS, hacked: 0, blocked: 0, stolen: 0, idx: -1, results: [], readyAt: 0,
     voiceOn: $("optVoice").checked, phase: "idle", checksLeft: CHECKS, checksUsed: 0 });
-  state.order = DAY.map(([id, at]) => Object.assign(SCENARIOS.find((s) => s.id === id), { at }));
+  state.order = part.scenes.map(([id, at]) => Object.assign(SCENARIOS.find((s) => s.id === id), { at }));
   $("optVoice2").checked = state.voiceOn;
   showBrief();
 }
 let briefTimer = null;
+/* What the hacker has already tried today, shown in later briefings. */
+function hackerSoFar() {
+  const tried = Object.values(state.history || {}).flat().filter((r) => r.cur.scam);
+  if (!tried.length) return "";
+  const got = tried.filter((r) => r.outcome === "hacked");
+  return "<p>" + (got.length ? "Earlier today they got " + money(got.reduce((a, r) => a + r.loss, 0)) + " from you. They'll be back for more."
+    : "They've already tried once today and got nothing. They're changing tactics.") + "</p>";
+}
 function showBrief() {
   $("screenStart").hidden = true; $("screenEnd").hidden = true; $("screenGame").hidden = true; $("screenBrief").hidden = false;
   window.scrollTo(0, 0);
   $("bIni").textContent = state.persona.ini; $("bName").textContent = state.persona.name;
   const ini = (n) => n.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const tick = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--you)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>';
-  const today = `<div class="dcard"><h3>Today <small>${DAY_LABEL}</small></h3><div class="tl">${BRIEF.today.map(([t, h, d, k]) =>
+  const B = PARTS[state.part];
+  const today = `<div class="dcard"><h3>Today <small>${B.when}</small></h3><div class="tl">${B.today.map(([t, h, d, k]) =>
     `<div class="tl-row${k ? " key" : ""}"><span class="tl-time">${t}</span><span class="tl-dot"></span><div><b>${h}</b><span>${d}</span></div></div>`).join("")}</div></div>`;
-  const later = `<div class="dcard"><h3>Coming up</h3><div class="later">${BRIEF.later.map(([w, h, d]) =>
+  const later = `<div class="dcard"><h3>Coming up</h3><div class="later">${B.later.map(([w, h, d]) =>
     `<div class="later-row"><span class="when">${w}</span><div><b>${h}</b><span>${d}</span></div></div>`).join("")}</div></div>`;
-  const people = `<div class="dcard"><h3>Who's who <small>their real details</small></h3><div class="people">${BRIEF.people.map((p) =>
+  const people = `<div class="dcard"><h3>Who's who <small>their real details</small></h3><div class="people">${B.people.map((p) =>
     `<div class="person"><span class="pav${p.logo ? " sq" : ""}"><span class="ini" style="background:${p.c || AV_COLORS[p.n.length % AV_COLORS.length]}">${p.logo || ini(p.n)}</span></span><div><b>${p.n} <span class="prole">· ${p.r}</span></b><span class="det">${p.d}</span>${p.note ? `<span class="note">${p.note}</span>` : ""}</div></div>`).join("")}</div></div>`;
-  const rules = `<div class="dcard"><h3>Your rules</h3><ul class="rules">${BRIEF.rules.map((r) => `<li><i>${tick}</i><span>${r}</span></li>`).join("")}</ul></div>`;
-  const pub = `<div class="dcard pub"><h3>What the hacker can see <small>public</small></h3><div class="feed">${BRIEF.public.map(([pl, who, when, txt]) =>
+  const rules = `<div class="dcard"><h3>Your rules</h3><ul class="rules">${B.rules.map((r) => `<li><i>${tick}</i><span>${r}</span></li>`).join("")}</ul></div>`;
+  const pub = `<div class="dcard pub"><h3>What the hacker can see <small>public</small></h3><div class="feed">${B.public.map(([pl, who, when, txt]) =>
     `<div class="post"><div class="ph"><span><span class="plat">${pl}</span> · <b>${who}</b></span><span>${when}</span></div><p>${txt}</p></div>`).join("")}</div></div>`;
-  const expect = `<div class="dcard"><h3>Expect to hear from <small>and why</small></h3><ul class="expect">${MISSION.expect.map(([k, w, why]) =>
+  const expect = `<div class="dcard"><h3>Expect to hear from <small>and why</small></h3><ul class="expect">${B.expect.map(([k, w, why]) =>
     `<li><i>${ICON[k]}</i><span><b>${w}</b><small>${why}</small></span></li>`).join("")}</ul><p class="expect-foot">You may also hear from people you weren't expecting.</p></div>`;
   const fill = (el) => { el.innerHTML = P(el.innerHTML); };
-  $("bMission").innerHTML = `<div class="mcard story"><span class="tag2">The situation</span>${MISSION.story.map((x) => `<p>${x}</p>`).join("")}</div>`
-    + `<div class="mcard threat"><span class="tag2">The threat</span>${MISSION.threat.map((x) => `<p>${x}</p>`).join("")}</div>`
-    + `<div class="mcard goal2"><span class="tag2">Your objective</span><p>${MISSION.goal}</p><p style="margin-top:10px"><b>What you can do</b></p><ul>${MISSION.can.map((x) => `<li>${x}</li>`).join("")}</ul></div>`;
-  $("bGrid").innerHTML = `<div class="dcol">${today}${later}</div><div class="dcol">${expect}${people}${rules}</div><div class="dcol">${pub}</div>`;
+  const story = (state.part === 0 ? [SITUATION] : []).concat(B.story);
+  const goal = "Get through " + (B.scenes.length === 2 ? "both contacts" : "every contact") + " in this part of your day without paying, clicking or handing anything to the hacker, and without letting down a real person.";
+  $("bPart").textContent = "Part " + (state.part + 1) + " of " + PARTS.length + " · " + B.title;
+  $("bMission").innerHTML = `<div class="mcard story"><span class="tag2">The situation</span>${story.map((x) => `<p>${x}</p>`).join("")}</div>`
+    + `<div class="mcard threat"><span class="tag2">The threat</span><p>${B.threat}</p>${hackerSoFar()}<p><b>They won't look like a hacker.</b> They'll look like the people and companies you deal with.</p></div>`
+    + `<div class="mcard goal2"><span class="tag2">Your objective</span><p>${goal}</p><p style="margin-top:10px"><b>What you can do</b></p><ul>${CAN.map((x) => `<li>${x}</li>`).join("")}</ul></div>`;
+  $("bGrid").innerHTML = `<div class="dcol">${today}${later}</div><div class="dcol">${expect}${people}</div><div class="dcol">${pub}${rules}</div>`;
   fill($("bMission")); fill($("bGrid"));
   let left = BRIEF_SECS;
   const C = 2 * Math.PI * 28;
@@ -2171,10 +2208,15 @@ function endGame(reason) {
   const verifiedN = R.filter((r) => r.verified).length;
   const firstHack = R.find((r) => r.outcome === "hacked");
 
-  $("endReason").textContent = reason + " · " + DAY_LABEL;
-  $("endTitle").textContent = !R.length ? "You didn't answer anyone." : hacked === 0 ? (blocked + unresolved === 0 && unseen === 0 ? "You beat the hacker." : "You didn't get hacked.") : "You were hacked " + (hacked === 1 ? "once" : hacked + " times") + " today.";
+  state.history[state.part] = R;
+  const nextPart = PARTS[state.part + 1];
+  $("endReason").textContent = reason + " · Part " + (state.part + 1) + " of " + PARTS.length + " · " + PARTS[state.part].title;
+  $("btnNext").hidden = !nextPart;
+  if (nextPart) $("btnNext").textContent = "Next: " + nextPart.title;
+  $("btnAgain").textContent = nextPart ? "Replay this part" : "Play the day again";
+  $("endTitle").textContent = !R.length ? "You didn't answer anyone." : hacked === 0 ? (blocked + unresolved === 0 && unseen === 0 ? (PARTS[state.part + 1] ? "You kept the hacker out " + ["this morning", "at lunchtime", "this afternoon"][state.part] + "." : "You beat the hacker.") : "You didn't get hacked.") : "You were hacked " + (hacked === 1 ? "once" : hacked + " times") + " " + ["this morning", "at lunchtime", "this afternoon"][state.part] + ".";
   $("endLine").textContent = !R.length ? "Start again and work through your day."
-    : hacked === 0 && blocked + unresolved === 0 && unseen === 0 ? "Every attack failed and every real person was looked after. A perfect day."
+    : hacked === 0 && blocked + unresolved === 0 && unseen === 0 ? "Every attack failed and every real person was looked after." + (PARTS[state.part + 1] ? "" : " A perfect day.")
     : hacked === 0 ? "No money lost. " + (blocked + unresolved ? "But " + (blocked + unresolved) + " real " + (blocked + unresolved > 1 ? "people were" : "person was") + " left worse off. " : "") + (unseen ? unseen + " contact" + (unseen > 1 ? "s" : "") + " never got answered." : "")
     : "It started at " + firstHack.cur.at + ", when you said: “" + firstHack.breachText.replace(/[.!?]$/, "") + "”. Nobody told you at the time, and that's how real hacks work.";
   const tiles = [["Times hacked", hacked, "h"], ["Money lost", money(state.stolen), "h"], ["Attacks that failed", kept + "/" + scams.length, "y"], ["Real people let down", (blocked + unresolved) + "/" + reals.length, "w"]];
@@ -2185,7 +2227,7 @@ function endGame(reason) {
   const letDown = blocked + unresolved;
   let prof, desc;
   if (!R.length) { prof = "Not tested"; desc = "You didn't finish a single contact."; }
-  else if (hacked === 0 && letDown === 0) { prof = "Human firewall"; desc = "You acted like a professional all day: you checked details against what you knew and never let pressure decide for you."; }
+  else if (hacked === 0 && letDown === 0) { prof = "Human firewall"; desc = "You acted like a professional: you checked details against what you knew and never let pressure decide for you."; }
   else if (hacked > letDown) { prof = "Too trusting"; desc = "The hacker got what they wanted more often than you were wrongly cautious. Friendly faces, believable stories and time pressure work on you."; }
   else if (letDown > hacked) { prof = "Over-cautious"; desc = "You kept the hacker out but let real people down. Look for proof, like a detail that doesn't match your briefing, rather than a bad feeling."; }
   else { prof = "Mixed instincts"; desc = "You went wrong in both directions. Compare every request with what you already know before acting."; }
@@ -2201,7 +2243,7 @@ function endGame(reason) {
   const tg = el("div", "tags"); tags.forEach((t) => tg.appendChild(el("span", "tag", t))); pc.appendChild(tg);
 
   const rep = $("report"); rep.innerHTML = "";
-  const k = el("div", "card"); k.appendChild(el("h3", null, "Your day in numbers"));
+  const k = el("div", "card"); k.appendChild(el("h3", null, "This part in numbers"));
   const kp = el("div", "kpis");
   [
     [scams.length ? Math.round((kept / scams.length) * 100) + "%" : "—", "Attacks that failed", kept + " of " + scams.length + " · " + reported + " reported"],
@@ -2215,10 +2257,11 @@ function endGame(reason) {
 
   const plan = el("div", "card"); plan.appendChild(el("h3", null, "The hacker's plan"));
   const pw = el("div", "tact");
-  state.order.filter((c) => PLAN[c.id]).forEach((c, i) => {
-    const r = R.find((x) => x.cur === c), o = r ? OUTCOME[r.outcome] : null;
+  const allR = Object.values(state.history).flat();
+  PARTS.flatMap((p) => p.scenes).filter(([id]) => PLAN[id]).forEach(([id, at], i) => {
+    const r = allR.find((x) => x.cur.id === id), o = r ? OUTCOME[r.outcome] : null;
     const row = el("div", "tact-row");
-    row.append(el("b", null, "Attempt " + (i + 1) + " · " + c.at), o ? el("span", "res " + o[1], o[2]) : el("span", "res", "Not reached"), el("span", null, PLAN[c.id]));
+    row.append(el("b", null, "Attempt " + (i + 1) + " · " + at), o ? el("span", "res " + o[1], o[2]) : el("span", "res", "Still to come"), el("span", null, o ? PLAN[id] : "You'll find out later in the day."));
     pw.appendChild(row);
   });
   plan.appendChild(pw); rep.appendChild(plan);
@@ -2316,8 +2359,9 @@ document.querySelectorAll(".pchip").forEach((b) => b.addEventListener("click", (
   state.pick = b.dataset.p;
   document.querySelectorAll(".pchip").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-checked", x === b); });
 }));
-$("btnStart").addEventListener("click", startGame);
-$("btnAgain").addEventListener("click", startGame);
+$("btnStart").addEventListener("click", () => startGame(0));
+$("btnAgain").addEventListener("click", () => startGame(PARTS[state.part + 1] ? state.part : 0));
+$("btnNext").addEventListener("click", () => startGame(state.part + 1));
 $("btnAnswer").addEventListener("click", answer);
 $("btnDecline").addEventListener("click", () => exitContact("declined"));
 $("notif").addEventListener("click", answer);
