@@ -40,14 +40,17 @@ auth guard at all. This closes the class, not just the six instances.
 
 ---
 
-## 2. Open findings — confirmed by attack, not yet fixed
+## 2. Open findings — confirmed by attack
 
-### O1 · No rate limiting on sign-in — **High**
+### O1 · No rate limiting on sign-in — **High** — FIXED
 
-Reproduced: **30 password guesses against a real account in under a second, none refused, no
-lockout**, and the correct password still worked immediately afterward. Credential stuffing and
-brute force are unthrottled. `docs/RELEASE-READINESS.md` B7. Needs a limiter on `/api/auth` (and
-every mutating route) before launch.
+Originally reproduced: **30 password guesses against a real account in under a second, none
+refused, no lockout.** Now throttled: the sign-in POST (`/api/auth/callback/credentials`) is
+limited to **12 attempts per IP per 5 minutes** in `src/middleware.ts`, returning `429` with a
+`Retry-After` header. The limiter (`src/lib/rate-limit.ts`) uses Upstash Redis when
+`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are set (required in production so the limit
+is shared across serverless instances), and falls back to in-process memory otherwise. Verified:
+attempts 1–12 pass through, 13+ return `429`.
 
 ### O2 · `script-src 'unsafe-inline'` in the CSP — **Medium**
 

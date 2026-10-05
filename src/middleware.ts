@@ -2,12 +2,26 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "./auth.config";
 import { canAccessPath } from "@/lib/authz";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 import type { Role, TenantType } from "@prisma/client";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth((req) => {
+export default auth(async (req) => {
   const { pathname } = req.nextUrl;
+
+  // Throttle sign-in before anything else: credential stuffing and brute force hit this one POST.
+  if (req.method === "POST" && pathname.startsWith("/api/auth/callback/credentials")) {
+    const { success, resetMs } = await rateLimit("signin", clientIp(req.headers));
+    if (!success) {
+      const retry = Math.ceil(resetMs / 1000);
+      return new NextResponse("Too many sign-in attempts. Please wait a few minutes and try again.", {
+        status: 429,
+        headers: { "Retry-After": String(retry), "Content-Type": "text/plain" },
+      });
+    }
+  }
+
   const user = req.auth?.user as (typeof req.auth extends null ? never : { id: string; tenantId: string; role: Role; tenantType: TenantType }) | undefined;
 
   if (!user) {
