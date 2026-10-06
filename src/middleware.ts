@@ -25,7 +25,7 @@ export default auth(async (req) => {
   const user = req.auth?.user as (typeof req.auth extends null ? never : { id: string; tenantId: string; role: Role; tenantType: TenantType }) | undefined;
 
   if (!user) {
-    if (pathname === "/login" || pathname === "/join" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname === "/api/health") return NextResponse.next();
+    if (pathname === "/login" || pathname === "/join" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname.startsWith("/api/cron") || pathname === "/api/health") return NextResponse.next();
     const url = new URL("/login", req.nextUrl);
     url.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(url);

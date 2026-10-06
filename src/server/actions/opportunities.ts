@@ -8,7 +8,7 @@ import { requireInternalAction } from "@/server/session";
 import { parseList, fullName } from "@/lib/utils";
 import { retrieveMatches, type MatchPerson } from "@/lib/matching";
 import { getAIProvider } from "@/lib/ai";
-import { assertSameTenant, canApprove } from "@/lib/authz";
+import { assertSameTenant, canApprove, canRevealIdentity, AuthorizationError } from "@/lib/authz";
 import type { CommercialModel, EngagementRoute, HumanDecision, OpportunitySource, OpportunityStatus, Seniority } from "@prisma/client";
 
 const oppSchema = z.object({
@@ -207,6 +207,11 @@ export async function updateIntroductionStatus(formData: FormData) {
   const intro = await prisma.introduction.findUnique({ where: { id } });
   if (!intro) throw new Error("Not found");
   assertSameTenant(user, intro.tenantId);
+  // Releasing a name to a client or agency is an owner/admin decision — a contributor can progress
+  // an introduction but not reveal the person (control: "An owner approves every identity reveal").
+  if (status === "IDENTITY_REVEALED" && !canRevealIdentity(user)) {
+    throw new AuthorizationError("Only an owner or admin can release a person's name.");
+  }
   const consent = formData.get("consentStatus") ? String(formData.get("consentStatus")) : undefined;
   await prisma.introduction.update({
     where: { id },

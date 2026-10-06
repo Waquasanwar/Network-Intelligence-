@@ -29,6 +29,7 @@ export type AuditAction =
   | "integration.disconnect"
   | "user.role_change"
   | "data.deletion_request"
+  | "data.retention_review"
   | "team.add"
   | "team.remove"
   | "account.create"

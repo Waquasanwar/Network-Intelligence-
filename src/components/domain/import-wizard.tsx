@@ -50,14 +50,14 @@ export function ImportWizard() {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="2. Upload the file, or paste the rows" description="Excel (.xlsx), CSV, or rows copied straight out of a spreadsheet." />
+          <CardHeader title="2. Upload the file, or paste the rows" description="A CSV file, or rows copied straight out of a spreadsheet. (In Excel: File → Save As → CSV.)" />
           <CardBody>
             <form action={runPreview} className="space-y-4">
               <label className="block rounded-lg border border-dashed border-line-strong bg-surface-muted/50 px-4 py-6 text-center cursor-pointer hover:border-navy/40 transition-colors">
-                <input ref={fileRef} type="file" name="file" accept=".xlsx,.xls,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" className="sr-only" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} />
+                <input ref={fileRef} type="file" name="file" accept=".csv,.tsv,text/csv,text/plain" className="sr-only" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} />
                 <FileUp className="h-5 w-5 text-ink-faint mx-auto" />
-                <div className="text-[13px] font-medium mt-2">{fileName ?? "Choose an Excel or CSV file"}</div>
-                <div className="text-[11.5px] text-ink-faint mt-0.5">.xlsx or .csv, up to 2,000 rows per import</div>
+                <div className="text-[13px] font-medium mt-2">{fileName ?? "Choose a CSV file"}</div>
+                <div className="text-[11.5px] text-ink-faint mt-0.5">.csv, up to 2,000 rows per import</div>
               </label>
               <div className="text-center text-[11px] text-ink-faint">or</div>
               <Field label="Paste rows" hint="Include the header row. Copying cells from Excel works as is."><Textarea name="text" className="min-h-[110px] mono" placeholder={"first_name,last_name,email,company,capabilities\nSarah,Okonkwo,sarah@example.com,Independent,Programme director; Turnaround"} /></Field>

@@ -7,7 +7,7 @@ import { audit } from "@/lib/audit";
 import { requireInternalAction } from "@/server/session";
 import { parseList } from "@/lib/utils";
 import { suggestNextCheck } from "@/lib/availability";
-import { assertSameTenant } from "@/lib/authz";
+import { assertSameTenant, canRevealIdentity, AuthorizationError } from "@/lib/authz";
 import type { AvailabilityStatus, EngagementRoute, Seniority, SourceType, RelationshipType, EvidenceType, Visibility } from "@prisma/client";
 
 const routes = ["PERMANENT", "CONTRACT", "INTERIM", "FRACTIONAL", "ADVISORY", "SOW"] as const;
@@ -235,6 +235,9 @@ export async function addEvidence(formData: FormData) {
 
 export async function exportPerson(personId: string) {
   const user = await requireInternalAction();
+  // Taking a full copy of a person's record is an owner/admin act, not something every contributor
+  // can do (control: "Only owners can export").
+  if (!canRevealIdentity(user)) throw new AuthorizationError("Only an owner or admin can export a person's record.");
   const person = await prisma.person.findUnique({ where: { id: personId }, include: { relationships: true, evidence: true, conversations: true, relocationProfile: true } });
   if (!person) throw new Error("Not found");
   assertSameTenant(user, person.tenantId);
