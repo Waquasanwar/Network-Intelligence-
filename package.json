@@ -21,7 +21,8 @@
     "db:clear-demo": "tsx prisma/clear-demo.ts",
     "qa:layout": "node tools/layout-qa.mjs",
     "qa:design": "node tools/design-audit.mjs",
-    "qa:serve": "cd prototype/dist && python3 -m http.server 8787"
+    "qa:serve": "cd prototype/dist && python3 -m http.server 8787",
+    "db:create-owner": "tsx scripts/create-owner.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
