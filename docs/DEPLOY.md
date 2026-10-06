@@ -85,6 +85,7 @@ production). Never reuse the demo value.
 | `AUTH_TRUST_HOST` | `true` | required behind Vercel's proxy |
 | `UPSTASH_REDIS_REST_URL` | from Upstash | sign-in throttle |
 | `UPSTASH_REDIS_REST_TOKEN` | from Upstash | sign-in throttle |
+| `CRON_SECRET` | `openssl rand -base64 32` | gates the daily retention sweep (`/api/cron/retention`); Vercel Cron sends it automatically |
 | `AI_PROVIDER` | `heuristic` | no external AI calls; set `anthropic` + `ANTHROPIC_API_KEY` to enable Claude |
 | `SHOW_DEMO_ACCOUNTS` | *(unset / `false`)* | keep the demo panel off the login page |
 
@@ -147,23 +148,18 @@ Verified by the live security test (`docs/SECURITY-TEST.md`) and enforced in cod
 - **Secrets** — the login page hides demo accounts in production; no secrets are shipped to the
   browser.
 
-## Pre-launch gate — before real customer data goes in
+## Pre-launch gate
 
-These are tracked in `docs/RELEASE-READINESS.md`. Do them before onboarding real people:
+Most of the original gate is now done in code (see `docs/SECURITY-CONTROLS.md`): MFA (TOTP),
+nonce-based CSP, owner-only export, owner-approved reveal, the retention sweep, and removing the
+`xlsx` advisory. What's left before real customer data:
 
-1. **Tighten the CSP.** `script-src` still allows `'unsafe-inline'`. Move to a nonce-based policy
-   (generate a nonce in `middleware.ts`, pass it to the inline scripts Next emits) so an injected
-   script can't execute.
-2. **Enforce the remaining security switches.** `mfaRequired`, `approveBeforeReveal`,
-   `alertOnReveal`, `restrictExport`, and `retentionSweep` are shown in Settings → Security but are
-   not yet read by the runtime. Wire each to real behaviour (MFA is the priority) or hide the ones
-   you won't ship.
-3. **Dependency updates.** Run `npm audit`; take the available fixes (`postcss`, `deepmerge-ts`).
-   Reassess `xlsx` — move the import feature to a maintained parser if the advisory applies.
-4. **Backups & recovery.** Enable Neon's point-in-time restore and test a restore once.
-5. **Secret rotation plan.** Document how to rotate `AUTH_SECRET` (it invalidates sessions) and the
+1. **Backups & recovery.** Enable Neon point-in-time restore and test a restore once.
+2. **Secret rotation plan.** Document how to rotate `AUTH_SECRET` (it invalidates sessions) and the
    database credentials.
-6. **Load & QA pass** on realistic data volumes (`docs/QA-SCHEDULE.md`).
+3. **Load & QA pass** on realistic data volumes (`docs/QA-SCHEDULE.md`).
+4. **Nice-to-haves, not blockers:** a real-time alert channel for identity reveals, and a
+   tenant-wide "require MFA for everyone" mandate (per-account MFA already works).
 
 ## Operations
 

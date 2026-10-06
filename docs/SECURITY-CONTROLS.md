@@ -41,8 +41,10 @@ data class has a lawful basis under both regimes and a defined end state
 
 | Control | Detail | Where | Verified by |
 |---|---|---|---|
-| **Security headers** | HSTS (2y, preload), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy`, `Referrer-Policy`, `Permissions-Policy` | `next.config.ts` | Live test — all present |
+| **Security headers** | HSTS (2y, preload), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` (static) | `next.config.ts` | Live test — all present |
+| **Content-Security-Policy** | Per-request **nonce**; in production `script-src 'self' 'nonce-…' 'strict-dynamic'` — no `'unsafe-inline'` on scripts | `src/middleware.ts` (`cspFor`) | Prod build — header carries nonce, app hydrates, zero CSP violations |
 | **No stack disclosure** | `x-powered-by` removed | `next.config.ts` (`poweredByHeader: false`) | Live test — absent |
+| **Multi-factor auth (TOTP)** | RFC-6238 authenticator; enrol with QR + one-time recovery codes; required at sign-in when enabled | `src/lib/mfa.ts` · `src/auth.ts` · Settings → Security | Tested end-to-end — correct code signs in, missing/wrong code refused |
 | **Session cookie** | `HttpOnly`, `SameSite=Lax`, `Secure` over HTTPS; JWT sessions expire after 8h | NextAuth v5 · `src/auth.config.ts` | Live test — cookie flags confirmed |
 | **Password storage** | bcrypt hash compare; plaintext never stored or logged | `src/auth.ts` (`compare()`) | Code + `authz`/auth flow |
 | **Credential validation** | Email/password validated (zod) before any DB lookup | `src/auth.ts` (`credentialsSchema`) | Code |
@@ -56,34 +58,38 @@ data class has a lawful basis under both regimes and a defined end state
 
 ## 3 · Configurable security controls (Settings → Security)
 
-Eight controls ship **on by default** (secure-by-default; proven by `security.test.ts`). Three are
-enforced by running code today; five are stored and shown but **not yet read by the runtime** — the
-Security page labels these honestly as "not enforced yet."
+Eight controls ship **on by default** (secure-by-default; proven by `security.test.ts`). **Seven
+are now enforced by running code**; one (real-time alert on reveal) is honestly still not, because
+there's no notification channel yet — reveals are recorded, not pushed.
 
 | Control | Default | Status | Enforced by |
 |---|---|---|---|
+| Require a second factor (MFA) | on | **Enforced** | TOTP verified at sign-in (`auth.ts`); enrol in Settings → Security |
 | Sign people out after 8h idle | on | **Enforced** | `auth.config.ts` — JWT sessions expire after 8h |
+| An owner approves every identity reveal | on | **Enforced** | `updateIntroductionStatus()` allows a reveal only for owner/admin |
+| Only owners can export | on | **Enforced** | `exportPerson()` requires owner/admin |
 | Private notes never leave the tenant | on | **Enforced** | `redactForPartner()` strips `relationshipNotes` |
 | Redact names & figures before speech | on | **Enforced** | `redactForSpeech()` before the vendor call |
-| Require a second factor (MFA) | on | **Planned** | flag stored on the user; nothing checks it at sign-in yet |
-| An owner approves every identity reveal | on | **Planned** | `canRevealIdentity()` gates on role, not this setting |
-| Alert whenever a name is released | on | **Planned** | reveals are audited, but no notification path yet |
-| Only owners can export | on | **Planned** | export admits any internal user, not only owners |
-| Delete data when retention ends | on | **Planned** | the due-queue is computed; no scheduler runs it yet |
+| Delete data when retention ends | on | **Enforced** | daily cron `/api/cron/retention` records what's due; deletion is human-reviewed |
+| Alert whenever a name is released | on | **Partial** | every reveal is written to the immutable audit log; no real-time push yet |
 
-The Security tab reports this as **"3 of 8 enforced · 5 not yet implemented"** rather than a
-flattering "8 of 8 on" — a switch nothing reads is an intention, not a protection.
+The Security tab reports this as **"7 of 8 enforced"** — a switch nothing reads is an intention,
+not a protection, so the one without a mechanism is still shown honestly as not enforced.
 
 ---
 
-## 4 · Known gaps — do before real customer data
+## 4 · Known gaps — remaining
 
-Stated plainly so there are no surprises; tracked in `docs/RELEASE-READINESS.md`.
+Most of the original gaps are now closed (MFA, CSP, export/reveal gating, retention sweep, and the
+`xlsx` advisory by moving import to CSV). What remains:
 
-1. **CSP allows `'unsafe-inline'` on scripts** (Medium). Move to a nonce-based policy.
-2. **Five configurable controls are not yet enforced** (table above); MFA is the priority.
-3. **Dependency advisories** — run `npm audit`; take the `postcss` / `deepmerge-ts` fixes and
-   reassess `xlsx`.
+1. **Real-time alert on reveal** — reveals are recorded in the audit log but not pushed to the
+   owner at the moment they happen (needs an email/notification channel).
+2. **Tenant-wide MFA mandate** — MFA is available and enforced per account; forcing every user in a
+   tenant to enrol before access is a follow-up (needs per-tenant settings persistence).
+3. **Build/dev dependency advisories** — `npm audit` still lists `postcss` (bundled inside Next),
+   `braces` and `deepmerge-ts` in the build/dev toolchain; these aren't on the deployed runtime
+   surface. Take them when a non-breaking fix (or a Next update) is available.
 4. **Backups & secret rotation** — enable Neon point-in-time restore; document `AUTH_SECRET` and DB
    credential rotation.
 

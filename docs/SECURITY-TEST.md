@@ -52,17 +52,19 @@ limited to **12 attempts per IP per 5 minutes** in `src/middleware.ts`, returnin
 is shared across serverless instances), and falls back to in-process memory otherwise. Verified:
 attempts 1–12 pass through, 13+ return `429`.
 
-### O2 · `script-src 'unsafe-inline'` in the CSP — **Medium**
+### O2 · `script-src 'unsafe-inline'` in the CSP — **Medium** — FIXED
 
-The Content-Security-Policy is otherwise strong, but `'unsafe-inline'` on scripts materially weakens
-its XSS protection. `docs/RELEASE-READINESS.md` B8.
+The CSP is now set per-request in `src/middleware.ts` with a fresh nonce. In production
+`script-src` is `'self' 'nonce-…' 'strict-dynamic'` — no `'unsafe-inline'`. Verified on a prod
+build: the header carries the nonce, the app hydrates, login works, and there are zero CSP
+violations in the console.
 
-### O3 · Unenforced security switches — **Medium** (mitigated)
+### O3 · Unenforced security switches — **Medium** — MOSTLY FIXED
 
-`mfaRequired`, `approveBeforeReveal`, `alertOnReveal`, `restrictExport`, `retentionSweep` are shown
-as toggles but nothing in the build reads them. Mitigated last pass — the Security tab now labels
-each "not enforced yet" and counts only the three that are real. The work to implement them remains.
-`docs/RELEASE-READINESS.md` B1–B6.
+Seven of the eight switches are now enforced by code: MFA (real TOTP at sign-in), 8h sessions,
+owner-approved reveal, owner-only export, notes stay internal, speech redaction, and a daily
+retention sweep. Only "alert on reveal" remains partial (reveals are audited, not pushed) — see
+`docs/SECURITY-CONTROLS.md` §3.
 
 ---
 
@@ -89,9 +91,10 @@ readiness doc records the mutation testing that proves those have teeth).
 
 ## 4. Dependency audit
 
-`npm audit`: 5 High, 1 Moderate. `postcss` and `deepmerge-ts` have fixes available and should be
-taken. `xlsx` has no upstream fix — assess whether the import feature needs it or can move to a
-maintained parser before launch.
+`xlsx` (the one with no upstream fix, and the only advisory on the runtime surface) has been
+**removed** — contact import is now CSV-only. The remaining advisories (`postcss` bundled in Next,
+`braces`, `deepmerge-ts`) are in the build/dev toolchain, not the deployed runtime; take them when a
+non-breaking fix or a Next update lands.
 
 ---
 
