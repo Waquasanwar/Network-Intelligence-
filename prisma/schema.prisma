@@ -68,6 +68,8 @@ model User {
   role          Role      @default(CONTRIBUTOR)
   personId      String?   @unique // MEMBER users are linked to their own person record
   mfaEnabled    Boolean   @default(false)
+  mfaSecret         String?    // base32 TOTP secret, set during enrolment, held only while MFA is on
+  mfaRecoveryCodes  String[]   @default([]) // sha256 hashes of one-time recovery codes
   emailVerified DateTime?
   image         String?
   lastLoginAt   DateTime?

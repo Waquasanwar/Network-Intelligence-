@@ -170,7 +170,7 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
     does: "Everybody in your tenant sets up an authenticator before they can open the network again.",
     ifOff: "A leaked password is enough to read every profile you hold.",
     defaultOn: true, weakensIfOff: true,
-    enforcedBy: null,  // the flag is stored on the user but nothing checks it at sign-in yet
+    enforcedBy: "auth.ts verifies a TOTP or recovery code at sign-in when the account has MFA on; users enrol in Settings → Security",
   },
   {
     key: "sessionTimeout", label: "Sign people out after 8 hours idle", group: "identity",
@@ -184,7 +184,7 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
     does: "A contributor can propose anybody, but releasing a name to a client waits for you.",
     ifOff: "Any contributor can release a name once the person has consented.",
     defaultOn: true, weakensIfOff: true,
-    enforcedBy: null,  // canRevealIdentity() gates on role, not on this setting
+    enforcedBy: "updateIntroductionStatus() allows IDENTITY_REVEALED only for an owner/admin",
   },
   {
     key: "alertOnReveal", label: "Tell me whenever a name is released", group: "disclosure",
@@ -198,7 +198,7 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
     does: "Bulk export of people or shortlists is limited to owners, and every export is recorded with what was in it.",
     ifOff: "Any contributor can take a copy of the network with them.",
     defaultOn: true, weakensIfOff: true,
-    enforcedBy: null,  // exportPerson() admits any internal user, not only owners
+    enforcedBy: "exportPerson() requires an owner/admin before returning a record",
   },
   {
     key: "notesStayInternal", label: "Private notes never leave the tenant", group: "disclosure",
@@ -216,10 +216,10 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
   },
   {
     key: "retentionSweep", label: "Delete data when its retention period ends", group: "retention",
-    does: "Anything past its stated retention date is deleted or anonymised on a monthly sweep, and you get the list first.",
+    does: "A daily sweep records everything past its retention date so nothing is silently kept; you review and confirm the deletions.",
     ifOff: "Data is kept until somebody deletes it by hand, which is the easiest promise to break.",
     defaultOn: true, weakensIfOff: true,
-    enforcedBy: null,  // retentionDue() computes the queue; no scheduler runs it yet
+    enforcedBy: "a daily cron (/api/cron/retention) records what is due; destructive deletion is human-reviewed",
   },
 ];
 

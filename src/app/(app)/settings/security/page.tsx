@@ -4,9 +4,10 @@ import { isInternal } from "@/lib/authz";
 import { PageHeader } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, Checkbox } from "@/components/ui/form";
+import { Select } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { changeUserRole, toggleMfa } from "@/server/actions/settings";
+import { changeUserRole } from "@/server/actions/settings";
+import { MfaCard } from "@/components/domain/mfa-card";
 import { DateText } from "@/components/domain/date";
 
 export const metadata = { title: "Security" };
@@ -62,13 +63,9 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
         </div>
         <div className="space-y-4">
           <Card>
-            <CardHeader title="Your account" />
+            <CardHeader title="Your account" description="Sessions expire after 8 hours; signing out revokes the current session." />
             <CardBody>
-              <form action={toggleMfa} className="space-y-3">
-                <Checkbox name="enabled" label="Multi-factor authentication" defaultChecked={me?.mfaEnabled} />
-                <div className="text-[11px] text-ink-faint">Sessions expire after 8 hours. Signing out revokes the current session.</div>
-                <SubmitButton size="sm" variant="secondary">Save</SubmitButton>
-              </form>
+              <MfaCard enabled={!!me?.mfaEnabled} />
             </CardBody>
           </Card>
           <Card>

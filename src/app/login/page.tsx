@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     const home = existing?.role === "PARTNER" ? "/partner-portal" : existing?.role === "CLIENT" ? "/client-workspace" : existing?.role === "MEMBER" ? "/member" : "/overview";
     const callbackUrl = requested === "/" || requested === "/login" ? home : requested;
     try {
-      await signIn("credentials", { email, password: String(formData.get("password") || ""), redirectTo: callbackUrl });
+      await signIn("credentials", { email, password: String(formData.get("password") || ""), code: String(formData.get("code") || ""), redirectTo: callbackUrl });
     } catch (err) {
       if (err instanceof AuthError) redirect(`/login?error=invalid&callbackUrl=${encodeURIComponent(callbackUrl)}`);
       throw err;
@@ -81,6 +81,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/"} />
             <Field label="Email" required><Input name="email" type="email" autoComplete="email" required placeholder="you@company.com" className="h-9" /></Field>
             <Field label="Password" required><Input name="password" type="password" autoComplete="current-password" required minLength={8} className="h-9" /></Field>
+            <Field label="Authentication code" hint="Only if you've set up MFA — the 6-digit code from your authenticator"><Input name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="123 456" className="h-9" /></Field>
             <Button type="submit" size="lg" className="w-full rounded-full">Continue</Button>
           </form>
           {hasEntra ? (

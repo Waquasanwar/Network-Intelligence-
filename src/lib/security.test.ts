@@ -32,11 +32,11 @@ describe("what happens when somebody turns a protection off", () => {
   });
 
   it("leads with the consequence, not the setting name, once everything is enforced", () => {
-    // With no enforcement gap left, the line is about what was switched off.
-    const enforcedOnly = Object.fromEntries(SECURITY_CONTROLS.map((c) => [c.key, !!c.enforcedBy]));
-    // Only the enforced controls are on, so nothing is "switched on but unimplemented"; the line
-    // then leads with the worst thing that is actually off.
-    const p = posture(enforcedOnly as never);
+    // Turn off every control with no code behind it (so there is no enforcement gap), plus one
+    // weakening control an admin has switched off. The line then leads with the consequence.
+    const unenforcedOff = Object.fromEntries(SECURITY_CONTROLS.filter((c) => !c.enforcedBy).map((c) => [c.key, false]));
+    const weakening = SECURITY_CONTROLS.find((c) => c.enforcedBy && c.weakensIfOff)!;
+    const p = posture({ ...unenforcedOff, [weakening.key]: false } as never);
     expect(p.notYetEnforced).toHaveLength(0);
     expect(p.line).toMatch(/switched off below the default/i);
     expect(p.weakened.length).toBeGreaterThan(0);

@@ -5,8 +5,9 @@ import { z } from "zod";
 import { authConfig } from "./auth.config";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
+import { verifyTotp, consumeRecoveryCode } from "@/lib/mfa";
 
-const credentialsSchema = z.object({ email: z.string().email(), password: z.string().min(8).max(200) });
+const credentialsSchema = z.object({ email: z.string().email(), password: z.string().min(8).max(200), code: z.string().max(40).optional() });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -22,6 +23,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user?.passwordHash) return null;
         const ok = await compare(parsed.data.password, user.passwordHash);
         if (!ok) return null;
+        // Second factor: when MFA is on, a valid authenticator code (or a one-time recovery code)
+        // is required. No code, wrong code → no session, exactly as a wrong password.
+        if (user.mfaEnabled) {
+          const code = (parsed.data.code ?? "").trim();
+          if (!code) return null;
+          const totpOk = user.mfaSecret ? verifyTotp(user.email, user.mfaSecret, code) : false;
+          if (!totpOk) {
+            const remaining = consumeRecoveryCode(code, user.mfaRecoveryCodes);
+            if (remaining === null) return null;
+            await prisma.user.update({ where: { id: user.id }, data: { mfaRecoveryCodes: remaining } });
+          }
+        }
         await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
         await audit({ tenantId: user.tenantId, actorId: user.id, action: "auth.login", entityType: "User", entityId: user.id });
         return {
