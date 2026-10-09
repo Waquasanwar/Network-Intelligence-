@@ -1,0 +1,15 @@
+{
+  "name": "linkedin-lead-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone LinkedIn lead and appointment-setter tracker: import connections and followers, score them against your target sectors, and work them through to booked appointments.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
