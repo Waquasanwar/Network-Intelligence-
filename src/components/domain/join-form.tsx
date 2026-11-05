@@ -44,7 +44,7 @@ export function JoinForm({ members, referrer, error }: { members: Member[]; refe
       ) : null}
       {error ? <div className="mt-3 rounded-[12px] border border-amber/30 bg-amber-100 px-3 py-2 text-[12.5px]">{error}</div> : null}
 
-      <div className="mt-4 rounded-[14px] border border-navy-400/25 bg-navy-50 p-3.5">
+      <div className="ai-surface mt-4 rounded-[14px] bg-navy-50 p-3.5">
         <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-navy"><Sparkles className="h-3.5 w-3.5" /> Save typing</div>
         <p className="text-[12px] text-ink-muted mt-0.5">Paste your LinkedIn link or a one-line bio and we&apos;ll fill the basics in. You can edit everything.</p>
         <div className="flex gap-2 mt-2">

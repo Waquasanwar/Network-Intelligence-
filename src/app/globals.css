@@ -102,20 +102,33 @@ html, body {
   font-feature-settings: "cv11", "ss01", "ss03";
 }
 
-/* Ambient light: two soft washes behind everything. */
-.ambient {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background:
-    radial-gradient(900px 500px at 12% -10%, rgba(59, 59, 168, 0.06), transparent 60%),
-    radial-gradient(800px 500px at 100% 10%, rgba(107, 107, 240, 0.07), transparent 60%);
+/* Ambient aurora: soft, slowly drifting washes behind everything. */
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.ambient::before, .ambient::after {
+  content: ""; position: absolute; width: 46vw; height: 46vw; border-radius: 50%;
+  filter: blur(96px); will-change: transform;
 }
+.ambient::before { top: -16vw; left: -8vw; background: radial-gradient(circle, rgba(59, 59, 168, 0.13), transparent 66%); animation: aurora-a 30s ease-in-out infinite; }
+.ambient::after { top: -10vw; right: -10vw; width: 52vw; height: 52vw; background: radial-gradient(circle, rgba(107, 107, 240, 0.15), transparent 66%); animation: aurora-b 38s ease-in-out infinite; }
+@keyframes aurora-a { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(5vw, 3vw) scale(1.1); } }
+@keyframes aurora-b { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-4vw, 4vw) scale(1.08); } }
 @media (prefers-color-scheme: dark) {
-  .ambient {
-    background:
-      radial-gradient(900px 500px at 12% -10%, rgba(142, 166, 230, 0.12), transparent 60%),
-      radial-gradient(800px 500px at 100% 10%, rgba(63, 210, 192, 0.1), transparent 60%);
-  }
+  .ambient::before { background: radial-gradient(circle, rgba(139, 139, 247, 0.16), transparent 66%); }
+  .ambient::after { background: radial-gradient(circle, rgba(63, 210, 192, 0.12), transparent 66%); }
 }
+
+/* Signature: a living gradient border that marks every agentic / AI surface. */
+.ai-surface { position: relative; isolation: isolate; }
+.ai-surface::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1;
+  background: linear-gradient(115deg, var(--color-navy-400), var(--color-teal-400), var(--color-navy-600), var(--color-navy-400));
+  background-size: 260% 260%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0.55; animation: ai-pan 7s linear infinite; pointer-events: none;
+}
+@keyframes ai-pan { 0% { background-position: 0% 50%; } 100% { background-position: 260% 50%; } }
+.gradient-text { background: linear-gradient(100deg, var(--color-navy), var(--color-navy-400) 55%, var(--color-teal-400)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 ::selection { background: rgba(13, 122, 111, 0.2); }
 :focus-visible { outline: 2px solid var(--color-navy-400); outline-offset: 2px; border-radius: 6px; }
@@ -174,7 +187,7 @@ kbd {
 .lift { transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease, border-color 160ms ease; }
 .lift:hover { transform: translateY(-1px); box-shadow: var(--shadow-card-hover); }
 @media (prefers-reduced-motion: reduce) {
-  .anim-drawer, .anim-fade, .anim-pop, .reveal > * { animation: none; }
+  .anim-drawer, .anim-fade, .anim-pop, .reveal > *, .ambient::before, .ambient::after, .ai-surface::before { animation: none; }
   .lift, table.data tbody tr { transition: none; }
   .lift:hover { transform: none; }
 }

@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, Sparkles, CornerDownLeft } from "lucide-react";
 
 type Item = { id: string; label: string; hint?: string; href: string; group: string };
 
@@ -38,11 +38,17 @@ export function CommandPalette({ items }: { items: Item[] }) {
     }
   }, [open]);
 
-  const results = React.useMemo(() => {
+  const matches = React.useMemo(() => {
     const t = q.trim().toLowerCase();
     const list = t ? items.filter((i) => `${i.label} ${i.hint ?? ""}`.toLowerCase().includes(t)) : items.filter((i) => i.group === "Pages");
     return list.slice(0, 12);
   }, [q, items]);
+
+  // Concierge: a plain-language query (more than one word) can be asked of the network directly.
+  const ask: Item | null = /\s/.test(q.trim()) && q.trim().length >= 3
+    ? { id: "__ask", label: q.trim(), hint: "Ask the network", href: `/network?q=${encodeURIComponent(q.trim())}`, group: "Ask" }
+    : null;
+  const results = React.useMemo(() => (ask ? [ask, ...matches] : matches), [ask, matches]);
 
   const go = (item: Item) => {
     setOpen(false);
@@ -65,7 +71,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
               if (e.key === "ArrowUp") { e.preventDefault(); setIdx((i) => Math.max(0, i - 1)); }
               if (e.key === "Enter" && results[idx]) go(results[idx]);
             }}
-            placeholder="Search people, opportunities, pages…"
+            placeholder="Search, or ask the network in plain language…"
             className="h-11 flex-1 bg-transparent text-sm outline-none placeholder:text-ink-faint"
           />
           <kbd>esc</kbd>
@@ -77,10 +83,11 @@ export function CommandPalette({ items }: { items: Item[] }) {
               <button
                 onMouseEnter={() => setIdx(i)}
                 onClick={() => go(r)}
-                className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 cursor-pointer rounded-md mx-1 ${i === idx ? "bg-navy-50" : ""}`} style={{ width: "calc(100% - 8px)" }}
+                className={`w-full text-left px-3 py-2 flex items-center gap-2.5 cursor-pointer rounded-md mx-1 ${i === idx ? (r.id === "__ask" ? "bg-[linear-gradient(100deg,var(--color-navy-50),var(--color-surface))]" : "bg-navy-50") : ""}`} style={{ width: "calc(100% - 8px)" }}
               >
-                <span className="text-[13px] text-ink">{r.label}</span>
-                <span className="text-[11px] text-ink-faint truncate">{r.hint ?? r.group}</span>
+                {r.id === "__ask" ? <Sparkles className="h-4 w-4 text-navy flex-none" /> : null}
+                <span className={`text-[13px] min-w-0 flex-1 truncate ${r.id === "__ask" ? "text-ink font-medium" : "text-ink"}`}>{r.id === "__ask" ? <><span className="text-ink-muted font-normal">Ask the network: </span>“{r.label}”</> : r.label}</span>
+                {r.id === "__ask" && i === idx ? <CornerDownLeft className="h-3.5 w-3.5 text-ink-faint flex-none" /> : <span className="text-[11px] text-ink-faint truncate flex-none">{r.hint ?? r.group}</span>}
               </button>
             </li>
           ))}

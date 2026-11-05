@@ -53,7 +53,7 @@ export function AiAddPersonForm({ people }: { people: { id: string; firstName: s
   if (stage === "intake") {
     return (
       <div className="space-y-4">
-        <div className="rounded-[14px] border border-navy-400/25 bg-[linear-gradient(135deg,var(--color-navy-50),color-mix(in_srgb,var(--color-teal-50,var(--color-navy-50))_60%,transparent))] p-4">
+        <div className="ai-surface rounded-[14px] bg-[linear-gradient(135deg,var(--color-navy-50),color-mix(in_srgb,var(--color-surface)_55%,var(--color-navy-50)))] p-4">
           <div className="flex items-center gap-2 text-[13px] font-semibold text-navy"><Sparkles className="h-4 w-4" /> Add with AI</div>
           <p className="text-[12.5px] text-ink-muted mt-1">Paste their LinkedIn URL, or a few lines about them. The assistant drafts the profile — you check it before saving.</p>
           <Textarea value={source} onChange={(e) => setSource(e.target.value)} rows={4} className="mt-3" placeholder="https://linkedin.com/in/…  — or —  Priya Natarajan, programme director at Majid Al Futtaim in Dubai, led two large transformations, open to advisory work." />
