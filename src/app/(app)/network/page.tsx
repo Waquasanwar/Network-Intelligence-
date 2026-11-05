@@ -15,7 +15,7 @@ import { DateText } from "@/components/domain/date";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { AVAILABILITY_LABELS, ROUTE_LABELS, SOURCE_LABELS } from "@/lib/labels";
 import type { AvailabilityStatus, EngagementRoute, Prisma } from "@prisma/client";
-import { Search, Upload } from "lucide-react";
+import { Search, Upload, Share2 } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { TableSort } from "@/components/ui/table-sort";
 
@@ -89,7 +89,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<><Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import</Button></Link><AddPersonDrawer people={allPeopleLite} /></>} />
+      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<><Link href="/network/map"><Button variant="secondary"><Share2 className="h-3.5 w-3.5" /> Map</Button></Link><Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import</Button></Link><AddPersonDrawer people={allPeopleLite} /></>} />
 
       <form className="flex gap-2 mb-3">
         <div className="relative flex-1">
