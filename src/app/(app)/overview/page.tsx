@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
-import { Stat } from "@/components/ui/stat";
+import { KpiCard } from "@/components/ui/kpi-card";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { PersonLink } from "@/components/domain/person-link";
@@ -39,6 +39,25 @@ export default async function OverviewPage() {
   const amanaDemand = activeOpps.filter((o) => o.isAmana).length;
   const pipeline = activeOpps.reduce((a, o) => a + (o.budget ? Number(o.budget) * (o.engagementRoute === "PERMANENT" ? 0.15 : 20) : 0), 0);
 
+  // Honest trend lines: an 8-week cumulative line and the count confirmed in the last 7 days.
+  const WEEKS = 8;
+  const weekMs = 7 * 86_400_000;
+  const windowStart = now.getTime() - WEEKS * weekMs;
+  const cumSeries = (dates: Date[]) => {
+    const b = new Array<number>(WEEKS).fill(0);
+    for (const d of dates) {
+      const ts = d.getTime();
+      if (ts < windowStart) { b[0] += 1; continue; }
+      b[Math.min(WEEKS - 1, Math.floor((ts - windowStart) / weekMs))] += 1;
+    }
+    for (let i = 1; i < WEEKS; i++) b[i] += b[i - 1];
+    return b;
+  };
+  const last7 = (dates: Date[]) => dates.filter((d) => now.getTime() - d.getTime() <= weekMs).length;
+  const peopleDates = people.map((p) => p.createdAt);
+  const oppDates = activeOpps.map((o) => o.createdAt);
+  const introDates = liveIntros.map((i) => i.createdAt);
+
   const reconnect = people
     .filter((p) => assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now) !== "fresh")
     .filter((p) => p.relationships.some((r) => r.workedTogether) || ACTIVE_STATUSES.includes(p.availabilityStatus) || p.amanaBench)
@@ -74,10 +93,10 @@ export default async function OverviewPage() {
         </Card>
       ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
-        <Stat label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" />
-        <Stat label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" />
-        <Stat label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" />
-        <Stat label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" />
+        <KpiCard label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
+        <KpiCard label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
+        <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
+        <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

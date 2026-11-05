@@ -17,6 +17,7 @@ import { AVAILABILITY_LABELS, ROUTE_LABELS, SOURCE_LABELS } from "@/lib/labels";
 import type { AvailabilityStatus, EngagementRoute, Prisma } from "@prisma/client";
 import { Search, Upload } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
+import { TableSort } from "@/components/ui/table-sort";
 
 export const metadata = { title: "Network" };
 
@@ -133,28 +134,37 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
+      <div data-sortable className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
         {people.length === 0 ? (
           <EmptyState title="No one matches" description="Try a broader search, or add the person you have in mind." />
         ) : (
           <table className="data">
             <thead>
               <tr>
-                <th>Person</th>
+                <th data-sort="name">Person</th>
                 <th>Provenance</th>
                 <th>Expertise</th>
-                <th>Location</th>
-                <th>Availability · routes</th>
-                <th>Trust</th>
-                <th className="num">Evidence</th>
-                <th>Next action</th>
+                <th data-sort="loc">Location</th>
+                <th data-sort="avail">Availability · routes</th>
+                <th data-sort="trust">Trust</th>
+                <th className="num" data-sort="evidence">Evidence</th>
+                <th data-sort="next">Next action</th>
               </tr>
             </thead>
             <tbody>
               {people.map((p) => {
                 const primary = p.relationships[0];
+                const trust = trustScore({ vouches: p.vouches.map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })), workedWith: p.relationships.filter((r) => r.workedTogether).length, wouldWorkAgain: p.relationships.filter((r) => r.wouldWorkTogetherAgain === true).length, evidence: p.evidence.filter((e) => e.evidenceType !== "CAUTION").length, cautions: p.evidence.filter((e) => e.evidenceType === "CAUTION").length, approvedConversations: p.conversations.filter((c) => c.approvalStatus === "APPROVED").length, screened: p.screeningStatus === "APPROVED" || !!p.screenedAt, freshness: assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now), referralsAccepted: p.referralsMade.filter((r) => r.status === "ACCEPTED").length });
                 return (
-                  <tr key={p.id}>
+                  <tr
+                    key={p.id}
+                    data-sort-name={`${p.lastName} ${p.firstName}`.toLowerCase()}
+                    data-sort-loc={[p.primaryCountry, p.primaryCity].filter(Boolean).join(" ").toLowerCase()}
+                    data-sort-avail={p.availabilityConfirmedAt ? p.availabilityConfirmedAt.getTime() : 0}
+                    data-sort-trust={trust.score}
+                    data-sort-evidence={p.evidence.length}
+                    data-sort-next={p.nextActionDate ? p.nextActionDate.getTime() : 0}
+                  >
                     <td className="max-w-[220px]"><PersonLink person={p} sub={p.currentRole ? `${p.currentRole}${p.currentCompany ? ` · ${p.currentCompany}` : ""}` : p.headline} /></td>
                     <td>
                       {primary ? (
@@ -167,7 +177,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
                     <td><div className="flex items-center gap-1 overflow-hidden w-[200px]">{p.capabilities.slice(0, 2).map((c) => <Chip key={c} className="max-w-[120px] overflow-hidden text-ellipsis block">{c}</Chip>)}{p.capabilities.length > 2 ? <span className="text-[11px] text-ink-faint flex-none">+{p.capabilities.length - 2}</span> : null}</div></td>
                     <td className="text-xs text-ink-muted whitespace-nowrap">{[p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—"}{p.targetLocations.length ? <div className="text-[11px] text-ink-faint">→ {p.targetLocations.join(", ")}</div> : null}</td>
                     <td className="whitespace-nowrap"><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} /><div className="text-[11px] text-ink-faint mt-0.5">{p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : ROUTE_LABELS[r])).join(", ") || "Routes not confirmed"}</div></td>
-                    <td><TrustMini t={trustScore({ vouches: p.vouches.map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })), workedWith: p.relationships.filter((r) => r.workedTogether).length, wouldWorkAgain: p.relationships.filter((r) => r.wouldWorkTogetherAgain === true).length, evidence: p.evidence.filter((e) => e.evidenceType !== "CAUTION").length, cautions: p.evidence.filter((e) => e.evidenceType === "CAUTION").length, approvedConversations: p.conversations.filter((c) => c.approvalStatus === "APPROVED").length, screened: p.screeningStatus === "APPROVED" || !!p.screenedAt, freshness: assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now), referralsAccepted: p.referralsMade.filter((r) => r.status === "ACCEPTED").length })} /></td>
+                    <td><TrustMini t={trust} /></td>
                     <td className="num text-xs text-ink-muted">{p.evidence.length} <span className="text-ink-faint">· {p.conversations.filter((c) => c.approvalStatus === "APPROVED").length} conv</span></td>
                     <td className="text-xs text-ink-muted min-w-[130px] max-w-[170px]">{p.nextAction ?? "—"}{p.nextActionDate ? <div className="text-[11px] text-ink-faint"><DateText date={p.nextActionDate} relative /></div> : null}</td>
                   </tr>
@@ -176,8 +186,9 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
             </tbody>
           </table>
         )}
+        <TableSort />
       </div>
-      <div className="text-[11px] text-ink-faint mt-2 tabular">{people.length} people</div>
+      <div className="text-[11px] text-ink-faint mt-2 tabular">{people.length} people · click any column to sort</div>
     </>
   );
 }
