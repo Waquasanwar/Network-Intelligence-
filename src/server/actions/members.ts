@@ -14,6 +14,7 @@ import { SCREENING_SCRIPT, screeningToResult, type ScreeningAnswers, type Screen
 import { matchBrief, type BriefPerson } from "@/lib/demand";
 import { toDomain } from "@/server/actions/demand";
 import { resolveMemberPerson } from "@/server/queries";
+import { signInvite } from "@/lib/invite";
 import type { Prisma } from "@prisma/client";
 import type { TrustPerson } from "@/lib/trust-include";
 import { DEFAULT_VOICE, type VoiceSettings } from "@/lib/voice-config";
@@ -217,6 +218,17 @@ export async function setBriefMembers(formData: FormData) {
   await prisma.brief.update({ where: { id: b.id }, data: { openToMembers: open, memberSummary: String(formData.get("memberSummary") || "").trim().slice(0, 1000) || null } });
   await audit({ tenantId: b.tenantId, actorId: user.id, action: "brief.members", entityType: "Brief", entityId: b.id, metadata: { open } });
   revalidatePath(`/requirements/${b.id}`); revalidatePath("/member");
+}
+
+// ---------- invitations ----------
+
+/** Mint a shareable invite link for a member (or, for the owner, on behalf of a member). */
+export async function createInviteLink(personId?: string): Promise<{ ok: true; token: string; inviter: string } | { ok: false; error: string }> {
+  const user = await requireUser();
+  const me = await resolveMemberPerson(user, personId ?? null);
+  if (!me) return { ok: false, error: "Only members can invite. Finish your own screening first." };
+  await audit({ tenantId: me.tenantId, actorId: user.id, action: "member.register", entityType: "Person", entityId: me.id, metadata: { inviteLink: true } });
+  return { ok: true, token: signInvite(me.id), inviter: `${me.firstName} ${me.lastName}` };
 }
 
 // ---------- registration (public) ----------

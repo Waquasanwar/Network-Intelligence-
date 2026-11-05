@@ -1,5 +1,5 @@
-import type { AIProvider, ExtractedSummary, SearchIntent } from "./types";
-import { ExtractedSummarySchema } from "./types";
+import type { AIProvider, ExtractedSummary, ProfileDraft, SearchIntent } from "./types";
+import { ExtractedSummarySchema, ProfileDraftSchema } from "./types";
 import { HeuristicAIProvider } from "./heuristic";
 
 /**
@@ -69,6 +69,25 @@ export class AnthropicAIProvider implements AIProvider {
       return { text: query, capabilities: j.capabilities ?? [], locations: j.locations ?? [], routes: j.routes ?? [], availableSoon: !!j.availableSoon, workedWithOnly: !!j.workedWithOnly, sectors: j.sectors ?? [] };
     } catch {
       return this.fallback.parseSearch(query);
+    }
+  }
+
+  async enrichProfile(input: { name?: string; linkedinUrl?: string; text?: string }): Promise<ProfileDraft> {
+    try {
+      const prompt = `Build a draft professional profile for review. Only use what is stated or clearly implied; put gaps in "unresolved". Do not invent employers, achievements, or contact details, and do not infer any protected characteristic.
+<name>${input.name ?? ""}</name>
+<linkedinUrl>${input.linkedinUrl ?? ""}</linkedinUrl>
+<pastedText>
+${(input.text ?? "").slice(0, 6000)}
+</pastedText>
+
+Return only JSON with keys: firstName, lastName, headline, currentCompany, currentRole, primaryCity, primaryCountry, capabilities[], sectors[], workRights[] (countries/regions only), engagementPreferences[] (PERMANENT|CONTRACT|INTERIM|FRACTIONAL|ADVISORY|SOW), suggestedAvailabilityStatus (one of AVAILABLE_NOW, OPEN_TO_CONVERSATIONS, QUIETLY_EXPLORING, RIGHT_OPPORTUNITY_ONLY, FINISHING_ENGAGEMENT_SOON, FRACTIONAL_AVAILABILITY, SOW_ONLY, PERMANENT_ONLY, CONTRACT_ONLY, HAPPY_WHERE_I_AM, NOT_LOOKING_KEEP_IN_TOUCH, UNAVAILABLE_UNTIL, TAKING_A_BREAK, NEEDS_REFRESH, or omit), summary, confidence (low|medium|high), unresolved[].`;
+      const parsed = ProfileDraftSchema.safeParse(this.extractJson(await this.call(prompt)));
+      if (parsed.success) return parsed.data;
+      throw new Error("schema mismatch");
+    } catch (err) {
+      console.warn("[ai] anthropic enrichProfile failed, using heuristic", err);
+      return this.fallback.enrichProfile(input);
     }
   }
 }

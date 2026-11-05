@@ -6,6 +6,7 @@ export type AuditAction =
   | "auth.logout"
   | "person.create"
   | "person.update"
+  | "person.enrich"
   | "person.export"
   | "relationship.create"
   | "evidence.create"

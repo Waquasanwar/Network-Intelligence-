@@ -1,5 +1,5 @@
-import type { AIProvider, ExtractedSummary, SearchIntent } from "./types";
-import { ExtractedSummarySchema } from "./types";
+import type { AIProvider, ExtractedSummary, ProfileDraft, SearchIntent } from "./types";
+import { ExtractedSummarySchema, ProfileDraftSchema } from "./types";
 
 /**
  * Local, deterministic provider. Runs with no network access and no external model.
@@ -35,6 +35,38 @@ const ROUTE_HINTS: Record<string, "PERMANENT" | "CONTRACT" | "INTERIM" | "FRACTI
 };
 
 const sentences = (text: string) => text.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter((s) => s.length > 3);
+
+/** token → {city?, country} so a detected place becomes structured fields. */
+const LOCATION_MAP: Record<string, { city?: string; country: string }> = {
+  london: { city: "London", country: "UK" }, manchester: { city: "Manchester", country: "UK" }, birmingham: { city: "Birmingham", country: "UK" }, edinburgh: { city: "Edinburgh", country: "UK" }, uk: { country: "UK" },
+  dubai: { city: "Dubai", country: "UAE" }, "abu dhabi": { city: "Abu Dhabi", country: "UAE" }, uae: { country: "UAE" },
+  riyadh: { city: "Riyadh", country: "KSA" }, saudi: { country: "KSA" }, ksa: { country: "KSA" },
+  doha: { city: "Doha", country: "Qatar" }, qatar: { country: "Qatar" },
+  singapore: { city: "Singapore", country: "Singapore" }, "new york": { city: "New York", country: "USA" }, europe: { country: "Europe" },
+};
+
+const titleCase = (s: string) => s.replace(/\b([a-z])/g, (m) => m.toUpperCase()).replace(/\bAnd\b/g, "and").replace(/\bOf\b/g, "of");
+
+function splitName(raw: string): { firstName: string; lastName: string } {
+  const parts = raw.trim().replace(/\s+/g, " ").split(" ").filter(Boolean);
+  if (!parts.length) return { firstName: "", lastName: "" };
+  if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
+/** A name is the run of capitalised words at the very start of a bio ("Priya Natarajan is…"). */
+function nameFromText(text: string): string {
+  const m = /^\s*((?:[A-Z][a-z'’.-]+)(?:\s+(?:[A-Z][a-z'’.-]+|Al|bin|van|de|von)){0,2})\b/.exec(text.trim());
+  return m?.[1]?.trim() ?? "";
+}
+
+/** Pull a probable name out of a LinkedIn vanity URL (…/in/jane-doe-1a2b → "Jane Doe"). */
+function nameFromLinkedin(url: string): string {
+  const slug = /\/in\/([^/?#]+)/i.exec(url)?.[1];
+  if (!slug) return "";
+  const tokens = decodeURIComponent(slug).split("-").filter((t) => /^[a-z']+$/i.test(t) && t.length > 1).slice(0, 3);
+  return tokens.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(" ");
+}
 
 function findAll(text: string, lexicon: string[]): string[] {
   const t = text.toLowerCase();
@@ -122,6 +154,54 @@ export class HeuristicAIProvider implements AIProvider {
     ]
       .filter(Boolean)
       .join(" ");
+  }
+
+  async enrichProfile(input: { name?: string; linkedinUrl?: string; text?: string }): Promise<ProfileDraft> {
+    const text = [input.name, input.text].filter(Boolean).join("\n");
+    const lower = text.toLowerCase();
+
+    let { firstName, lastName } = splitName(input.name ?? "");
+    if (!firstName && input.linkedinUrl) ({ firstName, lastName } = splitName(nameFromLinkedin(input.linkedinUrl)));
+    if (!firstName && input.text) ({ firstName, lastName } = splitName(nameFromText(input.text)));
+
+    const capabilities = findAll(text, CAPABILITY_LEXICON).map(titleCase);
+    const sectors = findAll(text, SECTOR_LEXICON).map(titleCase);
+    const locTokens = findAll(text, LOCATION_LEXICON);
+    let primaryCity = "";
+    let primaryCountry = "";
+    for (const tok of locTokens) {
+      const m = LOCATION_MAP[tok];
+      if (!m) continue;
+      if (m.city && !primaryCity) { primaryCity = m.city; primaryCountry = m.country; }
+      else if (!primaryCountry && m.country) primaryCountry = m.country;
+    }
+
+    const routes = [...new Set(Object.entries(ROUTE_HINTS).filter(([h]) => lower.includes(h)).map(([, r]) => r))];
+    const atMatch = /\b([A-Z][\w &/-]{2,60}?)\s+(?:at|@)\s+([A-Z][\w &/.-]{1,60})/.exec(text);
+    const currentRole = atMatch?.[1]?.trim().slice(0, 120) ?? "";
+    const currentCompany = atMatch?.[2]?.trim().replace(/[.,;]$/, "").slice(0, 120) ?? "";
+    const firstSentence = sentences(text).find((s) => s.length > 10) ?? "";
+    const headline = (atMatch ? `${currentRole} at ${currentCompany}` : firstSentence).slice(0, 160);
+
+    const hasRights = /right to work|citizen|permanent resident|visa|green card|iqama/.test(lower);
+    const workRights = hasRights ? [...new Set(locTokens.map((t) => LOCATION_MAP[t]?.country).filter((c): c is string => !!c && c !== "Europe"))] : [];
+
+    const signalCount = capabilities.length + sectors.length + locTokens.length + (input.linkedinUrl ? 1 : 0);
+    const confidence: ProfileDraft["confidence"] = (input.linkedinUrl && input.text && capabilities.length >= 2) || capabilities.length >= 3 ? "high" : signalCount >= 1 || !!input.text ? "medium" : "low";
+
+    const unresolved: string[] = [];
+    if (!firstName || !lastName) unresolved.push("Confirm the person's full name.");
+    if (!capabilities.length) unresolved.push("No expertise detected — add a few areas they are known for.");
+    if (!primaryCountry) unresolved.push("Location not confirmed.");
+    if (!routes.length) unresolved.push("Preferred engagement route (permanent, contract, advisory…) not stated.");
+
+    return ProfileDraftSchema.parse({
+      firstName, lastName, headline, currentCompany, currentRole, primaryCity, primaryCountry,
+      capabilities, sectors, workRights, engagementPreferences: routes,
+      suggestedAvailabilityStatus: detectStatus(text),
+      summary: firstSentence.slice(0, 400),
+      confidence, unresolved: unresolved.slice(0, 8),
+    });
   }
 
   async parseSearch(query: string): Promise<SearchIntent> {

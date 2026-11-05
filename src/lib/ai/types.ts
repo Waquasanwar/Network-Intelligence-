@@ -46,6 +46,33 @@ export const ExtractedSummarySchema = z.object({
 
 export type ExtractedSummary = z.infer<typeof ExtractedSummarySchema>;
 
+/**
+ * A reviewable profile draft built from a name, a LinkedIn URL and/or pasted text.
+ * Nothing here is authoritative — it pre-fills a form a human confirms, so the agent
+ * speeds up intake without ever deciding on its own.
+ */
+export const ProfileDraftSchema = z.object({
+  firstName: z.string().max(80).default(""),
+  lastName: z.string().max(80).default(""),
+  headline: z.string().max(200).default(""),
+  currentCompany: z.string().max(120).default(""),
+  currentRole: z.string().max(120).default(""),
+  primaryCity: z.string().max(80).default(""),
+  primaryCountry: z.string().max(80).default(""),
+  capabilities: z.array(z.string().max(80)).max(30).default([]),
+  sectors: z.array(z.string().max(80)).max(20).default([]),
+  workRights: z.array(z.string().max(80)).max(10).default([]),
+  engagementPreferences: z.array(z.enum(["PERMANENT", "CONTRACT", "INTERIM", "FRACTIONAL", "ADVISORY", "SOW"])).max(6).default([]),
+  suggestedAvailabilityStatus: z
+    .enum(["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "SOW_ONLY", "PERMANENT_ONLY", "CONTRACT_ONLY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "UNAVAILABLE_UNTIL", "TAKING_A_BREAK", "NEEDS_REFRESH"])
+    .optional(),
+  summary: z.string().max(1200).default(""),
+  confidence: z.enum(["low", "medium", "high"]).default("low"),
+  unresolved: z.array(z.string().max(200)).max(10).default([]),
+});
+
+export type ProfileDraft = z.infer<typeof ProfileDraftSchema>;
+
 export interface AIProvider {
   readonly name: string;
   /** Structure a conversation transcript or notes into a reviewable summary. */
@@ -54,6 +81,8 @@ export interface AIProvider {
   explainFit(input: { personName: string; opportunityTitle: string; dimensions: { name: string; score: number; note: string }[]; uncertainty: string[] }): Promise<string>;
   /** Turn a natural-language query into structured search filters. */
   parseSearch(query: string): Promise<SearchIntent>;
+  /** Draft a reviewable profile from a name, a LinkedIn URL and/or pasted text. Never authoritative. */
+  enrichProfile(input: { name?: string; linkedinUrl?: string; text?: string }): Promise<ProfileDraft>;
 }
 
 export type SearchIntent = {

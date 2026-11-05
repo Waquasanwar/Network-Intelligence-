@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { isInternal, redactForPartner } from "@/lib/authz";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { InviteLinkButton } from "@/components/domain/invite-link-button";
 import { Badge, Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea, Field, Checkbox } from "@/components/ui/form";
@@ -77,7 +78,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
         <><div className="mb-3"><h2 className="text-[15px] font-semibold">Opportunities open to members</h2><p className="text-[12.5px] text-ink-muted">Anonymised. Pitch with your own profile, or refer someone you would put your name behind. You are only ever named to a client with your consent.</p></div>{open.length ? <div className="space-y-3">{open.map((b) => <OppCard key={b.id} b={b} />)}</div> : <EmptyState title="Nothing open right now" description="When a requirement is opened to members, it appears here." />}</>
       ) : tab === "refer" ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2"><Card><CardHeader title="Refer someone" description="This is what makes the network compound." /><CardBody>
+          <div className="xl:col-span-2"><Card><CardHeader title="Refer someone" description="This is what makes the network compound." action={<InviteLinkButton asPersonId={internal ? p.id : undefined} />} /><CardBody>
             <form action={submitReferral} className="space-y-4">
               {internal ? <input type="hidden" name="asPersonId" value={p.id} /> : null}
               <p className="text-[12.5px] text-ink-muted">Only people you would genuinely stand behind. Your referral is anonymous to clients; we tell the person you sent them only if you say we can.</p>
