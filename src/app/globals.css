@@ -46,11 +46,11 @@
   --radius-md: 11px;
   --radius-lg: 16px;
   --radius-xl: 22px;
-  --shadow-card: 0 1px 2px rgba(20, 24, 45, 0.03), 0 10px 30px -18px rgba(20, 24, 45, 0.12);
-  --shadow-card-hover: 0 2px 6px rgba(20, 24, 45, 0.05), 0 20px 44px -22px rgba(20, 24, 45, 0.2);
+  --shadow-card: 0 1px 2px rgba(20, 24, 45, 0.04);
+  --shadow-card-hover: 0 1px 2px rgba(20, 24, 45, 0.05), 0 10px 26px -18px rgba(20, 24, 45, 0.22);
   --shadow-drawer: 0 32px 80px -16px rgba(20, 24, 45, 0.28), 0 0 0 1px rgba(20, 24, 45, 0.05);
   --shadow-pop: 0 20px 60px -12px rgba(20, 24, 45, 0.24), 0 0 0 1px rgba(20, 24, 45, 0.05);
-  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(59, 59, 168, 0.24), 0 6px 14px -8px rgba(59, 59, 168, 0.4);
+  --shadow-button: 0 1px 2px rgba(20, 24, 45, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -102,33 +102,16 @@ html, body {
   font-feature-settings: "cv11", "ss01", "ss03";
 }
 
-/* Ambient aurora: soft, slowly drifting washes behind everything. */
-.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.ambient::before, .ambient::after {
-  content: ""; position: absolute; width: 46vw; height: 46vw; border-radius: 50%;
-  filter: blur(96px); will-change: transform;
-}
-.ambient::before { top: -16vw; left: -8vw; background: radial-gradient(circle, rgba(59, 59, 168, 0.13), transparent 66%); animation: aurora-a 30s ease-in-out infinite; }
-.ambient::after { top: -10vw; right: -10vw; width: 52vw; height: 52vw; background: radial-gradient(circle, rgba(107, 107, 240, 0.15), transparent 66%); animation: aurora-b 38s ease-in-out infinite; }
-@keyframes aurora-a { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(5vw, 3vw) scale(1.1); } }
-@keyframes aurora-b { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-4vw, 4vw) scale(1.08); } }
+/* Ambient: one faint, static wash. Minimal-SaaS depth comes from hairlines, not glow. */
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(1000px 440px at 50% -14%, rgba(59, 59, 168, 0.045), transparent 62%); }
 @media (prefers-color-scheme: dark) {
-  .ambient::before { background: radial-gradient(circle, rgba(139, 139, 247, 0.16), transparent 66%); }
-  .ambient::after { background: radial-gradient(circle, rgba(63, 210, 192, 0.12), transparent 66%); }
+  .ambient { background: radial-gradient(1000px 440px at 50% -14%, rgba(139, 139, 247, 0.1), transparent 62%); }
 }
 
-/* Signature: a living gradient border that marks every agentic / AI surface. */
-.ai-surface { position: relative; isolation: isolate; }
-.ai-surface::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1;
-  background: linear-gradient(115deg, var(--color-navy-400), var(--color-teal-400), var(--color-navy-600), var(--color-navy-400));
-  background-size: 260% 260%;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  opacity: 0.55; animation: ai-pan 7s linear infinite; pointer-events: none;
-}
-@keyframes ai-pan { 0% { background-position: 0% 50%; } 100% { background-position: 260% 50%; } }
-.gradient-text { background: linear-gradient(100deg, var(--color-navy), var(--color-navy-400) 55%, var(--color-teal-400)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* Agentic surfaces are marked by a single restrained indigo hairline — no animation. */
+.ai-surface { position: relative; }
+.ai-surface::before { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid color-mix(in srgb, var(--color-navy-400) 42%, transparent); pointer-events: none; }
+.gradient-text { color: var(--color-navy); }
 
 ::selection { background: rgba(13, 122, 111, 0.2); }
 :focus-visible { outline: 2px solid var(--color-navy-400); outline-offset: 2px; border-radius: 6px; }
