@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Input, Select, Textarea, Field, Checkbox } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ export function AiAddPersonForm({ people }: { people: { id: string; firstName: s
             </button>
           </div>
         </div>
+        <Link href="/network/intake" className="text-[12.5px] text-navy hover:underline inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" /> or interview them in a conversation →</Link>
       </div>
     );
   }

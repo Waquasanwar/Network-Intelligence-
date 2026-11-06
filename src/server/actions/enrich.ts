@@ -1,6 +1,6 @@
 "use server";
 import { headers } from "next/headers";
-import { getAIProvider, type ProfileDraft } from "@/lib/ai";
+import { getAIProvider, type ProfileDraft, type ExtractedSummary } from "@/lib/ai";
 import { requireInternalAction } from "@/server/session";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
@@ -56,5 +56,27 @@ export async function enrichSelfDraft(input: EnrichInput): Promise<EnrichResult>
   } catch (err) {
     console.error("[enrich] self failed", err);
     return { ok: false, error: "Couldn't read that just now — you can fill the form in yourself." };
+  }
+}
+
+export type IntakeResult = { ok: true; summary: ExtractedSummary } | { ok: false; error: string };
+
+/**
+ * AI intake: structure a free-flowing intake conversation into a reviewable summary.
+ * Reuses structureConversation; the transcript is untrusted input and nothing is written here.
+ */
+export async function structureIntake(input: { personName?: string; transcript: string }): Promise<IntakeResult> {
+  const user = await requireInternalAction();
+  const h = await headers();
+  const limited = await rateLimit("mutate", `intake:${user.id}:${clientIp(h)}`);
+  if (!limited.success) return { ok: false, error: "One moment — that's a lot of summaries in a short time." };
+  const transcript = (input.transcript ?? "").trim().slice(0, 12000);
+  if (transcript.length < 20) return { ok: false, error: "Have a little more of a conversation first." };
+  try {
+    const summary = await getAIProvider().structureConversation({ personName: input.personName?.slice(0, 120) || "the person", transcript });
+    return { ok: true, summary };
+  } catch (err) {
+    console.error("[intake] structure failed", err);
+    return { ok: false, error: "Couldn't summarise the conversation just now. Try again in a moment." };
   }
 }
