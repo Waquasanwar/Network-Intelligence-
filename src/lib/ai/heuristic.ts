@@ -71,8 +71,36 @@ function nameFromLinkedin(url: string): string {
 function findAll(text: string, lexicon: string[]): string[] {
   const t = text.toLowerCase();
   const out: string[] = [];
-  for (const term of lexicon) if (t.includes(term)) out.push(term);
+  for (const term of lexicon) {
+    // Word-boundary match so "ai" doesn't match "Dubai" and "cto" doesn't match "director".
+    const re = new RegExp(`(?:^|[^a-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[^a-z0-9]|$)`, "i");
+    if (re.test(t)) out.push(term);
+  }
   return [...new Set(out)];
+}
+
+const ROLE_WORDS = ["director", "manager", "lead", "head", "officer", "architect", "consultant", "partner", "founder", "cto", "cio", "ceo", "cfo", "coo", "analyst", "engineer", "advisor", "adviser", "counsel", "controller", "president", "principal", "specialist", "strategist"];
+const ROLE_STOP = new Set(["the", "a", "an", "is", "was", "of", "and", "to", "at", "in", "our", "their", "his", "her", "as", "now", "currently"]);
+
+/** Tighten a free-text role to "<qualifier> <role word>", e.g. "programme director". */
+function roleFrom(text: string): string {
+  const words = text.replace(/\n/g, " ").split(/\s+/);
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i].toLowerCase().replace(/[^a-z]/g, "");
+    if (ROLE_WORDS.includes(w)) {
+      const prevRaw = words[i - 1] ?? "";
+      const prev = prevRaw.toLowerCase().replace(/[^a-z]/g, "");
+      const parts = prev && !ROLE_STOP.has(prev) ? [prevRaw, words[i]] : [words[i]];
+      return parts.join(" ").replace(/[^A-Za-z /&-].*$/, "").trim();
+    }
+  }
+  return "";
+}
+
+/** Company after "at/@/with": the run of Capitalised words, stopping before "in/for…". */
+function companyFrom(text: string): string {
+  const m = /\b(?:at|@|with)\s+([A-Z][A-Za-z0-9&.'-]+(?:\s+(?:[A-Z][A-Za-z0-9&.'-]+|Al|bin|van|de|von))*)/.exec(text);
+  return (m?.[1] ?? "").replace(/\s+(?:in|for|on|across|since)\b.*$/i, "").replace(/[.,;:]$/, "").trim().slice(0, 80);
 }
 
 function detectStatus(text: string): ExtractedSummary["suggestedAvailabilityStatus"] {
@@ -177,11 +205,11 @@ export class HeuristicAIProvider implements AIProvider {
     }
 
     const routes = [...new Set(Object.entries(ROUTE_HINTS).filter(([h]) => lower.includes(h)).map(([, r]) => r))];
-    const atMatch = /\b([A-Z][\w &/-]{2,60}?)\s+(?:at|@)\s+([A-Z][\w &/.-]{1,60})/.exec(text);
-    const currentRole = atMatch?.[1]?.trim().slice(0, 120) ?? "";
-    const currentCompany = atMatch?.[2]?.trim().replace(/[.,;]$/, "").slice(0, 120) ?? "";
+    const role = roleFrom(text);
+    const currentRole = role ? titleCase(role) : "";
+    const currentCompany = companyFrom(text);
     const firstSentence = sentences(text).find((s) => s.length > 10) ?? "";
-    const headline = (atMatch ? `${currentRole} at ${currentCompany}` : firstSentence).slice(0, 160);
+    const headline = (currentRole && currentCompany ? `${currentRole} at ${currentCompany}` : firstSentence).slice(0, 160);
 
     const hasRights = /right to work|citizen|permanent resident|visa|green card|iqama/.test(lower);
     const workRights = hasRights ? [...new Set(locTokens.map((t) => LOCATION_MAP[t]?.country).filter((c): c is string => !!c && c !== "Europe"))] : [];

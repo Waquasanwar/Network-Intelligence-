@@ -57,6 +57,12 @@ describe("HeuristicAIProvider.enrichProfile", () => {
     expect(d.primaryCity).toBe("Dubai");
     expect(d.primaryCountry).toBe("UAE");
     expect(d.engagementPreferences).toEqual(expect.arrayContaining(["ADVISORY", "FRACTIONAL"]));
+    expect(d.currentRole).toBe("Programme Director");
+    expect(d.currentCompany).toBe("Majid Al Futtaim");
+    expect(d.headline).toBe("Programme Director at Majid Al Futtaim");
+    // Word-boundary matching: no "ai" from "Dubai", no "cto"/"ceo" from "director".
+    expect(d.capabilities).not.toContain("Ai");
+    expect(d.capabilities).not.toContain("Cto");
     expect(d.confidence).toBe("high");
   });
 
