@@ -14,7 +14,7 @@ import { SCREENING_SCRIPT, screeningToResult, type ScreeningAnswers, type Screen
 import { matchBrief, type BriefPerson } from "@/lib/demand";
 import { toDomain } from "@/server/actions/demand";
 import { resolveMemberPerson } from "@/server/queries";
-import { signInvite } from "@/lib/invite";
+import { signInvite, signTenantInvite, parseInvite } from "@/lib/invite";
 import type { Prisma } from "@prisma/client";
 import type { TrustPerson } from "@/lib/trust-include";
 import { DEFAULT_VOICE, type VoiceSettings } from "@/lib/voice-config";
@@ -226,27 +226,51 @@ export async function setBriefMembers(formData: FormData) {
 export async function createInviteLink(personId?: string): Promise<{ ok: true; token: string; inviter: string } | { ok: false; error: string }> {
   const user = await requireUser();
   const me = await resolveMemberPerson(user, personId ?? null);
-  if (!me) return { ok: false, error: "Only members can invite. Finish your own screening first." };
-  await audit({ tenantId: me.tenantId, actorId: user.id, action: "member.register", entityType: "Person", entityId: me.id, metadata: { inviteLink: true } });
-  return { ok: true, token: signInvite(me.id), inviter: `${me.firstName} ${me.lastName}` };
+  if (me) {
+    await audit({ tenantId: me.tenantId, actorId: user.id, action: "member.register", entityType: "Person", entityId: me.id, metadata: { inviteLink: true } });
+    return { ok: true, token: signInvite(me.id), inviter: `${me.firstName} ${me.lastName}` };
+  }
+  // The owner/admin can invite the first members directly into the tenant, before anyone is a member.
+  if (isInternal(user)) {
+    const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { name: true } });
+    await audit({ tenantId: user.tenantId, actorId: user.id, action: "member.register", entityType: "Tenant", metadata: { inviteLink: true, tenant: true } });
+    return { ok: true, token: signTenantInvite(user.tenantId), inviter: tenant?.name ?? "the network" };
+  }
+  return { ok: false, error: "Only members can invite. Finish your own screening first." };
 }
 
 // ---------- registration (public) ----------
 
-const registerSchema = z.object({ firstName: z.string().trim().min(1).max(60), lastName: z.string().trim().min(1).max(60), email: z.string().trim().email().max(200), password: z.string().min(8).max(200), headline: z.string().max(200).optional(), linkedinUrl: z.string().max(300).optional(), referrerId: z.string().min(1), consent: z.coerce.boolean() });
+const registerSchema = z.object({ firstName: z.string().trim().min(1).max(60), lastName: z.string().trim().min(1).max(60), email: z.string().trim().email().max(200), password: z.string().min(8).max(200), headline: z.string().max(200).optional(), linkedinUrl: z.string().max(300).optional(), referrerId: z.string().optional(), inviteToken: z.string().optional(), consent: z.coerce.boolean() });
 
-/** A new member registers through a member's invitation. They get a member login and land in their screening. */
+/**
+ * A new member registers through an invitation — a member who referred them, or the network's
+ * own invite link. Invitation-only is preserved: without a valid member referrer or a signed
+ * invite token, registration is refused.
+ */
 export async function registerMember(formData: FormData) {
   const d = registerSchema.parse(Object.fromEntries(formData));
   if (!d.consent) redirect("/join?error=consent");
-  const referrer = await prisma.person.findFirst({ where: { id: d.referrerId, memberSince: { not: null } } });
-  if (!referrer) redirect("/join?error=referrer");
+
+  const invite = d.inviteToken ? parseInvite(d.inviteToken) : null;
+  let tenantId: string | null = null;
+  let introducer: { id: string; firstName: string; lastName: string } | null = null;
+  const referrerId = d.referrerId || invite?.personId;
+  if (referrerId) {
+    const r = await prisma.person.findFirst({ where: { id: referrerId, memberSince: { not: null } }, select: { id: true, firstName: true, lastName: true, tenantId: true } });
+    if (r) { tenantId = r.tenantId; introducer = { id: r.id, firstName: r.firstName, lastName: r.lastName }; }
+  } else if (invite?.tenantId) {
+    const t = await prisma.tenant.findUnique({ where: { id: invite.tenantId }, select: { id: true } });
+    if (t) tenantId = t.id;
+  }
+  if (!tenantId) redirect("/join?error=referrer");
+
   const email = d.email.toLowerCase();
   if (await prisma.user.findUnique({ where: { email } })) redirect("/join?error=exists");
-  const owner = await prisma.user.findFirst({ where: { tenantId: referrer.tenantId, role: "OWNER" }, select: { id: true } });
-  const person = await prisma.person.create({ data: { tenantId: referrer.tenantId, firstName: d.firstName, lastName: d.lastName, email, headline: d.headline || null, linkedinUrl: d.linkedinUrl && /^https?:\/\//i.test(d.linkedinUrl) ? d.linkedinUrl : null, availabilityStatus: "NEEDS_REFRESH", screeningStatus: "REGISTERED", referralConsent: "ask", memberSince: new Date(), nextAction: "Screening call", nextActionDate: new Date(Date.now() + 3 * 86_400_000), relationships: owner ? { create: { networkOwnerId: owner.id, sourceType: "INBOUND", relationshipType: "INTRODUCED", introducedById: referrer.id, relationshipNotes: `Registered through ${referrer.firstName} ${referrer.lastName}'s invitation.`, lastContactDate: new Date() } } : undefined } });
-  await prisma.user.create({ data: { tenantId: referrer.tenantId, email, name: `${d.firstName} ${d.lastName}`, role: "MEMBER", personId: person.id, passwordHash: await hash(d.password, 10) } });
-  await audit({ tenantId: referrer.tenantId, actorId: null, action: "member.register", entityType: "Person", entityId: person.id, metadata: { referrerId: referrer.id } });
+  const owner = await prisma.user.findFirst({ where: { tenantId, role: "OWNER" }, select: { id: true } });
+  const person = await prisma.person.create({ data: { tenantId, firstName: d.firstName, lastName: d.lastName, email, headline: d.headline || null, linkedinUrl: d.linkedinUrl && /^https?:\/\//i.test(d.linkedinUrl) ? d.linkedinUrl : null, availabilityStatus: "NEEDS_REFRESH", screeningStatus: "REGISTERED", referralConsent: "ask", memberSince: new Date(), nextAction: "Screening call", nextActionDate: new Date(Date.now() + 3 * 86_400_000), relationships: owner ? { create: { networkOwnerId: owner.id, sourceType: "INBOUND", relationshipType: introducer ? "INTRODUCED" : "DIRECT", introducedById: introducer?.id ?? null, relationshipNotes: introducer ? `Registered through ${introducer.firstName} ${introducer.lastName}'s invitation.` : "Registered via the network's invite link.", lastContactDate: new Date() } } : undefined } });
+  await prisma.user.create({ data: { tenantId, email, name: `${d.firstName} ${d.lastName}`, role: "MEMBER", personId: person.id, passwordHash: await hash(d.password, 10) } });
+  await audit({ tenantId, actorId: null, action: "member.register", entityType: "Person", entityId: person.id, metadata: { referrerId: introducer?.id ?? null, viaTenantInvite: !!invite?.tenantId } });
   redirect(`/login?registered=1&callbackUrl=${encodeURIComponent("/member?welcome=1")}`);
 }
 

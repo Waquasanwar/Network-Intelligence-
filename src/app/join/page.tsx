@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { JoinForm } from "@/components/domain/join-form";
-import { verifyInvite } from "@/lib/invite";
+import { parseInvite } from "@/lib/invite";
 import { SCREENING_MINUTES } from "@/lib/screening";
 
 export const metadata = { title: "Join the network" };
@@ -10,8 +10,10 @@ export const dynamic = "force-dynamic";
 export default async function JoinPage({ searchParams }: { searchParams: Promise<{ error?: string; ref?: string; t?: string }> }) {
   const sp = await searchParams;
   const members = await prisma.person.findMany({ where: { memberSince: { not: null } }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" }, take: 300 });
-  const invitedId = verifyInvite(sp.t) ?? (sp.ref || null);
-  const referrer = invitedId ? members.find((m) => m.id === invitedId) ?? null : null;
+  const invite = parseInvite(sp.t) ?? (sp.ref ? { personId: sp.ref } : null);
+  const referrer = invite?.personId ? members.find((m) => m.id === invite.personId) ?? null : null;
+  const tenantInvite = !!invite?.tenantId;
+  const inviteToken = sp.t && (referrer || tenantInvite) ? sp.t : undefined;
   const error = sp.error === "exists" ? "There is already a login for that email. Sign in instead." : sp.error === "referrer" ? "Choose the member who invited you." : sp.error === "consent" ? "Please confirm you understand how your profile is shared." : null;
   return (
     <div className="min-h-screen bg-canvas text-ink">
@@ -25,7 +27,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
           <ul className="mt-7 space-y-3">{[["One screening, 30 minutes.", `Your story, expertise, availability, work rights and how you work. About ${SCREENING_MINUTES} minutes.`], ["Anonymous until you say yes.", "Clients see a capability card, never your name."], ["Trust, built by people.", "Every person who vouches for you adds to your trust score."], ["Refer and be referred.", "Pitch for opportunities, or refer someone you would stand behind."]].map(([b, t]) => <li key={b} className="rounded-[14px] bg-white/[0.07] border border-white/[0.12] px-3.5 py-3 text-[13px] text-white/75"><b className="text-white font-semibold">{b}</b> {t}</li>)}</ul>
           <div className="mt-auto pt-6 text-[12px] text-white/45">{members.length} members in the network · <a href="/login" className="text-white/70 hover:text-white">Already a member? Sign in</a></div>
         </div>
-        <JoinForm members={members} referrer={referrer} error={error} />
+        <JoinForm members={members} referrer={referrer} tenantInvite={tenantInvite} inviteToken={inviteToken} error={error} />
       </div>
     </div>
   );

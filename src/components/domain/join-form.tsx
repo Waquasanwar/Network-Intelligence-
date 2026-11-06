@@ -10,7 +10,7 @@ import { Sparkles, Wand2, Check } from "lucide-react";
 
 type Member = { id: string; firstName: string; lastName: string };
 
-export function JoinForm({ members, referrer, error }: { members: Member[]; referrer: Member | null; error: string | null }) {
+export function JoinForm({ members, referrer, tenantInvite = false, inviteToken, error }: { members: Member[]; referrer: Member | null; tenantInvite?: boolean; inviteToken?: string; error: string | null }) {
   const [fields, setFields] = useState({ firstName: "", lastName: "", headline: "", linkedinUrl: "" });
   const [source, setSource] = useState("");
   const [autofilled, setAutofilled] = useState(false);
@@ -41,6 +41,8 @@ export function JoinForm({ members, referrer, error }: { members: Member[]; refe
       <p className="text-[12.5px] text-ink-muted mt-0.5">Takes a minute. Your screening comes next.</p>
       {referrer ? (
         <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-teal/10 text-teal text-[12px] font-medium px-2.5 py-1"><Check className="h-3.5 w-3.5" /> Invited by {fullName(referrer)}</div>
+      ) : tenantInvite ? (
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-teal/10 text-teal text-[12px] font-medium px-2.5 py-1"><Check className="h-3.5 w-3.5" /> You&apos;ve been invited to join the network</div>
       ) : null}
       {error ? <div className="mt-3 rounded-[12px] border border-amber/30 bg-amber-100 px-3 py-2 text-[12.5px]">{error}</div> : null}
 
@@ -64,9 +66,10 @@ export function JoinForm({ members, referrer, error }: { members: Member[]; refe
         <Field label="Password" required hint="At least 8 characters. This is your login."><Input name="password" type="password" required minLength={8} /></Field>
         <Field label="What you are known for"><Input name="headline" value={fields.headline} onChange={set("headline")} placeholder="One line" /></Field>
         <Field label="LinkedIn profile" hint="Optional. We can import recommendations from here."><Input name="linkedinUrl" value={fields.linkedinUrl} onChange={set("linkedinUrl")} placeholder="https://linkedin.com/in/…" /></Field>
+        {inviteToken ? <input type="hidden" name="inviteToken" value={inviteToken} /> : null}
         {referrer ? (
           <input type="hidden" name="referrerId" value={referrer.id} />
-        ) : (
+        ) : tenantInvite ? null : (
           <Field label="Who invited you?" required hint="Only members can invite. If you were not invited, ask the person who told you about us."><Select name="referrerId" defaultValue="" required><option value="">— choose —</option>{members.map((m) => <option key={m.id} value={m.id}>{fullName(m)}</option>)}</Select></Field>
         )}
         <Checkbox name="consent" label="I understand my profile is anonymous to clients until I consent to an introduction" defaultChecked />

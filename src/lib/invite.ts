@@ -16,6 +16,18 @@ export function signInvite(personId: string): string {
   return `${payload}.${sign(payload)}`;
 }
 
+/** A link the owner can share before anyone is a member yet: onboards straight into the tenant. */
+export function signTenantInvite(tenantId: string): string {
+  return signInvite(`t:${tenantId}`);
+}
+
+/** Resolve a verified token to either a member referrer or a tenant invite. */
+export function parseInvite(token: string | undefined | null): { personId?: string; tenantId?: string } | null {
+  const v = verifyInvite(token);
+  if (!v) return null;
+  return v.startsWith("t:") ? { tenantId: v.slice(2) } : { personId: v };
+}
+
 export function verifyInvite(token: string | undefined | null): string | null {
   if (!token || !token.includes(".")) return null;
   const [payload, sig] = token.split(".");

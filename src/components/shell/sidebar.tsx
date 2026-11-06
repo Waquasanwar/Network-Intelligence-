@@ -22,7 +22,7 @@ const WORKSPACES = [
 ];
 const SETTINGS_NAV = [
   { href: "/network/import", label: "Import contacts", icon: Upload },
-  { href: "/join", label: "Join link", icon: Link2 },
+  { href: "/invite", label: "Invite link", icon: Link2 },
   { href: "/settings/commercials", label: "Commercials", icon: Percent },
   { href: "/settings/screening", label: "Screening call", icon: MicVocal },
   { href: "/settings/integrations", label: "Integrations", icon: Plug },
