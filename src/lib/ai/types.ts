@@ -83,6 +83,8 @@ export interface AIProvider {
   parseSearch(query: string): Promise<SearchIntent>;
   /** Draft a reviewable profile from a name, a LinkedIn URL and/or pasted text. Never authoritative. */
   enrichProfile(input: { name?: string; linkedinUrl?: string; text?: string }): Promise<ProfileDraft>;
+  /** Draft a short, honest outreach note to a person about an opportunity. The client is never named. */
+  draftOutreach(input: { toName: string; role: string; capability: string; whyFit: string; senderName: string; worked: boolean }): Promise<string>;
 }
 
 export type SearchIntent = {

@@ -90,4 +90,16 @@ Return only JSON with keys: firstName, lastName, headline, currentCompany, curre
       return this.fallback.enrichProfile(input);
     }
   }
+
+  async draftOutreach(input: { toName: string; role: string; capability: string; whyFit: string; senderName: string; worked: boolean }): Promise<string> {
+    try {
+      const prompt = `Write a short, warm, honest outreach message (under 110 words) from ${input.senderName} to ${input.toName.split(" ")[0]} about a possible opportunity. ${input.worked ? "They have worked together before." : "They have not worked together directly."}
+Context (do NOT name any client or company): role/route = "${input.role}"; area = "${input.capability}"; why they came to mind = "${input.whyFit}".
+Rules: no client or company name; make clear it is early and exploratory; say nothing about them is shared without their consent; ask for a short call; sign off as ${input.senderName}. Return only the message text, no preamble.`;
+      const text = (await this.call(prompt, 400)).trim();
+      return text || this.fallback.draftOutreach(input);
+    } catch {
+      return this.fallback.draftOutreach(input);
+    }
+  }
 }

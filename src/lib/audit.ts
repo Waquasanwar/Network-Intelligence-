@@ -21,6 +21,7 @@ export type AuditAction =
   | "match.generate"
   | "match.decide"
   | "introduction.request"
+  | "outreach.draft"
   | "introduction.approve"
   | "identity.reveal"
   | "partner.requirement"

@@ -232,6 +232,23 @@ export class HeuristicAIProvider implements AIProvider {
     });
   }
 
+  async draftOutreach(i: { toName: string; role: string; capability: string; whyFit: string; senderName: string; worked: boolean }): Promise<string> {
+    const first = i.toName.trim().split(/\s+/)[0] || "there";
+    const why = i.whyFit ? i.whyFit.split(/(?<=[.!?])\s/)[0].replace(/[.?!]$/, "").trim() : "";
+    const open = i.worked ? "Hope you're keeping well — it's been a while." : "Hope you don't mind the direct note.";
+    const need = `a client I'm working with has ${i.role ? `${/^[aeiou]/i.test(i.role) ? "an" : "a"} ${i.role.toLowerCase()} requirement` : "a new requirement"}${i.capability ? ` around ${i.capability.toLowerCase()}` : ""}`;
+    return [
+      `Hi ${first},`,
+      "",
+      `${open} ${need.charAt(0).toUpperCase() + need.slice(1)}, and you came to mind${why ? ` — ${why.charAt(0).toLowerCase() + why.slice(1)}` : ""}.`,
+      "",
+      "It's early and completely exploratory, and nothing about you is shared with anyone without your say-so. Would you be open to a short call to see whether it's the kind of thing you'd want to hear more about?",
+      "",
+      "Best,",
+      i.senderName,
+    ].join("\n");
+  }
+
   async parseSearch(query: string): Promise<SearchIntent> {
     const q = query.toLowerCase();
     const routes = [...new Set(Object.entries(ROUTE_HINTS).filter(([h]) => q.includes(h)).map(([, r]) => r))];

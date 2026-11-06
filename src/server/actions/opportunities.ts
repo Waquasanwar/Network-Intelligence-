@@ -9,6 +9,7 @@ import { parseList, fullName } from "@/lib/utils";
 import { retrieveMatches, type MatchPerson } from "@/lib/matching";
 import { getAIProvider } from "@/lib/ai";
 import { assertSameTenant, canApprove, canRevealIdentity, AuthorizationError } from "@/lib/authz";
+import { ROUTE_LABELS } from "@/lib/labels";
 import type { CommercialModel, EngagementRoute, HumanDecision, OpportunitySource, OpportunityStatus, Seniority } from "@prisma/client";
 
 const oppSchema = z.object({
@@ -252,4 +253,36 @@ export async function removeFromTeam(formData: FormData) {
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "team.remove", entityType: "Opportunity", entityId: m.opportunity.id, metadata: { personId: m.personId } });
   revalidatePath("/amana");
   revalidatePath(`/opportunities/${m.opportunity.id}`);
+}
+
+/**
+ * Agentic outreach: draft a short, honest note to a matched person about this opportunity.
+ * The client is never named. Returns text for the owner to edit and send — nothing is sent here.
+ */
+export async function draftOutreach(opportunityId: string, personId: string): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const user = await requireInternalAction();
+  const opp = await prisma.opportunity.findUnique({ where: { id: opportunityId }, select: { tenantId: true, title: true, engagementRoute: true, requiredCapabilities: true, preferredCapabilities: true } });
+  if (!opp) return { ok: false, error: "Opportunity not found." };
+  assertSameTenant(user, opp.tenantId);
+  const person = await prisma.person.findUnique({ where: { id: personId }, select: { tenantId: true, firstName: true, lastName: true, relationships: { select: { workedTogether: true } } } });
+  if (!person) return { ok: false, error: "Person not found." };
+  assertSameTenant(user, person.tenantId);
+  const match = await prisma.match.findFirst({ where: { opportunityId, personId }, select: { fitExplanation: true } });
+  const capability = opp.requiredCapabilities[0] ?? opp.preferredCapabilities[0] ?? "";
+  const whyFit = (match?.fitExplanation ?? "").split(/(?<=[.!?])\s/)[0] ?? "";
+  try {
+    const text = await getAIProvider().draftOutreach({
+      toName: fullName(person),
+      role: ROUTE_LABELS[opp.engagementRoute] ?? "",
+      capability,
+      whyFit,
+      senderName: user.name,
+      worked: person.relationships.some((r) => r.workedTogether),
+    });
+    await audit({ tenantId: user.tenantId, actorId: user.id, action: "outreach.draft", entityType: "Opportunity", entityId: opportunityId, metadata: { personId } });
+    return { ok: true, text };
+  } catch (err) {
+    console.error("[outreach] draft failed", err);
+    return { ok: false, error: "Couldn't draft a message just now. Try again in a moment." };
+  }
 }

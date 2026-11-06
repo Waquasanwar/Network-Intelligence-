@@ -13,7 +13,7 @@ type SimNode = GNode & { x: number; y: number; vx: number; vy: number; r: number
  * stronger "worked together" links. Drag, hover to focus a neighbourhood, scroll to zoom,
  * click a node to open the profile.
  */
-export function NetworkGraph({ nodes, links }: { nodes: GNode[]; links: GLink[] }) {
+export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)] min-h-[460px]" }: { nodes: GNode[]; links: GLink[]; heightClass?: string }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const router = useRouter();
@@ -210,7 +210,7 @@ export function NetworkGraph({ nodes, links }: { nodes: GNode[]; links: GLink[] 
   }, [nodes, links, router]);
 
   return (
-    <div ref={wrapRef} className="relative w-full h-[calc(100vh-180px)] min-h-[460px] rounded-[16px] border border-line bg-surface overflow-hidden">
+    <div ref={wrapRef} className={`relative w-full ${heightClass} rounded-[16px] border border-line bg-surface overflow-hidden`}>
       <canvas ref={canvasRef} className="block" />
       {tip ? (
         <div className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-[10px] border border-line bg-surface px-2.5 py-1.5 shadow-[var(--shadow-card)]" style={{ left: tip.x, top: tip.y }}>

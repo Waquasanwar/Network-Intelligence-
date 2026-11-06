@@ -3,6 +3,7 @@ import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { KpiCard } from "@/components/ui/kpi-card";
+import { NetworkGraph, type GNode, type GLink } from "@/components/domain/network-graph";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { PersonLink } from "@/components/domain/person-link";
@@ -73,6 +74,21 @@ export default async function OverviewPage() {
 
   const stageCounts = ["INTAKE", "QUALIFYING", "MATCHING", "SHORTLIST", "INTRODUCING", "ENGAGED"].map((s) => ({ stage: s, count: opportunities.filter((o) => o.status === s).length }));
 
+  // A simple map of the network for the home page — full interactive version at /network/map.
+  const MAP_HUB = "__hub__";
+  const peopleIds = new Set(people.map((p) => p.id));
+  const mapNodes: GNode[] = [{ id: MAP_HUB, name: `${user.name.split(" ")[0]}’s network`, headline: "You", trust: 100, worked: true, hub: true }];
+  const mapLinks: GLink[] = [];
+  for (const p of people) {
+    const worked = p.relationships.some((r) => r.workedTogether);
+    const approved = p.conversations.filter((c) => c.approvalStatus === "APPROVED").length;
+    const trust = Math.min(100, 18 + p.evidence.length * 10 + (worked ? 25 : 0) + approved * 8);
+    mapNodes.push({ id: p.id, name: fullName(p), headline: p.headline ?? "", trust, worked });
+    const primary = p.relationships[0];
+    const introducer = primary?.introducedById && peopleIds.has(primary.introducedById) ? primary.introducedById : null;
+    mapLinks.push({ source: introducer ?? MAP_HUB, target: p.id, worked: !!primary?.workedTogether });
+  }
+
   return (
     <>
       <PageHeader
@@ -98,6 +114,13 @@ export default async function OverviewPage() {
         <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
         <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
       </div>
+
+      {people.length > 1 ? (
+        <Card className="mb-4 overflow-hidden">
+          <CardHeader title="Your network" description="Who you know and how they reach you — worked-with in filled indigo, introduced outlined." action={<Link href="/network/map" className="text-xs text-navy hover:underline">Open full map</Link>} />
+          <div className="px-3 pb-3"><NetworkGraph nodes={mapNodes} links={mapLinks} heightClass="h-[360px]" /></div>
+        </Card>
+      ) : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">

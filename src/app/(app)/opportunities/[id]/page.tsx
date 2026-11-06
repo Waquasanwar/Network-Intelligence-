@@ -13,6 +13,7 @@ import { AvailabilityBadge, DecisionBadge, IntroBadge, RouteBadge, StageBadge } 
 import { DateText } from "@/components/domain/date";
 import { ApproveIntroductionDrawer } from "@/components/domain/opportunity-drawers";
 import { generateMatches, decideMatch, setOpportunityStatus, updateIntroductionStatus, addToTeam, removeFromTeam } from "@/server/actions/opportunities";
+import { OutreachButton } from "@/components/domain/outreach-button";
 import { DECISION_LABELS, OPPORTUNITY_STATUS_LABELS, ROUTE_LABELS, SENIORITY_LABELS, INTRO_STATUS_LABELS } from "@/lib/labels";
 import { formatMoney, fullName } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
@@ -131,6 +132,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                             {opp.isAmana && !opp.teamShortlist.some((t) => t.personId === m.personId) ? <form action={addToTeam}><input type="hidden" name="opportunityId" value={opp.id} /><input type="hidden" name="personId" value={m.personId} /><input type="hidden" name="roleOnTeam" value="Team member" /><Button size="sm" variant="ghost" type="submit">Add to team</Button></form> : null}
                           </div>
                         </div>
+                        <OutreachButton opportunityId={opp.id} personId={m.personId} />
                         {m.approvedBy ? <div className="text-[11px] text-ink-faint mt-2">Decision by {m.approvedBy.name} · <DateText date={m.updatedAt} relative /></div> : null}
                       </CardBody>
                     </Card>
