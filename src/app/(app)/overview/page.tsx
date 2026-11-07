@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { NetworkGraph, type GNode, type GLink } from "@/components/domain/network-graph";
+import { InviteCard } from "@/components/domain/invite-card";
+import { signTenantInvite } from "@/lib/invite";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { PersonLink } from "@/components/domain/person-link";
@@ -96,6 +98,8 @@ export default async function OverviewPage() {
         description="Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?"
         actions={<AddPersonDrawer people={existingPeopleForDrawer} />}
       />
+
+      <InviteCard token={signTenantInvite(user.tenantId)} />
 
       {total < 25 ? (
         <Card className="mb-5 border-navy-400/20 bg-[linear-gradient(135deg,var(--color-navy-50),var(--color-teal-50))]">
