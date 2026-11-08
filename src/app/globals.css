@@ -18,16 +18,16 @@
   --color-ink-muted: #5a5f6e;
   --color-ink-faint: #9498a5;
   /* "navy" is the primary/indigo family (kept its token names so components need no rename) */
-  --color-navy: #3b3ba8;
-  --color-navy-600: #4a45c4;
-  --color-navy-400: #6b6bf0;
-  --color-navy-100: #e6e6fa;
-  --color-navy-50: #f1f1fc;
+  --color-navy: #3d3f7a;
+  --color-navy-600: #4a4d94;
+  --color-navy-400: #7276b2;
+  --color-navy-100: #e6e6f1;
+  --color-navy-50: #f0f1f7;
   /* "teal" is the positive/trusted signal — also indigo, so the interface reads as one accent */
-  --color-teal: #3b3ba8;
-  --color-teal-400: #6b6bf0;
-  --color-teal-100: #e6e6fa;
-  --color-teal-50: #f1f1fc;
+  --color-teal: #3d3f7a;
+  --color-teal-400: #7276b2;
+  --color-teal-100: #e6e6f1;
+  --color-teal-50: #f0f1f7;
   --color-amber: #9a6212;
   --color-amber-100: #fdebcf;
   --color-amber-50: #fdf6ea;
@@ -37,9 +37,9 @@
   --color-rail-ink: #5a5f6e;
   --color-rail-ink-strong: #1a1d29;
   --color-rail-line: rgba(20, 24, 45, 0.08);
-  --color-rail-active: rgba(107, 107, 240, 0.12);
-  --color-chart-a: #3b3ba8;
-  --color-chart-b: #6b6bf0;
+  --color-rail-active: rgba(114, 118, 178, 0.14);
+  --color-chart-a: #3d3f7a;
+  --color-chart-b: #7276b2;
   --font-sans: var(--font-sans-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-fallback), ui-monospace, SFMono-Regular, Menlo, monospace;
   --radius-sm: 8px;
@@ -64,13 +64,13 @@
     --color-ink: #eef1f7;
     --color-ink-muted: #a3acbf;
     --color-ink-faint: #6f7a90;
-    --color-navy: #b9b9fb;
-    --color-navy-600: #a5a5fb;
-    --color-navy-400: #8b8bf7;
+    --color-navy: #b4b6e6;
+    --color-navy-600: #a6a8df;
+    --color-navy-400: #9093d6;
     --color-navy-100: #26264a;
     --color-navy-50: #1c1c3a;
-    --color-teal: #b9b9fb;
-    --color-teal-400: #8b8bf7;
+    --color-teal: #b4b6e6;
+    --color-teal-400: #9093d6;
     --color-teal-100: #26264a;
     --color-teal-50: #1c1c3a;
     --color-amber: #f0a64a;
@@ -103,7 +103,7 @@ html, body {
 }
 
 /* Ambient: one faint, static wash. Minimal-SaaS depth comes from hairlines, not glow. */
-.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(1000px 440px at 50% -14%, rgba(59, 59, 168, 0.045), transparent 62%); }
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(1000px 440px at 50% -14%, rgba(61, 63, 122, 0.05), transparent 62%); }
 @media (prefers-color-scheme: dark) {
   .ambient { background: radial-gradient(1000px 440px at 50% -14%, rgba(139, 139, 247, 0.1), transparent 62%); }
 }

@@ -35,8 +35,11 @@ export default async function OverviewPage() {
     prisma.person.findMany({ where: { tenantId: t }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }),
   ]);
 
+  const showP23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 === "true";
   const total = people.length;
   const workedWith = people.filter((p) => p.relationships.some((r) => r.workedTogether)).length;
+  const members = people.filter((p) => p.memberSince).length;
+  const awaitingScreening = people.filter((p) => ["REGISTERED", "INVITED", "BOOKED", "SUBMITTED"].includes(p.screeningStatus)).length;
   const activeOpps = opportunities.filter((o) => !["CLOSED_WON", "CLOSED_LOST", "ON_HOLD"].includes(o.status));
   const liveIntros = introductions.filter((i) => !["DECLINED", "WITHDRAWN"].includes(i.status));
   const amanaDemand = activeOpps.filter((o) => o.isAmana).length;
@@ -114,9 +117,19 @@ export default async function OverviewPage() {
       ) : null}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
         <KpiCard label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
-        <KpiCard label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
-        <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
-        <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
+        {showP23 ? (
+          <>
+            <KpiCard label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
+            <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
+            <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
+          </>
+        ) : (
+          <>
+            <KpiCard label="Signed up" value={members} hint="members in your network" href="/network" />
+            <KpiCard label="Awaiting screening" value={awaitingScreening} hint="registered, not yet screened" href="/conversations" tone={awaitingScreening ? "amber" : "neutral"} />
+            <KpiCard label="Worked with" value={workedWith} hint="people you've delivered with" href="/network?workedWith=1" tone="neutral" />
+          </>
+        )}
       </div>
 
       {people.length > 1 ? (
@@ -177,6 +190,7 @@ export default async function OverviewPage() {
             </Card>
           </div>
 
+          {showP23 ? (
           <Card>
             <CardHeader title="Opportunity intelligence" description="Open requirements by stage" action={<Link href="/opportunities" className="text-xs text-navy hover:underline">Board</Link>} />
             <CardBody>
@@ -201,9 +215,11 @@ export default async function OverviewPage() {
               </ul>
             </CardBody>
           </Card>
+          ) : null}
         </div>
 
         <div className="space-y-4">
+          {showP23 ? (
           <Card>
             <CardHeader title="Amana Expert Network" description="Bench and live demand" action={<Link href="/amana" className="text-xs text-navy hover:underline">Open</Link>} />
             <CardBody>
@@ -214,6 +230,7 @@ export default async function OverviewPage() {
               </div>
             </CardBody>
           </Card>
+          ) : null}
           <Card>
             <CardHeader title="Needs review" description="AI summaries waiting for a human" action={<Link href="/conversations?tab=review" className="text-xs text-navy hover:underline">Review</Link>} />
             <CardBody>
@@ -229,6 +246,7 @@ export default async function OverviewPage() {
               )}
             </CardBody>
           </Card>
+          {showP23 ? (<>
           <Card>
             <CardHeader title="Partner activity" action={<Link href="/partners" className="text-xs text-navy hover:underline">Partners</Link>} />
             <CardBody>
@@ -259,6 +277,7 @@ export default async function OverviewPage() {
               )}
             </CardBody>
           </Card>
+          </>) : null}
         </div>
       </div>
     </>

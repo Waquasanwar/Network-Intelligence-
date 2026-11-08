@@ -5,26 +5,29 @@ import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
+// Phase 1 — build the network and get people signed up. The rest (agencies, clients,
+// opportunities) is Phase 2 & 3, hidden until NEXT_PUBLIC_FEATURE_PHASE23=true. Routes still work.
+const SHOW_PHASE23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 === "true";
+
 const INTERNAL_NAV = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/network", label: "Network", icon: Users },
   { href: "/conversations", label: "Conversations", icon: MessagesSquare },
+];
+const WORKSPACES = [
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/requirements", label: "Requirements", icon: ListChecks },
   { href: "/referrals", label: "Referrals & pitches", icon: UserPlus },
-];
-const WORKSPACES = [
   { href: "/amana", label: "Amana Expert Network", icon: Building2 },
   { href: "/portal", label: "Client & agency portal", icon: MonitorSmartphone },
-  { href: "/member", label: "Member portal", icon: BadgeCheck },
   { href: "/partners", label: "Partners", icon: Handshake },
   { href: "/relocation", label: "Relocation", icon: Plane },
 ];
 const SETTINGS_NAV = [
-  { href: "/network/import", label: "Import contacts", icon: Upload },
   { href: "/invite", label: "Invite link", icon: Link2 },
-  { href: "/settings/commercials", label: "Commercials", icon: Percent },
-  { href: "/settings/screening", label: "Screening call", icon: MicVocal },
+  { href: "/network/import", label: "Import contacts", icon: Upload },
+  { href: "/settings/screening", label: "Screening", icon: MicVocal },
+  ...(SHOW_PHASE23 ? [{ href: "/settings/commercials", label: "Commercials", icon: Percent }] : []),
   { href: "/settings/integrations", label: "Integrations", icon: Plug },
   { href: "/settings/security", label: "Security", icon: ShieldCheck },
 ];
@@ -69,8 +72,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {INTERNAL_NAV.map((i) => <Item key={i.href} {...i} />)}
-            <Group label="Workspaces" />
-            {WORKSPACES.map((i) => <Item key={i.href} {...i} />)}
+            {SHOW_PHASE23 ? <><Group label="Workspaces" />{WORKSPACES.map((i) => <Item key={i.href} {...i} />)}</> : null}
             <Group label="Setup" />
             {SETTINGS_NAV.map((i) => <Item key={i.href} {...i} />)}
           </>
