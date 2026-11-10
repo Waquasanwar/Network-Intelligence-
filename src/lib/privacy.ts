@@ -79,11 +79,15 @@ export type Privacy = {
 
 export const DEFAULT_PRIVACY: Privacy = { consents: { ...DEFAULT_CONSENTS }, hideRateBand: false, hideRegion: false, reviewedAt: null, erasureRequestedAt: null };
 
-export const privacyOf = (p: { privacy?: Partial<Privacy> | null } | null | undefined): Privacy => ({
-  ...DEFAULT_PRIVACY,
-  ...(p?.privacy ?? {}),
-  consents: { ...DEFAULT_CONSENTS, ...(p?.privacy?.consents ?? {}) },
-});
+/** Anything that carries a privacy blob — a Prisma Person (JsonValue) or a hand-built test object. */
+export type PrivacyHolder = { privacy?: Partial<Privacy> | unknown | null } | null | undefined;
+
+const asPrivacy = (v: unknown): Partial<Privacy> => (v && typeof v === "object" ? (v as Partial<Privacy>) : {});
+
+export const privacyOf = (p: PrivacyHolder): Privacy => {
+  const raw = asPrivacy(p?.privacy);
+  return { ...DEFAULT_PRIVACY, ...raw, consents: { ...DEFAULT_CONSENTS, ...(raw.consents ?? {}) } };
+};
 
 // ---------- what we hold, why, and for how long ----------
 

@@ -202,6 +202,7 @@ model Person {
   screeningStatus        ScreeningStatus    @default(NONE)
   screenedAt             DateTime?
   referralConsent        String?            // yes | ask | no — the person decides whether they are on the radar
+  privacy                Json?              // Privacy (lib/privacy.ts): granular consents, retention, erasureRequestedAt
   memberSince            DateTime?
   attributes             Json?              // self-assessed FitScores from the screening (working style, never protected characteristics)
   seniority              Seniority?

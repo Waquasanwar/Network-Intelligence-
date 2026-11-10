@@ -23,8 +23,8 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
             <span className="h-8 w-8 rounded-[9px] bg-navy text-white text-[12px] font-semibold inline-flex items-center justify-center">NI</span>
             <span className="text-[14px] font-medium text-ink">Network Intelligence</span>
           </div>
-          <h1 className="text-center text-[30px] leading-[1.08] font-semibold tracking-[-0.03em]">Known. Not just matched.</h1>
-          <p className="text-center text-[13.5px] text-ink-muted mt-2.5 leading-[1.55] max-w-[38ch] mx-auto">Join by invitation, do one screening conversation, and you&apos;re on the radar for work that genuinely suits you.</p>
+          <h1 className="text-center text-[30px] leading-[1.08] font-semibold tracking-[-0.03em]">Be in the network for when the right work comes up.</h1>
+          <p className="text-center text-[13.5px] text-ink-muted mt-2.5 leading-[1.55] max-w-[40ch] mx-auto">One short screening and you&apos;re on the radar — fractional, contract or permanent. When a client needs someone like you, we already know you and can make the introduction.</p>
           <JoinForm members={members} referrer={referrer} tenantInvite={tenantInvite} inviteToken={inviteToken} error={error} />
           <div className="flex items-center justify-center gap-2 text-[11.5px] text-ink-faint mt-6">
             <span>Invitation only</span><span className="opacity-40">·</span><span>Anonymous until you consent</span><span className="opacity-40">·</span><a href="/login" className="text-ink-muted hover:text-ink">Sign in</a>

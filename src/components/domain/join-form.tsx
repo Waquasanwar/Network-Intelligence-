@@ -67,10 +67,11 @@ export function JoinForm({ members, referrer, tenantInvite = false, inviteToken,
         )}
 
         <label className="flex items-start gap-2.5 text-[12px] text-ink-muted leading-[1.5] pt-1 cursor-pointer">
-          <input type="checkbox" name="consent" defaultChecked className="mt-0.5 h-3.5 w-3.5 rounded border-line-strong accent-navy flex-none" />
-          <span>I understand my profile stays anonymous to clients until I consent to an introduction.</span>
+          <input type="checkbox" name="consent" required className="mt-0.5 h-3.5 w-3.5 rounded border-line-strong accent-navy flex-none" />
+          <span>I agree to Network Intelligence holding my details to put me forward for work that suits me — fractional, contract or permanent. My profile stays anonymous to clients until I say yes to a specific introduction, and I can see, export or delete my data at any time.</span>
         </label>
         <SubmitButton className="w-full" size="lg" pendingText="Creating your account…">Create account &amp; start screening</SubmitButton>
+        <p className="text-[11px] text-ink-faint text-center leading-[1.5]">Held under UK GDPR and the UAE PDPL · Delete your data in one click from your profile, any time.</p>
       </form>
     </div>
   );

@@ -16,6 +16,9 @@ import { DateText } from "@/components/domain/date";
 import { TrustCard, FitCard, ScreeningBadge } from "@/components/domain/trust";
 import { BookScreeningDrawer, PitchDrawer } from "@/components/domain/member-drawers";
 import { trustFor, fitFor, startScreening, setConsent, submitReferral } from "@/server/actions/members";
+import { updateMyConsents } from "@/server/actions/privacy";
+import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
+import { privacyOf } from "@/lib/privacy";
 import { resolveMemberPerson } from "@/server/queries";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
@@ -47,6 +50,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const screened = p.screeningStatus === "APPROVED" || !!p.screenedAt; const submitted = p.screeningStatus === "SUBMITTED";
   const anon = redactForPartner({ ...p, evidence: p.evidence, relationships: p.relationships });
   const highlights = fitHighlights(fit); const band = rateBand(p.rateExpectation ?? p.salaryExpectation);
+  const privacy = privacyOf(p);
   const accepted = p.referralsMade.filter((r) => r.status === "ACCEPTED").length;
 
   const OppCard = ({ b }: { b: (typeof open)[number] }) => { const pitched = p.pitches.find((x) => x.briefId === b.id); const refd = p.referralsMade.filter((r) => r.briefId === b.id).length; const summary = `${b.roles[0] ?? "Requirement"}${b.headcount > 1 ? ` × ${b.headcount}` : ""} · ${b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"} · ${b.locations.join(" / ") || "location flexible"}`; return (
@@ -112,6 +116,12 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             </CardBody></Card>
             <Card><CardHeader title="Your consent" description="You decide whether you are on the radar." /><CardBody>
               <form action={setConsent} className="space-y-2"><input type="hidden" name="personId" value={p.id} />{[["yes", "Refer me for opportunities"], ["ask", "Ask me each time"], ["no", "Not for now"]].map(([k, l]) => <label key={k} className={`flex items-center gap-2.5 px-3 py-2 rounded-[12px] border text-[12.5px] cursor-pointer ${(p.referralConsent ?? "ask") === k ? "border-navy-400 bg-navy-100/60" : "border-line"}`}><input type="radio" name="referralConsent" value={k} defaultChecked={(p.referralConsent ?? "ask") === k} className="accent-navy-400" /><span>{l}</span></label>)}<div className="flex justify-end"><SubmitButton size="sm" variant="secondary" pendingText="…">Save</SubmitButton></div></form>
+            </CardBody></Card>
+            <Card><CardHeader title="What we may do with your profile" description="Each permission is yours to switch on or off — immediately." /><CardBody>
+              <ConsentToggles privacy={privacy} update={updateMyConsents} asPersonId={internal ? p.id : undefined} />
+            </CardBody></Card>
+            <Card><CardHeader title="Your data & privacy" description="Take a copy, or ask to be removed. Your right under UK GDPR and the UAE PDPL." /><CardBody>
+              <DataRights privacy={privacy} firstName={p.firstName} asPersonId={internal ? p.id : undefined} />
             </CardBody></Card>
             <Card><CardHeader title="Your referrals and pitches" action={<Link href={`/member?tab=refer${internal ? `&person=${p.id}` : ""}`} className="text-[12px] text-ink-muted hover:text-ink">Refer</Link>} /><CardBody>
               <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.slice(0, 4).map((r) => <li key={r.id} className="py-1.5 flex justify-between gap-2"><span><b>{r.name}</b><small className="block text-ink-faint">referral</small></span><Badge tone={r.status === "ACCEPTED" ? "teal" : "amber"} filled>{REF_STATUS[r.status]}</Badge></li>)}{p.pitches.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><b>{x.brief.roles[0] ?? "Requirement"}</b><small className="block text-ink-faint">pitch</small></span><Badge tone={x.status === "SHORTLISTED" ? "teal" : "navy"} filled>{PITCH_STATUS[x.status]}</Badge></li>)}{!p.referralsMade.length && !p.pitches.length ? <li className="text-ink-muted py-1">None yet. Refer someone or pitch for an opportunity.</li> : null}</ul>
