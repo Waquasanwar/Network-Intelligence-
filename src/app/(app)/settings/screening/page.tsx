@@ -68,6 +68,19 @@ export default async function ScreeningSettingsPage() {
 
         <div className="space-y-4">
           <Card>
+            <CardHeader title="Set up the voice in 3 steps" description="Low-cost by default — pennies per screening." />
+            <CardBody className="pt-0 text-[12.5px] space-y-2.5">
+              {[
+                ["1", <>In ElevenLabs, open <b>Voices</b>, pick or clone a voice, and copy its <b>Voice ID</b>. Paste it on the left and choose <b>ElevenLabs</b> as the provider.</>],
+                ["2", <>Add <code className="text-[11px] bg-surface-muted rounded px-1 py-0.5">ELEVENLABS_API_KEY</code> to the server environment. It stays on the server — never in the browser or an artifact.</>],
+                ["3", <>Keep the model on <b>Flash v2.5</b> and leave <b>Conversational agent</b> blank: the screening reads questions aloud and captures answers as text on the person&apos;s own device. That&apos;s the cheapest path — only our short questions are ever sent to ElevenLabs.</>],
+              ].map(([n, text]) => (
+                <div key={n as string} className="flex gap-2.5"><span className="flex-none h-5 w-5 rounded-full bg-navy text-white text-[11px] font-semibold inline-flex items-center justify-center">{n as string}</span><span className="text-ink-muted">{text}</span></div>
+              ))}
+              <p className="text-[11.5px] text-ink-faint pt-1 border-t border-line mt-1">Cost control: read-aloud bills only the ~1,500 words of questions per screening (fractions of a cent on Flash). The full two-way <b>Conversational agent</b> is richer but bills per minute — add an agent id only if you want that. The device voice is always free.</p>
+            </CardBody>
+          </Card>
+          <Card>
             <CardHeader title="What leaves this platform" description="Short answer: almost nothing." />
             <CardBody className="pt-0 text-[12.5px] space-y-2.5">
               {[

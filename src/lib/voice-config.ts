@@ -35,7 +35,7 @@ export type VoiceSettings = {
 export const DEFAULT_VOICE: VoiceSettings = {
   provider: "device",
   voiceId: "",
-  modelId: "eleven_turbo_v2_5",
+  modelId: "eleven_flash_v2_5",
   stability: 0.45,
   similarity: 0.8,
   style: 0.15,
@@ -46,9 +46,9 @@ export const DEFAULT_VOICE: VoiceSettings = {
 
 /** Models worth offering: low latency matters more than anything else in a live call. */
 export const VOICE_MODELS: [string, string][] = [
-  ["eleven_flash_v2_5", "Flash v2.5 — fastest, good for live turns"],
-  ["eleven_turbo_v2_5", "Turbo v2.5 — fast, warmer"],
-  ["eleven_multilingual_v2", "Multilingual v2 — richest, a little slower"],
+  ["eleven_flash_v2_5", "Flash v2.5 — lowest cost, fastest (recommended)"],
+  ["eleven_turbo_v2_5", "Turbo v2.5 — a little warmer, still cheap"],
+  ["eleven_multilingual_v2", "Multilingual v2 — richest, higher cost"],
 ];
 
 export const PROVIDER_LABELS: Record<VoiceProvider, string> = {

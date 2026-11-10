@@ -45,10 +45,11 @@ describe("trustScore", () => {
 });
 
 describe("screening", () => {
-  it("is a 25 to 30 minute script", () => {
-    expect(SCREENING_MINUTES).toBeGreaterThanOrEqual(25);
-    expect(SCREENING_MINUTES).toBeLessThanOrEqual(30);
-    expect(SCREENING_SCRIPT.flatMap((s) => s.questions).some((q) => q.key === "workRights")).toBe(true);
+  it("is a ~15 minute script that still covers what we match on", () => {
+    expect(SCREENING_MINUTES).toBeGreaterThanOrEqual(12);
+    expect(SCREENING_MINUTES).toBeLessThanOrEqual(18);
+    const keys = SCREENING_SCRIPT.flatMap((s) => s.questions).map((q) => q.key);
+    for (const k of ["headline", "capabilities", "status", "workRights", "rate", "pushback", "referralConsent"]) expect(keys).toContain(k);
   });
 
   it("turns answers into a profile, a summary and referrals", () => {
@@ -62,6 +63,7 @@ describe("screening", () => {
       "attr:assertiveness": "5", "attr:political": "4", "attr:commercial": "3", pushback: "Told the CIO the SI plan was fiction; re-baselined in front of the board.",
       politics: "The CIO decided, not the steering group, so I took him the one number he cared about every week.",
       commercialCall: "Cut the reporting scope rather than lose the margin, and made the business case for the delay myself.",
+      ambiguity: "Walked into a programme with no scope; in the first week I mapped the real decisions and set a baseline nobody had.",
     });
     expect(r.attributes).toEqual({ assertiveness: 5, political: 4, commercial: 3 });
     expect(r.attitudeStory).toMatch(/CIO/);

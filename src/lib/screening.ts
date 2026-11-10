@@ -19,59 +19,52 @@ const ROUTES: [string, string][] = [["PERMANENT", "Permanent"], ["CONTRACT", "Co
 const STATUSES: [string, string][] = [["AVAILABLE_NOW", "Available now"], ["FINISHING_ENGAGEMENT_SOON", "Finishing an engagement soon"], ["OPEN_TO_CONVERSATIONS", "Open to conversations"], ["QUIETLY_EXPLORING", "Quietly exploring"], ["RIGHT_OPPORTUNITY_ONLY", "Only the right opportunity"], ["FRACTIONAL_AVAILABILITY", "Has fractional capacity"], ["HAPPY_WHERE_I_AM", "Happy where I am"], ["NOT_LOOKING_KEEP_IN_TOUCH", "Not looking, keep in touch"], ["TAKING_A_BREAK", "Taking a break"]];
 const SENIORITY: [string, string][] = [["ASSOCIATE", "Associate"], ["MANAGER", "Manager"], ["SENIOR_MANAGER", "Senior manager / lead"], ["DIRECTOR", "Director / head of"], ["EXECUTIVE", "Executive / VP"], ["C_LEVEL", "C-level"]];
 
-/** The script. Six sections, about 27 minutes. Every answer maps to a profile field or a follow-up. */
+/**
+ * The script. Seven short parts, about 15 minutes — tight enough that a busy senior person will
+ * actually finish it, long enough to match and to read working style out of real stories. Every
+ * answer maps to a profile field or feeds the attribute scoring in src/lib/interview.ts; the keys
+ * that scoring and matching rely on (headline, capabilities, status, routes, workRights, rate,
+ * pushback, politics, ambiguity, workingStyle, proudest, knows, referralConsent) are all kept.
+ */
 export const SCREENING_SCRIPT: ScreeningSection[] = [
-  { key: "story", title: "Your story", minutes: 4, intent: "What they are known for, in their own words.", questions: [
+  { key: "story", title: "Your story", minutes: 2, intent: "What they are known for, in their own words.", questions: [
     { key: "headline", prompt: "In one line, what are you known for?", help: "The sentence a client would repeat about you.", kind: "text", required: true, placeholder: "e.g. Programme director who stabilises troubled transformations" },
-    { key: "currentRole", prompt: "What are you doing right now, and where?", kind: "text", placeholder: "e.g. Programme Director at a UK bank, London" },
     { key: "proudest", prompt: "Tell me about a piece of work you are proudest of. What was the situation, what did you do, what happened?", help: "This becomes observable evidence once someone in the network confirms it.", kind: "long" },
   ] },
-  { key: "expertise", title: "Expertise", minutes: 4, intent: "Capabilities and sectors, specific enough to match on.", questions: [
+  { key: "expertise", title: "Expertise", minutes: 2, intent: "Capabilities and sectors, specific enough to match on.", questions: [
     { key: "capabilities", prompt: "What are you genuinely strong at? List the capabilities you would want to be found for.", kind: "chips", required: true, placeholder: "Programme director, SAP, Cyber GRC…" },
     { key: "sectors", prompt: "Which industries do you know from the inside?", kind: "chips", placeholder: "Banking, Government, Energy…" },
     { key: "seniority", prompt: "What level do you operate at?", kind: "select", options: SENIORITY },
-    { key: "avoid", prompt: "What do you not want to be put forward for?", help: "Greenfield builds, hands-on delivery, politically sensitive roles…", kind: "chips" },
   ] },
-  { key: "availability", title: "Availability", minutes: 3, intent: "Where they are on the spectrum, and for what kind of work.", questions: [
+  { key: "availability", title: "Availability", minutes: 2, intent: "Where they are on the spectrum, and for what kind of work.", questions: [
     { key: "status", prompt: "Where are you right now?", help: "Status is a spectrum, not a yes or no.", kind: "select", options: STATUSES, required: true },
-    { key: "routes", prompt: "What kinds of engagement would you consider?", kind: "multi", options: ROUTES },
-    { key: "noticePeriod", prompt: "How quickly could you start, or what is your notice period?", kind: "text", placeholder: "e.g. 4 weeks, or from January" },
+    { key: "routes", prompt: "What kinds of engagement would you consider?", help: "Fractional, contract, permanent — whatever genuinely suits you.", kind: "multi", options: ROUTES },
   ] },
-  { key: "location", title: "Location and work rights", minutes: 3, intent: "Where they are, where they would go, and what visas they hold.", questions: [
+  { key: "location", title: "Location and work rights", minutes: 2, intent: "Where they are, where they would go, and what visas they hold.", questions: [
     { key: "location", prompt: "Where are you based?", kind: "text", required: true, placeholder: "City, country" },
     { key: "targetLocations", prompt: "Where else would you work or relocate to?", kind: "chips", placeholder: "Dubai, Riyadh, Remote…" },
     { key: "workRights", prompt: "What rights to work do you hold?", help: "Visas and rights to work only. Never nationality.", kind: "chips", placeholder: "Right to work in UK, UAE residence visa…" },
-    { key: "relocation", prompt: "Would a move be with family, and would you want help with schools or housing?", kind: "text" },
   ] },
-  { key: "commercials", title: "Commercials and constraints", minutes: 3, intent: "Numbers and boundaries, so nobody wastes time.", questions: [
+  { key: "commercials", title: "Commercials", minutes: 1, intent: "The number, so nobody wastes time. It only ever reaches a client as a band.", questions: [
     { key: "rate", prompt: "What day rate, or salary, are you looking for?", kind: "text", placeholder: "e.g. £1,200/day or £150k" },
-    { key: "constraints", prompt: "Any constraints we should respect? Travel, days on site, confidentiality, a current employer not to approach…", kind: "chips" },
   ] },
   // Working style is read out of stories, not out of self-ratings: nobody describes their own
   // assertiveness usefully. src/lib/interview.ts scores the attributes from these answers, and a
   // vouch from someone who worked with them carries more weight than either.
-  { key: "fit", title: "How you work", minutes: 5, intent: "Four stories that show how they operate. The attributes are read from these, never asked for as a score.", questions: [
+  { key: "fit", title: "How you work", minutes: 4, intent: "Three stories that show how they operate. The attributes are read from these, never asked for as a score.", questions: [
     { key: "pushback", prompt: "Tell me about a time you had to push back on a senior stakeholder. What did you do, and how did it land?", help: "Assertiveness, conflict and influence all come out of this one.", kind: "long" },
     { key: "politics", prompt: "On your last piece of work, how did you work out who really decided — and what they needed to hear?", help: "Political awareness, in their own words.", kind: "long" },
-    { key: "commercialCall", prompt: "What commercial trade-off have you had to make? Cost against scope, margin against goodwill, that sort of thing.", help: "Commercial awareness, and whether they think past delivery.", kind: "long" },
     { key: "ambiguity", prompt: "Tell me about starting something where nobody could tell you what good looked like. What did you do first?", help: "Comfort with ambiguity, and pace.", kind: "long" },
     { key: "workingStyle", prompt: "What kind of team, client or culture brings out your best, and what wears you down?", kind: "long" },
   ] },
-  // The part that makes someone a person rather than a CV. Interests, motivation and how they like
-  // to be worked with — never protected characteristics, never anything a client is entitled to.
-  // It stays inside the network: it is here so we know who we are putting forward, not to be sold.
-  { key: "person", title: "You, not the CV", minutes: 3, intent: "Who they are away from the work, and what it is like to have them on a team. Internal only — a client never sees this.", questions: [
-    { key: "outsideWork", prompt: "What do you get up to when you are not working?", help: "Genuinely optional. It is how we remember you as a person.", kind: "long", placeholder: "e.g. Coach my daughter's football team, restore old motorbikes, run half marathons badly" },
-    { key: "interests", prompt: "Anything you are into, or learning at the moment?", kind: "chips", placeholder: "Football, chess, Arabic, woodworking…" },
+  // The part that makes someone a person rather than a CV — internal only, a client never sees it.
+  { key: "person", title: "You, not the CV", minutes: 1, intent: "A little of who they are away from the work. Internal only.", questions: [
     { key: "motivation", prompt: "What actually gets you out of bed for a piece of work?", help: "Money, mess, mission, the team — there is no wrong answer.", kind: "long" },
-    { key: "howToWorkWith", prompt: "If someone is about to work with you, what should they know? Best way to reach you, how you like feedback, anything that winds you up.", kind: "long" },
     { key: "languages", prompt: "Which languages do you work in?", kind: "chips", placeholder: "English, Arabic, Urdu…" },
-    { key: "surprising", prompt: "Tell me something people are surprised to learn about you.", kind: "text" },
   ] },
-  { key: "network", title: "Your network", minutes: 4, intent: "Who they know and would vouch for. This is what makes the network compound.", questions: [
+  { key: "network", title: "Your network", minutes: 1, intent: "Who they know and would vouch for. This is what makes the network compound.", questions: [
     { key: "knows", prompt: "Who do you know that you would genuinely put your name behind? Anyone already in our network, or someone we should meet.", help: "Name, what you have seen them do, and how you know them. We only contact them with your say-so.", kind: "people" },
     { key: "referralConsent", prompt: "Are you happy for people in the network to refer you for opportunities, anonymously until you say yes?", kind: "select", options: [["yes", "Yes, refer me"], ["ask", "Ask me each time"], ["no", "Not for now"]], required: true },
-    { key: "contactPreference", prompt: "How do you prefer to be contacted, and when should we check in next?", kind: "text", placeholder: "e.g. WhatsApp, check in after Q1" },
   ] },
 ];
 
@@ -136,7 +129,7 @@ export function screeningToResult(a: ScreeningAnswers, now = new Date()): Screen
   };
   const attributes: FitScores = {};
   for (const at of ATTRIBUTES) { const v = Number(str(a[`attr:${at.key}`])); if (v >= 1 && v <= 5) attributes[at.key] = v; }
-  const required = ["headline", "capabilities", "status", "location", "referralConsent"]; const important = ["currentRole", "proudest", "sectors", "routes", "workRights", "rate", "knows", "contactPreference", "pushback", "politics", "commercialCall"];
+  const required = ["headline", "capabilities", "status", "location", "referralConsent"]; const important = ["proudest", "sectors", "routes", "workRights", "rate", "knows", "pushback", "politics", "ambiguity"];
   const answered = (k: string) => { const v = a[k]; return Array.isArray(v) ? v.length > 0 : !!str(v); };
   const missing = [...required.filter((k) => !answered(k)), ...important.filter((k) => !answered(k))];
   const completeness = Math.round(((required.filter(answered).length * 2 + important.filter(answered).length) / (required.length * 2 + important.length)) * 100);
