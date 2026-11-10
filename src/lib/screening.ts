@@ -20,7 +20,7 @@ const STATUSES: [string, string][] = [["AVAILABLE_NOW", "Available now"], ["FINI
 const SENIORITY: [string, string][] = [["ASSOCIATE", "Associate"], ["MANAGER", "Manager"], ["SENIOR_MANAGER", "Senior manager / lead"], ["DIRECTOR", "Director / head of"], ["EXECUTIVE", "Executive / VP"], ["C_LEVEL", "C-level"]];
 
 /**
- * The script. Seven short parts, about 15 minutes — tight enough that a busy senior person will
+ * The script. Eight short parts, about 15 minutes — tight enough that a busy senior person will
  * actually finish it, long enough to match and to read working style out of real stories. Every
  * answer maps to a profile field or feeds the attribute scoring in src/lib/interview.ts; the keys
  * that scoring and matching rely on (headline, capabilities, status, routes, workRights, rate,

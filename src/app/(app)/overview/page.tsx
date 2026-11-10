@@ -35,7 +35,7 @@ export default async function OverviewPage() {
     prisma.person.findMany({ where: { tenantId: t }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }),
   ]);
 
-  const showP23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 === "true";
+  const showP23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 !== "false";
   const total = people.length;
   const workedWith = people.filter((p) => p.relationships.some((r) => r.workedTogether)).length;
   const members = people.filter((p) => p.memberSince).length;

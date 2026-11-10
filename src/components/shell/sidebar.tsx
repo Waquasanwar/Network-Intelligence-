@@ -5,9 +5,10 @@ import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
-// Phase 1 — build the network and get people signed up. The rest (agencies, clients,
-// opportunities) is Phase 2 & 3, hidden until NEXT_PUBLIC_FEATURE_PHASE23=true. Routes still work.
-const SHOW_PHASE23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 === "true";
+// The full platform — network, opportunities, placement, portals, commercials — is shown by
+// default. Set NEXT_PUBLIC_FEATURE_PHASE23=false to collapse to the Phase-1 "build the network and
+// get people signed up" view (the Workspaces group and opportunity KPIs hide; the routes still work).
+const SHOW_PHASE23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 !== "false";
 
 const INTERNAL_NAV = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
