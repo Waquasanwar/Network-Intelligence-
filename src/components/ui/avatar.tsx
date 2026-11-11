@@ -2,10 +2,10 @@ import { initials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 const PALETTES = [
-  "from-[#1b2f5e] to-[#3b5ba9]",
-  "from-[#0d7a6f] to-[#14b8a6]",
+  "from-[#2f3168] to-[#5a5da8]",
+  "from-[#4a3f73] to-[#7d72b3]",
   "from-[#334155] to-[#64748b]",
-  "from-[#3b5ba9] to-[#14b8a6]",
+  "from-[#2c4668] to-[#5f7fa6]",
 ];
 
 function hue(p: { firstName: string; lastName: string }) {

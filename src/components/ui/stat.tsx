@@ -7,7 +7,7 @@ export function Stat({ label, value, hint, href, tone }: { label: string; value:
       <div className="text-[12px] font-medium text-ink-muted whitespace-nowrap truncate">{label}</div>
       <div className={cn("text-[26px] font-semibold tabular mt-2 leading-9 tracking-[-0.03em] whitespace-nowrap", tone === "teal" && "text-teal", tone === "amber" && "text-amber")}>{value}</div>
       {hint ? <div className="text-[11.5px] text-ink-faint mt-1.5 truncate">{hint}</div> : null}
-      {tone && tone !== "neutral" ? <span className={cn("absolute right-0 top-0 h-full w-24 opacity-[0.07] pointer-events-none", tone === "teal" ? "bg-[radial-gradient(circle_at_100%_0%,#14b8a6,transparent_70%)]" : "bg-[radial-gradient(circle_at_100%_0%,#f59e0b,transparent_70%)]")} /> : null}
+      {tone && tone !== "neutral" ? <span className={cn("absolute right-0 top-0 h-full w-24 opacity-[0.07] pointer-events-none", tone === "teal" ? "bg-[radial-gradient(circle_at_100%_0%,var(--color-navy-400),transparent_70%)]" : "bg-[radial-gradient(circle_at_100%_0%,#f59e0b,transparent_70%)]")} /> : null}
     </div>
   );
   return href ? <Link href={href} className="block h-full">{body}</Link> : body;

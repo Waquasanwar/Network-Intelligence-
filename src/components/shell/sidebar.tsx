@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
@@ -33,7 +33,7 @@ const SETTINGS_NAV = [
   { href: "/settings/security", label: "Security", icon: ShieldCheck },
 ];
 const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
-const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Refer someone", icon: UserPlus }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
+const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Refer someone", icon: UserPlus }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 
 export function Sidebar({ user }: { user: { name: string; email: string; role: Role; tenantName: string } }) {

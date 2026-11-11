@@ -61,7 +61,7 @@ export function Section({ title, description, children, action, className }: { t
 }
 
 export function Score({ value, label }: { value: number; label?: string }) {
-  const tone = value >= 70 ? "bg-[linear-gradient(90deg,#0d7a6f,#14b8a6)]" : value >= 45 ? "bg-[linear-gradient(90deg,var(--color-navy-600),var(--color-navy-400))]" : "bg-[linear-gradient(90deg,#b05a00,#f59e0b)]";
+  const tone = value >= 70 ? "bg-[linear-gradient(90deg,var(--color-navy),var(--color-navy-600))]" : value >= 45 ? "bg-navy-400" : "bg-[linear-gradient(90deg,#b05a00,#f59e0b)]";
   return (
     <div className="flex items-center gap-2 min-w-[110px]">
       <div className="h-1.5 flex-1 rounded-full bg-surface-muted overflow-hidden">

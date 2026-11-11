@@ -18,7 +18,7 @@ import { BookScreeningDrawer, PitchDrawer } from "@/components/domain/member-dra
 import { trustFor, fitFor, startScreening, setConsent, submitReferral } from "@/server/actions/members";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
-import { privacyOf } from "@/lib/privacy";
+import { privacyOf, privacySummary } from "@/lib/privacy";
 import { resolveMemberPerson } from "@/server/queries";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
@@ -71,12 +71,12 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       {sp.screened ? <div className="mb-4 rounded-[14px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. A person will review your screening and confirm your profile.</div> : null}
       {sp.sent ? <div className="mb-4 rounded-[14px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. Your referral is with us to review.</div> : null}
 
-      <div className="rounded-[22px] px-8 py-7 mb-5 text-white bg-[radial-gradient(900px_400px_at_10%_0%,#163a52_0%,#0b1226_60%)] shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
+      <div className="rounded-[22px] px-8 py-7 mb-5 brand-panel shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
         <div className="flex items-center gap-4"><Avatar person={p} size="xl" ring /><div><div className="text-[11px] font-medium uppercase tracking-[0.1em] text-white/55">Network member{p.memberSince ? ` since ${p.memberSince.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}` : ""}</div><h1 className="text-[28px] font-semibold tracking-[-0.03em] mt-1">{fullName(p)}</h1><p className="text-white/70 text-[13.5px] mt-1">{p.headline ?? "Add a headline in your screening"}</p><div className="flex flex-wrap gap-2 mt-2.5"><ScreeningBadge status={p.screeningStatus} /><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} />{p.referralConsent === "yes" ? <Badge tone="teal" filled>on the radar</Badge> : p.referralConsent === "no" ? <Badge filled>not being referred</Badge> : <Badge tone="amber" filled>asked each time</Badge>}</div></div></div>
         <div className="flex flex-wrap gap-2.5">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)} className="min-w-[120px] rounded-[16px] bg-white/[0.07] border border-white/[0.12] px-4 py-3"><div className="text-[12px] text-white/60">{l}</div><div className="text-[24px] font-semibold tabular leading-8">{v}</div><div className="text-[11px] text-white/45">{h}</div></div>)}</div>
       </div>
 
-      <Tabs items={[{ key: "home", label: "Home" }, { key: "opportunities", label: "Opportunities", count: open.length }, { key: "refer", label: "Refer someone" }]} current={tab} base={internal ? `/member?person=${p.id}` : "/member"} />
+      <Tabs items={[{ key: "home", label: "Home" }, { key: "opportunities", label: "Opportunities", count: open.length }, { key: "refer", label: "Refer someone" }, { key: "privacy", label: "Privacy & data" }]} current={tab} base={internal ? `/member?person=${p.id}` : "/member"} />
 
       {tab === "opportunities" ? (
         <><div className="mb-3"><h2 className="text-[15px] font-semibold">Opportunities open to members</h2><p className="text-[12.5px] text-ink-muted">Anonymised. Pitch with your own profile, or refer someone you would put your name behind. You are only ever named to a client with your consent.</p></div>{open.length ? <div className="space-y-3">{open.map((b) => <OppCard key={b.id} b={b} />)}</div> : <EmptyState title="Nothing open right now" description="When a requirement is opened to members, it appears here." />}</>
@@ -94,6 +94,23 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             </form>
           </CardBody></Card></div>
           <Card><CardHeader title="Your referrals" description={`${accepted} accepted into the network`} /><CardBody>{p.referralsMade.length ? <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.map((r) => <li key={r.id} className="py-2 first:pt-0 last:pb-0"><div className="flex justify-between gap-2"><b>{r.name}</b><Badge tone={r.status === "ACCEPTED" ? "teal" : r.status === "DECLINED" ? "neutral" : "amber"} filled>{REF_STATUS[r.status]}</Badge></div><div className="text-ink-muted">{r.context}</div></li>)}</ul> : <div className="text-xs text-ink-muted">None yet.</div>}</CardBody></Card>
+        </div>
+      ) : tab === "privacy" ? (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <div className="xl:col-span-2 space-y-4">
+            <Card><CardHeader title="What we may do with your profile" description="Each permission is yours to switch on or off — immediately." /><CardBody>
+              <ConsentToggles privacy={privacy} update={updateMyConsents} asPersonId={internal ? p.id : undefined} />
+            </CardBody></Card>
+          </div>
+          <div className="space-y-4">
+            <Card><CardHeader title="Your consent" description="You decide whether you are on the radar." /><CardBody>
+              <form action={setConsent} className="space-y-2"><input type="hidden" name="personId" value={p.id} />{[["yes", "Refer me for opportunities"], ["ask", "Ask me each time"], ["no", "Not for now"]].map(([k, l]) => <label key={k} className={`flex items-center gap-2.5 px-3 py-2 rounded-[12px] border text-[12.5px] cursor-pointer ${(p.referralConsent ?? "ask") === k ? "border-navy-400 bg-navy-100/60" : "border-line"}`}><input type="radio" name="referralConsent" value={k} defaultChecked={(p.referralConsent ?? "ask") === k} className="accent-navy-400" /><span>{l}</span></label>)}<div className="flex justify-end"><SubmitButton size="sm" variant="secondary" pendingText="…">Save</SubmitButton></div></form>
+            </CardBody></Card>
+            <Card><CardHeader title="Your data & privacy" description="Take a copy, or ask to be removed. Your right under UK GDPR and the UAE PDPL." /><CardBody>
+              <DataRights privacy={privacy} firstName={p.firstName} asPersonId={internal ? p.id : undefined} />
+            </CardBody></Card>
+            <div className="text-[11px] text-ink-faint">Attributes we track: {ATTRIBUTES.map((a) => a.label.toLowerCase()).join(", ")}. Never nationality or any protected characteristic.</div>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -114,19 +131,10 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
               <div className="flex flex-wrap gap-1 mt-1.5"><Chip>{anon.region ?? "region undisclosed"}</Chip><Chip>availability: {anon.availabilityBand}</Chip><Chip>vouched by {t.vouchedBy}</Chip>{highlights.map((h) => <Chip key={h}>{h}</Chip>)}{band ? <Chip>{band}</Chip> : null}</div>
               <div className="text-[12px] text-ink-muted mt-1.5">{anon.evidenceSummary}</div>
             </CardBody></Card>
-            <Card><CardHeader title="Your consent" description="You decide whether you are on the radar." /><CardBody>
-              <form action={setConsent} className="space-y-2"><input type="hidden" name="personId" value={p.id} />{[["yes", "Refer me for opportunities"], ["ask", "Ask me each time"], ["no", "Not for now"]].map(([k, l]) => <label key={k} className={`flex items-center gap-2.5 px-3 py-2 rounded-[12px] border text-[12.5px] cursor-pointer ${(p.referralConsent ?? "ask") === k ? "border-navy-400 bg-navy-100/60" : "border-line"}`}><input type="radio" name="referralConsent" value={k} defaultChecked={(p.referralConsent ?? "ask") === k} className="accent-navy-400" /><span>{l}</span></label>)}<div className="flex justify-end"><SubmitButton size="sm" variant="secondary" pendingText="…">Save</SubmitButton></div></form>
-            </CardBody></Card>
-            <Card><CardHeader title="What we may do with your profile" description="Each permission is yours to switch on or off — immediately." /><CardBody>
-              <ConsentToggles privacy={privacy} update={updateMyConsents} asPersonId={internal ? p.id : undefined} />
-            </CardBody></Card>
-            <Card><CardHeader title="Your data & privacy" description="Take a copy, or ask to be removed. Your right under UK GDPR and the UAE PDPL." /><CardBody>
-              <DataRights privacy={privacy} firstName={p.firstName} asPersonId={internal ? p.id : undefined} />
-            </CardBody></Card>
             <Card><CardHeader title="Your referrals and pitches" action={<Link href={`/member?tab=refer${internal ? `&person=${p.id}` : ""}`} className="text-[12px] text-ink-muted hover:text-ink">Refer</Link>} /><CardBody>
               <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.slice(0, 4).map((r) => <li key={r.id} className="py-1.5 flex justify-between gap-2"><span><b>{r.name}</b><small className="block text-ink-faint">referral</small></span><Badge tone={r.status === "ACCEPTED" ? "teal" : "amber"} filled>{REF_STATUS[r.status]}</Badge></li>)}{p.pitches.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><b>{x.brief.roles[0] ?? "Requirement"}</b><small className="block text-ink-faint">pitch</small></span><Badge tone={x.status === "SHORTLISTED" ? "teal" : "navy"} filled>{PITCH_STATUS[x.status]}</Badge></li>)}{!p.referralsMade.length && !p.pitches.length ? <li className="text-ink-muted py-1">None yet. Refer someone or pitch for an opportunity.</li> : null}</ul>
             </CardBody></Card>
-            <div className="text-[11px] text-ink-faint">Attributes we track: {ATTRIBUTES.map((a) => a.label.toLowerCase()).join(", ")}. Never nationality or any protected characteristic.</div>
+            <Link href={`/member?tab=privacy${internal ? `&person=${p.id}` : ""}`} className="lift flex items-center justify-between gap-3 rounded-[16px] border border-line bg-surface px-4 py-3.5 shadow-[var(--shadow-card)]"><span className="min-w-0"><b className="block text-[13px] font-semibold">Privacy &amp; data</b><span className="block text-[12px] text-ink-muted">{privacySummary({ privacy })}</span></span><span className="flex-none text-[12px] text-navy">Manage →</span></Link>
           </div>
         </div>
       )}

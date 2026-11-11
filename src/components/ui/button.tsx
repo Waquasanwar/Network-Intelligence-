@@ -10,7 +10,7 @@ const buttonVariants = cva(
         primary: "bg-navy text-white hover:bg-navy-600 shadow-[var(--shadow-button)] dark:text-canvas",
         secondary: "bg-surface text-ink border border-line hover:border-line-strong hover:bg-surface-hover shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
         ghost: "text-ink-muted hover:bg-surface-muted hover:text-ink",
-        teal: "bg-[linear-gradient(180deg,#14b8a6,#0d7a6f)] text-white hover:brightness-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_6px_14px_-8px_rgba(13,122,111,0.7)]",
+        teal: "bg-[linear-gradient(180deg,var(--color-navy-600),var(--color-navy))] text-white hover:brightness-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_6px_14px_-8px_rgba(13,122,111,0.7)]",
         danger: "bg-risk text-white hover:brightness-95",
         link: "text-navy underline-offset-4 hover:underline px-0 h-auto",
       },

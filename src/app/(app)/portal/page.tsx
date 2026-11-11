@@ -52,7 +52,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <div className="relative rounded-[22px] px-8 py-7 mb-5 text-white bg-[radial-gradient(900px_400px_at_10%_0%,#163a52_0%,#0b1226_60%)] shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
+      <div className="relative rounded-[22px] px-8 py-7 mb-5 brand-panel shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
         <div>
           <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-white/55">Client & agency portal{internal ? " · viewing as" : ""}</div>
           {internal ? <form method="get" action="/portal" className="flex items-center gap-2 mt-2"><Select name="account" defaultValue={account.id} className="h-9 rounded-full bg-white/10 text-white border-white/20 max-w-[340px]">{accounts.map((a) => <option key={a.id} value={a.id} className="text-ink">{a.name} · {KIND_LABEL[a.kind]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Switch</SubmitButton></form> : null}

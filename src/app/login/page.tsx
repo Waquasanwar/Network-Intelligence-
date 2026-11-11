@@ -47,7 +47,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]">
-      <aside className="relative hidden lg:flex flex-col justify-between p-12 text-white overflow-hidden" style={{ background: "linear-gradient(158deg, #363963 0%, #1c1d3a 62%, #171830 100%)" }}>
+      <aside className="brand-panel relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
         <div className="flex items-center gap-2.5 relative z-10">
           <span className="h-8 w-8 rounded-[9px] bg-white/95 text-[#2b2d55] text-[12px] font-semibold inline-flex items-center justify-center">NI</span>
           <span className="text-[14px] font-medium">Network Intelligence</span>

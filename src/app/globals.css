@@ -108,6 +108,10 @@ html, body {
   .ambient { background: radial-gradient(1000px 440px at 50% -14%, rgba(139, 139, 247, 0.1), transparent 62%); }
 }
 
+/* The one dark surface in the product: sign-in, join, and the member / screening / portal heroes all
+   wear it, so the brand reads as a single deep indigo rather than a different gradient per page. */
+.brand-panel { color: #fff; background: radial-gradient(720px 360px at 8% 0%, rgba(114, 118, 178, 0.28), transparent 62%), linear-gradient(158deg, #363963 0%, #1c1d3a 62%, #171830 100%); }
+
 /* Agentic surfaces are marked by a single restrained indigo hairline — no animation. */
 .ai-surface { position: relative; }
 .ai-surface::before { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid color-mix(in srgb, var(--color-navy-400) 42%, transparent); pointer-events: none; }

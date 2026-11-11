@@ -40,7 +40,7 @@ export function TrustCard({ t, firstName, self, screened, workedWith, action }: 
           {t.breakdown.map((b) => (
             <li key={b.label} className="grid grid-cols-[130px_1fr_34px] gap-x-2.5 items-center text-[12px]">
               <span className="text-ink-muted">{b.label}</span>
-              <div className="h-1.5 rounded-full bg-surface-muted border border-line overflow-hidden"><div className={cn("h-full rounded-full", b.points < 0 ? "bg-amber" : "bg-[linear-gradient(90deg,#0d7a6f,#14b8a6)]")} style={{ width: `${b.max ? Math.min(100, Math.max(0, (b.points / b.max) * 100)) : 100}%` }} /></div>
+              <div className="h-1.5 rounded-full bg-surface-muted border border-line overflow-hidden"><div className={cn("h-full rounded-full", b.points < 0 ? "bg-amber" : "bg-[linear-gradient(90deg,var(--color-navy),var(--color-navy-400))]")} style={{ width: `${b.max ? Math.min(100, Math.max(0, (b.points / b.max) * 100)) : 100}%` }} /></div>
               <b className={cn("text-right tabular", b.points < 0 && "text-amber")}>{b.points > 0 ? "+" : ""}{b.points}</b>
               <small className="col-span-3 text-[11px] text-ink-faint -mt-1">{b.note}</small>
             </li>
