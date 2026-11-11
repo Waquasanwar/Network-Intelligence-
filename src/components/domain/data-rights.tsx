@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { exportMyData, requestMyErasure, cancelMyErasure } from "@/server/actions/privacy";
 import { CONSENTS, type Privacy } from "@/lib/privacy";
-import { Download, ShieldCheck, Trash2, Check, AlertTriangle } from "lucide-react";
+import { Download, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
 
 /**
  * A member's own data rights, in one place: a copy to take away, control over each permission, and
