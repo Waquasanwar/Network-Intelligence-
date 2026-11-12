@@ -1,6 +1,7 @@
 import { Sidebar } from "./sidebar";
 import { CommandPalette } from "./command-palette";
 import { TopBar } from "./topbar";
+import { Spotlight } from "@/components/ui/spotlight";
 import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
@@ -47,6 +48,7 @@ export async function AppShell({ user, children }: { user: SessionUser; children
         </main>
       </div>
       <CommandPalette items={items} />
+      <Spotlight />
     </div>
   );
 }

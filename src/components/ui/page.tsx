@@ -7,8 +7,8 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
     <div className="flex items-end justify-between gap-6 mb-5">
       <div className="min-w-0">
         {eyebrow ? <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-1">{eyebrow}</div> : null}
-        <h1 className="text-[26px] font-semibold text-ink leading-8 tracking-[-0.025em]">{title}</h1>
-        {description ? <p className="text-[13.5px] text-ink-muted mt-1 max-w-2xl leading-5">{description}</p> : null}
+        <h1 className="font-display text-[32px] font-semibold text-ink leading-[1.1] tracking-[-0.035em]">{title}</h1>
+        {description ? <p className="text-[13.5px] text-ink-muted mt-1.5 max-w-2xl leading-5">{description}</p> : null}
       </div>
       {actions ? <div className="flex items-center gap-2 flex-none">{actions}</div> : null}
     </div>

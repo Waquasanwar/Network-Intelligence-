@@ -45,7 +45,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
 
         <div className="relative max-w-[460px]">
           <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/45 mb-3">By invitation</div>
-          <h1 className="text-[38px] leading-[1.05] font-semibold tracking-[-0.03em]">Be in the network for when the right work comes up.</h1>
+          <h1 className="font-display text-[42px] leading-[1.04] font-semibold tracking-[-0.035em]">Be in the network for when <span className="hl">the right work</span> comes up.</h1>
           <p className="mt-4 text-white/60 text-[14px] leading-[1.6] max-w-[44ch]">We place people we actually know. Join once, and when something fits we already know who you are and why we&apos;d put our name behind you.</p>
 
           <ol className="mt-9 relative">

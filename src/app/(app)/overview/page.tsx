@@ -8,7 +8,7 @@ import { buildNetworkMap } from "@/server/network-map";
 import { InviteCard } from "@/components/domain/invite-card";
 import { signTenantInvite } from "@/lib/invite";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
-import { PageHeader, EmptyState } from "@/components/ui/page";
+import { EmptyState } from "@/components/ui/page";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge, StageBadge, IntroBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
@@ -85,11 +85,33 @@ export default async function OverviewPage() {
 
   return (
     <>
-      <PageHeader
-        title={`Good ${now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, ${user.name.split(" ")[0]}`}
-        description="Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?"
-        actions={<AddPersonDrawer people={existingPeopleForDrawer} />}
-      />
+      {/* The stage: greeting and the numbers that matter, on the one dark surface of the page. */}
+      <section className="brand-panel relative overflow-hidden rounded-[26px] px-8 pt-8 pb-7 mb-5 shadow-[0_24px_60px_-30px_rgba(21,22,46,0.7)]">
+        <div className="relative flex flex-wrap items-end justify-between gap-5">
+          <div className="min-w-0">
+            <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/50">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
+            <h1 className="font-display text-[44px] leading-[1.04] font-semibold tracking-[-0.035em] mt-2">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, <span className="hl">{user.name.split(" ")[0]}</span></h1>
+            <p className="text-white/65 text-[14.5px] mt-3 max-w-[60ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
+          </div>
+          <AddPersonDrawer people={existingPeopleForDrawer} variant="accent" />
+        </div>
+        <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
+          <KpiCard variant="glass" label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
+          {showP23 ? (
+            <>
+              <KpiCard variant="glass" label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
+              <KpiCard variant="glass" label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
+              <KpiCard variant="glass" label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
+            </>
+          ) : (
+            <>
+              <KpiCard variant="glass" label="Signed up" value={members} hint="members in your network" href="/network" />
+              <KpiCard variant="glass" label="Awaiting screening" value={awaitingScreening} hint="registered, not yet screened" href="/conversations" tone={awaitingScreening ? "amber" : "neutral"} />
+              <KpiCard variant="glass" label="Worked with" value={workedWith} hint="people you've delivered with" href="/network?workedWith=1" tone="neutral" />
+            </>
+          )}
+        </div>
+      </section>
 
       <InviteCard token={signTenantInvite(user.tenantId)} />
 
@@ -104,23 +126,6 @@ export default async function OverviewPage() {
           </CardBody>
         </Card>
       ) : null}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
-        <KpiCard label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
-        {showP23 ? (
-          <>
-            <KpiCard label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
-            <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
-            <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
-          </>
-        ) : (
-          <>
-            <KpiCard label="Signed up" value={members} hint="members in your network" href="/network" />
-            <KpiCard label="Awaiting screening" value={awaitingScreening} hint="registered, not yet screened" href="/conversations" tone={awaitingScreening ? "amber" : "neutral"} />
-            <KpiCard label="Worked with" value={workedWith} hint="people you've delivered with" href="/network?workedWith=1" tone="neutral" />
-          </>
-        )}
-      </div>
-
       {people.length > 1 ? (
         <Card className="mb-4 overflow-hidden">
           <CardHeader title="Your network" description="Who you know and how they reach you. Filter by capability; click a person to see their trust and the open roles they fit." action={<Link href="/network/map" className="text-xs text-navy hover:underline">Open full map</Link>} />

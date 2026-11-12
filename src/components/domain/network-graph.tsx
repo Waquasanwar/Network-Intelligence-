@@ -70,6 +70,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
       line: C("--color-line-strong", "rgba(20,24,45,0.13)"),
       surface: C("--color-surface", "#ffffff"),
     };
+    const stage = C("--graph-glow", "") === "1"; // on the dark stage, trusted people are drawn as light
 
     const byId = new Map<string, SimNode>();
     const sim: SimNode[] = nodes.map((n, i) => {
@@ -194,14 +195,16 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
         const off = dimmed(n);
         const a = off ? 0.12 : on ? 1 : 0.2;
         const trusted = n.hub || n.trust >= TRUSTED;
-        if (trusted && !off && on) { ctx!.globalAlpha = 0.16; ctx!.fillStyle = col.navy400; ctx!.beginPath(); ctx!.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2); ctx!.fill(); }
+        if (trusted && !off && on) { ctx!.globalAlpha = stage ? 0.2 : 0.16; ctx!.fillStyle = stage ? col.navy : col.navy400; ctx!.beginPath(); ctx!.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2); ctx!.fill(); }
         ctx!.globalAlpha = a;
+        if (stage && trusted && !off && on) { ctx!.shadowColor = col.navy; ctx!.shadowBlur = 22 * dpr; }
         ctx!.beginPath();
         ctx!.arc(n.x, n.y, n.r, 0, Math.PI * 2);
         if (n.hub) { ctx!.fillStyle = col.navy; ctx!.fill(); ctx!.lineWidth = 3 / view.k; ctx!.strokeStyle = col.surface; ctx!.stroke(); }
         else if (trusted) { ctx!.fillStyle = col.navy; ctx!.fill(); }
         else if (n.worked) { ctx!.fillStyle = col.navy400; ctx!.fill(); }
         else { ctx!.fillStyle = col.surface; ctx!.fill(); ctx!.lineWidth = 1.8 / view.k; ctx!.strokeStyle = col.navy400; ctx!.stroke(); }
+        ctx!.shadowBlur = 0;
         if (hover === n || sel === n.id) {
           ctx!.globalAlpha = 1;
           ctx!.beginPath(); ctx!.arc(n.x, n.y, n.r + 4 / view.k, 0, Math.PI * 2); ctx!.lineWidth = (sel === n.id ? 2.4 : 1.6) / view.k; ctx!.strokeStyle = col.navy; ctx!.stroke();
@@ -312,15 +315,15 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
 
   return (
     <div className={cn("relative w-full flex rounded-[16px] border border-line bg-surface overflow-hidden", heightClass)}>
-      <div ref={wrapRef} className="relative flex-1 min-w-0">
+      <div ref={wrapRef} className="graph-stage brand-panel relative flex-1 min-w-0">
         <canvas ref={canvasRef} className="block touch-none" />
 
         {!compact ? (
           <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-2">
             {[[stats.total, "in the network"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
-              <div key={String(l)} className="rounded-[12px] border border-line bg-surface/85 backdrop-blur px-3.5 py-2 shadow-[0_2px_10px_rgba(16,20,40,0.05)]">
-                <div className="text-[18px] font-semibold tabular leading-6 tracking-[-0.02em]">{v}</div>
-                <div className="text-[11px] text-ink-faint">{l}</div>
+              <div key={String(l)} className="glass-tile rounded-[13px] px-4 py-2.5">
+                <div className="font-display text-[22px] font-semibold tabular leading-7 tracking-[-0.02em] text-white">{v}</div>
+                <div className="text-[11px] text-white/55">{l}</div>
               </div>
             ))}
           </div>
@@ -341,17 +344,17 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
           <div className="pointer-events-auto flex flex-wrap gap-1.5">
             {topCaps.length ? (
               <>
-                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === null ? "bg-navy border-navy text-white font-medium" : "bg-surface/85 backdrop-blur border-line text-ink-muted hover:border-line-strong")}>Everyone</button>
+                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === null ? "bg-accent border-accent text-accent-ink font-semibold shadow-[0_0_18px_-6px_var(--color-accent)]" : "bg-white/[0.07] backdrop-blur border-white/15 text-white/75 hover:border-white/35 hover:text-white")}>Everyone</button>
                 {topCaps.map((c) => (
-                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === c.key ? "bg-navy border-navy text-white font-medium" : "bg-surface/85 backdrop-blur border-line text-ink-muted hover:border-line-strong")}>{c.label}</button>
+                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === c.key ? "bg-accent border-accent text-accent-ink font-semibold shadow-[0_0_18px_-6px_var(--color-accent)]" : "bg-white/[0.07] backdrop-blur border-white/15 text-white/75 hover:border-white/35 hover:text-white")}>{c.label}</button>
                 ))}
               </>
             ) : null}
           </div>
-          <div className="hidden md:flex flex-none items-center gap-3 text-[11px] text-ink-faint bg-surface/85 backdrop-blur rounded-full border border-line px-3 py-1.5">
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-navy" /> trusted</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-navy-400" /> worked together</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-[1.5px] border-navy-400 bg-surface" /> introduced</span>
+          <div className="hidden md:flex flex-none items-center gap-3 text-[11px] text-white/60 bg-white/[0.07] backdrop-blur rounded-full border border-white/15 px-3 py-1.5">
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" /> trusted</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#a3a6ec]" /> worked together</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-[1.5px] border-[#a3a6ec]" /> introduced</span>
             {compact ? null : <span>· size = trust</span>}
           </div>
         </div>

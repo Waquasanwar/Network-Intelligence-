@@ -66,7 +66,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </svg>
         <div className="relative z-10">
           <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/45 mb-3">Invitation only</div>
-          <h1 className="text-[42px] leading-[1.04] font-semibold tracking-[-0.03em]">Known.<br />Not just matched.</h1>
+          <h1 className="font-display text-[48px] leading-[1.02] font-semibold tracking-[-0.035em]"><span className="hl">Known.</span><br />Not just matched.</h1>
           <p className="mt-5 text-white/60 text-[14px] max-w-[42ch] leading-[1.6]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
         </div>
         <div className="text-[12px] text-white/35 relative z-10">Human-led. AI-enhanced. The relationship intelligence is the asset.</div>
