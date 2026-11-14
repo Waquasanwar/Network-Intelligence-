@@ -73,7 +73,7 @@ export function AiIntakeChat() {
         </div>
         {summary.suggestedAvailabilityStatus ? <div><div className="text-[11px] uppercase tracking-[0.05em] text-ink-faint mb-1">Availability</div><Chip>{AVAILABILITY_LABELS[summary.suggestedAvailabilityStatus as AvailabilityStatus] ?? summary.suggestedAvailabilityStatus}</Chip></div> : null}
         {summary.unresolvedQuestions.length ? (
-          <div className="rounded-[12px] border border-amber/25 bg-amber-50 px-3.5 py-3">
+          <div className="rounded-[10px] border border-amber/25 bg-amber-50 px-3.5 py-3">
             <div className="text-[11px] uppercase tracking-[0.05em] text-amber mb-1">Still to confirm</div>
             <ul className="text-[12.5px] text-ink space-y-0.5 list-disc pl-4">{summary.unresolvedQuestions.map((q, i) => <li key={i}>{q}</li>)}</ul>
           </div>
@@ -84,12 +84,12 @@ export function AiIntakeChat() {
   }
 
   return (
-    <div className="ai-surface rounded-[16px] bg-surface">
+    <div className="ai-surface rounded-[12px] bg-surface">
       <div ref={scroller} className="max-h-[440px] overflow-y-auto p-5 space-y-3">
         {log.map((m, i) => (
           <div key={i} className={m.role === "ai" ? "flex gap-2.5 items-start" : "flex justify-end"}>
             {m.role === "ai" ? <span className="mt-0.5 h-6 w-6 rounded-full bg-navy text-white grid place-items-center flex-none"><Sparkles className="h-3.5 w-3.5" /></span> : null}
-            <div className={m.role === "ai" ? "max-w-[82%] rounded-[14px] rounded-tl-sm bg-surface-muted px-3.5 py-2.5 text-[13px] text-ink leading-5" : "max-w-[82%] rounded-[14px] rounded-tr-sm bg-navy text-white px-3.5 py-2.5 text-[13px] leading-5"}>{m.text}</div>
+            <div className={m.role === "ai" ? "max-w-[82%] rounded-[10px] rounded-tl-sm bg-surface-muted px-3.5 py-2.5 text-[13px] text-ink leading-5" : "max-w-[82%] rounded-[10px] rounded-tr-sm bg-navy text-white px-3.5 py-2.5 text-[13px] leading-5"}>{m.text}</div>
           </div>
         ))}
       </div>

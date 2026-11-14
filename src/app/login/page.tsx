@@ -47,29 +47,29 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]">
-      <aside className="brand-panel relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
+      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
         <div className="flex items-center gap-2.5 relative z-10">
-          <span className="h-8 w-8 rounded-[9px] bg-white/95 text-[#2b2d55] text-[12px] font-semibold inline-flex items-center justify-center">NI</span>
+          <span className="h-8 w-8 rounded-[9px] bg-navy text-white text-[12px] font-semibold inline-flex items-center justify-center">NI</span>
           <span className="text-[14px] font-medium">Network Intelligence</span>
         </div>
         <svg viewBox="0 0 620 500" preserveAspectRatio="xMidYMid meet" className="absolute inset-x-0 top-[9%] h-[48%] w-full opacity-90" aria-hidden="true">
           {edges.map(([a, b, strong], i) => (
-            <line key={i} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} stroke={strong ? "rgba(180,182,230,0.75)" : "rgba(255,255,255,0.22)"} strokeWidth={strong ? 1.5 : 1} strokeDasharray={strong ? undefined : "3 5"} />
+            <line key={i} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} stroke={strong ? "rgba(47,49,112,0.55)" : "rgba(47,49,112,0.22)"} strokeWidth={strong ? 1.5 : 1} strokeDasharray={strong ? undefined : "3 5"} />
           ))}
           {nodes.map((n, i) => (
             <g key={i}>
-              <circle cx={n.x} cy={n.y} r={n.r + 7} fill={n.accent ? "rgba(180,182,230,0.14)" : "rgba(255,255,255,0.06)"} />
-              <circle cx={n.x} cy={n.y} r={n.r} fill={n.strong ? "#ffffff" : n.accent ? "#c8caf0" : "rgba(255,255,255,0.7)"} />
-              {n.label ? <text x={n.x + 14} y={n.y + 4} fontSize="12.5" fill="rgba(255,255,255,0.62)" fontFamily="var(--font-sans)">{n.label}</text> : null}
+              <circle cx={n.x} cy={n.y} r={n.r + 7} fill={n.accent ? "rgba(47,49,112,0.08)" : "rgba(47,49,112,0.05)"} />
+              <circle cx={n.x} cy={n.y} r={n.r} fill={n.strong ? "#2f3170" : n.accent ? "#6c6fb6" : "rgba(47,49,112,0.45)"} />
+              {n.label ? <text x={n.x + 14} y={n.y + 4} fontSize="12.5" fill="rgba(17,19,39,0.6)" fontFamily="var(--font-sans)">{n.label}</text> : null}
             </g>
           ))}
         </svg>
         <div className="relative z-10">
-          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/45 mb-3">Invitation only</div>
-          <h1 className="font-display text-[48px] leading-[1.02] font-semibold tracking-[-0.035em]"><span className="hl">Known.</span><br />Not just matched.</h1>
-          <p className="mt-5 text-white/60 text-[14px] max-w-[42ch] leading-[1.6]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
+          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint mb-3">Invitation only</div>
+          <h1 className="font-display text-[40px] leading-[1.06] font-semibold tracking-[-0.035em] text-ink">Known.<br />Not just matched.</h1>
+          <p className="mt-5 text-ink-muted text-[14px] max-w-[42ch] leading-[1.6]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
         </div>
-        <div className="text-[12px] text-white/35 relative z-10">Human-led. AI-enhanced. The relationship intelligence is the asset.</div>
+        <div className="text-[12px] text-ink-faint relative z-10">Human-led. AI-enhanced. The relationship intelligence is the asset.</div>
       </aside>
 
       <main className="relative flex items-center justify-center px-6 py-12 sm:px-10 bg-canvas">
@@ -82,8 +82,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h2 className="text-[26px] font-semibold tracking-[-0.025em]">Welcome back</h2>
           <p className="text-[13.5px] text-ink-muted mt-1.5">Sign in to your network.</p>
 
-          {sp.registered ? <div className="mt-5 rounded-[12px] border border-teal/25 bg-teal/5 px-3.5 py-2.5 text-[12.5px] text-ink">Account created. Sign in to start your screening.</div> : null}
-          {sp.error ? <div className="mt-5 rounded-[12px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
+          {sp.registered ? <div className="mt-5 rounded-[10px] border border-teal/25 bg-teal/5 px-3.5 py-2.5 text-[12.5px] text-ink">Account created. Sign in to start your screening.</div> : null}
+          {sp.error ? <div className="mt-5 rounded-[10px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
 
           <form action={login} className="mt-7 space-y-3.5">
             <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/"} />
@@ -100,7 +100,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           ) : null}
 
           {showDemo ? (
-            <div className="mt-6 rounded-[12px] border border-line bg-surface/60 p-3.5 text-[11.5px] text-ink-muted leading-5">
+            <div className="mt-6 rounded-[10px] border border-line bg-surface/60 p-3.5 text-[11.5px] text-ink-muted leading-5">
               <div className="font-medium text-ink mb-1.5">Demo accounts · password <span className="mono">Password123!</span></div>
               <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                 <span className="mono">waqas@networkintelligence.local</span><span>Owner</span>

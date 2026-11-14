@@ -3,22 +3,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] font-medium transition-[background-color,border-color,box-shadow,color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none active:translate-y-px",
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] font-medium transition-[background-color,border-color,box-shadow,color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none active:translate-y-px",
   {
     variants: {
       variant: {
-        primary: "bg-[linear-gradient(180deg,var(--color-navy-600),var(--color-navy))] text-white hover:brightness-110 active:translate-y-px shadow-[var(--shadow-button)] dark:text-canvas",
-        accent: "bg-accent text-accent-ink font-semibold hover:brightness-105 active:translate-y-px shadow-[0_10px_24px_-12px_var(--color-accent)]",
+        primary: "bg-navy text-white hover:bg-navy-600 active:translate-y-px shadow-[var(--shadow-button)] dark:text-canvas",
+        accent: "bg-navy text-white hover:bg-navy-600 active:translate-y-px shadow-[var(--shadow-button)] dark:text-canvas",
         secondary: "bg-surface text-ink border border-line hover:border-line-strong hover:bg-surface-hover shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
         ghost: "text-ink-muted hover:bg-surface-muted hover:text-ink",
-        teal: "bg-[linear-gradient(180deg,var(--color-navy-600),var(--color-navy))] text-white hover:brightness-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_6px_14px_-8px_rgba(13,122,111,0.7)]",
+        teal: "bg-navy text-white hover:bg-navy-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_6px_14px_-8px_rgba(13,122,111,0.7)]",
         danger: "bg-risk text-white hover:brightness-95",
         link: "text-navy underline-offset-4 hover:underline px-0 h-auto",
       },
       size: {
         sm: "h-7 px-2.5 text-[12.5px] rounded-[8px]",
         md: "h-8 px-3.5 text-[13px]",
-        lg: "h-10 px-4 text-sm rounded-[12px]",
+        lg: "h-10 px-4 text-sm rounded-[10px]",
         icon: "h-8 w-8",
       },
     },

@@ -32,7 +32,7 @@ export function DataRights({ privacy, firstName, asPersonId }: { privacy: Privac
   if (erasing) {
     return (
       <div className="space-y-3">
-        <div className="flex items-start gap-2.5 rounded-[12px] border border-amber/30 bg-amber-50 px-3.5 py-3 text-[12.5px] text-ink">
+        <div className="flex items-start gap-2.5 rounded-[10px] border border-amber/30 bg-amber-50 px-3.5 py-3 text-[12.5px] text-ink">
           <AlertTriangle className="h-4 w-4 text-amber flex-none mt-0.5" />
           <div>Deletion requested. You&apos;re no longer shown to anyone, and the network owner removes your profile within 30 days. Fee and audit records the law requires us to keep are anonymised, not deleted.</div>
         </div>
@@ -59,12 +59,12 @@ export function DataRights({ privacy, firstName, asPersonId }: { privacy: Privac
             <Trash2 className="h-3.5 w-3.5" /> Delete my data
           </button>
         ) : (
-          <form action={requestMyErasure} className="space-y-2.5 rounded-[12px] border border-risk/25 bg-risk-100/50 p-3.5">
+          <form action={requestMyErasure} className="space-y-2.5 rounded-[10px] border border-risk/25 bg-risk-100/50 p-3.5">
             {asPersonId ? <input type="hidden" name="asPersonId" value={asPersonId} /> : null}
             <div className="text-[12.5px] text-ink leading-[1.5]">{firstName}, this removes you from the network. You stop being shown immediately; your profile and screening are deleted within 30 days. This can&apos;t be undone once it&apos;s carried out.</div>
-            <input type="text" name="reason" placeholder="Reason (optional)" className="w-full h-9 rounded-[10px] border border-line bg-surface px-3 text-[12.5px] outline-none focus:border-navy-400" />
+            <input type="text" name="reason" placeholder="Reason (optional)" className="w-full h-9 rounded-[8px] border border-line bg-surface px-3 text-[12.5px] outline-none focus:border-navy-400" />
             <label className="block text-[11.5px] text-ink-muted">Type <b className="text-risk">DELETE</b> to confirm</label>
-            <input type="text" name="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full h-9 rounded-[10px] border border-line bg-surface px-3 text-[12.5px] font-mono outline-none focus:border-risk" autoComplete="off" />
+            <input type="text" name="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full h-9 rounded-[8px] border border-line bg-surface px-3 text-[12.5px] font-mono outline-none focus:border-risk" autoComplete="off" />
             <div className="flex items-center gap-2">
               <SubmitButton size="sm" variant="danger" disabled={confirm !== "DELETE"} pendingText="…">Request deletion</SubmitButton>
               <Button type="button" variant="ghost" size="sm" onClick={() => { setOpen(false); setConfirm(""); }}>Cancel</Button>

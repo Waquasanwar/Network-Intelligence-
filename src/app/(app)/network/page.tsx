@@ -4,7 +4,8 @@ import { trustScore } from "@/lib/trust";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { getAIProvider } from "@/lib/ai";
-import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
+import { textSearchClauses } from "@/server/network-search";
+import { assessFreshness } from "@/lib/availability";
 import { PageHeader, EmptyState, Pill } from "@/components/ui/page";
 import { Input, Select } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -40,25 +41,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   const where: Prisma.PersonWhereInput = { tenantId: user.tenantId };
   const and: Prisma.PersonWhereInput[] = [];
-  if (filters.q) {
-    const text = filters.q.trim();
-    const or: Prisma.PersonWhereInput[] = [
-      { firstName: { contains: text, mode: "insensitive" } },
-      { lastName: { contains: text, mode: "insensitive" } },
-      { headline: { contains: text, mode: "insensitive" } },
-      { currentCompany: { contains: text, mode: "insensitive" } },
-      { capabilities: { hasSome: [text] } },
-    ];
-    if (intent) {
-      for (const c of intent.capabilities) or.push({ capabilities: { hasSome: [c] } }, { headline: { contains: c, mode: "insensitive" } });
-      for (const s of intent.sectors) or.push({ sectors: { hasSome: [s] } });
-      for (const l of intent.locations) or.push({ primaryCity: { contains: l, mode: "insensitive" } }, { primaryCountry: { contains: l, mode: "insensitive" } }, { targetLocations: { hasSome: [l] } });
-    }
-    and.push({ OR: or });
-    if (intent?.routes.length) and.push({ engagementPreferences: { hasSome: intent.routes as EngagementRoute[] } });
-    if (intent?.availableSoon) and.push({ availabilityStatus: { in: ACTIVE_STATUSES } });
-    if (intent?.workedWithOnly) and.push({ relationships: { some: { workedTogether: true } } });
-  }
+  if (filters.q) and.push(...textSearchClauses(filters.q, intent));
   if (filters.status) and.push({ availabilityStatus: filters.status as AvailabilityStatus });
   if (filters.route) and.push({ engagementPreferences: { has: filters.route as EngagementRoute } });
   if (filters.location) and.push({ OR: [{ primaryCity: { contains: filters.location, mode: "insensitive" } }, { primaryCountry: { contains: filters.location, mode: "insensitive" } }, { targetLocations: { hasSome: [filters.location] } }] });
@@ -134,7 +117,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      <div data-sortable className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
+      <div data-sortable className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
         {people.length === 0 ? (
           <EmptyState title="No one matches" description="Try a broader search, or add the person you have in mind." />
         ) : (

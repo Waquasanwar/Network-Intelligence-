@@ -46,7 +46,7 @@ export function PitchDrawer({ briefId, asPersonId, summary }: { briefId: string;
       <form action={submitPitch} className="space-y-4">
         <input type="hidden" name="briefId" value={briefId} />
         {asPersonId ? <input type="hidden" name="asPersonId" value={asPersonId} /> : null}
-        <div className="rounded-[12px] bg-surface-muted px-3 py-2.5 text-[12.5px]">{summary}</div>
+        <div className="rounded-[10px] bg-surface-muted px-3 py-2.5 text-[12.5px]">{summary}</div>
         <Field label="Your pitch" required><Textarea name="note" required className="min-h-[120px]" placeholder="What you have done that is closest to this, and why now." /></Field>
         <div className="flex justify-end"><SubmitButton pendingText="Sending…">Send pitch</SubmitButton></div>
       </form>

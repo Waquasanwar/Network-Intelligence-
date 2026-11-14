@@ -59,7 +59,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
           <Card>
             <CardHeader title="The brief" description="What was asked, in their words and in structure." />
             <CardBody>
-              <blockquote className="border-l-[3px] border-navy-400 bg-surface-muted rounded-r-[12px] px-4 py-3 text-[14px] italic leading-6 mb-3">{b.rawText}</blockquote>
+              <blockquote className="border-l-[3px] border-navy-400 bg-surface-muted rounded-r-[10px] px-4 py-3 text-[14px] italic leading-6 mb-3">{b.rawText}</blockquote>
               <BriefChips b={d} />
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-4">
                 <div><div className="text-ink-faint">Roles</div><div>{b.roles.join(", ") || "to confirm"}</div></div>
@@ -71,7 +71,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
                 <div><div className="text-ink-faint">Budget</div><div className="tabular">{budgetLabel(d.budget) ?? "—"}</div></div>
                 <div><div className="text-ink-faint">Start · duration</div><div>{b.startBy ?? "—"}{b.durationMonths ? ` · ${b.durationMonths} months` : ""}</div></div>
               </div>
-              {b.questions.length ? <div className="mt-3 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-1">Still to confirm with {b.account.name}</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
+              {b.questions.length ? <div className="mt-3 rounded-[10px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-1">Still to confirm with {b.account.name}</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
             </CardBody>
           </Card>
 
@@ -86,7 +86,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
                       <FitChecks checks={fitChecks(traits, fitProfile((s.person.attributes as FitScores | null) ?? null, s.person.vouches.map((v) => v.attributes as FitScores | null).filter((a): a is FitScores => !!a)))} />
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name}><div className="text-[10px] uppercase text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>
                       <p className="text-[13px] mt-3 leading-5">{s.fitExplanation}</p>
-                      {s.uncertainty.length ? <div className="mt-2 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2 text-[12px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-0.5">Uncertainty</div><ul className="pl-4 list-disc space-y-0.5">{s.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul></div> : null}
+                      {s.uncertainty.length ? <div className="mt-2 rounded-[10px] bg-amber-100 border border-amber/30 px-3 py-2 text-[12px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-0.5">Uncertainty</div><ul className="pl-4 list-disc space-y-0.5">{s.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul></div> : null}
                       <form action={decideShortlist} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-2.5 items-end mt-3 pt-3 border-t border-line">
                         <input type="hidden" name="itemId" value={s.id} />
                         <Field label="Decision"><Select name="decision" defaultValue={s.decision}>{Object.entries(SHORTLIST_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>

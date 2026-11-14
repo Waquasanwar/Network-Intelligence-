@@ -30,7 +30,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
       </div>
 
       {opps.length === 0 ? <EmptyState title="No opportunities" description="Create one from a business problem." /> : view === "list" ? (
-        <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+        <div className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
           <table className="data">
             <thead><tr><th>Opportunity</th><th>Type</th><th>Source</th><th>Client</th><th>Value</th><th>Location</th><th>Stage</th><th>Matches</th><th>Updated</th></tr></thead>
             <tbody>
@@ -55,11 +55,11 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           {KANBAN_STAGES.map((stage) => {
             const cards = opps.filter((o) => o.status === stage);
             return (
-              <div key={stage} className="rounded-[16px] bg-surface-muted/70 border border-line p-2.5">
+              <div key={stage} className="rounded-[12px] bg-surface-muted/70 border border-line p-2.5">
                 <div className="flex items-center justify-between px-1 mb-2"><span className="text-[11px] font-medium uppercase tracking-wide text-ink-muted">{OPPORTUNITY_STATUS_LABELS[stage]}</span><span className="text-[11px] text-ink-faint tabular">{cards.length}</span></div>
                 <div className="space-y-2">
                   {cards.map((o) => (
-                    <Link key={o.id} href={`/opportunities/${o.id}`} className="block rounded-[12px] border border-line bg-surface p-3 lift shadow-[var(--shadow-card)]">
+                    <Link key={o.id} href={`/opportunities/${o.id}`} className="block rounded-[10px] border border-line bg-surface p-3 lift shadow-[var(--shadow-card)]">
                       <div className="text-[13px] font-medium leading-4 text-ink">{o.title}</div>
                       <div className="text-[11px] text-ink-faint mt-1 truncate">{o.clientName ?? "—"}</div>
                       <div className="flex items-center justify-between gap-2 mt-2.5 whitespace-nowrap"><RouteBadge route={o.engagementRoute} /><span className="text-[11px] text-ink-faint tabular flex-none">{o.matches.length} matches</span></div>

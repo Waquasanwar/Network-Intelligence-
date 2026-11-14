@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export function Card({ className, interactive = false, ...props }: React.HTMLAttributes<HTMLDivElement> & { interactive?: boolean }) {
-  return <div className={cn("rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)]", interactive && "lift cursor-pointer", className)} {...props} />;
+  return <div className={cn("rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)]", interactive && "lift cursor-pointer", className)} {...props} />;
 }
 
 export function CardHeader({ className, title, description, action }: { className?: string; title: React.ReactNode; description?: React.ReactNode; action?: React.ReactNode }) {

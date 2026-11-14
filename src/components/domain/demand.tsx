@@ -43,11 +43,11 @@ export function BriefChips({ b, className }: { b: Brief; className?: string }) {
 /** "How the co-pilot read it": chips, assumptions, and what it could not infer. */
 export function ReadCard({ b, title = "How the co-pilot read it" }: { b: Brief; title?: string }) {
   return (
-    <div className="rounded-[16px] border border-line bg-surface p-4">
+    <div className="rounded-[12px] border border-line bg-surface p-4">
       <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-2">{title}</div>
       <BriefChips b={b} />
       {b.assumptions.length ? <ul className="mt-3 pl-4 list-disc text-[12.5px] text-ink-muted space-y-0.5">{b.assumptions.map((a) => <li key={a}>{a}</li>)}</ul> : null}
-      {b.questions.length ? <div className="mt-3 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-1">Still to confirm</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
+      {b.questions.length ? <div className="mt-3 rounded-[10px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-1">Still to confirm</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
     </div>
   );
 }
@@ -86,7 +86,7 @@ export function FitChecks({ checks }: { checks: { key: string; label: string; st
 
 export function FeeBox({ est, model, pct, label = "Estimated fee to us", extra }: { est: FeeEstimate; model?: FeeModel; pct?: number | null; label?: string; extra?: React.ReactNode }) {
   return (
-    <div className={cn("rounded-[16px] border px-4 py-3.5", est.confident ? "border-teal/30 bg-[linear-gradient(135deg,rgba(20,184,166,0.14),rgba(79,111,214,0.10))]" : "border-line bg-surface-muted")}>
+    <div className={cn("rounded-[12px] border px-4 py-3.5", est.confident ? "border-teal/30 bg-[linear-gradient(135deg,rgba(20,184,166,0.14),rgba(79,111,214,0.10))]" : "border-line bg-surface-muted")}>
       <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-muted">{label}</div>
       <div className={cn("text-[28px] font-semibold tabular tracking-[-0.03em] leading-9 mt-0.5", est.confident ? "text-teal" : "text-ink-faint")}>{est.confident ? fmt(est.ourTake, est.currency) : "—"}</div>
       {model ? <div className="text-[12px] text-ink-muted">{FEE_MODEL_LABELS[model]}{pct ? ` · ${pct}%` : ""}</div> : null}

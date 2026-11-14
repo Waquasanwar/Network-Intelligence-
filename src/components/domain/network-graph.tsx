@@ -314,23 +314,23 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
   const card =selectedNode ? <PersonCard n={selectedNode} connections={degree.get(selectedNode.id) ?? 0} onClose={() => setSelected(null)} /> : null;
 
   return (
-    <div className={cn("relative w-full flex rounded-[16px] border border-line bg-surface overflow-hidden", heightClass)}>
-      <div ref={wrapRef} className="graph-stage brand-panel relative flex-1 min-w-0">
+    <div className={cn("relative w-full flex rounded-[12px] border border-line bg-surface overflow-hidden", heightClass)}>
+      <div ref={wrapRef} className="relative flex-1 min-w-0 bg-[linear-gradient(180deg,var(--color-surface),var(--color-surface-hover))]">
         <canvas ref={canvasRef} className="block touch-none" />
 
         {!compact ? (
           <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-2">
             {[[stats.total, "in the network"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
-              <div key={String(l)} className="glass-tile rounded-[13px] px-4 py-2.5">
-                <div className="font-display text-[22px] font-semibold tabular leading-7 tracking-[-0.02em] text-white">{v}</div>
-                <div className="text-[11px] text-white/55">{l}</div>
+              <div key={String(l)} className="rounded-[8px] border border-line bg-surface/90 backdrop-blur px-3.5 py-2 shadow-[var(--shadow-card)]">
+                <div className="font-display text-[20px] font-semibold tabular leading-6 tracking-[-0.02em] text-ink">{v}</div>
+                <div className="text-[11px] text-ink-faint">{l}</div>
               </div>
             ))}
           </div>
         ) : null}
 
         {tip ? (
-          <div className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-[10px] border border-line bg-surface px-2.5 py-1.5 shadow-[var(--shadow-card)]" style={{ left: tip.x, top: tip.y }}>
+          <div className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-[8px] border border-line bg-surface px-2.5 py-1.5 shadow-[var(--shadow-card)]" style={{ left: tip.x, top: tip.y }}>
             <div className="text-[12.5px] font-semibold text-ink whitespace-nowrap">{tip.node.name}</div>
             {tip.node.headline ? <div className="text-[11px] text-ink-muted max-w-[220px] truncate">{tip.node.headline}</div> : null}
             {tip.node.hub ? null : <div className="text-[10.5px] text-ink-faint mt-0.5">Trust {Math.round(tip.node.trust)}{tip.node.worked ? " · worked together" : ""}{tip.node.roles?.length ? ` · fits ${tip.node.roles.length} open role${tip.node.roles.length === 1 ? "" : "s"}` : ""}</div>}
@@ -338,23 +338,23 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
         ) : null}
 
         {/* On the home page and on small screens the person opens as a floating card. */}
-        {card ? <div className={cn("absolute right-3 top-3 z-20 w-[300px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[14px] border border-line bg-surface shadow-[var(--shadow-card)]", compact ? "" : "lg:hidden")}>{card}</div> : null}
+        {card ? <div className={cn("absolute right-3 top-3 z-20 w-[300px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[10px] border border-line bg-surface shadow-[var(--shadow-card)]", compact ? "" : "lg:hidden")}>{card}</div> : null}
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
           <div className="pointer-events-auto flex flex-wrap gap-1.5">
             {topCaps.length ? (
               <>
-                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === null ? "bg-accent border-accent text-accent-ink font-semibold shadow-[0_0_18px_-6px_var(--color-accent)]" : "bg-white/[0.07] backdrop-blur border-white/15 text-white/75 hover:border-white/35 hover:text-white")}>Everyone</button>
+                <button type="button" onClick={() => setCap(null)} className={cn("rounded-[7px] border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === null ? "bg-navy border-navy text-white font-medium dark:text-canvas" : "bg-surface/90 backdrop-blur border-line text-ink-muted hover:border-line-strong hover:text-ink")}>Everyone</button>
                 {topCaps.map((c) => (
-                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === c.key ? "bg-accent border-accent text-accent-ink font-semibold shadow-[0_0_18px_-6px_var(--color-accent)]" : "bg-white/[0.07] backdrop-blur border-white/15 text-white/75 hover:border-white/35 hover:text-white")}>{c.label}</button>
+                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-[7px] border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === c.key ? "bg-navy border-navy text-white font-medium dark:text-canvas" : "bg-surface/90 backdrop-blur border-line text-ink-muted hover:border-line-strong hover:text-ink")}>{c.label}</button>
                 ))}
               </>
             ) : null}
           </div>
-          <div className="hidden md:flex flex-none items-center gap-3 text-[11px] text-white/60 bg-white/[0.07] backdrop-blur rounded-full border border-white/15 px-3 py-1.5">
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" /> trusted</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#a3a6ec]" /> worked together</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-[1.5px] border-[#a3a6ec]" /> introduced</span>
+          <div className="hidden md:flex flex-none items-center gap-3 text-[11px] text-ink-faint bg-surface/90 backdrop-blur rounded-[8px] border border-line px-3 py-1.5">
+            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-navy" /> trusted</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-navy-400" /> worked together</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full border-[1.5px] border-navy-400 bg-surface" /> introduced</span>
             {compact ? null : <span>· size = trust</span>}
           </div>
         </div>
@@ -431,7 +431,7 @@ function PersonCard({ n, connections, onClose }: { n: GNode; connections: number
       </div>
 
       <div className="p-4 border-t border-line">
-        <Link href={`/network/${n.id}`} className="flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-navy text-white text-[13px] font-medium hover:bg-navy-600 dark:text-canvas">Open profile <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+        <Link href={`/network/${n.id}`} className="flex h-9 items-center justify-center gap-1.5 rounded-[8px] bg-navy text-white text-[13px] font-medium hover:bg-navy-600 dark:text-canvas">Open profile <ArrowUpRight className="h-3.5 w-3.5" /></Link>
       </div>
     </div>
   );

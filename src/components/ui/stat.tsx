@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export function Stat({ label, value, hint, href, tone }: { label: string; value: React.ReactNode; hint?: string; href?: string; tone?: "teal" | "amber" | "neutral" }) {
   const body = (
-    <div className={cn("rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] px-5 py-[18px] h-full relative overflow-hidden", href && "lift")}>
+    <div className={cn("rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] px-5 py-[18px] h-full relative overflow-hidden", href && "lift")}>
       <div className="text-[12px] font-medium text-ink-muted whitespace-nowrap truncate">{label}</div>
       <div className={cn("text-[26px] font-semibold tabular mt-2 leading-9 tracking-[-0.03em] whitespace-nowrap", tone === "teal" && "text-teal", tone === "amber" && "text-amber")}>{value}</div>
       {hint ? <div className="text-[11.5px] text-ink-faint mt-1.5 truncate">{hint}</div> : null}

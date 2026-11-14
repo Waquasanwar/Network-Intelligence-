@@ -234,7 +234,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
       {tab === "relationships" ? (
         <Section title="Relationships" description="Relationship provenance and private notes. Notes never leave this tenant." action={<AddRelationshipDrawer personId={person.id} people={allPeople} />}>
-          <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+          <div className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
             <table className="data">
               <thead><tr><th>Known by</th><th>Type</th><th>Source</th><th>Worked together</th><th>Years</th><th>Again?</th><th>Last contact</th>{showNotes ? <th>Private notes</th> : null}</tr></thead>
               <tbody>
@@ -307,7 +307,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "opportunities" ? (
         <Section title="Opportunities" description="Where this person has been considered. Scores are per-opportunity, never a global rank.">
           {person.matches.length === 0 && person.teamMemberships.length === 0 ? <EmptyState title="Not yet considered for an opportunity" /> : (
-            <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+            <div className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
               <table className="data">
                 <thead><tr><th>Opportunity</th><th>Route</th><th>Stage</th><th>Fit</th><th>Human decision</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -359,7 +359,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "activity" ? (
         <Section title="Activity" description="Audit trail of sensitive actions on this record.">
           {audit.length === 0 ? <EmptyState title="No activity recorded" /> : (
-            <div className="rounded-[16px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+            <div className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
               <table className="data"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
                 <tbody>{audit.map((a) => <tr key={a.id}><td><DateText date={a.createdAt} relative /></td><td>{a.actor?.name ?? "system"}</td><td className="font-mono text-[11px]">{a.action}</td><td>{a.entityType}</td><td className="text-xs text-ink-muted font-mono">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody>
               </table>

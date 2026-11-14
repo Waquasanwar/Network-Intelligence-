@@ -7,7 +7,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
     <div className="flex items-end justify-between gap-6 mb-5">
       <div className="min-w-0">
         {eyebrow ? <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-1">{eyebrow}</div> : null}
-        <h1 className="font-display text-[32px] font-semibold text-ink leading-[1.1] tracking-[-0.035em]">{title}</h1>
+        <h1 className="font-display text-[28px] font-semibold text-ink leading-[1.15] tracking-[-0.03em]">{title}</h1>
         {description ? <p className="text-[13.5px] text-ink-muted mt-1.5 max-w-2xl leading-5">{description}</p> : null}
       </div>
       {actions ? <div className="flex items-center gap-2 flex-none">{actions}</div> : null}
@@ -17,7 +17,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
 
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
   return (
-    <div className="rounded-[16px] border border-dashed border-line-strong px-6 py-10 text-center bg-surface/60">
+    <div className="rounded-[12px] border border-dashed border-line-strong px-6 py-10 text-center bg-surface/60">
       <div className="text-[13px] font-medium text-ink">{title}</div>
       {description ? <div className="text-[12.5px] text-ink-muted mt-1 max-w-sm mx-auto leading-5">{description}</div> : null}
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

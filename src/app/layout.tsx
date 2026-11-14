@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono, Bricolage_Grotesque } from "next/font/google";
+import { Inter, IBM_Plex_Mono, Inter_Tight } from "next/font/google";
 import "./globals.css";
 
 // Inter carries the whole interface: a modern, neutral grotesque tuned for screens — the same
 // register as the products this is measured against. It falls to the Apple system face on Apple
 // devices so the typography feels native there too.
 const sans = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans-inter", display: "swap" });
-// Bricolage Grotesque is the display voice: page titles, hero lines and the big numbers. Inter stays
+// Inter Tight is the display cut: page titles and the big numbers, set close and sharp. Inter stays
 // for everything you read or operate.
-const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-display-bricolage", display: "swap" });
+const display = Inter_Tight({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-display-tight", display: "swap" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono-fallback", display: "swap" });
 
 export const metadata: Metadata = {

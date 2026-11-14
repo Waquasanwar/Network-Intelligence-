@@ -16,7 +16,18 @@ import { formatMoneyCompact, fullName } from "@/lib/utils";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, Sparkles, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight } from "lucide-react";
+import { AgentComposer } from "@/components/domain/agent-composer";
+
+// What the agent has queued for you, by the kind of decision it needs.
+type QueueKind = "match" | "review" | "approve" | "reconnect" | "intro";
+const QUEUE: Record<QueueKind, { tag: string; verb: string; icon: typeof Sparkles }> = {
+  match: { tag: "Matching", verb: "Run", icon: Sparkles },
+  review: { tag: "Shortlist", verb: "Review", icon: ListChecks },
+  approve: { tag: "Summary", verb: "Approve", icon: FileCheck2 },
+  reconnect: { tag: "Reconnect", verb: "Open", icon: RefreshCw },
+  intro: { tag: "Introduction", verb: "Respond", icon: Handshake },
+};
 
 export const metadata = { title: "Overview" };
 
@@ -71,43 +82,53 @@ export default async function OverviewPage() {
     .sort((a, b) => (a.availabilityConfirmedAt?.getTime() ?? 0) - (b.availabilityConfirmedAt?.getTime() ?? 0))
     .slice(0, 6);
 
-  const suggestions: { text: string; href: string }[] = [];
-  for (const o of activeOpps.filter((o) => o.matches.length === 0).slice(0, 2)) suggestions.push({ text: `Generate matches for "${o.title}" — no suggestions yet.`, href: `/opportunities/${o.id}` });
-  for (const o of activeOpps.filter((o) => o.matches.some((m) => m.humanDecision === "UNDECIDED")).slice(0, 2)) suggestions.push({ text: `Review ${o.matches.filter((m) => m.humanDecision === "UNDECIDED").length} undecided suggestions on "${o.title}".`, href: `/opportunities/${o.id}` });
-  for (const c of needsReview.slice(0, 2)) suggestions.push({ text: `Approve the structured summary for ${fullName(c.person)}.`, href: `/conversations?tab=review&open=${c.id}` });
-  for (const p of reconnect.slice(0, 2)) suggestions.push({ text: `Reconnect with ${fullName(p)} — status last confirmed ${p.availabilityConfirmedAt ? p.availabilityConfirmedAt.toLocaleDateString("en-GB") : "never"}.`, href: `/network/${p.id}` });
-  for (const r of partnerReqs.filter((r) => r.status === "INTRO_REQUESTED").slice(0, 1)) suggestions.push({ text: `${r.partner.name} has requested an introduction on "${r.title}".`, href: "/partners" });
+  const suggestions: { kind: QueueKind; text: string; href: string }[] = [];
+  for (const o of activeOpps.filter((o) => o.matches.length === 0).slice(0, 2)) suggestions.push({ kind: "match", text: `Generate matches for "${o.title}" — no suggestions yet.`, href: `/opportunities/${o.id}` });
+  for (const o of activeOpps.filter((o) => o.matches.some((m) => m.humanDecision === "UNDECIDED")).slice(0, 2)) suggestions.push({ kind: "review", text: `Review ${o.matches.filter((m) => m.humanDecision === "UNDECIDED").length} undecided suggestions on "${o.title}".`, href: `/opportunities/${o.id}` });
+  for (const c of needsReview.slice(0, 2)) suggestions.push({ kind: "approve", text: `Approve the structured summary for ${fullName(c.person)}.`, href: `/conversations?tab=review&open=${c.id}` });
+  for (const p of reconnect.slice(0, 2)) suggestions.push({ kind: "reconnect", text: `Reconnect with ${fullName(p)} — status last confirmed ${p.availabilityConfirmedAt ? p.availabilityConfirmedAt.toLocaleDateString("en-GB") : "never"}.`, href: `/network/${p.id}` });
+  for (const r of partnerReqs.filter((r) => r.status === "INTRO_REQUESTED").slice(0, 1)) suggestions.push({ kind: "intro", text: `${r.partner.name} has requested an introduction on "${r.title}".`, href: "/partners" });
 
   const stageCounts = ["INTAKE", "QUALIFYING", "MATCHING", "SHORTLIST", "INTRODUCING", "ENGAGED"].map((s) => ({ stage: s, count: opportunities.filter((o) => o.status === s).length }));
 
   // The same living map as /network/map — real trust scores and real role matches — in a compact frame.
   const { nodes: mapNodes, links: mapLinks } = await buildNetworkMap(user, now);
 
+  const counts = (xs: string[]) => [...xs.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const topCaps = counts(mapNodes.flatMap((n) => n.capabilities ?? []));
+  const topCities = counts(mapNodes.map((n) => n.city?.split(",")[0]).filter((c): c is string => !!c));
+  const askSuggestions = [
+    topCaps[0] ? `${topCaps[0]}, available now` : null,
+    topCities[0] ? `People in ${topCities[0]}` : null,
+    topCaps[1] ? `${topCaps[1]} we have worked with` : null,
+  ].filter((x): x is string => !!x);
+
   return (
     <>
       {/* The stage: greeting and the numbers that matter, on the one dark surface of the page. */}
-      <section className="brand-panel relative overflow-hidden rounded-[26px] px-8 pt-8 pb-7 mb-5 shadow-[0_24px_60px_-30px_rgba(21,22,46,0.7)]">
+      <section className="brand-panel relative rounded-[12px] px-7 pt-7 pb-6 mb-5 shadow-[var(--shadow-card)]">
         <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div className="min-w-0">
-            <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/50">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
-            <h1 className="font-display text-[44px] leading-[1.04] font-semibold tracking-[-0.035em] mt-2">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, <span className="hl">{user.name.split(" ")[0]}</span></h1>
-            <p className="text-white/65 text-[14.5px] mt-3 max-w-[60ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
+            <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
+            <h1 className="font-display text-[34px] leading-[1.1] font-semibold tracking-[-0.035em] text-ink mt-1.5">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
+            <p className="text-ink-muted text-[14px] mt-2 max-w-[62ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
           </div>
-          <AddPersonDrawer people={existingPeopleForDrawer} variant="accent" />
+          <AddPersonDrawer people={existingPeopleForDrawer} />
         </div>
-        <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
-          <KpiCard variant="glass" label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
+        <AgentComposer suggestions={askSuggestions} />
+        <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+          <KpiCard label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
           {showP23 ? (
             <>
-              <KpiCard variant="glass" label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
-              <KpiCard variant="glass" label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
-              <KpiCard variant="glass" label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
+              <KpiCard label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
+              <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
+              <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
             </>
           ) : (
             <>
-              <KpiCard variant="glass" label="Signed up" value={members} hint="members in your network" href="/network" />
-              <KpiCard variant="glass" label="Awaiting screening" value={awaitingScreening} hint="registered, not yet screened" href="/conversations" tone={awaitingScreening ? "amber" : "neutral"} />
-              <KpiCard variant="glass" label="Worked with" value={workedWith} hint="people you've delivered with" href="/network?workedWith=1" tone="neutral" />
+              <KpiCard label="Signed up" value={members} hint="members in your network" href="/network" />
+              <KpiCard label="Awaiting screening" value={awaitingScreening} hint="registered, not yet screened" href="/conversations" tone={awaitingScreening ? "amber" : "neutral"} />
+              <KpiCard label="Worked with" value={workedWith} hint="people you've delivered with" href="/network?workedWith=1" tone="neutral" />
             </>
           )}
         </div>
@@ -136,16 +157,25 @@ export default async function OverviewPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
           <Card>
-            <CardHeader title="Suggested next actions" description="Generated from the state of the network. You decide." />
+            <CardHeader title={<span className="inline-flex items-center gap-2"><span className="live-dot" aria-hidden="true" /> Agent queue</span>} description="What the agent has lined up from the state of the network. Nothing happens until you say so." action={suggestions.length ? <span className="rounded-full bg-navy-50 px-2 py-0.5 text-[11px] font-medium text-navy tabular">{suggestions.length} waiting</span> : undefined} />
             <CardBody>
-              {suggestions.length === 0 ? <EmptyState title="Nothing pressing" description="The network is in good shape." /> : (
-                <ul className="divide-y divide-line">
-                  {suggestions.map((s, i) => (
-                    <li key={i} className="py-2.5 flex items-start gap-2">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal shrink-0" />
-                      <Link href={s.href} className="text-[13px] text-ink hover:underline underline-offset-4">{s.text}</Link>
-                    </li>
-                  ))}
+              {suggestions.length === 0 ? <EmptyState title="Nothing waiting" description="The agent is watching. New matches, reviews and reconnects appear here." /> : (
+                <ul className="space-y-1.5">
+                  {suggestions.map((s, i) => {
+                    const k = QUEUE[s.kind]; const Icon = k.icon;
+                    return (
+                      <li key={i}>
+                        <Link href={s.href} className="group flex items-center gap-3 rounded-[10px] border border-line bg-surface px-3 py-2.5 transition-colors hover:border-navy-400/50">
+                          <span className="grid h-8 w-8 flex-none place-items-center rounded-[8px] bg-navy-50 text-navy"><Icon className="h-4 w-4" /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[10.5px] font-medium uppercase tracking-[0.07em] text-ink-faint">{k.tag}</span>
+                            <span className="block truncate text-[13px] text-ink">{s.text}</span>
+                          </span>
+                          <span className="inline-flex flex-none items-center gap-1 rounded-[9px] border border-line px-2.5 py-1 text-[12px] font-medium text-ink-muted transition-colors group-hover:border-navy group-hover:bg-navy group-hover:text-white dark:group-hover:text-canvas">{k.verb} <ArrowRight className="h-3 w-3" /></span>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </CardBody>
@@ -190,7 +220,7 @@ export default async function OverviewPage() {
             <CardBody>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
                 {stageCounts.map((s) => (
-                  <div key={s.stage} className="rounded-[10px] bg-surface-muted px-2 py-2.5 text-center">
+                  <div key={s.stage} className="rounded-[8px] bg-surface-muted px-2 py-2.5 text-center">
                     <div className="text-[16px] font-semibold tabular text-ink leading-none">{s.count}</div>
                     <div className="text-[9.5px] uppercase tracking-[0.06em] text-ink-faint mt-1 truncate">{s.stage.toLowerCase()}</div>
                   </div>

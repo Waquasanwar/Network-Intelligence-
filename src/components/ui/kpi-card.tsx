@@ -59,10 +59,10 @@ export function KpiCard({
   const sparkTone: Tone = dir === "down" ? "amber" : tone;
 
   const body = (
-    <div className={cn("rounded-[16px] px-5 py-[18px] h-full flex flex-col", glass ? "glass-tile" : "spot border border-line bg-surface shadow-[var(--shadow-card)]", href && !glass && "lift")}>
+    <div className={cn("rounded-[12px] px-5 py-[18px] h-full flex flex-col", glass ? "glass-tile" : "border border-line bg-surface shadow-[var(--shadow-card)]", href && !glass && "lift")}>
       <div className={cn("text-[12px] font-medium whitespace-nowrap truncate", glass ? "text-white/60" : "text-ink-muted")}>{label}</div>
       <div className="flex items-end justify-between gap-2 mt-2">
-        <div className={cn("font-display text-[32px] font-semibold tabular leading-9 tracking-[-0.03em] whitespace-nowrap", glass ? "text-white" : "text-ink")}>{typeof value === "number" ? <Ticker value={value} /> : value}</div>
+        <div className={cn("font-display text-[28px] font-semibold tabular leading-9 tracking-[-0.03em] whitespace-nowrap", glass ? "text-white" : "text-ink")}>{typeof value === "number" ? <Ticker value={value} /> : value}</div>
         {delta ? (
           <span
             className={cn(

@@ -46,12 +46,12 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
       <Link
         href={href}
         className={cn(
-          "group relative flex items-center gap-3 rounded-[10px] px-3 py-[9px] text-[13px] transition-colors",
+          "group relative flex items-center gap-3 rounded-[8px] px-3 py-[9px] text-[13px] transition-colors",
           active ? "bg-rail-active text-rail-ink-strong font-medium" : "text-rail-ink hover:bg-rail-active hover:text-rail-ink-strong",
         )}
       >
-        {active ? <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-accent shadow-[0_0_12px_var(--color-accent)]" /> : null}
-        <Icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-accent" : "text-rail-ink group-hover:text-rail-ink-strong")} />
+        {active ? <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-navy" /> : null}
+        <Icon className={cn("h-[15px] w-[15px] transition-colors", active ? "text-navy" : "text-rail-ink group-hover:text-rail-ink-strong")} />
         {label}
       </Link>
     );
@@ -62,7 +62,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
     <aside className="w-[232px] flex-none rail-surface h-screen sticky top-0 flex flex-col text-rail-ink border-r border-rail-line">
       <div className="px-4 pt-5 pb-4">
         <Link href={restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview"} className="flex items-center gap-2.5">
-          <span className="h-8 w-8 rounded-[9px] bg-accent text-accent-ink text-[11.5px] font-bold inline-flex items-center justify-center tracking-tight shadow-[0_0_18px_-4px_var(--color-accent)]">NI</span>
+          <span className="h-8 w-8 rounded-[9px] bg-navy text-white text-[11.5px] font-semibold inline-flex items-center justify-center tracking-tight">NI</span>
           <span className="leading-tight">
             <span className="block text-[13px] font-semibold text-rail-ink-strong">Network Intelligence</span>
             <span className="block text-[11px] text-rail-ink">{user.tenantName}</span>
@@ -79,10 +79,10 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
           </>
         )}
       </nav>
-      <div className="m-2.5 mt-0 rounded-[12px] bg-white/[0.06] ring-1 ring-rail-line px-3 py-2.5">
+      <div className="m-2.5 mt-0 rounded-[8px] bg-surface-muted/60 ring-1 ring-rail-line px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="h-7 w-7 rounded-full bg-accent text-accent-ink text-[11px] font-bold inline-flex items-center justify-center flex-none">{user.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}</span>
+            <span className="h-7 w-7 rounded-full bg-navy text-white text-[11px] font-semibold inline-flex items-center justify-center flex-none">{user.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}</span>
             <div className="min-w-0 leading-tight">
               <div className="text-[12.5px] font-medium text-rail-ink-strong truncate">{user.name}</div>
               <div className="text-[11px] text-rail-ink truncate capitalize">{user.role.toLowerCase()}</div>

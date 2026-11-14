@@ -31,7 +31,7 @@ export function OutreachButton({ opportunityId, personId }: { opportunityId: str
   }
 
   return (
-    <div className="mt-3 rounded-[12px] border border-line bg-surface-muted/50 p-3 w-full">
+    <div className="mt-3 rounded-[10px] border border-line bg-surface-muted/50 p-3 w-full">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[11px] font-medium text-ink inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-navy" /> Draft message — yours to edit before sending. The client is never named.</span>
         <button type="button" onClick={() => { navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {}); }} className="text-[11.5px] text-navy inline-flex items-center gap-1 hover:underline">

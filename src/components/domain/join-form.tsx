@@ -31,15 +31,15 @@ export function JoinForm({ members, referrer, tenantInvite = false, inviteToken,
   }
 
   return (
-    <div className="mt-8 rounded-[18px] border border-line bg-surface shadow-[var(--shadow-card)] p-6 sm:p-7">
+    <div className="mt-8 rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] p-6 sm:p-7">
       {(referrer || tenantInvite) ? (
         <div className="flex justify-center mb-5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-teal/10 text-teal text-[12px] font-medium px-3 py-1"><Check className="h-3.5 w-3.5" /> {referrer ? `Invited by ${fullName(referrer)}` : "You've been invited to join"}</span>
         </div>
       ) : null}
-      {error ? <div className="mb-4 rounded-[12px] border border-amber/30 bg-amber-50 px-3.5 py-2.5 text-[12.5px] text-ink">{error}</div> : null}
+      {error ? <div className="mb-4 rounded-[10px] border border-amber/30 bg-amber-50 px-3.5 py-2.5 text-[12.5px] text-ink">{error}</div> : null}
 
-      <div className="rounded-[12px] border border-line bg-surface-muted/40 p-3.5 mb-5">
+      <div className="rounded-[10px] border border-line bg-surface-muted/40 p-3.5 mb-5">
         <label className="text-[12px] font-medium text-ink inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-navy" /> Save typing — paste your LinkedIn</label>
         <div className="flex gap-2 mt-2">
           <Input value={source} onChange={(e) => setSource(e.target.value)} placeholder="linkedin.com/in/…  or a one-line bio" />
