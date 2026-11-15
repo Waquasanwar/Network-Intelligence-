@@ -106,11 +106,11 @@ export default async function OverviewPage() {
   return (
     <>
       {/* The stage: greeting and the numbers that matter, on the one dark surface of the page. */}
-      <section className="brand-panel relative rounded-[12px] px-7 pt-7 pb-6 mb-5 shadow-[var(--shadow-card)]">
+      <section className="brand-panel relative rounded-[12px] px-5 pt-6 pb-5 sm:px-7 sm:pt-7 sm:pb-6 mb-5 shadow-[var(--shadow-card)]">
         <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div className="min-w-0">
             <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
-            <h1 className="font-display text-[34px] leading-[1.1] font-semibold tracking-[-0.035em] text-ink mt-1.5">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
+            <h1 className="font-display text-[27px] sm:text-[34px] leading-[1.1] font-semibold tracking-[-0.035em] text-ink mt-1.5">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
             <p className="text-ink-muted text-[14px] mt-2 max-w-[62ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
           </div>
           <AddPersonDrawer people={existingPeopleForDrawer} />

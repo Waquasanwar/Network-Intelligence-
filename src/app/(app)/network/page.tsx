@@ -74,20 +74,20 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
     <>
       <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<><Link href="/network/map"><Button variant="secondary"><Share2 className="h-3.5 w-3.5" /> Map</Button></Link><Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import</Button></Link><AddPersonDrawer people={allPeopleLite} /></>} />
 
-      <form className="flex gap-2 mb-3">
-        <div className="relative flex-1">
+      <form className="flex flex-wrap gap-2 mb-3">
+        <div className="relative basis-full lg:basis-0 lg:flex-1">
           <Search className="h-4 w-4 text-ink-faint absolute left-3.5 top-3" />
           <Input name="q" defaultValue={filters.q ?? ""} placeholder='e.g. "programme director available soon who we have worked with, open to Dubai"' className="pl-9 rounded-full h-10 shadow-[var(--shadow-card)]" />
         </div>
-        <Select name="status" defaultValue={filters.status ?? ""} className="w-[200px] h-10 rounded-full">
+        <Select name="status" defaultValue={filters.status ?? ""} className="flex-1 min-w-[130px] lg:flex-none lg:w-[200px] h-10 rounded-full">
           <option value="">Any status</option>
           {Object.entries(AVAILABILITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Select name="route" defaultValue={filters.route ?? ""} className="w-[150px] h-10 rounded-full">
+        <Select name="route" defaultValue={filters.route ?? ""} className="flex-1 min-w-[120px] lg:flex-none lg:w-[150px] h-10 rounded-full">
           <option value="">Any route</option>
           {Object.entries(ROUTE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Input name="location" defaultValue={filters.location ?? ""} placeholder="Location" className="w-[140px] h-10 rounded-full" />
+        <Input name="location" defaultValue={filters.location ?? ""} placeholder="Location" className="flex-1 min-w-[120px] lg:flex-none lg:w-[140px] h-10 rounded-full" />
         <Button type="submit" variant="secondary" size="lg" className="rounded-full">Search</Button>
       </form>
 

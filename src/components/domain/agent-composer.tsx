@@ -76,7 +76,8 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
           placeholder={suggestions.length ? `Ask your network — “${suggestions[hint % suggestions.length]}”` : "Ask your network a question"}
           className="agent-input h-10 min-w-0 flex-1 text-[14.5px] text-ink placeholder:text-ink-faint" autoComplete="off"
         />
-        <button type="submit" disabled={!value.trim() || phase === "thinking"} className="inline-flex h-9 flex-none items-center gap-1.5 rounded-[8px] bg-navy px-3.5 text-[13px] font-medium text-white shadow-[var(--shadow-button)] transition-colors hover:bg-navy-600 disabled:opacity-40 cursor-pointer disabled:cursor-default dark:text-canvas">
+        <kbd className="hidden sm:inline-flex flex-none items-center rounded-[5px] border border-line px-1.5 py-0.5 text-[10.5px] text-ink-faint" aria-hidden="true">↵</kbd>
+        <button type="submit" disabled={!value.trim() || phase === "thinking"} className="inline-flex h-10 sm:h-9 flex-none items-center gap-1.5 rounded-[8px] bg-navy px-3.5 text-[13px] font-medium text-white shadow-[var(--shadow-button)] transition-colors hover:bg-navy-600 disabled:opacity-40 cursor-pointer disabled:cursor-default dark:text-canvas">
           Ask <ArrowUp className="h-3.5 w-3.5" strokeWidth={2.4} />
         </button>
       </form>

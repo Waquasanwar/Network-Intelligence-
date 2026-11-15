@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal, Lock } from "lucide-react";
@@ -40,13 +41,25 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
   const pathname = usePathname();
   const restricted = user.role === "PARTNER" || user.role === "CLIENT" || user.role === "MEMBER";
 
+  // Below the desktop breakpoint the rail becomes a drawer, opened from the top bar's menu button.
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const toggle = () => setOpen((o) => !o);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("ni:toggle-nav", toggle);
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("ni:toggle-nav", toggle); window.removeEventListener("keydown", onKey); };
+  }, []);
+  useEffect(() => { setOpen(false); }, [pathname]); // navigating closes it
+  useEffect(() => { document.body.style.overflow = open ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [open]);
+
   const Item = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
     const active = href === "/network" ? pathname === "/network" || (pathname.startsWith("/network/") && !pathname.startsWith("/network/import")) : pathname === href || pathname.startsWith(href + "/");
     return (
       <Link
         href={href}
         className={cn(
-          "group relative flex items-center gap-3 rounded-[8px] px-3 py-[9px] text-[13px] transition-colors",
+          "group relative flex items-center gap-3 rounded-[8px] px-3 py-[11px] lg:py-[9px] text-[14px] lg:text-[13px] transition-colors",
           active ? "bg-rail-active text-rail-ink-strong font-medium" : "text-rail-ink hover:bg-rail-active hover:text-rail-ink-strong",
         )}
       >
@@ -59,7 +72,9 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
   const Group = ({ label }: { label: string }) => <div className="px-3 pt-6 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-rail-ink">{label}</div>;
 
   return (
-    <aside className="w-[232px] flex-none rail-surface h-screen sticky top-0 flex flex-col text-rail-ink border-r border-rail-line">
+    <>
+    {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-ink/35 lg:hidden cursor-default" /> : null}
+    <aside id="app-nav" className={cn("rail-surface flex flex-col text-rail-ink border-r border-rail-line h-dvh flex-none fixed inset-y-0 left-0 z-40 w-[272px] max-w-[86vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-0 lg:z-auto lg:w-[232px] lg:translate-x-0 lg:visible", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)] lg:shadow-none" : "-translate-x-full invisible")}>
       <div className="px-4 pt-5 pb-4">
         <Link href={restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview"} className="flex items-center gap-2.5">
           <span className="h-8 w-8 rounded-[9px] bg-navy text-white text-[11.5px] font-semibold inline-flex items-center justify-center tracking-tight">NI</span>
@@ -94,5 +109,6 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         </div>
       </div>
     </aside>
+    </>
   );
 }

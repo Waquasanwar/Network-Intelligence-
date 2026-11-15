@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils";
 
 export function PageHeader({ title, description, actions, eyebrow }: { title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode; eyebrow?: React.ReactNode }) {
   return (
-    <div className="flex items-end justify-between gap-6 mb-5">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-5">
       <div className="min-w-0">
         {eyebrow ? <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-1">{eyebrow}</div> : null}
-        <h1 className="font-display text-[28px] font-semibold text-ink leading-[1.15] tracking-[-0.03em]">{title}</h1>
+        <h1 className="font-display text-[24px] sm:text-[28px] font-semibold text-ink leading-[1.15] tracking-[-0.03em]">{title}</h1>
         {description ? <p className="text-[13.5px] text-ink-muted mt-1.5 max-w-2xl leading-5">{description}</p> : null}
       </div>
-      {actions ? <div className="flex items-center gap-2 flex-none">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2 sm:flex-none">{actions}</div> : null}
     </div>
   );
 }

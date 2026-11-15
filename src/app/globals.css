@@ -16,7 +16,7 @@
   --color-line-strong: rgba(17, 19, 40, 0.15);
   --color-ink: #111327;
   --color-ink-muted: #555a6e;
-  --color-ink-faint: #8a8fa3;
+  --color-ink-faint: #6a6f84;
   /* "navy" is the primary: one deep indigo, used sparingly so it stays sharp */
   --color-navy: #2f3170;
   --color-navy-600: #3c3e88;
@@ -68,7 +68,7 @@
     --color-line-strong: rgba(255, 255, 255, 0.16);
     --color-ink: #eef1f7;
     --color-ink-muted: #a3acbf;
-    --color-ink-faint: #6f7a90;
+    --color-ink-faint: #8a95ab;
     --color-navy: #b4b6e6;
     --color-navy-600: #a6a8df;
     --color-navy-400: #9093d6;
@@ -143,6 +143,8 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .glass { background: color-mix(in srgb, var(--color-surface) 72%, transparent); backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px); }
 
 /* Tables: dense, quiet, readable */
+/* A wide table scrolls inside its own card on a narrow screen; the page never scrolls sideways. */
+:where(div):has(> table.data) { overflow-x: auto; }
 table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 table.data th {
   position: sticky; top: 0; z-index: 1;

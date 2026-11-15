@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Menu } from "lucide-react";
 import * as React from "react";
 
 const NAMES: Record<string, string> = {
@@ -24,8 +24,11 @@ export function TopBar({ crumbs, alerts = [] }: { crumbs?: { label: string; href
   }, [pathname]);
   const items = (crumbs ?? auto).map((c, i, arr) => (i === arr.length - 1 && c.label === "Detail" && docTitle ? { ...c, label: docTitle } : c));
   return (
-    <header className="h-14 flex items-center justify-between gap-4 px-7 sticky top-0 z-20 glass border-b border-line">
-      <nav className="flex items-center gap-1.5 text-[12.5px] text-ink-muted min-w-0" aria-label="Breadcrumb">
+    <header className="h-14 flex items-center justify-between gap-3 px-4 lg:px-7 sticky top-0 z-20 glass border-b border-line">
+      <button type="button" aria-label="Open menu" aria-controls="app-nav" onClick={() => window.dispatchEvent(new CustomEvent("ni:toggle-nav"))} className="lg:hidden -ml-1 h-10 w-10 flex-none grid place-items-center rounded-[8px] text-ink-muted hover:text-ink hover:bg-surface-muted cursor-pointer">
+        <Menu className="h-5 w-5" />
+      </button>
+      <nav className="flex flex-1 items-center gap-1.5 text-[12.5px] text-ink-muted min-w-0" aria-label="Breadcrumb">
         {items.map((c, i) => (
           <span key={i} className="flex items-center gap-1.5 min-w-0">
             {i > 0 ? <span className="text-ink-faint/60">/</span> : null}
@@ -36,13 +39,13 @@ export function TopBar({ crumbs, alerts = [] }: { crumbs?: { label: string; href
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette"))}
-        className="group flex items-center gap-2 h-9 w-[320px] max-w-[40vw] rounded-full border border-line bg-surface/80 px-3.5 text-[12.5px] text-ink-faint hover:border-line-strong hover:bg-surface transition-all cursor-text shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+        aria-label="Search people and opportunities" className="group flex flex-none items-center justify-center md:justify-start gap-2 h-9 w-9 md:w-[320px] md:max-w-[40vw] rounded-full border border-line bg-surface/80 px-0 md:px-3.5 text-[12.5px] text-ink-faint hover:border-line-strong hover:bg-surface transition-all cursor-pointer md:cursor-text shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
       >
         <Search className="h-3.5 w-3.5" />
-        <span className="flex-1 text-left">Search people, opportunities…</span>
-        <span className="flex items-center gap-0.5"><kbd>⌘</kbd><kbd>K</kbd></span>
+        <span className="hidden md:block flex-1 text-left">Search people, opportunities…</span>
+        <span className="hidden md:flex items-center gap-0.5"><kbd>⌘</kbd><kbd>K</kbd></span>
       </button>
-      <div className="relative">
+      <div className="relative flex-none">
         <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Alerts" className="relative h-9 w-9 rounded-full border border-line bg-surface/80 grid place-items-center text-ink-muted hover:text-ink hover:border-line-strong">
           <Bell className="h-4 w-4" />
           {alerts.length ? <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber text-[#1a1200] text-[10.5px] font-semibold leading-[18px] text-center ring-2 ring-canvas">{alerts.length}</span> : null}

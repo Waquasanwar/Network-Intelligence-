@@ -52,15 +52,15 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <div className="relative rounded-[14px] px-8 py-7 mb-5 brand-panel shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
+      <div className="relative rounded-[14px] px-5 py-6 sm:px-8 sm:py-7 mb-5 brand-panel shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
         <div>
           <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-ink-muted">Client & agency portal{internal ? " · viewing as" : ""}</div>
           {internal ? <form method="get" action="/portal" className="flex items-center gap-2 mt-2"><Select name="account" defaultValue={account.id} className="h-9 rounded-full bg-surface text-ink border-line-strong max-w-[340px]">{accounts.map((a) => <option key={a.id} value={a.id} className="text-ink">{a.name} · {KIND_LABEL[a.kind]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Switch</SubmitButton></form> : null}
           <h1 className="text-[30px] font-semibold tracking-[-0.03em] mt-2">{account.name}</h1>
           <p className="text-ink-muted max-w-[60ch] mt-2 text-[13.5px] leading-5">What {account.kind === "AGENCY" ? "an agency" : account.kind === "CLIENT" ? "a client" : "Amana"} sees. Names are hidden until an introduction is requested and the person consents. Relationship notes never leave the network.</p>
         </div>
-        <div className="flex gap-2.5">
-          {[["Open requirements", briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length], ["People proposed", proposedCount], ["Introductions", introCount]].map(([l, v]) => <div key={String(l)} className="min-w-[130px] rounded-[12px] bg-surface border border-line shadow-[var(--shadow-card)] px-4 py-3"><div className="text-[12px] text-ink-muted">{l}</div><div className="text-[24px] font-semibold tabular leading-8">{v}</div></div>)}
+        <div className="flex flex-wrap gap-2.5">
+          {[["Open requirements", briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length], ["People proposed", proposedCount], ["Introductions", introCount]].map(([l, v]) => <div key={String(l)} className="flex-1 min-w-[104px] sm:min-w-[130px] rounded-[12px] bg-surface border border-line shadow-[var(--shadow-card)] px-4 py-3"><div className="text-[12px] text-ink-muted">{l}</div><div className="text-[24px] font-semibold tabular leading-8">{v}</div></div>)}
         </div>
       </div>
 
