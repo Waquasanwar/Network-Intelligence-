@@ -31,15 +31,15 @@ export function JoinForm({ members, referrer, tenantInvite = false, inviteToken,
   }
 
   return (
-    <div className="mt-8 rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] p-6 sm:p-7">
+    <div className="mt-8 rounded-[24px] border border-line bg-surface shadow-[var(--shadow-card)] p-6 sm:p-7">
       {(referrer || tenantInvite) ? (
         <div className="flex justify-center mb-5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-teal/10 text-teal text-[12px] font-medium px-3 py-1"><Check className="h-3.5 w-3.5" /> {referrer ? `Invited by ${fullName(referrer)}` : "You've been invited to join"}</span>
         </div>
       ) : null}
-      {error ? <div className="mb-4 rounded-[10px] border border-amber/30 bg-amber-50 px-3.5 py-2.5 text-[12.5px] text-ink">{error}</div> : null}
+      {error ? <div className="mb-4 rounded-[14px] border border-amber/30 bg-amber-50 px-3.5 py-2.5 text-[12.5px] text-ink">{error}</div> : null}
 
-      <div className="rounded-[10px] border border-line bg-surface-muted/40 p-3.5 mb-5">
+      <div className="rounded-[16px] bg-surface-muted p-4 mb-5">
         <label className="text-[12px] font-medium text-ink inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-navy" /> Save typing — paste your LinkedIn</label>
         <div className="flex gap-2 mt-2">
           <Input value={source} onChange={(e) => setSource(e.target.value)} placeholder="linkedin.com/in/…  or a one-line bio" />
@@ -70,7 +70,7 @@ export function JoinForm({ members, referrer, tenantInvite = false, inviteToken,
           <input type="checkbox" name="consent" required className="mt-0.5 h-3.5 w-3.5 rounded border-line-strong accent-navy flex-none" />
           <span>I agree to Network Intelligence holding my details to put me forward for work that suits me — fractional, contract or permanent. My profile stays anonymous to clients until I say yes to a specific introduction, and I can see, export or delete my data at any time.</span>
         </label>
-        <SubmitButton className="w-full" size="lg" pendingText="Creating your account…">Create account &amp; start screening</SubmitButton>
+        <SubmitButton className="w-full" size="lg" variant="accent" pendingText="Creating your account…">Create account &amp; start screening</SubmitButton>
         <p className="text-[11px] text-ink-faint text-center leading-[1.5]">Held under UK GDPR and the UAE PDPL · Delete your data in one click from your profile, any time.</p>
       </form>
     </div>

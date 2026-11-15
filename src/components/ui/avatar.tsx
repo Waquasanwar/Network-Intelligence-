@@ -1,11 +1,13 @@
 import { initials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
+// Flat fills drawn from the brand: navy, mint, and two quiet neutrals.
 const PALETTES = [
-  "from-[#2f3168] to-[#5a5da8]",
-  "from-[#4a3f73] to-[#7d72b3]",
-  "from-[#334155] to-[#64748b]",
-  "from-[#2c4668] to-[#5f7fa6]",
+  "bg-[#0c1b33] text-[#f3f4f0]",
+  "bg-[#7ee3bc] text-[#0c1b33]",
+  "bg-[#24344f] text-[#f3f4f0]",
+  "bg-[#dfe3e8] text-[#0c1b33]",
+  "bg-[#cfeee0] text-[#0c1b33]",
 ];
 
 function hue(p: { firstName: string; lastName: string }) {
@@ -17,7 +19,7 @@ function hue(p: { firstName: string; lastName: string }) {
 export function Avatar({ person, size = "md", className, ring = false }: { person: { firstName: string; lastName: string }; size?: "sm" | "md" | "lg" | "xl"; className?: string; ring?: boolean }) {
   const s = size === "sm" ? "h-6 w-6 text-[10px]" : size === "lg" ? "h-12 w-12 text-[15px]" : size === "xl" ? "h-16 w-16 text-[20px]" : "h-8 w-8 text-xs";
   const core = (
-    <span className={cn("inline-flex items-center justify-center rounded-full bg-gradient-to-br text-white font-semibold shrink-0 tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]", hue(person), s, className)}>
+    <span className={cn("inline-flex items-center justify-center rounded-full font-bold shrink-0 tracking-tight", hue(person), s, className)}>
       {initials(person)}
     </span>
   );

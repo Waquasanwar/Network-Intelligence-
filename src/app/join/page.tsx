@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { JoinForm } from "@/components/domain/join-form";
 import { parseInvite } from "@/lib/invite";
 import { SCREENING_MINUTES } from "@/lib/screening";
+import { BrandMark } from "@/components/ui/brand-mark";
 
 export const metadata = { title: "Join the network" };
 export const dynamic = "force-dynamic";
@@ -25,44 +26,44 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1fr_1.05fr]">
-      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
+      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[32px]">
         {/* The same constellation as sign-in, pushed to the far edge so it frames the copy rather than competing with it. */}
-        <svg viewBox="0 0 300 620" preserveAspectRatio="xMaxYMid meet" className="pointer-events-none absolute right-0 top-0 h-full w-[46%] opacity-70" aria-hidden="true">
+        <svg viewBox="0 0 300 620" preserveAspectRatio="xMaxYMid meet" className="pointer-events-none absolute right-0 top-0 h-full w-[40%] opacity-80" aria-hidden="true">
           {([[232, 96, 150, 188], [150, 188, 248, 300], [150, 188, 92, 318], [248, 300, 176, 428], [92, 318, 176, 428], [176, 428, 256, 536]] as const).map(([x1, y1, x2, y2], i) => (
-            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={i % 2 ? "rgba(47,49,112,0.2)" : "rgba(47,49,112,0.45)"} strokeWidth={i % 2 ? 1 : 1.4} strokeDasharray={i % 2 ? "3 5" : undefined} />
+            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={i % 2 ? "rgba(243,244,240,0.28)" : "rgba(243,244,240,0.5)"} strokeWidth={i % 2 ? 1 : 1.4} strokeDasharray={i % 2 ? "3 5" : undefined} />
           ))}
           {([[232, 96, 4.5, false], [150, 188, 6.5, true], [248, 300, 5, false], [92, 318, 4, false], [176, 428, 6, true], [256, 536, 4.5, false]] as const).map(([cx, cy, r, strong], i) => (
             <g key={i}>
-              <circle cx={cx} cy={cy} r={r + 7} fill={strong ? "rgba(47,49,112,0.08)" : "rgba(47,49,112,0.05)"} />
-              <circle cx={cx} cy={cy} r={r} fill={strong ? "#2f3170" : "rgba(47,49,112,0.45)"} />
+              <circle cx={cx} cy={cy} r={r + 7} fill={strong ? "rgba(126,227,188,0.16)" : "rgba(243,244,240,0.07)"} />
+              <circle cx={cx} cy={cy} r={r} fill={strong ? "#7ee3bc" : "rgba(243,244,240,0.5)"} />
             </g>
           ))}
         </svg>
         <div className="relative flex items-center gap-2.5">
-          <span className="h-8 w-8 rounded-[9px] bg-navy text-white text-[12px] font-semibold inline-flex items-center justify-center">NI</span>
-          <span className="text-[14px] font-medium">Network Intelligence</span>
+          <BrandMark className="h-7 w-auto" />
+          <span className="font-display is-small text-[18px]">Network Intelligence</span>
         </div>
 
         <div className="relative max-w-[460px]">
-          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint mb-3">By invitation</div>
-          <h1 className="font-display text-[34px] leading-[1.1] font-semibold tracking-[-0.035em] text-ink">Be in the network for when the right work comes up.</h1>
-          <p className="mt-4 text-ink-muted text-[14px] leading-[1.6] max-w-[44ch]">We place people we actually know. Join once, and when something fits we already know who you are and why we&apos;d put our name behind you.</p>
+          <div className="eyebrow mb-5">By invitation</div>
+          <h1 className="font-display text-[52px] leading-[0.95]">Be in the network for when the right work comes up.</h1>
+          <p className="mt-5 text-stage-muted text-[15.5px] leading-[1.55] max-w-[44ch]">We place people we actually know. Join once, and when something fits we already know who you are and why we&apos;d put our name behind you.</p>
 
           <ol className="mt-9 relative">
-            <span aria-hidden="true" className="absolute left-[13px] top-3 bottom-8 w-px bg-line-strong" />
+            <span aria-hidden="true" className="absolute left-[17px] top-3 bottom-8 w-px bg-stage-line" />
             {STEPS.map((s, i) => (
               <li key={s.title} className="relative flex gap-4 pb-6 last:pb-0">
-                <span className={`relative z-[1] mt-0.5 h-[27px] w-[27px] flex-none rounded-full inline-flex items-center justify-center text-[12px] font-semibold ${i === 0 ? "bg-navy text-white" : "bg-surface text-ink-muted ring-1 ring-line-strong"}`}>{i + 1}</span>
+                <span className={`font-display is-small relative z-[1] h-9 w-9 flex-none rounded-full inline-flex items-center justify-center text-[15px] ${i === 0 ? "bg-accent text-accent-ink" : "bg-stage text-stage-ink ring-1 ring-stage-line"}`}>{i + 1}</span>
                 <span>
-                  <span className="block text-[15px] font-medium">{s.title}</span>
-                  <span className="block text-[13px] text-ink-muted leading-[1.55] mt-0.5 max-w-[40ch]">{s.detail}</span>
+                  <span className="block font-display is-small text-[19px] leading-[1.15] mt-1">{s.title}</span>
+                  <span className="block text-[13.5px] text-stage-muted leading-[1.55] mt-1 max-w-[40ch]">{s.detail}</span>
                 </span>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="relative text-[12px] text-ink-faint">Anonymous to clients until you say yes · See, export or delete your data any time</div>
+        <div className="relative text-[12.5px] text-stage-muted">Anonymous to clients until you say yes · See, export or delete your data any time</div>
       </aside>
 
       <main className="relative flex items-center justify-center px-5 py-10 sm:px-10 bg-canvas text-ink">
@@ -70,15 +71,15 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
         <div className="w-full max-w-[440px] relative z-[1]">
           <div className="lg:hidden mb-7">
             <div className="flex items-center gap-2.5 mb-6">
-              <span className="h-8 w-8 rounded-[9px] bg-navy text-white text-[12px] font-semibold inline-flex items-center justify-center">NI</span>
-              <span className="text-[14px] font-medium text-ink">Network Intelligence</span>
+              <BrandMark className="h-6 w-auto text-ink" />
+              <span className="font-display is-small text-[17px] text-ink">Network Intelligence</span>
             </div>
-            <h1 className="text-[26px] leading-[1.1] font-semibold tracking-[-0.03em]">Be in the network for when the right work comes up.</h1>
+            <h1 className="font-display text-[34px] leading-[1]">Be in the network for when the right work comes up.</h1>
             <p className="text-[13.5px] text-ink-muted mt-2 leading-[1.55]">Create your account, have a {SCREENING_MINUTES}-minute screening, and you&apos;re on the radar — fractional, contract or permanent.</p>
           </div>
           <div className="hidden lg:block">
-            <h2 className="text-[24px] font-semibold tracking-[-0.025em]">Create your account</h2>
-            <p className="text-[13.5px] text-ink-muted mt-1.5">Step 1 of 3 · about two minutes</p>
+            <h2 className="font-display text-[36px] leading-[1]">Create your account</h2>
+            <p className="text-[14.5px] text-ink-muted mt-2.5">Step 1 of 3 · about two minutes</p>
           </div>
           <JoinForm members={members} referrer={referrer} tenantInvite={tenantInvite} inviteToken={inviteToken} error={error} />
           <div className="text-[11.5px] text-ink-faint mt-5 text-center">Already a member? <a href="/login" className="text-ink-muted hover:text-ink underline underline-offset-2">Sign in</a></div>

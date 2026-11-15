@@ -41,7 +41,7 @@ export default async function AmanaPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
           <Card>
-            <CardHeader title="Trusted experts" description="Bench status, availability and evidence at a glance" action={<Link href="/network?amanaBench=1" className="text-xs text-navy hover:underline">Full list</Link>} />
+            <CardHeader title="Trusted experts" description="Bench status, availability and evidence at a glance" action={<Link href="/network?amanaBench=1" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Full list</Link>} />
             <CardBody className="px-0 pb-0">
               <table className="data">
                 <thead><tr><th className="pl-4">Expert</th><th>Capabilities</th><th>Availability</th><th>Routes</th><th>Evidence</th><th>History</th></tr></thead>

@@ -40,7 +40,7 @@ export function TrustCard({ t, firstName, self, screened, workedWith, action }: 
           {t.breakdown.map((b) => (
             <li key={b.label} className="grid grid-cols-[130px_1fr_34px] gap-x-2.5 items-center text-[12px]">
               <span className="text-ink-muted">{b.label}</span>
-              <div className="h-1.5 rounded-full bg-surface-muted border border-line overflow-hidden"><div className={cn("h-full rounded-full", b.points < 0 ? "bg-amber" : "bg-[linear-gradient(90deg,var(--color-navy),var(--color-navy-400))]")} style={{ width: `${b.max ? Math.min(100, Math.max(0, (b.points / b.max) * 100)) : 100}%` }} /></div>
+              <div className="h-1.5 rounded-full bg-surface-muted border border-line overflow-hidden"><div className={cn("h-full rounded-full", b.points < 0 ? "bg-amber" : "bg-navy")} style={{ width: `${b.max ? Math.min(100, Math.max(0, (b.points / b.max) * 100)) : 100}%` }} /></div>
               <b className={cn("text-right tabular", b.points < 0 && "text-amber")}>{b.points > 0 ? "+" : ""}{b.points}</b>
               <small className="col-span-3 text-[11px] text-ink-faint -mt-1">{b.note}</small>
             </li>
@@ -61,9 +61,9 @@ export function FitCard({ rows, self, traits = [] }: { rows: FitProfileRow[]; se
           <>
             <ul className="space-y-2.5">
               {rows.map((r) => (
-                <li key={r.key} className={cn("grid grid-cols-1 md:grid-cols-[170px_1fr_74px] gap-x-3 gap-y-1 items-center text-[12.5px]", traits.includes(r.key) && "bg-navy-100/60 rounded-[10px] px-2 py-1.5 -mx-2")}>
+                <li key={r.key} className={cn("grid grid-cols-1 md:grid-cols-[170px_1fr_74px] gap-x-3 gap-y-1 items-center text-[12.5px]", traits.includes(r.key) && "bg-navy-100/60 rounded-[14px] px-2 py-1.5 -mx-2")}>
                   <span className="flex flex-col items-start gap-0.5"><b className="font-medium">{r.label}</b>{traits.includes(r.key) ? <Badge tone="navy" filled>asked for</Badge> : null}</span>
-                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center"><small className="text-[10.5px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.low}</small><div className="relative h-2 rounded-full border border-line bg-[linear-gradient(90deg,var(--color-surface-muted),var(--color-navy-100))]">{r.self !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-navy-400 shadow" style={{ left: `${((r.self - 1) / 4) * 100}%` }} title={`Self-assessed ${r.self}/5`} /> : null}{r.peers !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-teal shadow" style={{ left: `${((r.peers - 1) / 4) * 100}%` }} title={`Observed by ${r.peerCount}: ${r.peers}/5`} /> : null}</div><small className="text-[10.5px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.high}</small></div>
+                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center"><small className="text-[10.5px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.low}</small><div className="relative h-2 rounded-full border border-line bg-navy">{r.self !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-navy-400 shadow" style={{ left: `${((r.self - 1) / 4) * 100}%` }} title={`Self-assessed ${r.self}/5`} /> : null}{r.peers !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-teal shadow" style={{ left: `${((r.peers - 1) / 4) * 100}%` }} title={`Observed by ${r.peerCount}: ${r.peers}/5`} /> : null}</div><small className="text-[10.5px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.high}</small></div>
                   <em className="not-italic font-semibold text-right tabular">{r.combined !== null ? `${r.combined}/5` : "—"}<small className="block text-[10.5px] text-ink-faint font-normal">{r.peerCount ? `${r.peerCount} observed` : r.self !== null ? "self" : ""}</small></em>
                 </li>
               ))}

@@ -68,31 +68,31 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
   const done = phase === "answer" && result?.ok && typed.length >= result.answer.length;
 
   return (
-    <div className="relative mt-5">
-      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="flex items-center gap-2.5 rounded-[10px] border border-line-strong bg-surface p-1.5 pl-3.5 shadow-[0_1px_2px_rgba(17,19,40,0.05)] transition-[border-color,box-shadow] focus-within:border-navy-400 focus-within:shadow-[0_0_0_3px_var(--color-navy-100)]">
-        <Sparkles className="h-4 w-4 flex-none text-navy" aria-hidden="true" />
+    <div className="relative mt-7 sm:mt-9">
+      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="flex items-center gap-2.5 rounded-full bg-white p-1.5 pl-5 text-[#0c1b33] transition-shadow duration-200 focus-within:shadow-[0_0_0_4px_var(--color-accent)]">
+        <Sparkles className="h-[18px] w-[18px] flex-none text-[#0c1b33]" aria-hidden="true" />
         <input
           ref={inputRef} id="agent-ask" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Ask your network"
           placeholder={suggestions.length ? `Ask your network — “${suggestions[hint % suggestions.length]}”` : "Ask your network a question"}
-          className="agent-input h-10 min-w-0 flex-1 text-[14.5px] text-ink placeholder:text-ink-faint" autoComplete="off"
+          className="agent-input h-11 min-w-0 flex-1 text-[15.5px] text-[#0c1b33] placeholder:text-[#5b6576]" autoComplete="off"
         />
-        <kbd className="hidden sm:inline-flex flex-none items-center rounded-[5px] border border-line px-1.5 py-0.5 text-[10.5px] text-ink-faint" aria-hidden="true">↵</kbd>
-        <button type="submit" disabled={!value.trim() || phase === "thinking"} className="inline-flex h-10 sm:h-9 flex-none items-center gap-1.5 rounded-[8px] bg-navy px-3.5 text-[13px] font-medium text-white shadow-[var(--shadow-button)] transition-colors hover:bg-navy-600 disabled:opacity-40 cursor-pointer disabled:cursor-default dark:text-canvas">
-          Ask <ArrowUp className="h-3.5 w-3.5" strokeWidth={2.4} />
+        <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="group inline-flex h-11 flex-none items-center gap-2 rounded-full bg-accent pl-5 pr-1.5 text-[14px] font-semibold text-[#0c1b33] transition-[filter,opacity] duration-200 hover:brightness-95 cursor-pointer disabled:cursor-default">
+          Ask
+          <span aria-hidden="true" className="arrow-badge grid h-8 w-8 place-items-center rounded-full bg-[#0c1b33] text-accent"><ArrowUp className="h-4 w-4 -rotate-0" strokeWidth={2.4} /></span>
         </button>
       </form>
 
       {phase === "idle" && suggestions.length ? (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-[11.5px] text-ink-faint mr-0.5">Try</span>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-[12px] font-semibold text-stage-muted mr-0.5">Try</span>
           {suggestions.map((s) => (
-            <button key={s} type="button" onClick={() => ask(s)} className="rounded-[7px] border border-line bg-surface px-2.5 py-1 text-[12px] text-ink-muted transition-colors hover:border-line-strong hover:text-ink cursor-pointer">{s}</button>
+            <button key={s} type="button" onClick={() => ask(s)} className="rounded-full border border-stage-line px-3.5 py-1.5 text-[12.5px] font-medium text-stage-ink transition-colors duration-200 hover:border-accent hover:bg-accent hover:text-[#0c1b33] cursor-pointer">{s}</button>
           ))}
         </div>
       ) : null}
 
       {phase !== "idle" ? (
-        <div className="rise-in mt-2.5 rounded-[10px] border border-line bg-surface p-5 shadow-[var(--shadow-card)]" aria-live="polite">
+        <div className="rise-in mt-3 rounded-[20px] bg-surface p-5 sm:p-6 text-ink" aria-live="polite">
           {/* The plan: what the agent is doing, as it does it. Collapses to a single trace line once answered. */}
           {phase === "thinking" ? (
             <ol className="space-y-2">
@@ -112,18 +112,18 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
           ) : result?.ok ? (
             <>
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[11.5px] text-ink-faint">
-                <span className="inline-flex items-center gap-1.5 font-medium text-navy"><Sparkles className="h-3.5 w-3.5" /> Network agent</span>
+                <span className="eyebrow text-ink">Network agent</span>
                 <span>Searched {result.searched} people · ranked by trust</span>
-                {result.understood.length ? <span className="inline-flex flex-wrap items-center gap-1.5">Understood{result.understood.slice(0, 4).map((u) => <span key={u} className="rounded-[6px] border border-line bg-surface-muted/60 px-1.5 py-0.5 text-ink-muted">{u}</span>)}</span> : null}
+                {result.understood.length ? <span className="inline-flex flex-wrap items-center gap-1.5">Understood{result.understood.slice(0, 4).map((u) => <span key={u} className="rounded-full bg-surface-muted px-2 py-0.5 font-medium text-ink-muted">{u}</span>)}</span> : null}
               </div>
-              <p className={cn("mt-2.5 max-w-[78ch] text-[15.5px] leading-[1.55] text-ink", !done && "stream-caret")}>{typed}</p>
+              <p className={cn("font-display is-small mt-3 max-w-[60ch] text-[21px] leading-[1.25] text-ink", !done && "stream-caret")}>{typed}</p>
 
               {done && result.people.length ? (
                 <div className="mt-3.5 grid grid-cols-1 gap-2 md:grid-cols-2">
                   {result.people.map((p, i) => (
                     <Link key={p.id} href={`/network/${p.id}`} className="rise-in group block" style={{ animationDelay: `${i * 50}ms` }}>
-                      <div className="flex h-full items-start gap-3 rounded-[8px] border border-line bg-surface p-3 transition-colors group-hover:border-line-strong">
-                        <span className="grid h-9 w-9 flex-none place-items-center rounded-[9px] bg-navy-50 text-[12px] font-semibold text-navy">{initials(p.name)}</span>
+                      <div className="flex h-full items-start gap-3 rounded-[16px] border border-line bg-surface p-3.5 transition-colors duration-200 group-hover:border-ink">
+                        <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-accent text-[12.5px] font-bold text-accent-ink">{initials(p.name)}</span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-1.5">
                             <span className="truncate text-[13.5px] font-semibold text-ink">{p.name}</span>
@@ -133,7 +133,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
                           {p.why.length ? <span className="mt-1 block text-[12px] leading-[1.45] text-ink-faint">{p.why.slice(0, 3).join(" · ")}</span> : null}
                         </span>
                         <span className="flex-none text-right">
-                          <span className="block font-display text-[18px] font-semibold leading-5 text-ink tabular">{Math.round(p.trust)}</span>
+                          <span className="block font-display text-[26px] leading-[1] text-ink tabular">{Math.round(p.trust)}</span>
                           <span className="block text-[10.5px] text-ink-faint">{p.band.toLowerCase()}</span>
                         </span>
                       </div>
@@ -144,15 +144,15 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
 
               {done ? (
                 <div className="rise-in mt-3.5 flex flex-wrap items-center gap-2">
-                  {result.total ? <Link href={result.href} className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-navy px-3 text-[12.5px] font-medium text-white shadow-[var(--shadow-button)] hover:bg-navy-600 dark:text-canvas">{result.total > result.people.length ? `See all ${result.total} in Network` : "Open in Network"} <ArrowRight className="h-3.5 w-3.5" /></Link> : <Link href="/network/intake" className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-navy px-3 text-[12.5px] font-medium text-white shadow-[var(--shadow-button)] hover:bg-navy-600 dark:text-canvas">Add someone <ArrowRight className="h-3.5 w-3.5" /></Link>}
-                  <button type="button" onClick={reset} className="inline-flex h-8 items-center rounded-[8px] border border-line bg-surface px-3 text-[12.5px] text-ink-muted hover:border-line-strong hover:text-ink cursor-pointer">Ask something else</button>
+                  {result.total ? <Link href={result.href} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-navy px-4 text-[13px] font-semibold text-white transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">{result.total > result.people.length ? `See all ${result.total} in Network` : "Open in Network"} <ArrowRight className="h-3.5 w-3.5" /></Link> : <Link href="/network/intake" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-navy px-4 text-[13px] font-semibold text-white transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">Add someone <ArrowRight className="h-3.5 w-3.5" /></Link>}
+                  <button type="button" onClick={reset} className="inline-flex h-9 items-center rounded-full border border-line-strong bg-surface px-4 text-[13px] font-semibold text-ink transition-colors duration-200 hover:border-ink cursor-pointer">Ask something else</button>
                 </div>
               ) : null}
             </>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-ink">
               <span>{result && !result.ok ? result.error : "Something went wrong."}</span>
-              <button type="button" onClick={reset} className="rounded-[8px] border border-line px-3 py-1.5 text-[12.5px] text-ink-muted hover:border-line-strong cursor-pointer">Try again</button>
+              <button type="button" onClick={reset} className="rounded-full border border-line-strong px-4 py-1.5 text-[13px] font-semibold text-ink hover:border-ink cursor-pointer">Try again</button>
             </div>
           )}
         </div>

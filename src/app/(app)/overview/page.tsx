@@ -105,51 +105,53 @@ export default async function OverviewPage() {
 
   return (
     <>
-      {/* The stage: greeting and the numbers that matter, on the one dark surface of the page. */}
-      <section className="brand-panel relative rounded-[12px] px-5 pt-6 pb-5 sm:px-7 sm:pt-7 sm:pb-6 mb-5 shadow-[var(--shadow-card)]">
-        <div className="relative flex flex-wrap items-end justify-between gap-5">
-          <div className="min-w-0">
-            <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</div>
-            <h1 className="font-display text-[27px] sm:text-[34px] leading-[1.1] font-semibold tracking-[-0.035em] text-ink mt-1.5">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
-            <p className="text-ink-muted text-[14px] mt-2 max-w-[62ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
+      {/* Bento: the navy stage carries the greeting and the question box; the numbers sit around it. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        <section className="brand-panel lg:col-span-2 rounded-[28px] p-6 sm:p-9 flex flex-col">
+          <div className="flex items-center justify-between gap-4">
+            <p className="eyebrow">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
+            <AddPersonDrawer people={existingPeopleForDrawer} variant="accent" />
           </div>
-          <AddPersonDrawer people={existingPeopleForDrawer} />
+          <h1 className="font-display text-[34px] sm:text-[60px] leading-[0.95] mt-8 sm:mt-10">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}.</h1>
+          <p className="text-stage-muted text-[15.5px] mt-4 max-w-[54ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
+          <AgentComposer suggestions={askSuggestions} />
+        </section>
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+          <KpiCard variant="mint" label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
+          {showP23
+            ? <KpiCard label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
+            : <KpiCard label="Signed up" value={members} hint="members in your network" href="/network" />}
         </div>
-        <AgentComposer suggestions={askSuggestions} />
-        <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
-          <KpiCard label="Network" value={total} hint={`${workedWith} you've worked with`} href="/network" series={cumSeries(peopleDates)} delta={{ value: last7(peopleDates), suffix: "7d" }} />
-          {showP23 ? (
-            <>
-              <KpiCard label="Live opportunities" value={activeOpps.length} hint={amanaDemand ? `${amanaDemand} via Amana` : "open requirements"} href="/opportunities" series={cumSeries(oppDates)} delta={{ value: last7(oppDates), suffix: "7d" }} />
-              <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
-              <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
-            </>
-          ) : (
-            <>
-              <KpiCard label="Signed up" value={members} hint="members in your network" href="/network" />
-              <KpiCard label="Awaiting screening" value={awaitingScreening} hint="registered, not yet screened" href="/conversations" tone={awaitingScreening ? "amber" : "neutral"} />
-              <KpiCard label="Worked with" value={workedWith} hint="people you've delivered with" href="/network?workedWith=1" tone="neutral" />
-            </>
-          )}
-        </div>
-      </section>
-
-      <InviteCard token={signTenantInvite(user.tenantId)} />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        {showP23 ? (
+          <>
+            <KpiCard label="Introductions live" value={liveIntros.length} hint="in flight now" href="/opportunities" series={cumSeries(introDates)} delta={{ value: last7(introDates), suffix: "7d" }} />
+            <KpiCard label="Indicative pipeline" value={formatMoneyCompact(pipeline)} hint="rough, not a forecast" tone="neutral" />
+          </>
+        ) : (
+          <>
+            <KpiCard label="Awaiting screening" value={awaitingScreening} hint="registered, not yet screened" href="/conversations" tone={awaitingScreening ? "amber" : "neutral"} />
+            <KpiCard label="Worked with" value={workedWith} hint="people you've delivered with" href="/network?workedWith=1" tone="neutral" />
+          </>
+        )}
+        <InviteCard token={signTenantInvite(user.tenantId)} className="col-span-2 lg:col-span-1" />
+      </div>
 
       {total < 25 ? (
-        <Card className="mb-5 border-navy-400/20 bg-[linear-gradient(135deg,var(--color-navy-50),var(--color-teal-50))]">
-          <CardBody className="pt-4 flex items-center justify-between gap-4">
+        <Card className="mb-4">
+          <CardBody className="pt-5 pb-5 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-[13px] font-semibold">Start with the people you already know</div>
+              <div className="font-display is-small text-[18px]">Start with the people you already know</div>
               <div className="text-[12.5px] text-ink-muted mt-0.5">Import your contact list from a spreadsheet, then book conversations from the reconnect queue. Provenance is recorded for every person automatically.</div>
             </div>
-            <Link href="/network/import" className="flex-none"><Button><Upload className="h-3.5 w-3.5" /> Import contacts</Button></Link>
+            <Link href="/network/import" className="flex-none"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import contacts</Button></Link>
           </CardBody>
         </Card>
       ) : null}
       {people.length > 1 ? (
         <Card className="mb-4 overflow-hidden">
-          <CardHeader title="Your network" description="Who you know and how they reach you. Filter by capability; click a person to see their trust and the open roles they fit." action={<Link href="/network/map" className="text-xs text-navy hover:underline">Open full map</Link>} />
+          <CardHeader title="Your network" description="Who you know and how they reach you. Filter by capability; click a person to see their trust and the open roles they fit." action={<Link href="/network/map" className="text-[13px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[6px]">Open full map</Link>} />
           <div className="px-3 pb-3"><NetworkGraph nodes={mapNodes} links={mapLinks} heightClass="h-[440px]" compact /></div>
         </Card>
       ) : null}
@@ -157,7 +159,7 @@ export default async function OverviewPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
           <Card>
-            <CardHeader title={<span className="inline-flex items-center gap-2"><span className="live-dot" aria-hidden="true" /> Agent queue</span>} description="What the agent has lined up from the state of the network. Nothing happens until you say so." action={suggestions.length ? <span className="rounded-full bg-navy-50 px-2 py-0.5 text-[11px] font-medium text-navy tabular">{suggestions.length} waiting</span> : undefined} />
+            <CardHeader title={<span className="inline-flex items-center gap-2"><span className="live-dot" aria-hidden="true" /> Agent queue</span>} description="What the agent has lined up from the state of the network. Nothing happens until you say so." action={suggestions.length ? <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-accent-ink tabular">{suggestions.length} waiting</span> : undefined} />
             <CardBody>
               {suggestions.length === 0 ? <EmptyState title="Nothing waiting" description="The agent is watching. New matches, reviews and reconnects appear here." /> : (
                 <ul className="space-y-1.5">
@@ -165,13 +167,13 @@ export default async function OverviewPage() {
                     const k = QUEUE[s.kind]; const Icon = k.icon;
                     return (
                       <li key={i}>
-                        <Link href={s.href} className="group flex items-center gap-3 rounded-[10px] border border-line bg-surface px-3 py-2.5 transition-colors hover:border-navy-400/50">
-                          <span className="grid h-8 w-8 flex-none place-items-center rounded-[8px] bg-navy-50 text-navy"><Icon className="h-4 w-4" /></span>
+                        <Link href={s.href} className="group flex items-center gap-3 rounded-[14px] border border-line bg-surface px-3 py-2.5 transition-colors duration-200 hover:border-ink">
+                          <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-surface-muted text-ink"><Icon className="h-4 w-4" /></span>
                           <span className="min-w-0 flex-1">
-                            <span className="block text-[10.5px] font-medium uppercase tracking-[0.07em] text-ink-faint">{k.tag}</span>
+                            <span className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-ink-faint">{k.tag}</span>
                             <span className="block truncate text-[13px] text-ink">{s.text}</span>
                           </span>
-                          <span className="inline-flex flex-none items-center gap-1 rounded-[9px] border border-line px-2.5 py-1 text-[12px] font-medium text-ink-muted transition-colors group-hover:border-navy group-hover:bg-navy group-hover:text-white dark:group-hover:text-canvas">{k.verb} <ArrowRight className="h-3 w-3" /></span>
+                          <span className="inline-flex flex-none items-center gap-1 rounded-full border border-line-strong px-3 py-1.5 text-[12px] font-semibold text-ink transition-colors duration-200 group-hover:border-accent group-hover:bg-accent group-hover:text-accent-ink">{k.verb} <ArrowRight className="h-3 w-3" /></span>
                         </Link>
                       </li>
                     );
@@ -183,7 +185,7 @@ export default async function OverviewPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
-              <CardHeader title="My week" description="Conversations in the next seven days" action={<Link href="/conversations" className="text-xs text-navy hover:underline">All</Link>} />
+              <CardHeader title="My week" description="Conversations in the next seven days" action={<Link href="/conversations" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">All</Link>} />
               <CardBody>
                 {upcoming.length === 0 ? <EmptyState title="No conversations booked" description="Book one from a person's profile." /> : (
                   <ul className="divide-y divide-line">
@@ -198,7 +200,7 @@ export default async function OverviewPage() {
               </CardBody>
             </Card>
             <Card>
-              <CardHeader title="Reconnect queue" description="Trusted people whose status is stale" action={<Link href="/network?freshness=stale" className="text-xs text-navy hover:underline">All</Link>} />
+              <CardHeader title="Reconnect queue" description="Trusted people whose status is stale" action={<Link href="/network?freshness=stale" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">All</Link>} />
               <CardBody>
                 {reconnect.length === 0 ? <EmptyState title="Everyone is current" /> : (
                   <ul className="divide-y divide-line">
@@ -216,11 +218,11 @@ export default async function OverviewPage() {
 
           {showP23 ? (
           <Card>
-            <CardHeader title="Opportunity intelligence" description="Open requirements by stage" action={<Link href="/opportunities" className="text-xs text-navy hover:underline">Board</Link>} />
+            <CardHeader title="Opportunity intelligence" description="Open requirements by stage" action={<Link href="/opportunities" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Board</Link>} />
             <CardBody>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
                 {stageCounts.map((s) => (
-                  <div key={s.stage} className="rounded-[8px] bg-surface-muted px-2 py-2.5 text-center">
+                  <div key={s.stage} className="rounded-[12px] bg-surface-muted px-2 py-2.5 text-center">
                     <div className="text-[16px] font-semibold tabular text-ink leading-none">{s.count}</div>
                     <div className="text-[9.5px] uppercase tracking-[0.06em] text-ink-faint mt-1 truncate">{s.stage.toLowerCase()}</div>
                   </div>
@@ -245,7 +247,7 @@ export default async function OverviewPage() {
         <div className="space-y-4">
           {showP23 ? (
           <Card>
-            <CardHeader title="Amana Expert Network" description="Bench and live demand" action={<Link href="/amana" className="text-xs text-navy hover:underline">Open</Link>} />
+            <CardHeader title="Amana Expert Network" description="Bench and live demand" action={<Link href="/amana" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Open</Link>} />
             <CardBody>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.amanaBench).length}</div><div className="text-[10px] text-ink-faint uppercase">bench</div></div>
@@ -256,14 +258,14 @@ export default async function OverviewPage() {
           </Card>
           ) : null}
           <Card>
-            <CardHeader title="Needs review" description="AI summaries waiting for a human" action={<Link href="/conversations?tab=review" className="text-xs text-navy hover:underline">Review</Link>} />
+            <CardHeader title="Needs review" description="AI summaries waiting for a human" action={<Link href="/conversations?tab=review" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Review</Link>} />
             <CardBody>
               {needsReview.length === 0 ? <EmptyState title="Inbox zero" /> : (
                 <ul className="divide-y divide-line">
                   {needsReview.map((c) => (
                     <li key={c.id} className="py-2.5 flex items-center justify-between gap-2">
                       <PersonLink person={c.person} sub={null} />
-                      <Link href={`/conversations?tab=review&open=${c.id}`} className="text-xs text-navy hover:underline">{c.approvalStatus === "DRAFT" ? "Draft" : "Review"}</Link>
+                      <Link href={`/conversations?tab=review&open=${c.id}`} className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">{c.approvalStatus === "DRAFT" ? "Draft" : "Review"}</Link>
                     </li>
                   ))}
                 </ul>
@@ -272,7 +274,7 @@ export default async function OverviewPage() {
           </Card>
           {showP23 ? (<>
           <Card>
-            <CardHeader title="Partner activity" action={<Link href="/partners" className="text-xs text-navy hover:underline">Partners</Link>} />
+            <CardHeader title="Partner activity" action={<Link href="/partners" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Partners</Link>} />
             <CardBody>
               {partnerReqs.length === 0 ? <EmptyState title="No open partner requirements" /> : (
                 <ul className="divide-y divide-line">

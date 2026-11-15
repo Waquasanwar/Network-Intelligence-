@@ -59,7 +59,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
   return (
     <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)}>
       <div className="absolute inset-0 bg-[#0f172a]/30 backdrop-blur-[2px] anim-fade" />
-      <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-[12px] bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-[20px] bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 px-3 border-b border-line">
           <Search className="h-4 w-4 text-ink-faint" />
           <input
@@ -83,7 +83,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
               <button
                 onMouseEnter={() => setIdx(i)}
                 onClick={() => go(r)}
-                className={`w-full text-left px-3 py-2 flex items-center gap-2.5 cursor-pointer rounded-md mx-1 ${i === idx ? (r.id === "__ask" ? "bg-[linear-gradient(100deg,var(--color-navy-50),var(--color-surface))]" : "bg-navy-50") : ""}`} style={{ width: "calc(100% - 8px)" }}
+                className={`w-full text-left px-3 py-2 flex items-center gap-2.5 cursor-pointer rounded-md mx-1 ${i === idx ? (r.id === "__ask" ? "bg-accent/35" : "bg-navy-50") : ""}`} style={{ width: "calc(100% - 8px)" }}
               >
                 {r.id === "__ask" ? <Sparkles className="h-4 w-4 text-navy flex-none" /> : null}
                 <span className={`text-[13px] min-w-0 flex-1 truncate ${r.id === "__ask" ? "text-ink font-medium" : "text-ink"}`}>{r.id === "__ask" ? <><span className="text-ink-muted font-normal">Ask the network: </span>“{r.label}”</> : r.label}</span>

@@ -3,28 +3,37 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] font-medium transition-[background-color,border-color,box-shadow,color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none active:translate-y-px",
+  "group inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold transition-[background-color,border-color,box-shadow,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none active:scale-[0.98]",
   {
     variants: {
       variant: {
-        primary: "bg-navy text-white hover:bg-navy-600 active:translate-y-px shadow-[var(--shadow-button)] dark:text-canvas",
-        accent: "bg-navy text-white hover:bg-navy-600 active:translate-y-px shadow-[var(--shadow-button)] dark:text-canvas",
-        secondary: "bg-surface text-ink border border-line hover:border-line-strong hover:bg-surface-hover shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
+        primary: "bg-navy text-white hover:bg-navy-600 dark:text-canvas",
+        accent: "bg-accent text-accent-ink hover:brightness-95",
+        secondary: "bg-surface text-ink border border-line-strong hover:border-ink",
         ghost: "text-ink-muted hover:bg-surface-muted hover:text-ink",
-        teal: "bg-navy text-white hover:bg-navy-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_6px_14px_-8px_rgba(13,122,111,0.7)]",
+        teal: "bg-accent text-accent-ink hover:brightness-95",
         danger: "bg-risk text-white hover:brightness-95",
-        link: "text-navy underline-offset-4 hover:underline px-0 h-auto",
+        link: "text-ink underline decoration-accent decoration-2 underline-offset-4 px-0 h-auto rounded-none",
       },
       size: {
-        sm: "h-7 px-2.5 text-[12.5px] rounded-[8px]",
-        md: "h-8 px-3.5 text-[13px]",
-        lg: "h-10 px-4 text-sm rounded-[10px]",
-        icon: "h-8 w-8",
+        sm: "h-8 px-3.5 text-[12.5px]",
+        md: "h-9 px-4 text-[13px]",
+        lg: "h-11 px-5 text-[14px]",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
   },
 );
+
+/** The navy circle with a mint arrow that closes a call to action — the Amana site's signature. */
+export function ArrowBadge({ className }: { className?: string }) {
+  return (
+    <span aria-hidden="true" className={cn("arrow-badge -mr-2.5 ml-1 grid h-7 w-7 flex-none place-items-center rounded-full bg-stage text-accent", className)}>
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </span>
+  );
+}
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {}
 
