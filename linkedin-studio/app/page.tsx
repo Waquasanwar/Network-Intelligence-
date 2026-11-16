@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { AreaChart } from "@/components/area-chart";
 import { Icon } from "@/components/icons";
+import { LivePill, Ticker, TimeAgo } from "@/components/live";
+import { PulseLine } from "@/components/pulse-line";
+import { postingPulse, recentActivity } from "@/lib/activity";
 import { ScoreRing, Sparkline } from "@/components/mini-charts";
 import { Bars, Empty, fmt, fmtDate, SetupNeeded, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
@@ -123,19 +126,25 @@ export default async function Dashboard() {
   const stages = ["Idea", "Drafting", "Ready", "Scheduled"] as const;
   const counts = stages.map((s) => live.filter((p) => p.status === s).length);
   const maxStage = Math.max(1, ...counts);
+  const pulse = postingPulse(posts);
+  const activity = recentActivity(posts);
+  const updatedAt = posts.map((p) => p.lastSynced).filter((v): v is string => !!v).sort().pop() ?? null;
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="reveal">
       <div className="page-head">
         <div>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>{today}</div>
+          <div className="row" style={{ marginBottom: 12, gap: 12 }}>
+            <div className="eyebrow">{today}</div>
+            <LivePill updatedAt={updatedAt} />
+          </div>
           <h1>What&rsquo;s working on LinkedIn</h1>
           <p className="muted">Your reach, your best posts and what to write next, from the numbers in Notion.</p>
         </div>
         <div className="row">
           <Link className="btn" href="/metrics"><Icon.upload /> Import analytics</Link>
-          <Link className="btn primary" href="/write"><Icon.plus /> New post</Link>
+          <Link className="btn coral" href="/write"><Icon.plus /> New post</Link>
         </div>
       </div>
 
@@ -143,24 +152,35 @@ export default async function Dashboard() {
         <div style={{ minWidth: 0 }}>
           <div className="eyebrow">Impressions · last 30 days</div>
           <div className="hero-figure">
-            <span className="big">{imp30 ? imp30.toLocaleString("en-GB") : "–"}</span>
+            <span className="big">{imp30 ? <Ticker value={imp30} /> : "–"}</span>
             {imp30 ? <Delta pct={change} /> : <span className="unit">Import or sync to see your reach</span>}
           </div>
           <p className="small" style={{ color: "var(--stage-muted)", marginBottom: 14 }}>
             {recent.length} post{recent.length === 1 ? "" : "s"} published in this period
             {best ? <> · best: &ldquo;{best.title.slice(0, 48)}{best.title.length > 48 ? "…" : ""}&rdquo;</> : null}
           </p>
-          <AreaChart tone="stage" height={190} points={last30.map((d) => ({ x: d.day, y: d.impressions }))} label="Daily impressions, last 30 days" unit="impressions" />
+          <AreaChart tone="stage" height={180} points={last30.map((d) => ({ x: d.day, y: d.impressions }))} label="Daily impressions, last 30 days" unit="impressions" />
+          <div className="pulse-strip">
+            <div className="row">
+              <span className="caps"><span className="beat" aria-hidden>♥</span>&nbsp; Posting pulse · last 30 days</span>
+              <span className="pulse-stats">
+                <span><b>{pulse.beats.length}</b>posts</span>
+                <span><b>{pulse.avgGap ?? "–"}</b>days apart</span>
+                <span><b>{pulse.beats.length ? Math.round(avg(pulse.beats.map((b) => b.score ?? 0))) : "–"}</b>avg score</span>
+              </span>
+            </div>
+            <PulseLine days={pulse.days} beats={pulse.beats} />
+          </div>
         </div>
         <div className="hero-side">
-          <div className="hero-stat">
+          <div className={`hero-stat ${newFollowers30 ? "hot" : ""}`}>
             <div className="caps">Followers</div>
             <div className="row">
               <div>
-                <div className="v">{compact(followers)}</div>
+                <div className="v">{followers != null ? <Ticker value={followers} /> : "–"}</div>
                 <div className="s">{newFollowers30 ? `+${newFollowers30.toLocaleString("en-GB")} in 30 days` : "From imports or your log"}</div>
               </div>
-              <Sparkline values={last30.map((d) => d.newFollowers)} />
+              <Sparkline values={last30.map((d) => d.newFollowers)} color="var(--coral)" />
             </div>
           </div>
           <div className="hero-stat">
@@ -294,6 +314,27 @@ export default async function Dashboard() {
             <p className="small muted" style={{ marginTop: -6 }}>Correlation between your score before posting and the real result. Right is better.</p>
             <Gauge label="Your gut score" r={cal.gut} n={cal.gutN} />
             <Gauge label="AI score" r={cal.ai} n={cal.aiN} />
+          </div>
+          <div className="panel lift">
+            <div className="panel-head">
+              <h2>Activity</h2>
+              <span className="caps faint">live</span>
+            </div>
+            {activity.length ? (
+              <ul className="feed">
+                {activity.map((e) => (
+                  <li key={e.id} className={e.kind}>
+                    <i aria-hidden />
+                    <div style={{ minWidth: 0 }}>
+                      <Link href={e.kind === "draft" ? `/write?id=${e.postId}` : `/posts/${e.postId}`}>{e.text}</Link>
+                      <TimeAgo iso={e.at} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="small faint">Nothing yet. Write a draft or import your analytics.</p>
+            )}
           </div>
         </div>
       </div>

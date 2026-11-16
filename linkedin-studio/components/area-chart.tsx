@@ -57,7 +57,7 @@ export function AreaChart({
     d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`;
   }
   const area = `${d} L${sx(pts.length - 1)},${sy(0)} L${sx(0)},${sy(0)} Z`;
-  const stroke = tone === "stage" ? "var(--mint)" : "var(--series)";
+  const stroke = tone === "stage" ? "var(--coral-mark-stage)" : "var(--series)";
   const grid = tone === "stage" ? "var(--stage-line)" : "var(--line)";
   const surface = tone === "stage" ? "var(--stage)" : "var(--panel)";
   const ticks = Array.from({ length: Math.round(max / step) + 1 }, (_, i) => i * step);
@@ -113,7 +113,10 @@ export function AreaChart({
             <circle cx={sx(hover)} cy={sy(h.y)} r="5" fill={stroke} stroke={surface} strokeWidth="2" />
           </g>
         ) : (
-          <circle cx={sx(pts.length - 1)} cy={sy(pts[pts.length - 1].y)} r="4.5" fill={stroke} stroke={surface} strokeWidth="2" />
+          <g>
+            <circle className="chart-ping" cx={sx(pts.length - 1)} cy={sy(pts[pts.length - 1].y)} r="4.5" fill={stroke} />
+            <circle cx={sx(pts.length - 1)} cy={sy(pts[pts.length - 1].y)} r="4.5" fill={stroke} stroke={surface} strokeWidth="2" />
+          </g>
         )}
       </svg>
       {h && hover != null ? (
