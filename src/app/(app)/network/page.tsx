@@ -99,7 +99,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         {pill("Worked with", "workedWith", "1")}
         {pill("Needs refresh", "freshness", "stale")}
         {pill("Fresh", "freshness", "fresh")}
-        {pill("Amana bench", "amanaBench", "1")}
+        {pill("Amana core circle", "amanaBench", "1")}
         {pill("Introduced", "source", "INTRODUCTION")}
         <span className="mx-1 text-ink-faint">·</span>
         <span className="text-[12px] text-ink-faint">Saved views:</span>
@@ -121,7 +121,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      <div data-sortable className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
+      <div data-sortable className="widget overflow-x-auto">
         {people.length === 0 ? (
           <EmptyState title="No one matches" description="Try a broader search, or add the person you have in mind." />
         ) : (

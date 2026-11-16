@@ -30,7 +30,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
       </div>
 
       {opps.length === 0 ? <EmptyState title="No opportunities" description="Create one from a business problem." /> : view === "list" ? (
-        <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+        <div className="widget overflow-hidden">
           <table className="data">
             <thead><tr><th>Opportunity</th><th>Type</th><th>Source</th><th>Client</th><th>Value</th><th>Location</th><th>Stage</th><th>Matches</th><th>Updated</th></tr></thead>
             <tbody>

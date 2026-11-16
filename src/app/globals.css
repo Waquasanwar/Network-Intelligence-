@@ -66,7 +66,9 @@
   --radius-xl: 28px;
   /* flat: cards are a hairline on a grey ground; only things that float cast a shadow */
   /* soft: cards float a little above a pale ground */
-  --shadow-card: 0 1px 2px rgba(12, 27, 51, 0.03), 0 14px 34px -18px rgba(12, 27, 51, 0.14);
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 1px rgba(12, 27, 51, 0.04), 0 12px 32px -16px rgba(12, 27, 51, 0.16);
+  /* The fine edge every widget carries: mint where the light comes from, coral where it leaves. */
+  --widget-edge: linear-gradient(145deg, rgba(47, 179, 137, 0.6) 0%, rgba(12, 27, 51, 0.1) 20%, rgba(12, 27, 51, 0.07) 76%, rgba(255, 84, 64, 0.55) 100%);
   --shadow-card-hover: 0 2px 4px rgba(12, 27, 51, 0.04), 0 22px 44px -18px rgba(12, 27, 51, 0.2);
   --shadow-drawer: 0 32px 80px -16px rgba(12, 27, 51, 0.3), 0 0 0 1px rgba(12, 27, 51, 0.05);
   --shadow-pop: 0 14px 40px rgba(12, 27, 51, 0.14), 0 0 0 1px rgba(12, 27, 51, 0.04);
@@ -113,14 +115,37 @@
     --color-coral-ink: #ff8a78;
     --color-coral-100: #3d1a15;
     --color-series-track: #1a2c4d;
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -18px rgba(0, 0, 0, 0.6);
+    --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -18px rgba(0, 0, 0, 0.6);
+    --widget-edge: linear-gradient(145deg, rgba(126, 227, 188, 0.55) 0%, rgba(255, 255, 255, 0.09) 22%, rgba(255, 255, 255, 0.06) 76%, rgba(255, 102, 80, 0.55) 100%);
     --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 22px 44px -18px rgba(0, 0, 0, 0.7);
     --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 }
 
+/* The ground: a soft aurora in the brand's three lights over a fine dot grid. Fixed, so content
+   scrolls across it. Everything is a gradient, so it stays sharp at any pixel density. */
+html {
+  background:
+    radial-gradient(rgba(12, 27, 51, 0.075) 1px, transparent 1.3px) 0 0 / 22px 22px,
+    radial-gradient(1100px 640px at 4% -10%, rgba(126, 227, 188, 0.34), transparent 62%),
+    radial-gradient(900px 620px at 104% 2%, rgba(40, 104, 180, 0.16), transparent 62%),
+    radial-gradient(900px 700px at 98% 110%, rgba(255, 84, 64, 0.14), transparent 60%),
+    var(--color-canvas);
+  background-attachment: fixed;
+}
+@media (prefers-color-scheme: dark) {
+  html {
+    background:
+      radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.3px) 0 0 / 22px 22px,
+      radial-gradient(1100px 640px at 4% -10%, rgba(47, 179, 137, 0.22), transparent 62%),
+      radial-gradient(900px 620px at 104% 2%, rgba(57, 135, 229, 0.16), transparent 62%),
+      radial-gradient(900px 700px at 98% 110%, rgba(255, 102, 80, 0.12), transparent 60%),
+      var(--color-canvas);
+    background-attachment: fixed;
+  }
+}
+body { background: transparent; }
 html, body {
-  background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-variation-settings: "wdth" 100;
@@ -144,7 +169,17 @@ html, body {
 
 /* The navy surface. */
 /* The dark surface: navy with a soft teal light from one corner. */
-.brand-panel { color: var(--color-stage-ink); background: radial-gradient(85% 130% at 100% 0%, #15616b 0%, rgba(21, 97, 107, 0) 62%), var(--color-stage); }
+.brand-panel {
+  color: var(--color-stage-ink);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 44px 44px,
+    radial-gradient(70% 125% at 100% 0%, rgba(47, 179, 137, 0.62) 0%, rgba(47, 179, 137, 0) 60%),
+    radial-gradient(48% 90% at 0% 108%, rgba(255, 84, 64, 0.26) 0%, rgba(255, 84, 64, 0) 62%),
+    radial-gradient(60% 80% at 62% 125%, rgba(40, 104, 180, 0.42) 0%, rgba(40, 104, 180, 0) 60%),
+    #081226;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 50px -28px rgba(8, 18, 38, 0.7);
+}
 .brand-panel.is-edge { border: 0; }
 
 .glass-tile { position: relative; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-ink); transition: border-color 160ms ease, box-shadow 160ms ease; }
@@ -172,7 +207,7 @@ a > .glass-tile:hover { box-shadow: var(--shadow-card-hover); }
 h1, h2, h3 { letter-spacing: -0.02em; }
 
 /* Glass */
-.glass { background: color-mix(in srgb, var(--color-canvas) 82%, transparent); backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px); }
+.glass { background: color-mix(in srgb, var(--color-canvas) 46%, transparent); backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px); }
 
 /* Tables: dense, quiet, readable */
 /* A wide table scrolls inside its own card on a narrow screen; the page never scrolls sideways. */
@@ -279,7 +314,16 @@ kbd {
 @media (prefers-reduced-motion: reduce) { .orbit-pulse { animation: none; opacity: 0; } .orbit-flow { animation: none; stroke-dasharray: none; } }
 
 /* The map's stage: deep navy, lit teal from the centre, with a slow radar sweep. */
-.orbit-stage { background: radial-gradient(58% 64% at 50% 50%, #145864 0%, rgba(20, 88, 100, 0) 72%), #091730; }
+.orbit-stage { background: radial-gradient(52% 58% at 50% 50%, rgba(23, 110, 112, 0.9) 0%, rgba(20, 88, 100, 0) 72%), radial-gradient(40% 46% at 4% 100%, rgba(255, 84, 64, 0.18) 0%, rgba(255, 84, 64, 0) 70%), #060f22; }
+/* People are dots: a lit core with a soft bloom, sharp at any size. */
+.orbit-dot.is-mint { background: radial-gradient(circle at 35% 30%, #eafff6 0%, #7ee3bc 55%, #3fc594 100%); box-shadow: 0 0 0 1px rgba(126, 227, 188, 0.35), 0 0 12px rgba(126, 227, 188, 0.75); }
+.orbit-dot.is-white { background: radial-gradient(circle at 35% 30%, #ffffff 0%, #cfe0ea 100%); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 9px rgba(190, 225, 240, 0.5); }
+.orbit-dot.is-faint { background: #8fa3bf; box-shadow: 0 0 0 1px rgba(143, 163, 191, 0.25); }
+@keyframes orbit-dust { to { transform: rotate(360deg); } }
+.orbit-dust { transform-origin: 0 0; animation: orbit-dust 240s linear infinite; }
+.orbit-dust.is-1 { animation-duration: 340s; animation-direction: reverse; }
+.orbit-dust.is-2 { animation-duration: 460s; }
+@media (prefers-reduced-motion: reduce) { .orbit-dust { animation: none; } }
 @keyframes orbit-sweep { to { transform: rotate(360deg); } }
 .orbit-sweep { position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 0deg, rgba(126, 227, 188, 0) 0deg, rgba(126, 227, 188, 0) 292deg, rgba(126, 227, 188, 0.14) 357deg, rgba(126, 227, 188, 0) 360deg); animation: orbit-sweep 9s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .orbit-sweep { animation: none; display: none; } }
@@ -293,7 +337,7 @@ kbd {
 @keyframes orbit-halo { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 10% { opacity: 0.8; transform: scale(1.06); } 40% { opacity: 0.4; transform: scale(1); } }
 .orbit-halo { background: radial-gradient(circle, rgba(126, 227, 188, 0.42) 0%, rgba(126, 227, 188, 0.12) 42%, rgba(126, 227, 188, 0) 70%); animation: orbit-halo 2.4s ease-in-out infinite; }
 @keyframes orbit-glow { 0%, 60%, 100% { opacity: 0; transform: scale(0.86); } 10% { opacity: var(--glow, 0.75); transform: scale(1.12); } 36% { opacity: 0; transform: scale(1.28); } }
-.orbit-glow { position: absolute; inset: -7px; border-radius: 9999px; pointer-events: none; opacity: 0; --glow: 0.7; background: radial-gradient(circle, rgba(126, 227, 188, 0.85) 0%, rgba(126, 227, 188, 0.3) 45%, rgba(126, 227, 188, 0) 72%); animation: orbit-glow 2.4s ease-out infinite; will-change: transform, opacity; }
+.orbit-glow { position: absolute; inset: -10px; border-radius: 9999px; pointer-events: none; opacity: 0; --glow: 0.7; background: radial-gradient(circle, rgba(126, 227, 188, 0.85) 0%, rgba(126, 227, 188, 0.3) 45%, rgba(126, 227, 188, 0) 72%); animation: orbit-glow 2.4s ease-out infinite; will-change: transform, opacity; }
 .orbit-glow.is-near { --glow: 0.95; }
 .orbit-glow.is-far { --glow: 0.4; }
 @keyframes orbit-ping { 0% { transform: scale(1); opacity: 0.9; } 65%, 100% { transform: scale(3); opacity: 0; } }
@@ -305,3 +349,29 @@ kbd {
   .orbit-beat, .orbit-halo, .orbit-drift { animation: none; }
   .orbit-ping::after { display: none; }
 }
+
+/* ---------- Widgets ---------- */
+/* Every card, tile and panel is a widget: a clean face with a one-pixel gradient edge and a soft,
+   layered shadow. In a layer of its own so a utility on the element (a tinted border, say) still wins. */
+@layer components {
+  .widget {
+    position: relative;
+    border-radius: 22px;
+    border: 1px solid transparent;
+    background: linear-gradient(var(--color-surface), var(--color-surface)) padding-box, var(--widget-edge) border-box;
+    box-shadow: var(--shadow-card);
+  }
+  .widget-lg { border-radius: 28px; }
+}
+@media (min-width: 1024px) {
+  .rail { border: 1px solid transparent; background: linear-gradient(var(--color-surface), var(--color-surface)) padding-box, var(--widget-edge) border-box; box-shadow: var(--shadow-card); }
+}
+/* Headline figures: ink that deepens to teal, so a number reads as a lit instrument rather than text. */
+.num-grad { background: linear-gradient(180deg, var(--color-ink) 35%, #17756b 115%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+@media (prefers-color-scheme: dark) { .num-grad { background-image: linear-gradient(180deg, #ffffff 35%, #7ee3bc 115%); } }
+@media (forced-colors: active) { .num-grad { -webkit-text-fill-color: currentColor; color: CanvasText; background: none; } }
+/* The small round holder behind a widget's icon. */
+.chip-icon { background: linear-gradient(140deg, rgba(126, 227, 188, 0.5), rgba(126, 227, 188, 0.12) 55%, rgba(255, 84, 64, 0.22)); box-shadow: inset 0 0 0 1px rgba(12, 27, 51, 0.06); color: var(--color-ink); }
+/* Buttons with a little depth: a lit top edge and a shadow in their own colour. */
+.btn-navy { background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 60%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 8px 18px -10px rgba(12, 27, 51, 0.7); }
+.btn-coral { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 10px 22px -10px rgba(255, 84, 64, 0.75); }

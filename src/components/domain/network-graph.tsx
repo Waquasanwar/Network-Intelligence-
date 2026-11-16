@@ -33,7 +33,21 @@ const beatDelay = (scale: number) => (((scale - WAVE.from) / (WAVE.to - WAVE.fro
 const ringOf = circleOf;
 
 type Placed = GNode & { ring: number; angle: number; size: number; a: number; b: number };
-const base0 = (ring: number, compact: boolean, narrow = false) => (narrow ? [30, 26, 22] : compact ? [38, 34, 30] : [46, 40, 34])[ring];
+// People are drawn as dots. `base0` is the slot each one occupies (and the area you can click);
+// the dot inside it is sized by trust.
+const base0 = (ring: number, compact: boolean, narrow = false) => (narrow ? [26, 24, 22] : compact ? [30, 28, 24] : [36, 32, 28])[ring];
+const dotOf = (ring: number, trust: number, narrow = false) => Math.round(((narrow ? [11, 8, 6] : [15, 11, 8])[ring] + Math.min(100, trust) * 0.07) * 10) / 10;
+
+/** Deterministic pseudo-random numbers, so the dust is identical on the server and in the browser. */
+function seeded(seed: number) { let x = seed; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
+/** Fine dust along each orbit: texture that says "a field of people", drawn once as vectors. */
+const DUST = (() => {
+  const rnd = seeded(20261116);
+  return [0.4, 0.71, 1].map((scale, ring) => Array.from({ length: [46, 84, 130][ring] }, () => {
+    const a = rnd() * Math.PI * 2, d = scale + (rnd() - 0.5) * [0.16, 0.2, 0.22][ring];
+    return { x: Math.cos(a) * d, y: Math.sin(a) * d, r: 0.5 + rnd() * 1.1, o: 0.14 + rnd() * 0.42 };
+  }));
+})();
 
 // Each circle sways gently, in its own time and direction, so the map breathes instead of sitting still.
 const SWAY = [{ amp: 0.085, period: 17 }, { amp: -0.06, period: 23 }, { amp: 0.045, period: 31 }];
@@ -175,7 +189,8 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   // A handful of introductions carry a moving signal, so the threads between people read as live.
   const signals = useMemo(() => { const step = Math.max(1, Math.ceil(links.length / 16)); return links.map((_, i) => i).filter((i) => i % step === 0); }, [links]);
-  const showNames = !layout?.narrow && people.length <= (compact ? 26 : 44);
+  // Names sit beside the people you know best; everyone else shows theirs on hover.
+  const showNames = !layout?.narrow;
   const matches = (n: GNode) => !cap || (n.capabilities ?? []).some((c) => c.trim().toLowerCase() === cap);
   const lit = (id: string) => !focus || id === focus || neighbours.get(focus)?.has(id);
 
@@ -185,7 +200,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
   const t0 = clock.current;
 
   return (
-    <div className={cn("relative w-full flex rounded-[22px] border border-line overflow-hidden", heightClass)}>
+    <div className={cn("relative w-full flex rounded-[22px] overflow-hidden bg-[#060f22] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_24px_50px_-28px_rgba(8,18,38,0.7)]", heightClass)}>
       <div ref={wrapRef} className="orbit-stage relative flex-1 min-w-0 bg-stage text-stage-ink" onClick={() => setSelected(null)}>
         {layout ? (
           <>
@@ -196,15 +211,23 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
               {[0, 1, 2].map((k) => <span key={k} className="orbit-ripple" style={{ animationDelay: `${k * BEAT}s` }} />)}
             </div>
             <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
+              {/* Dust on the orbits, turning slowly: each ring at its own pace, in the same tilt as the people. */}
+              <g transform={`translate(${layout.cx} ${layout.cy}) scale(1 ${(layout.ry / layout.rx).toFixed(4)})`}>
+                {DUST.map((dots, ring) => (
+                  <g key={ring} className={`orbit-dust is-${ring}`}>
+                    {dots.map((d, i) => <circle key={i} cx={(d.x * layout.rx).toFixed(1)} cy={(d.y * layout.rx).toFixed(1)} r={d.r} fill={ring === 0 ? "#a9f0d6" : "#ffffff"} opacity={d.o} />)}
+                  </g>
+                ))}
+              </g>
               {/* The orbits, widest first: each a faint plate with a fine edge, so the three bands read as depth. */}
               {[2, 1, 0].map((r) => (
-                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" strokeWidth={1} strokeDasharray={r === 2 ? "1 7" : undefined} strokeLinecap="round" className={r === 2 ? "orbit-drift" : undefined} />
+                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.16)" strokeWidth={1} strokeDasharray={r === 2 ? "1 7" : undefined} strokeLinecap="round" className={r === 2 ? "orbit-drift" : undefined} />
               ))}
               {/* Who introduced whom: a faint thread by default, a moving mint line for the person in focus. */}
               {links.map((l, i) => {
                 const fromHub = l.source === hub?.id;
                 const on = !!focus && (l.source === focus || l.target === focus);
-                return <path key={i} id={`${uid}-l${i}`} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "rgba(255,255,255,0.55)"} strokeWidth={on ? 1.8 : 1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.07 : 0.2} strokeLinecap="round" />;
+                return <path key={i} id={`${uid}-l${i}`} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "rgba(255,255,255,0.55)"} strokeWidth={on ? 1.6 : 0.8} strokeOpacity={on ? 1 : fromHub ? 0.07 : focus ? 0.06 : 0.26} strokeLinecap="round" />;
               })}
               {/* Signals running along the threads, from whoever made the introduction to the person. */}
               <g className="orbit-signals" opacity={focus ? 0.12 : 1}>
@@ -235,29 +258,24 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
               const dim = !matches(p) || !lit(p.id);
               const trusted = p.trust >= TRUSTED;
               const active = hover === p.id || selected === p.id;
-              const r = p.size / 2 - 1.5, c = 2 * Math.PI * r;
+              const dot = dotOf(p.ring, p.trust, layout.narrow);
               const st = nodeStyle(p, t0);
+              const named = showNames && (p.ring === 0 || active);
               return (
                 <button
                   key={p.id} type="button" aria-label={`${p.name}, trust ${Math.round(p.trust)}`} aria-pressed={selected === p.id}
                   ref={(el) => { if (el) nodeEls.current.set(p.id, el); else nodeEls.current.delete(p.id); }}
                   onClick={(e) => { e.stopPropagation(); setSelected(selected === p.id ? null : p.id); }}
                   onPointerEnter={() => setHover(p.id)} onPointerLeave={() => setHover(null)} onFocus={() => setHover(p.id)} onBlur={() => setHover(null)}
-                  className={cn("group absolute left-0 top-0 cursor-pointer rounded-full transition-opacity duration-300", dim ? "opacity-20" : "opacity-100")}
+                  className={cn("group absolute left-0 top-0 grid cursor-pointer place-items-center rounded-full transition-opacity duration-300", dim ? "opacity-20" : "opacity-100")}
                   style={{ width: p.size, height: p.size, transform: st.transform, zIndex: active ? 60 : st.zIndex }}
                 >
-                  <span className="node-in absolute inset-0 block" style={{ animationDelay: `${Math.min(i * 22, 600)}ms` }}>
+                  <span className="node-in relative block" style={{ width: dot, height: dot, animationDelay: `${Math.min(i * 14, 600)}ms` }}>
                     {/* Lights up as the wave from the centre reaches this person's circle. */}
                     <span className={cn("orbit-glow", p.ring === 0 ? "is-near" : p.ring === 2 ? "is-far" : "")} style={{ animationDelay: `${beatDelay(layout.scale[p.ring]).toFixed(2)}s` }} aria-hidden="true" />
-                    <svg viewBox={`0 0 ${p.size} ${p.size}`} className="absolute inset-0 -rotate-90" aria-hidden="true">
-                      <circle cx={p.size / 2} cy={p.size / 2} r={r} fill="var(--color-stage)" stroke="rgba(255,255,255,0.22)" strokeWidth={1.5} />
-                      {p.trust > 0 ? <circle cx={p.size / 2} cy={p.size / 2} r={r} fill="none" stroke="var(--color-accent)" strokeWidth={2.2} strokeLinecap="round" strokeDasharray={`${(Math.min(100, p.trust) / 100) * c} ${c}`} /> : null}
-                    </svg>
-                    <span className={cn("absolute inset-[4.5px] grid place-items-center rounded-full font-semibold leading-none transition-[transform,background-color,color] duration-200 group-hover:scale-110", trusted ? "bg-accent text-accent-ink" : active ? "bg-white text-[#0c1b33]" : "bg-white/[0.12] text-stage-ink", selected === p.id && "ring-2 ring-white ring-offset-2 ring-offset-stage")} style={{ fontSize: Math.max(8, Math.round(p.size * 0.29)) }}>
-                      {p.size >= 22 ? initials(p.name) : ""}
-                    </span>
-                    {p.open ? <span className="orbit-ping absolute right-0 bottom-0 h-[10px] w-[10px] rounded-full bg-coral ring-2 ring-stage" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
-                    {showNames ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none transition-colors duration-200", active ? "text-white font-semibold" : "text-stage-muted")}>{shortName(p.name)}</span> : null}
+                    {p.open ? <span className="orbit-ping absolute -inset-[3.5px] rounded-full border border-coral" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
+                    <span className={cn("orbit-dot absolute inset-0 rounded-full transition-transform duration-200 group-hover:scale-[1.7]", trusted || p.ring === 0 ? "is-mint" : p.ring === 1 ? "is-white" : "is-faint", active && "scale-[1.7]", selected === p.id && "ring-2 ring-white ring-offset-[3px] ring-offset-stage")} />
+                    {named ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none tracking-[0.01em] transition-colors duration-200", active ? "text-white font-semibold" : "text-stage-muted")}>{shortName(p.name)}</span> : null}
                   </span>
                 </button>
               );
@@ -299,15 +317,17 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
             ) : null}
           </div>
           <div className="hidden md:flex flex-none items-center gap-4 text-[11.5px] text-stage-muted">
-            <span className="inline-flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 14 14" className="-rotate-90" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" /><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeDasharray="20 40" strokeLinecap="round" /></svg> arc shows trust</span>
-            <span className="inline-flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded-full bg-accent text-[7px] font-bold text-accent-ink">A</span> trusted</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-coral ring-2 ring-white/20" /> open to work</span>
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-mint h-2.5 w-2.5 rounded-full" /> known well</span>
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-white h-2 w-2 rounded-full" /> known</span>
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-faint h-1.5 w-1.5 rounded-full" /> new</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border border-coral" /> open to work</span>
+            <span>bigger dot, more trust</span>
           </div>
         </div>
       </div>
 
       {!compact ? (
-        <aside className="hidden lg:block w-[320px] flex-none border-l border-line bg-surface overflow-y-auto">
+        <aside className="widget hidden lg:block w-[312px] flex-none m-3 !rounded-[18px] overflow-y-auto text-ink">
           {card ?? (
             <div className="h-full flex flex-col justify-center px-7">
               <div className="label-caps text-ink-faint">How to read it</div>

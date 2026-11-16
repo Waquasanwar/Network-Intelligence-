@@ -78,7 +78,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
     <>
     {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-ink/35 lg:hidden cursor-default" /> : null}
     {/* A floating white panel: brand, search, the menu, and one prompt to use the agent. */}
-    <aside id="app-nav" className={cn("flex flex-col flex-none bg-surface text-rail-ink fixed inset-y-0 left-0 z-40 w-[284px] max-w-[88vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-3 lg:z-auto lg:m-3 lg:mr-0 lg:h-[calc(100dvh-24px)] lg:w-[264px] lg:translate-x-0 lg:visible lg:rounded-[28px] lg:border lg:border-line lg:shadow-[var(--shadow-card)]", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)]" : "-translate-x-full invisible")}>
+    <aside id="app-nav" className={cn("rail flex flex-col flex-none bg-surface text-rail-ink fixed inset-y-0 left-0 z-40 w-[284px] max-w-[88vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-3 lg:z-auto lg:m-3 lg:mr-0 lg:h-[calc(100dvh-24px)] lg:w-[264px] lg:translate-x-0 lg:visible lg:rounded-[28px] lg:border lg:border-line lg:shadow-[var(--shadow-card)]", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)]" : "-translate-x-full invisible")}>
       <div className="px-5 pt-6 pb-4">
         <Link href={home} className="flex items-center gap-3">
           <BrandMark className="h-[22px] w-auto flex-none text-rail-ink-strong" />
@@ -109,7 +109,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         <div className="brand-panel m-3 mt-0 rounded-[22px] p-4">
           <div className="font-display is-small text-[14.5px] leading-[1.3]">Ask your network anything</div>
           <p className="text-[12.5px] text-stage-muted leading-[1.45] mt-1">One question, answered from people you know, ranked by trust.</p>
-          <button type="button" onClick={openSearch} className="mt-3 inline-flex h-8 items-center rounded-full bg-coral px-3.5 text-[12.5px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-105 cursor-pointer">Ask now</button>
+          <button type="button" onClick={openSearch} className="mt-3 inline-flex h-8 items-center btn-coral rounded-full bg-coral px-3.5 text-[12.5px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-105 cursor-pointer">Ask now</button>
         </div>
       ) : null}
     </aside>

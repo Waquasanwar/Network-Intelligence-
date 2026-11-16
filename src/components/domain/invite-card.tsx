@@ -15,7 +15,7 @@ export function InviteCard({ token, className }: { token: string; className?: st
   }
 
   return (
-    <div className={`rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] px-6 py-5 flex flex-col ${className ?? ""}`}>
+    <div className={`widget px-6 py-5 flex flex-col ${className ?? ""}`}>
       <div className="label-caps text-ink-faint flex items-center gap-2"><Link2 className="h-3.5 w-3.5" /> Invite link</div>
       <div className="font-display is-small text-[16px] leading-[1.25] text-ink mt-3">Bring someone into the network</div>
       <div className="text-[12.5px] text-ink-muted mt-1.5 leading-[1.5]">They register and do their screening; you review before they go live.</div>

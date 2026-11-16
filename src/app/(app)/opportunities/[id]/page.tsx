@@ -93,7 +93,7 @@ export default async function OpportunityPage({ params, searchParams }: { params
             action={<form action={generateMatches}><input type="hidden" name="opportunityId" value={opp.id} /><SubmitButton variant="secondary" pendingText="Finding…"><Sparkles className="h-3.5 w-3.5" /> {opp.matches.length ? "Refresh suggestions" : "Find possible matches"}</SubmitButton></form>}
           >
             {opp.matches.length === 0 ? <EmptyState icon={Sparkles} title="No suggestions yet" description="Find possible matches from your network. Each comes with the evidence behind it and what is still uncertain." /> : (
-              <div className="rounded-[22px] border border-line bg-surface divide-y divide-line overflow-hidden">
+              <div className="widget divide-y divide-line overflow-hidden">
                 {opp.matches.map((m) => {
                   const intro = opp.introductions.find((i) => i.personId === m.personId);
                   const cautions = m.person.evidence.filter((e) => e.evidenceType === "CAUTION").length;
@@ -206,7 +206,7 @@ export default async function OpportunityPage({ params, searchParams }: { params
                 </ul>
                 <form action={addToTeam} className="flex items-end gap-2">
                   <input type="hidden" name="opportunityId" value={opp.id} />
-                  <Field label="Add from bench" className="flex-1"><Select name="personId" defaultValue="">{[<option key="" value="" disabled>Choose…</option>, ...benchPeople.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)]}</Select></Field>
+                  <Field label="Add from the core circle" className="flex-1"><Select name="personId" defaultValue="">{[<option key="" value="" disabled>Choose…</option>, ...benchPeople.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)]}</Select></Field>
                   <Field label="Role" className="w-[120px]"><Select name="roleOnTeam" defaultValue="Lead"><option>Lead</option><option>Specialist</option><option>Advisor</option><option>PMO</option><option>Bid director</option></Select></Field>
                   <SubmitButton size="md" variant="secondary" pendingText="…">Add</SubmitButton>
                 </form>

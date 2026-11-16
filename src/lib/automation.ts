@@ -26,7 +26,7 @@ export type Automation = {
 };
 
 export const AUTOMATIONS: Automation[] = [
-  { key: "reconnect", label: "Reconnect queue", does: "Puts anyone you have worked with, or who is on the bench, back in front of you when their status goes cold.", why: "A network decays quietly. This is the thing that stops it.", cadence: "daily", defaultOn: true },
+  { key: "reconnect", label: "Reconnect queue", does: "Puts anyone you have worked with, or who is in your core circle, back in front of you when their status goes cold.", why: "A network decays quietly. This is the thing that stops it.", cadence: "daily", defaultOn: true },
   { key: "staleStatus", label: "Availability check", does: "Marks a status stale once it is past its check date, and suggests a two-line message.", why: "Proposing someone whose situation changed six months ago is how trust is lost.", cadence: "daily", defaultOn: true },
   { key: "screenInvite", label: "Screening invitations", does: "Invites anyone who registered but has not had the conversation yet.", why: "A registration with no conversation is a name, not a profile.", cadence: "daily", defaultOn: true },
   { key: "refreshShortlists", label: "Shortlist refresh", does: "Re-runs the hard-requirement checks on every open requirement when a brief or a profile changes.", why: "A visa or a location changes and a shortlist silently becomes wrong.", cadence: "on change", defaultOn: true },

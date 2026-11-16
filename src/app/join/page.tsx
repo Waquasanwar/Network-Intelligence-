@@ -98,7 +98,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
               <JoinForm inviteToken={sp.t!} invitedBy={invite.inviter ? `${invite.inviter.firstName} ${invite.inviter.lastName}` : null} network={invite.networkName} prefill={invite.prefill} claiming={!!invite.claimPersonId} error={error} />
             </>
           ) : (
-            <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] p-7 sm:p-8">
+            <div className="widget p-7 sm:p-8">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface-muted ring-1 ring-line"><MailQuestion className="h-5 w-5 text-ink-muted" /></span>
               <h2 className="font-display text-[24px] leading-[1.15] mt-5">{problem!.title}</h2>
               <p className="text-[14.5px] text-ink-muted mt-2.5 leading-[1.55]">{problem!.detail}</p>

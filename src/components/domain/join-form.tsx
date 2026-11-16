@@ -29,7 +29,7 @@ export function JoinForm({ inviteToken, invitedBy, network, prefill, claiming, e
   }
 
   return (
-    <div className="mt-8 rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] p-6 sm:p-7">
+    <div className="mt-8 widget p-6 sm:p-7">
       <div className="flex justify-center mb-5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 text-teal text-[12.5px] font-semibold px-3 py-1.5"><Check className="h-3.5 w-3.5" /> {invitedBy ? `Invited by ${invitedBy}` : `You've been invited to join ${network}`}</span>
       </div>

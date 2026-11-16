@@ -31,7 +31,7 @@ export default async function AmanaPage() {
       <PageHeader eyebrow="Exclusive workspace" title="Amana Expert Network" description="Who do we genuinely know who could solve this problem, and what evidence do we have? Consultants, associates, programme leaders, specialists, fractional executives and SOW teams." />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <Stat label="Trusted bench" value={bench.filter((p) => p.amanaBench).length} />
+        <Stat label="Core circle" value={bench.filter((p) => p.amanaBench).length} />
         <Stat label="Open to SOW now" value={sowReady.length} tone="teal" />
         <Stat label="Used before" value={bench.filter((p) => p.usedByAmana).length} />
         <Stat label="Live requirements" value={open.length} href="/opportunities?source=AMANA" />
@@ -41,7 +41,7 @@ export default async function AmanaPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
           <Card>
-            <CardHeader title="Trusted experts" description="Bench status, availability and evidence at a glance" action={<Link href="/network?amanaBench=1" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Full list</Link>} />
+            <CardHeader title="Trusted experts" description="Core circle status, availability and evidence at a glance" action={<Link href="/network?amanaBench=1" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Full list</Link>} />
             <CardBody className="px-0 pb-0">
               <table className="data">
                 <thead><tr><th className="pl-4">Expert</th><th>Capabilities</th><th>Availability</th><th>Routes</th><th>Evidence</th><th>History</th></tr></thead>
@@ -53,10 +53,10 @@ export default async function AmanaPage() {
                       <td><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} /></td>
                       <td className="text-xs text-ink-muted">{p.engagementPreferences.map((r) => r === "SOW" ? "SOW" : r.toLowerCase()).join(", ") || "—"}</td>
                       <td className="text-xs tabular"><span className={p.evidence.length ? "text-teal" : "text-amber"}>{p.evidence.length}</span>{p.relationships.some((r) => r.workedTogether) ? <span className="text-ink-faint"> · worked with</span> : null}</td>
-                      <td>{p.usedByAmana ? <Badge tone="teal">used by Amana</Badge> : <Badge>bench</Badge>}</td>
+                      <td>{p.usedByAmana ? <Badge tone="teal">used by Amana</Badge> : <Badge>core circle</Badge>}</td>
                     </tr>
                   ))}
-                  {!bench.length ? <tr><td colSpan={6}><EmptyState title="No bench yet" description="Flag people as 'Amana trusted bench' on their profile." /></td></tr> : null}
+                  {!bench.length ? <tr><td colSpan={6}><EmptyState title="No core circle yet" description="Flag people as 'Amana core circle' on their profile." /></td></tr> : null}
                 </tbody>
               </table>
             </CardBody>
@@ -87,15 +87,15 @@ export default async function AmanaPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader title="Current capability gaps" description="Required by live opportunities, not on the bench" />
+            <CardHeader title="Current capability gaps" description="Required by live opportunities, not covered by the core circle" />
             <CardBody>
-              {gaps.length === 0 ? <div className="text-xs text-ink-faint">The bench covers every live requirement.</div> : (
+              {gaps.length === 0 ? <div className="text-xs text-ink-faint">The core circle covers every live requirement.</div> : (
                 <ul className="space-y-1.5">{gaps.map((g, i) => <li key={i} className="text-xs"><Badge tone="amber">{g.capability}</Badge> <span className="text-ink-faint">for</span> <Link href={`/opportunities/${g.opportunity.id}`} className="text-navy hover:underline">{g.opportunity.title}</Link></li>)}</ul>
               )}
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Needs a status check" description="Bench members whose availability is stale" />
+            <CardHeader title="Needs a status check" description="Core circle members whose availability is stale" />
             <CardBody>
               <ul className="space-y-1.5">
                 {bench.filter((p) => assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }) !== "fresh").map((p) => <li key={p.id}><PersonLink person={p} sub={null} /></li>)}

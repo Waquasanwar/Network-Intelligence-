@@ -124,7 +124,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           {canMerge ? <form action={mergeRegistration} className="flex-none"><input type="hidden" name="newPersonId" value={person.id} /><input type="hidden" name="existingPersonId" value={twin.id} /><SubmitButton size="sm" pendingText="Joining up…">Same person: join them up</SubmitButton></form> : <span className="text-[12.5px] text-ink-muted flex-none">An owner or admin can join them up.</span>}
         </div>
       ) : null}
-      <div className="rounded-[22px] border border-line bg-surface p-5 sm:p-6 mb-5">
+      <div className="widget p-5 sm:p-6 mb-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4 min-w-0">
             <Avatar person={person} size="xl" />
@@ -137,7 +137,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
                 {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
-                {person.amanaBench ? <Badge tone="teal" filled>Amana bench</Badge> : null}
+                {person.amanaBench ? <Badge tone="teal" filled>Amana core circle</Badge> : null}
                 {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
                 {person.memberSince ? <Badge tone="teal" filled>network member</Badge> : null}
                 <ScreeningBadge status={person.screeningStatus} />
@@ -264,7 +264,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
       {tab === "relationships" ? (
         <Section title="Relationships" description="Relationship provenance and private notes. Notes never leave this tenant." action={<AddRelationshipDrawer personId={person.id} people={allPeople} />}>
-          <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+          <div className="widget overflow-hidden">
             <table className="data">
               <thead><tr><th>Known by</th><th>Type</th><th>Source</th><th>Worked together</th><th>Years</th><th>Again?</th><th>Last contact</th>{showNotes ? <th>Private notes</th> : null}</tr></thead>
               <tbody>
@@ -337,7 +337,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "opportunities" ? (
         <Section title="Opportunities" description="Where this person has been considered. Scores are per-opportunity, never a global rank.">
           {person.matches.length === 0 && person.teamMemberships.length === 0 ? <EmptyState title="Not yet considered for an opportunity" /> : (
-            <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+            <div className="widget overflow-hidden">
               <table className="data">
                 <thead><tr><th>Opportunity</th><th>Route</th><th>Stage</th><th>Fit</th><th>Human decision</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -389,7 +389,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "activity" ? (
         <Section title="Activity" description="Audit trail of sensitive actions on this record.">
           {audit.length === 0 ? <EmptyState title="No activity recorded" /> : (
-            <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+            <div className="widget overflow-hidden">
               <table className="data"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
                 <tbody>{audit.map((a) => <tr key={a.id}><td><DateText date={a.createdAt} relative /></td><td>{a.actor?.name ?? "system"}</td><td className="font-mono text-[12px]">{a.action}</td><td>{a.entityType}</td><td className="text-xs text-ink-muted font-mono">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody>
               </table>

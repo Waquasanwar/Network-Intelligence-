@@ -74,7 +74,7 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
           {alerts.length ? <span className="absolute top-0.5 right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-coral text-accent-ink text-[10px] font-bold leading-[17px] text-center ring-2 ring-canvas">{alerts.length}</span> : null}
         </button>
         {open === "alerts" ? (
-          <div className="absolute right-0 top-12 z-50 w-[380px] max-w-[calc(100vw-24px)] rounded-[22px] border border-line bg-surface text-ink shadow-[var(--shadow-pop)] overflow-hidden anim-fade">
+          <div className="absolute right-0 top-12 z-50 w-[380px] max-w-[calc(100vw-24px)] widget text-ink shadow-[var(--shadow-pop)] overflow-hidden anim-fade">
             <div className="flex items-center justify-between px-4 py-3 border-b border-line text-[13px]"><b>Needs your attention</b><small className="text-ink-faint">{alerts.length} item{alerts.length === 1 ? "" : "s"}</small></div>
             {alerts.length ? <ul className="p-1.5 max-h-[60vh] overflow-auto">{alerts.map((a, i) => <li key={i}><Link href={a.href} onClick={() => setOpen(null)} className="grid grid-cols-[auto_1fr_auto] gap-2.5 items-center px-2.5 py-2 rounded-[12px] text-[12.5px] hover:bg-surface-muted"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${a.tone === "teal" ? "bg-teal-100 text-teal" : a.tone === "amber" ? "bg-amber-100 text-amber" : "bg-navy-100 text-navy"}`}>{a.kind}</span><span>{a.text}</span><small className="text-ink-faint whitespace-nowrap">{a.when}</small></Link></li>)}</ul> : <p className="px-4 py-3.5 text-[12.5px] text-ink-muted">Nothing waiting. New registrations, screenings, referrals, pitches and client requests appear here.</p>}
           </div>
@@ -88,7 +88,7 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
           <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-ink-faint" aria-hidden="true" />
         </button>
         {open === "account" ? (
-          <div className="absolute right-0 top-12 z-50 w-[250px] rounded-[22px] border border-line bg-surface text-ink shadow-[var(--shadow-pop)] overflow-hidden anim-fade">
+          <div className="absolute right-0 top-12 z-50 w-[250px] widget text-ink shadow-[var(--shadow-pop)] overflow-hidden anim-fade">
             <div className="px-4 py-3 border-b border-line">
               <div className="text-[13px] font-semibold truncate">{user.name}</div>
               <div className="text-[12px] text-ink-muted truncate capitalize">{user.role.toLowerCase()} · {user.tenantName}</div>

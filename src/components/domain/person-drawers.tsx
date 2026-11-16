@@ -60,7 +60,7 @@ export function EditProfileDrawer({ person }: { person: Person }) {
           <Field label="By"><Input type="date" name="nextActionDate" defaultValue={toDate(person.nextActionDate)} /></Field>
         </div>
         <div className="flex gap-4">
-          <Checkbox name="amanaBench" label="Amana trusted bench" defaultChecked={person.amanaBench} />
+          <Checkbox name="amanaBench" label="Amana core circle" defaultChecked={person.amanaBench} />
           <Checkbox name="relocationInterest" label="Relocation interest" defaultChecked={person.relocationInterest} />
         </div>
         <div className="flex justify-end"><SubmitButton>Save profile</SubmitButton></div>

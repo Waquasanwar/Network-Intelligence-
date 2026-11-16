@@ -43,7 +43,7 @@ export function BriefChips({ b, className }: { b: Brief; className?: string }) {
 /** "How the co-pilot read it": chips, assumptions, and what it could not infer. */
 export function ReadCard({ b, title = "How the co-pilot read it" }: { b: Brief; title?: string }) {
   return (
-    <div className="rounded-[22px] border border-line bg-surface p-4">
+    <div className="widget p-4">
       <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-2">{title}</div>
       <BriefChips b={b} />
       {b.assumptions.length ? <ul className="mt-3 pl-4 list-disc text-[12.5px] text-ink-muted space-y-0.5">{b.assumptions.map((a) => <li key={a}>{a}</li>)}</ul> : null}

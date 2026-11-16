@@ -138,12 +138,12 @@ export default async function OverviewPage() {
               { label: "Worked with", value: workedWith, hint: "people you've delivered with", href: "/network?workedWith=1", delta: 0, icon: Handshake },
             ]
         ).map((k) => (
-          <Link key={k.label} href={k.href} className="lift group block rounded-[22px] border border-line bg-surface p-5 sm:p-6 shadow-[var(--shadow-card)]">
+          <Link key={k.label} href={k.href} className="lift group block widget p-5 sm:p-6 shadow-[var(--shadow-card)]">
             <div className="flex items-start justify-between gap-2">
               <div className="text-[12.5px] font-medium text-ink-muted leading-tight">{k.label}</div>
-              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-surface-muted text-ink"><k.icon className="h-4 w-4" /></span>
+              <span className="chip-icon grid h-9 w-9 flex-none place-items-center rounded-full"><k.icon className="h-4 w-4" /></span>
             </div>
-            <div className="font-display text-[34px] sm:text-[40px] leading-none mt-4 text-ink">{k.value}</div>
+            <div className="font-display num-grad text-[34px] sm:text-[40px] leading-none mt-4">{k.value}</div>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-faint">
               {k.delta ? <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 font-semibold text-teal">↗ +{k.delta} this week</span> : null}
               <span>{k.hint}</span>
@@ -160,7 +160,7 @@ export default async function OverviewPage() {
           { title: "Invite someone", text: "Send your link. They register, do the screening, and you review.", href: "/invite", icon: Send },
           { title: "Open the network map", text: "See your circles of trust and who introduced whom.", href: "/network/map", icon: Share2 },
         ].map((q) => (
-          <Link key={q.title} href={q.href} className="lift group flex items-start gap-3 rounded-[22px] border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+          <Link key={q.title} href={q.href} className="lift group flex items-start gap-3 widget p-4 shadow-[var(--shadow-card)]">
             <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-navy text-accent"><q.icon className="h-[18px] w-[18px]" /></span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center justify-between gap-2 text-[13.5px] font-semibold text-ink">{q.title} <ArrowRight className="arrow-badge h-3.5 w-3.5 flex-none text-ink-faint group-hover:text-ink" /></span>
@@ -287,10 +287,10 @@ export default async function OverviewPage() {
           <InviteCard token={await networkInviteToken(user.tenantId)} />
           {showP23 ? (
           <Card>
-            <CardHeader title="Amana Expert Network" description="Bench and live demand" action={<Link href="/amana" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Open</Link>} />
+            <CardHeader title="Amana Expert Network" description="Core circle and live demand" action={<Link href="/amana" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Open</Link>} />
             <CardBody>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.amanaBench).length}</div><div className="text-[12px] text-ink-faint uppercase">bench</div></div>
+                <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.amanaBench).length}</div><div className="text-[12px] text-ink-faint uppercase">core circle</div></div>
                 <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.usedByAmana).length}</div><div className="text-[12px] text-ink-faint uppercase">used before</div></div>
                 <div><div className="text-lg font-semibold tabular">{amanaDemand}</div><div className="text-[12px] text-ink-faint uppercase">open</div></div>
               </div>

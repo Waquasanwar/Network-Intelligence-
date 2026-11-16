@@ -83,7 +83,7 @@ export function credibility(i: CredInput): CredBadge[] {
     const n = i.engagements ?? 0;
     out.push({ key: "used", label: "We have used them ourselves", note: n ? `on ${n} engagement${n === 1 ? "" : "s"}` : "on our own delivery work", strength: "strong", icon: "check" });
   }
-  if (i.onBench && !i.usedByUs) out.push({ key: "bench", label: "On our bench", note: "trusted for our own project work", strength: "medium", icon: "trust" });
+  if (i.onBench && !i.usedByUs) out.push({ key: "bench", label: "In our core circle", note: "trusted for our own project work", strength: "medium", icon: "trust" });
 
   const rec = i.wouldRecommendCount ?? i.vouchCount;
   if (rec > 0) out.push({ key: "vouched", label: `Vouched for by ${rec}`, note: rec === 1 ? "one person put their name behind them" : "people who put their names behind them", strength: rec >= 3 ? "strong" : "medium", icon: "vouch" });

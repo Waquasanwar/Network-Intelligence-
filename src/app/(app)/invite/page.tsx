@@ -61,12 +61,12 @@ export default async function InvitePage() {
 
       <ol className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {steps.map((s, i) => (
-          <li key={s.label} className="relative rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] px-5 py-4">
+          <li key={s.label} className="relative widget px-5 py-4">
             <div className="flex items-center justify-between">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-ink-muted"><s.icon className="h-4 w-4" /></span>
+              <span className="chip-icon inline-flex h-8 w-8 items-center justify-center rounded-full"><s.icon className="h-4 w-4" /></span>
               {i > 0 && total > 0 ? <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-semibold text-teal" title={`${s.value} of ${total} people in your network`}>{Math.round((s.value / total) * 100)}% of network</span> : null}
             </div>
-            <div className="font-display text-[30px] leading-none mt-3">{s.value}</div>
+            <div className="font-display num-grad text-[30px] leading-none mt-3">{s.value}</div>
             <div className="text-[13px] font-semibold text-ink mt-1.5">{s.label}</div>
             <div className="text-[12px] text-ink-faint mt-0.5">{s.hint}</div>
           </li>
