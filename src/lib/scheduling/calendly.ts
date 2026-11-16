@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "crypto";
+import { oauthState } from "@/lib/secrets";
 import type { AvailabilityRequest, CreateMeetingRequest, ScheduledMeeting, SchedulingProvider, TimeSlot, UpdateMeetingRequest } from "./types";
 
 /**
@@ -15,11 +17,12 @@ export class CalendlySchedulingProvider implements SchedulingProvider {
     return Boolean(process.env.CALENDLY_CLIENT_ID && process.env.CALENDLY_CLIENT_SECRET);
   }
 
-  async connect() {
+  async connect(userId: string) {
     if (!this.isConfigured()) return { authorizationUrl: null };
     const params = new URLSearchParams({
       client_id: process.env.CALENDLY_CLIENT_ID as string,
       response_type: "code",
+      state: oauthState(userId, "CALENDLY"),
       redirect_uri: `${process.env.AUTH_URL ?? ""}/api/integrations/calendly/callback`,
     });
     return { authorizationUrl: `https://auth.calendly.com/oauth/authorize?${params}` };
@@ -71,16 +74,17 @@ export class CalendlySchedulingProvider implements SchedulingProvider {
   }
 }
 
-/** Verify Calendly webhook signature (HMAC-SHA256 over "t.body"). */
-export async function verifyCalendlySignature(rawBody: string, header: string | null, signingKey: string): Promise<boolean> {
+/** How old a signed delivery may be before it is refused as a replay. */
+const WEBHOOK_TOLERANCE_MS = 3 * 60_000;
+
+/** Verify Calendly webhook signature (HMAC-SHA256 over "t.body") and that it is recent. */
+export async function verifyCalendlySignature(rawBody: string, header: string | null, signingKey: string, now = Date.now()): Promise<boolean> {
   if (!header) return false;
-  const parts = Object.fromEntries(header.split(",").map((kv) => kv.split("=") as [string, string]));
+  const parts = Object.fromEntries(header.split(",").map((kv) => kv.trim().split("=") as [string, string]));
   const t = parts["t"];
   const v1 = parts["v1"];
-  if (!t || !v1) return false;
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey("raw", enc.encode(signingKey), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(`${t}.${rawBody}`));
-  const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  return hex === v1;
+  if (!t || !v1 || !/^\d+$/.test(t) || !/^[0-9a-f]{64}$/i.test(v1)) return false;
+  if (Math.abs(now - Number(t) * 1000) > WEBHOOK_TOLERANCE_MS) return false;
+  const expected = createHmac("sha256", signingKey).update(`${t}.${rawBody}`).digest();
+  return timingSafeEqual(expected, Buffer.from(v1, "hex"));
 }

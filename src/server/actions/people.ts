@@ -9,6 +9,10 @@ import { parseList } from "@/lib/utils";
 import { suggestNextCheck } from "@/lib/availability";
 import { assertSameTenant, canRevealIdentity, AuthorizationError } from "@/lib/authz";
 import type { AvailabilityStatus, EngagementRoute, Seniority, SourceType, RelationshipType, EvidenceType, Visibility } from "@prisma/client";
+import { privacyOf } from "@/lib/privacy";
+import type { Prisma } from "@prisma/client";
+
+const AVAILABILITY = z.enum(["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "SOW_ONLY", "PERMANENT_ONLY", "CONTRACT_ONLY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "UNAVAILABLE_UNTIL", "TAKING_A_BREAK", "NEEDS_REFRESH"]);
 
 const routes = ["PERMANENT", "CONTRACT", "INTERIM", "FRACTIONAL", "ADVISORY", "SOW"] as const;
 
@@ -133,7 +137,7 @@ export async function updatePerson(formData: FormData) {
 
 const availabilitySchema = z.object({
   personId: z.string(),
-  availabilityStatus: z.string(),
+  availabilityStatus: AVAILABILITY,
   availabilityDate: z.string().optional(),
   availabilitySource: z.string().max(80).optional(),
   availabilityConfidence: z.coerce.number().min(0).max(100).optional(),
@@ -166,8 +170,8 @@ export async function updateAvailability(formData: FormData) {
 
 const relationshipSchema = z.object({
   personId: z.string(),
-  sourceType: z.string(),
-  relationshipType: z.string(),
+  sourceType: z.enum(["PERSONAL_NETWORK", "INTRODUCTION", "WORKED_TOGETHER", "CLIENT", "PARTNER_REFERRAL", "EVENT", "INBOUND", "LINKEDIN", "OTHER"]),
+  relationshipType: z.enum(["DIRECT", "INTRODUCED", "WORKED_WITH", "MANAGED", "REPORTED_TO", "CLIENT_OF", "PEER", "MENTORED", "KNOWS_OF"]),
   introducedById: z.string().optional().or(z.literal("")),
   workedTogether: z.coerce.boolean().optional(),
   workedTogetherContext: z.string().max(1000).optional(),
@@ -182,6 +186,11 @@ export async function addRelationship(formData: FormData) {
   const existing = await prisma.person.findUnique({ where: { id: d.personId }, select: { tenantId: true } });
   if (!existing) throw new Error("Not found");
   assertSameTenant(user, existing.tenantId);
+  // The introducer must be someone in this same network, and not the person themselves.
+  if (d.introducedById) {
+    const intro = await prisma.person.findFirst({ where: { id: d.introducedById, tenantId: user.tenantId }, select: { id: true } });
+    if (!intro || intro.id === d.personId) throw new Error("Choose an introducer from your network");
+  }
   const r = await prisma.relationship.create({
     data: {
       personId: d.personId,
@@ -203,7 +212,7 @@ export async function addRelationship(formData: FormData) {
 
 const evidenceSchema = z.object({
   personId: z.string(),
-  evidenceType: z.string(),
+  evidenceType: z.enum(["DELIVERY_OBSERVED", "REFERENCE", "CLIENT_FEEDBACK", "PEER_FEEDBACK", "OUTCOME", "CAUTION"]),
   context: z.string().trim().min(2).max(200),
   description: z.string().trim().min(5).max(3000),
   confidence: z.coerce.number().min(0).max(100).default(70),
@@ -249,9 +258,16 @@ export async function requestDeletion(formData: FormData) {
   const user = await requireInternalAction();
   const personId = String(formData.get("personId"));
   const reason = String(formData.get("reason") || "").slice(0, 500);
-  const person = await prisma.person.findUnique({ where: { id: personId }, select: { tenantId: true } });
+  const person = await prisma.person.findUnique({ where: { id: personId }, select: { tenantId: true, privacy: true } });
   if (!person) throw new Error("Not found");
   assertSameTenant(user, person.tenantId);
+  // Recording the request is what takes them off every client and agency view straight away
+  // (see src/lib/reveal.ts) and puts the profile in the retention queue for deletion.
+  const current = privacyOf({ privacy: person.privacy });
+  if (!current.erasureRequestedAt) {
+    await prisma.person.update({ where: { id: personId }, data: { referralConsent: "no", privacy: { ...current, erasureRequestedAt: new Date().toISOString() } as unknown as Prisma.InputJsonValue } });
+  }
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "data.deletion_request", entityType: "Person", entityId: personId, metadata: { reason } });
+  revalidatePath(`/network/${personId}`); revalidatePath("/portal");
   revalidatePath("/settings/security");
 }

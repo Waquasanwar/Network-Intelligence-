@@ -8,7 +8,9 @@ import { requireInternalAction } from "@/server/session";
 import { parseList, fullName } from "@/lib/utils";
 import { retrieveMatches, type MatchPerson } from "@/lib/matching";
 import { getAIProvider } from "@/lib/ai";
-import { assertSameTenant, canApprove, canRevealIdentity, AuthorizationError } from "@/lib/authz";
+import { assertSameTenant, canApprove, canRevealIdentity } from "@/lib/authz";
+import { isIntroNamingStatus, namingBlocked } from "@/lib/reveal";
+import { limitOrThrow, rateLimit } from "@/lib/rate-limit";
 import { ROUTE_LABELS } from "@/lib/labels";
 import type { CommercialModel, EngagementRoute, HumanDecision, OpportunitySource, OpportunityStatus, Seniority } from "@prisma/client";
 
@@ -31,6 +33,19 @@ const oppSchema = z.object({
   partnerId: z.string().optional().or(z.literal("")),
 });
 
+/** An agency this network works with, or null. Never trust a partner id from a form on its own. */
+async function ownPartner(tenantId: string, partnerId: string | undefined | null) {
+  if (!partnerId) return null;
+  const partner = await prisma.partner.findFirst({ where: { id: partnerId, networkTenantId: tenantId } });
+  if (!partner) throw new Error("Partner not found");
+  return partner;
+}
+
+const OPP_STATUS = z.enum(["INTAKE", "QUALIFYING", "MATCHING", "SHORTLIST", "INTRODUCING", "ENGAGED", "CLOSED_WON", "CLOSED_LOST", "ON_HOLD"]);
+const HUMAN_DECISION = z.enum(["UNDECIDED", "RECOMMEND", "POSSIBLE", "NEED_MORE_EVIDENCE", "NOT_FOR_THIS_REQUIREMENT"]);
+const INTRO_STATUS = z.enum(["REQUESTED", "APPROVED", "IDENTITY_REVEALED", "INTRODUCED", "IN_PROGRESS", "ENGAGED", "DECLINED", "WITHDRAWN"]);
+const CONSENT_STATUS = z.enum(["NOT_REQUESTED", "REQUESTED", "GRANTED", "DECLINED"]);
+
 // Spec §17.6 — an opportunity is created from a business problem, never a CV or formal JD.
 export async function createOpportunity(formData: FormData) {
   const user = await requireInternalAction();
@@ -38,6 +53,7 @@ export async function createOpportunity(formData: FormData) {
   if (!parsed.success) throw new Error("Please describe the problem and choose a route");
   const d = parsed.data;
   const budget = d.budget ? Number(String(d.budget).replace(/[^0-9.]/g, "")) : null;
+  await ownPartner(user.tenantId, d.partnerId);
   const opp = await prisma.opportunity.create({
     data: {
       tenantId: user.tenantId,
@@ -70,7 +86,7 @@ export async function createOpportunity(formData: FormData) {
 export async function setOpportunityStatus(formData: FormData) {
   const user = await requireInternalAction();
   const id = String(formData.get("opportunityId"));
-  const status = String(formData.get("status")) as OpportunityStatus;
+  const status = OPP_STATUS.parse(formData.get("status")) as OpportunityStatus;
   const opp = await prisma.opportunity.findUnique({ where: { id }, select: { tenantId: true } });
   if (!opp) throw new Error("Not found");
   assertSameTenant(user, opp.tenantId);
@@ -83,6 +99,7 @@ export async function setOpportunityStatus(formData: FormData) {
 /** Spec §10 — AI retrieves and explains; the human decides. Regenerates suggestions, preserving decisions already made. */
 export async function generateMatches(formData: FormData) {
   const user = await requireInternalAction();
+  await limitOrThrow("ai", `match:${user.id}`);
   const id = String(formData.get("opportunityId"));
   const opp = await prisma.opportunity.findUnique({ where: { id } });
   if (!opp) throw new Error("Not found");
@@ -137,7 +154,7 @@ export async function decideMatch(formData: FormData) {
   const user = await requireInternalAction();
   if (!canApprove(user)) throw new Error("Not permitted");
   const matchId = String(formData.get("matchId"));
-  const decision = String(formData.get("decision")) as HumanDecision;
+  const decision = HUMAN_DECISION.parse(formData.get("decision")) as HumanDecision;
   const notes = String(formData.get("humanNotes") || "").slice(0, 2000) || null;
   const match = await prisma.match.findUnique({ where: { id: matchId }, include: { opportunity: { select: { id: true, tenantId: true } } } });
   if (!match) throw new Error("Not found");
@@ -172,28 +189,36 @@ export async function approveIntroduction(formData: FormData) {
   if (!match || match.humanDecision !== "RECOMMEND") throw new Error("Only a person marked Recommend by a human can be introduced");
   if (d.route === "PERMANENT" && !d.recruitmentPartnerId) throw new Error("Permanent placements are routed through a licensed recruitment partner");
   if (d.recruitmentPartnerId) {
-    const partner = await prisma.partner.findUnique({ where: { id: d.recruitmentPartnerId } });
-    if (!partner || !partner.licensedForPermanent) throw new Error("Selected partner is not licensed for permanent placements");
+    const partner = await ownPartner(user.tenantId, d.recruitmentPartnerId);
+    if (d.route === "PERMANENT" && !partner?.licensedForPermanent) throw new Error("Selected partner is not licensed for permanent placements");
   }
-  const intro = await prisma.introduction.upsert({
-    where: { id: String(formData.get("introductionId") || "new") },
-    create: {
-      tenantId: user.tenantId,
-      opportunityId: d.opportunityId,
-      personId: d.personId,
-      requestedById: user.id,
-      approvedById: user.id,
-      consentStatus: "REQUESTED",
-      status: "APPROVED",
-      route: d.route as EngagementRoute,
-      recruitmentPartnerId: d.recruitmentPartnerId || null,
-      commercialModel: d.commercialModel as CommercialModel,
-      commercialSharePct: d.commercialSharePct ? Number(d.commercialSharePct) : null,
-      commercialValue: d.commercialValue ? Number(String(d.commercialValue).replace(/[^0-9.]/g, "")) : null,
-      notes: d.notes || null,
-    },
-    update: { approvedById: user.id, status: "APPROVED", notes: d.notes || null, commercialModel: d.commercialModel as CommercialModel, commercialSharePct: d.commercialSharePct ? Number(d.commercialSharePct) : null },
-  });
+  const terms = {
+    commercialModel: d.commercialModel as CommercialModel,
+    commercialSharePct: d.commercialSharePct ? Number(d.commercialSharePct) : null,
+  };
+  // An existing introduction is only ever updated when it is this tenant's, for this same
+  // opportunity and person — the id comes from the form and proves nothing by itself.
+  const existingId = String(formData.get("introductionId") || "");
+  const existing = existingId ? await prisma.introduction.findFirst({ where: { id: existingId, tenantId: user.tenantId, opportunityId: d.opportunityId, personId: d.personId } }) : null;
+  if (existingId && !existing) throw new Error("Introduction not found");
+  const intro = existing
+    ? await prisma.introduction.update({ where: { id: existing.id }, data: { approvedById: user.id, status: ["REQUESTED", "DECLINED", "WITHDRAWN"].includes(existing.status) ? "APPROVED" : existing.status, notes: d.notes || null, ...terms } })
+    : await prisma.introduction.create({
+        data: {
+          tenantId: user.tenantId,
+          opportunityId: d.opportunityId,
+          personId: d.personId,
+          requestedById: user.id,
+          approvedById: user.id,
+          consentStatus: "REQUESTED",
+          status: "APPROVED",
+          route: d.route as EngagementRoute,
+          recruitmentPartnerId: d.recruitmentPartnerId || null,
+          ...terms,
+          commercialValue: d.commercialValue ? Number(String(d.commercialValue).replace(/[^0-9.]/g, "")) : null,
+          notes: d.notes || null,
+        },
+      });
   await prisma.opportunity.updateMany({ where: { id: d.opportunityId, status: { in: ["MATCHING", "SHORTLIST"] } }, data: { status: "INTRODUCING" } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "introduction.approve", entityType: "Introduction", entityId: intro.id, metadata: { personId: d.personId, opportunityId: d.opportunityId, route: d.route } });
   revalidatePath(`/opportunities/${d.opportunityId}`);
@@ -203,26 +228,27 @@ export async function approveIntroduction(formData: FormData) {
 
 export async function updateIntroductionStatus(formData: FormData) {
   const user = await requireInternalAction();
-  const id = String(formData.get("introductionId"));
-  const status = String(formData.get("status"));
-  const intro = await prisma.introduction.findUnique({ where: { id } });
+  const d = z.object({ introductionId: z.string().min(1).max(80), status: INTRO_STATUS, consentStatus: CONSENT_STATUS.optional() }).parse(Object.fromEntries(formData));
+  const intro = await prisma.introduction.findUnique({ where: { id: d.introductionId }, include: { person: { select: { privacy: true, referralConsent: true } } } });
   if (!intro) throw new Error("Not found");
   assertSameTenant(user, intro.tenantId);
-  // Releasing a name to a client or agency is an owner/admin decision — a contributor can progress
-  // an introduction but not reveal the person (control: "An owner approves every identity reveal").
-  if (status === "IDENTITY_REVEALED" && !canRevealIdentity(user)) {
-    throw new AuthorizationError("Only an owner or admin can release a person's name.");
+  const back = (notice: string): never => redirect(`/opportunities/${intro.opportunityId}?notice=${notice}`);
+  const consent = d.consentStatus ?? intro.consentStatus;
+  // Every stage from "identity revealed" onwards puts the person's name in front of the client or
+  // agency. Reaching one needs three things: an owner or admin, the person's recorded yes to this
+  // introduction, and their standing permission to be named still in place.
+  const naming = isIntroNamingStatus(d.status);
+  const newlyNamed = naming && !(isIntroNamingStatus(intro.status) && intro.consentStatus === "GRANTED");
+  if (naming) {
+    if (!canRevealIdentity(user)) back("reveal-role");
+    if (consent !== "GRANTED") back("reveal-consent");
+    if (namingBlocked(intro.person)) back("reveal-withdrawn");
   }
-  const consent = formData.get("consentStatus") ? String(formData.get("consentStatus")) : undefined;
   await prisma.introduction.update({
-    where: { id },
-    data: {
-      status: status as never,
-      consentStatus: consent as never,
-      introducedAt: status === "INTRODUCED" ? new Date() : intro.introducedAt,
-    },
+    where: { id: intro.id },
+    data: { status: d.status, consentStatus: consent, introducedAt: d.status === "INTRODUCED" ? new Date() : intro.introducedAt },
   });
-  if (status === "IDENTITY_REVEALED") await audit({ tenantId: user.tenantId, actorId: user.id, action: "identity.reveal", entityType: "Introduction", entityId: id, metadata: { personId: intro.personId, partnerId: intro.recruitmentPartnerId } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: newlyNamed ? "identity.reveal" : "introduction.approve", entityType: "Introduction", entityId: intro.id, metadata: { personId: intro.personId, partnerId: intro.recruitmentPartnerId, status: d.status, consent, from: intro.status } });
   revalidatePath(`/opportunities/${intro.opportunityId}`);
   revalidatePath("/partners");
 }
@@ -261,7 +287,8 @@ export async function removeFromTeam(formData: FormData) {
  */
 export async function draftOutreach(opportunityId: string, personId: string): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
   const user = await requireInternalAction();
-  const opp = await prisma.opportunity.findUnique({ where: { id: opportunityId }, select: { tenantId: true, title: true, engagementRoute: true, requiredCapabilities: true, preferredCapabilities: true } });
+  if (!(await rateLimit("ai", `outreach:${user.id}`)).success) return { ok: false, error: "Too many drafts at once. Wait a moment and try again." };
+  const opp = await prisma.opportunity.findUnique({ where: { id: String(opportunityId) }, select: { tenantId: true, title: true, engagementRoute: true, requiredCapabilities: true, preferredCapabilities: true } });
   if (!opp) return { ok: false, error: "Opportunity not found." };
   assertSameTenant(user, opp.tenantId);
   const person = await prisma.person.findUnique({ where: { id: personId }, select: { tenantId: true, firstName: true, lastName: true, relationships: { select: { workedTogether: true } } } });

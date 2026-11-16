@@ -1,6 +1,9 @@
 import { requireUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal, redactForPartner, containsForbiddenPartnerFields } from "@/lib/authz";
+import { partnerRef } from "@/lib/refs";
+import { mayShowCard, shortlistNameVisible } from "@/lib/reveal";
+import { partnerHidden } from "@/lib/privacy";
 import { EmptyState } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +12,8 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Button } from "@/components/ui/button";
 import { DateText } from "@/components/domain/date";
 import { BriefChips, ReadCard, AnonCard, KIND_LABEL } from "@/components/domain/demand";
-import { portalSubmitBrief, portalRespond, portalAcceptTerms, toDomain } from "@/server/actions/demand";
+import { portalSubmitBrief, portalRespond, portalAcceptTerms } from "@/server/actions/demand";
+import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard } from "@/server/queries";
 import { resolvePortalAccount } from "@/server/queries";
 import { parseBrief, fmt, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, type HardCheck, type Terms, type RateCard } from "@/lib/demand";
@@ -47,8 +51,8 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
     loadRateCard(account.tenantId),
   ]);
   const preview = sp.q?.trim() ? parseBrief(sp.q) : null;
-  const proposedCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision)).length, 0);
-  const introCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => ["INTRODUCED", "PLACED"].includes(s.decision)).length, 0);
+  const proposedCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision) && mayShowCard(s.person)).length, 0);
+  const introCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => shortlistNameVisible(s, s.person)).length, 0);
 
   return (
     <>
@@ -85,8 +89,8 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           </Card>
 
           {briefs.length === 0 ? <EmptyState title="No requirements yet" description="Send your first one above." /> : await Promise.all(briefs.map(async (b) => {
-            const d = await toDomain(b);
-            const items = b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision));
+            const d = toDomain(b);
+            const items = b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision) && mayShowCard(s.person));
             return (
               <Card key={b.id}>
                 <CardHeader title={b.title} description={<>{BRIEF_STATUS_LABELS[b.status]} · sent <DateText date={b.createdAt} relative /></>} />
@@ -97,12 +101,13 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
                   <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mt-4 mb-1">People we propose</div>
                   {items.length === 0 ? <div className="text-xs text-ink-muted">{b.status === "NEW" ? "Received. We are reading it now." : "Searching the network. You will see anonymised cards here first."}</div> : (
                     <ul>{items.map((s) => {
-                      const safe = redactForPartner({ ...s.person, tenantId: b.tenantId, evidence: s.person.evidence, relationships: s.person.relationships });
+                      const hidden = partnerHidden({ privacy: s.person.privacy as never });
+                      const safe = redactForPartner({ ...s.person, tenantId: b.tenantId, evidence: s.person.evidence, relationships: s.person.relationships }, { ref: partnerRef(account.id, s.person.id), hideRegion: hidden.region });
                       const leaked = containsForbiddenPartnerFields(safe);
                       if (leaked.length) throw new Error(`Portal redaction failed: ${leaked.join(", ")}`);
                       const checks = s.checks as HardCheck[];
-                      const revealed = ["INTRODUCED", "PLACED"].includes(s.decision);
-                      return <AnonCard key={s.id} refCode={safe.ref} headline={safe.headlineSummary || "Profile"} region={safe.region} availabilityBand={safe.availabilityBand} evidenceSummary={safe.evidenceSummary} rights={checks.find((c) => c.label === "Work rights")} rateStated={s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={revealed ? fullName(s.person) : null}
+                      const revealed = shortlistNameVisible(s, s.person);
+                      return <AnonCard key={s.id} refCode={safe.ref} headline={safe.headlineSummary || "Profile"} region={safe.region} availabilityBand={safe.availabilityBand} evidenceSummary={safe.evidenceSummary} rights={checks.find((c) => c.label === "Work rights")} rateStated={hidden.rateBand ? null : s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={revealed ? fullName(s.person) : null}
                         actions={s.decision === "PROPOSED" ? <><form action={portalRespond}><input type="hidden" name="itemId" value={s.id} /><input type="hidden" name="response" value="interested" /><SubmitButton size="sm" pendingText="…">Interested — request an introduction</SubmitButton></form><form action={portalRespond}><input type="hidden" name="itemId" value={s.id} /><input type="hidden" name="response" value="pass" /><Button size="sm" variant="ghost" type="submit">Not for us</Button></form></> : s.decision === "CLIENT_INTERESTED" ? <span className="text-[12px] text-ink-muted">Introduction requested. We are asking the person for consent{b.termsAccepted ? "" : " — accept the terms above to proceed"}.</span> : null} />;
                     })}</ul>
                   )}

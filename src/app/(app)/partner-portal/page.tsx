@@ -1,7 +1,10 @@
 import { requireUser } from "@/server/session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { isPartner, redactForPartner, containsForbiddenPartnerFields, opaqueRef } from "@/lib/authz";
+import { isPartner, redactForPartner, containsForbiddenPartnerFields } from "@/lib/authz";
+import { partnerRef, opaqueKey } from "@/lib/refs";
+import { introNameVisible, mayShowCard } from "@/lib/reveal";
+import { partnerHidden } from "@/lib/privacy";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Chip } from "@/components/ui/badge";
@@ -22,20 +25,28 @@ export const metadata = { title: "Partner portal" };
 export default async function PartnerPortal() {
   const user = await requireUser();
   if (!isPartner(user)) redirect("/forbidden");
-  const partner = await prisma.partner.findUnique({ where: { tenantId: user.tenantId }, include: { requirements: { orderBy: { createdAt: "desc" } }, introductions: { include: { opportunity: { select: { title: true } }, person: { select: { id: true, firstName: true, lastName: true, headline: true } } } } } });
+  const partner = await prisma.partner.findUnique({ where: { tenantId: user.tenantId }, include: { requirements: { orderBy: { createdAt: "desc" } }, introductions: { orderBy: { createdAt: "desc" }, include: { opportunity: { select: { title: true } }, person: { select: { id: true, firstName: true, lastName: true, privacy: true, referralConsent: true } } } } } });
   if (!partner) redirect("/forbidden");
+  const networkTenantId = partner.networkTenantId;
 
   const results = await Promise.all(
     partner.requirements.map(async (r) => {
-      if (!r.linkedOpportunityId || !["RESULTS_SHARED", "INTRO_REQUESTED"].includes(r.status)) return { requirement: r, results: [] as ReturnType<typeof redactForPartner>[] };
-      const opp = await prisma.opportunity.findUnique({ where: { id: r.linkedOpportunityId }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: { select: { evidenceType: true, visibility: true, description: true, context: true } } } } } } } });
-      const safe = opp ? opp.matches.map((m) => redactForPartner(m.person)) : [];
+      if (!networkTenantId || !r.linkedOpportunityId || !["RESULTS_SHARED", "INTRO_REQUESTED"].includes(r.status)) return { requirement: r, results: [] as ReturnType<typeof redactForPartner>[] };
+      const opp = await prisma.opportunity.findFirst({ where: { id: r.linkedOpportunityId, tenantId: networkTenantId }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: { select: { evidenceType: true, visibility: true, description: true, context: true } } } } } } } });
+      // Only people who are happy to be shown anonymously; the reference is keyed to this agency.
+      const safe = opp ? opp.matches.filter((m) => mayShowCard(m.person)).map((m) => redactForPartner(m.person, { ref: partnerRef(partner.id, m.person.id), hideRegion: partnerHidden({ privacy: m.person.privacy as never }).region })) : [];
       const leaks = containsForbiddenPartnerFields(safe);
       if (leaks.length) throw new Error(`Partner data boundary violated: ${leaks.join(", ")}`);
       return { requirement: r, results: safe };
     }),
   );
-  const [audit] = await Promise.all([prisma.auditLog.findMany({ where: { tenantId: user.tenantId }, orderBy: { createdAt: "desc" }, take: 15 })]);
+  const audit = await prisma.auditLog.findMany({ where: { tenantId: user.tenantId }, select: { id: true, action: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 15 });
+  // What reaches the page about an introduction: a name only when it may be shown, otherwise the
+  // same keyed reference as the card. Never a database id.
+  const intros = partner.introductions.map((i) => {
+    const revealed = introNameVisible(i, i.person);
+    return { key: opaqueKey(partner.id, i.id), revealed, label: revealed ? `${i.person.firstName} ${i.person.lastName}` : partnerRef(partner.id, i.person.id), title: i.opportunity.title, route: i.route, status: i.status };
+  });
 
   return (
     <>
@@ -77,8 +88,8 @@ export default async function PartnerPortal() {
           <Card>
             <CardHeader title="Your introductions" description="Names appear only once identity has been revealed with consent." />
             <CardBody>
-              {partner.introductions.length === 0 ? <div className="text-xs text-ink-faint">None yet.</div> : (
-                <ul className="space-y-2">{partner.introductions.map((i) => { const revealed = ["IDENTITY_REVEALED", "INTRODUCED", "IN_PROGRESS", "ENGAGED"].includes(i.status); return <li key={i.id} className="text-xs border border-line rounded-md px-2.5 py-2 flex items-center justify-between gap-2"><div><div className="font-medium text-[13px]">{revealed ? `${i.person.firstName} ${i.person.lastName}` : <span className="font-mono text-navy">{opaqueRef(i.person.id)}</span>}</div><div className="text-ink-faint">{i.opportunity.title} · {ROUTE_LABELS[i.route]}</div></div><Badge tone={revealed ? "teal" : "amber"}>{i.status.toLowerCase().replace(/_/g, " ")}</Badge></li>; })}</ul>
+              {intros.length === 0 ? <div className="text-xs text-ink-faint">None yet.</div> : (
+                <ul className="space-y-2">{intros.map((i) => <li key={i.key} className="text-xs border border-line rounded-md px-2.5 py-2 flex items-center justify-between gap-2"><div><div className="font-medium text-[13px]">{i.revealed ? i.label : <span className="font-mono text-navy">{i.label}</span>}</div><div className="text-ink-faint">{i.title} · {ROUTE_LABELS[i.route]}</div></div><Badge tone={i.revealed ? "teal" : "amber"}>{i.revealed ? i.status.toLowerCase().replace(/_/g, " ") : ["REQUESTED", "DECLINED", "WITHDRAWN"].includes(i.status) ? i.status.toLowerCase() : "awaiting consent"}</Badge></li>)}</ul>
               )}
             </CardBody>
           </Card>

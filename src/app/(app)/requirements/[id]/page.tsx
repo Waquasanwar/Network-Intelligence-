@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireInternal } from "@/server/session";
+import { requireInternal, getUser } from "@/server/session";
 import { prisma } from "@/lib/db";
+import { Notice } from "@/components/ui/notice";
 import { PageHeader, EmptyState, Score, Section } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,30 +16,35 @@ import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { EditBriefDrawer, AddFeeDrawer } from "@/components/domain/demand-drawers";
 import { BriefChips, CheckList, TierBadge, ShortlistBadge, BriefStatusBadge, FeeStatusBadge, FeeBox, AnonCard, routeLabel, budgetLabel, KIND_LABEL } from "@/components/domain/demand";
-import { findForBrief, decideShortlist, setBriefStatus, saveBriefTerms, setFeeStatus, toDomain } from "@/server/actions/demand";
+import { findForBrief, decideShortlist, setBriefStatus, saveBriefTerms, setFeeStatus } from "@/server/actions/demand";
+import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard } from "@/server/queries";
 import { estimateFee, fmt, PORTAL_VISIBLE, FEE_MODEL_LABELS, SHORTLIST_LABELS, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS, type HardCheck } from "@/lib/demand";
 import type { MatchResult } from "@/lib/matching";
 import { redactForPartner } from "@/lib/authz";
+import { partnerRef } from "@/lib/refs";
+import { partnerHidden } from "@/lib/privacy";
 import { SENIORITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const b = await prisma.brief.findUnique({ where: { id }, select: { title: true } });
+  const viewer = await getUser();
+  const b = viewer ? await prisma.brief.findFirst({ where: { id, tenantId: viewer.tenantId }, select: { title: true } }) : null;
   return { title: b?.title ?? "Requirement" };
 }
 
 const TIER_ORDER: Record<string, number> = { meets: 0, conversation: 1, stretch: 2 };
 
-export default async function RequirementPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function RequirementPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notice?: string }> }) {
+  const { notice } = await searchParams;
   const user = await requireInternal();
   const { id } = await params;
   const b = await prisma.brief.findUnique({ where: { id }, include: { account: true, shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: true } } } }, pitches: { include: { person: { select: { id: true, firstName: true, lastName: true, headline: true } } } }, referrals: { include: { referrer: { select: { firstName: true, lastName: true } } } }, feeLines: { include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } } } });
   if (!b || b.tenantId !== user.tenantId) notFound();
   const [card, audit] = await Promise.all([loadRateCard(user.tenantId), prisma.auditLog.findMany({ where: { tenantId: user.tenantId, entityId: id }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 8 })]);
-  const d = await toDomain(b);
+  const d = toDomain(b);
   const est = estimateFee(d, d.terms, card, d.expertHours);
   const items = b.shortlist.slice().sort((x, y) => TIER_ORDER[x.tier] - TIER_ORDER[y.tier] || y.fitScore - x.fitScore);
   const visible = items.filter((s) => PORTAL_VISIBLE.includes(s.decision));
@@ -47,6 +53,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
 
   return (
     <>
+      <Notice code={notice} />
       <PageHeader
         eyebrow={`${KIND_LABEL[b.account.kind]} · ${b.account.name}`}
         title={b.title}
@@ -92,6 +99,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
                         <Field label="Decision"><Select name="decision" defaultValue={s.decision}>{Object.entries(SHORTLIST_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
                         <Field label="Note for the client (anonymised card)"><Input name="clientNote" defaultValue={s.clientNote ?? ""} placeholder="Why this person, in a sentence they can read." /></Field>
                         <SubmitButton variant="secondary" pendingText="…">Save</SubmitButton>
+                        {s.person.referralConsent === "yes" || ["INTRODUCED", "PLACED"].includes(s.decision) ? null : <label className="md:col-span-3 flex items-center gap-2 text-[12.5px] text-ink-muted cursor-pointer"><input type="checkbox" name="consentConfirmed" className="h-3.5 w-3.5 rounded border-line-strong accent-navy" /> They have agreed to this introduction. Needed before choosing Introduced or Placed, which gives the client their name.</label>}
                       </form>
                     </CardBody>
                   </Card>
@@ -137,7 +145,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
             <CardBody>
               {visible.length === 0 ? <div className="text-xs text-ink-muted">Nothing yet. Mark someone as <b>Proposed to client</b> and an anonymised card appears here and in their portal.</div> : (
                 <>
-                  <ul>{visible.map((s) => { const x = redactForPartner({ ...s.person, tenantId: b.tenantId, evidence: s.person.evidence, relationships: s.person.relationships }); const checks = s.checks as HardCheck[]; return <AnonCard key={s.id} refCode={x.ref} headline={x.headlineSummary || s.person.headline || "Profile"} region={x.region} availabilityBand={x.availabilityBand} evidenceSummary={x.evidenceSummary} rights={checks.find((c) => c.label === "Work rights")} rateStated={s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={b.account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={placedOrIntroduced(s.decision) ? fullName(s.person) : null} />; })}</ul>
+                  <ul>{visible.map((s) => { const x = redactForPartner({ ...s.person, tenantId: b.tenantId, evidence: s.person.evidence, relationships: s.person.relationships }, { ref: partnerRef(b.accountId, s.person.id), hideRegion: partnerHidden({ privacy: s.person.privacy as never }).region }); const checks = s.checks as HardCheck[]; return <AnonCard key={s.id} refCode={x.ref} headline={x.headlineSummary || s.person.headline || "Profile"} region={x.region} availabilityBand={x.availabilityBand} evidenceSummary={x.evidenceSummary} rights={checks.find((c) => c.label === "Work rights")} rateStated={s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={b.account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={placedOrIntroduced(s.decision) ? fullName(s.person) : null} />; })}</ul>
                   <Link href={`/portal?account=${b.accountId}`} className="text-[12px] text-navy hover:underline underline-offset-4 mt-2 inline-block">Open the portal as {b.account.name} →</Link>
                 </>
               )}

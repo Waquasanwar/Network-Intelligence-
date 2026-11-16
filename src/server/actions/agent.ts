@@ -1,5 +1,6 @@
 "use server";
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 import { requireInternalAction } from "@/server/session";
 import { getAIProvider } from "@/lib/ai";
 import { textSearchClauses } from "@/server/network-search";
@@ -30,6 +31,7 @@ const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLow
 export async function askNetwork(query: string): Promise<AgentAnswer> {
   const user = await requireInternalAction();
   const q = String(query ?? "").trim().slice(0, 300);
+  if (!(await rateLimit("ai", `ask:${user.id}`)).success) return { ok: false, error: "That is a lot of questions at once. Give it a moment and ask again." };
   if (q.length < 2) return { ok: false, error: "Ask about a skill, a place or a kind of work — for example “cyber lead in Dubai, available now”." };
 
   const now = new Date();

@@ -68,6 +68,7 @@ async function main() {
   console.log("Seeding…");
   await prisma.$transaction([
     prisma.auditLog.deleteMany(),
+    prisma.invite.deleteMany(),
     prisma.pitch.deleteMany(),
     prisma.referral.deleteMany(),
     prisma.vouch.deleteMany(),
@@ -112,6 +113,7 @@ async function main() {
   const partner = await prisma.partner.create({
     data: {
       tenantId: partnerTenant.id,
+      networkTenantId: founderTenant.id,
       name: "Harbour Search",
       contactName: "Jo Harbour",
       contactEmail: "partner@harboursearch.local",
@@ -128,6 +130,7 @@ async function main() {
   await prisma.partner.create({
     data: {
       tenantId: (await prisma.tenant.create({ data: { slug: "gulf-talent-partners", name: "Gulf Talent Partners", type: "RECRUITMENT_PARTNER" } })).id,
+      networkTenantId: founderTenant.id,
       name: "Gulf Talent Partners",
       contactName: "Omar Siddiqui",
       subscriptionStatus: "TRIAL",

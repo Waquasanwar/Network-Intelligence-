@@ -5,7 +5,9 @@ import { prisma } from "@/lib/db";
 import { isInternal, redactForPartner } from "@/lib/authz";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { InviteLinkButton } from "@/components/domain/invite-link-button";
+import { InviteComposer, MyLinkShare, CopyInviteLink } from "@/components/domain/invite-share";
+import { revokeInvite } from "@/server/actions/invites";
+import { mayInvite } from "@/server/invites";
 import { Badge, Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea, Field, Checkbox } from "@/components/ui/form";
@@ -16,7 +18,8 @@ import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { TrustCard, FitCard, ScreeningBadge } from "@/components/domain/trust";
 import { BookScreeningDrawer, PitchDrawer } from "@/components/domain/member-drawers";
-import { trustFor, fitFor, startScreening, setConsent, submitReferral } from "@/server/actions/members";
+import { startScreening, setConsent, submitReferral } from "@/server/actions/members";
+import { trustFor, fitFor } from "@/lib/trust-for";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
 import { privacyOf, privacySummary } from "@/lib/privacy";
@@ -42,12 +45,16 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   if (!base) return <EmptyState title="No member profile" description={internal ? "Nobody has joined as a member yet. Share the join link." : "Your login is not linked to a profile yet. Ask your contact at Network Intelligence."} />;
   const p = await prisma.person.findUnique({ where: { id: base.id }, include: { ...TRUST_INCLUDE, referralsMade: { include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } }, pitches: { include: { brief: { select: { id: true, roles: true } } } } } });
   if (!p) redirect("/forbidden");
-  const [members, open] = await Promise.all([
+  const [members, open, myInvites] = await Promise.all([
     internal ? prisma.person.findMany({ where: { tenantId: p.tenantId, memberSince: { not: null } }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }) : Promise.resolve([]),
-    prisma.brief.findMany({ where: { tenantId: p.tenantId, openToMembers: true, status: { notIn: ["FILLED", "CLOSED"] } }, orderBy: { updatedAt: "desc" } }),
+    // Members read the summary written for them — select only what the card shows, never the client's own words or terms.
+    prisma.brief.findMany({ where: { tenantId: p.tenantId, openToMembers: true, memberSummary: { not: null }, status: { notIn: ["FILLED", "CLOSED"] } }, select: { id: true, roles: true, headcount: true, engagementRoute: true, locations: true, sectors: true, capabilities: true, workRights: true, memberSummary: true }, orderBy: { updatedAt: "desc" } }),
+    prisma.invite.findMany({ where: { inviterPersonId: p.id }, select: { id: true, name: true, status: true, expiresAt: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 25 }),
   ]);
+  const canInvite = mayInvite(p);
+  const now = new Date();
   const tab = sp.tab ?? "home";
-  const t = await trustFor(p); const fit = await fitFor(p);
+  const t = trustFor(p, isInternal(user) ? "internal" : "self"); const fit = fitFor(p);
   const screened = p.screeningStatus === "APPROVED" || !!p.screenedAt; const submitted = p.screeningStatus === "SUBMITTED";
   const anon = redactForPartner({ ...p, evidence: p.evidence, relationships: p.relationships });
   const highlights = fitHighlights(fit); const band = rateBand(p.rateExpectation ?? p.salaryExpectation);
@@ -58,7 +65,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
     <Card key={b.id}>
       <CardBody className="pt-4">
         <div className="flex items-start justify-between gap-3"><div><div className="text-[14px] font-semibold">{b.roles[0] ?? "Requirement"}{b.headcount > 1 ? ` × ${b.headcount}` : ""}</div><div className="text-[12px] text-ink-faint">{b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"} · {b.locations.join(" / ") || "location flexible"} · {b.sectors.join(", ") || "any sector"}</div></div><Badge filled>client name hidden</Badge></div>
-        <p className="text-[13.5px] leading-6 my-2.5">{b.memberSummary ?? b.rawText}</p>
+        <p className="text-[13.5px] leading-6 my-2.5">{b.memberSummary}</p>
         <div className="flex flex-wrap gap-1 mb-3">{b.capabilities.map((c) => <Chip key={c}>{c}</Chip>)}{b.workRights ? <Chip>{b.workRights}</Chip> : null}</div>
         <div className="flex flex-wrap items-center gap-2">{pitched ? <Badge tone={pitched.status === "SHORTLISTED" ? "teal" : "navy"} filled>You pitched · {PITCH_STATUS[pitched.status]}</Badge> : screened ? <PitchDrawer briefId={b.id} asPersonId={internal ? p.id : undefined} summary={summary} /> : <small className="text-ink-faint">Complete your screening to pitch.</small>}<Link href={`/member?tab=refer&for=${b.id}${internal ? `&person=${p.id}` : ""}`}><Button size="sm" variant="secondary" type="button">Refer someone</Button></Link>{refd ? <Badge tone="teal" filled>{refd} referred</Badge> : null}</div>
       </CardBody>
@@ -88,13 +95,27 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
         </CardBody>
       </Card>
 
-      <Tabs items={[{ key: "home", label: "Home" }, { key: "opportunities", label: "Opportunities", count: open.length }, { key: "refer", label: "Refer someone" }, { key: "privacy", label: "Privacy & data" }]} current={tab} base={internal ? `/member?person=${p.id}` : "/member"} />
+      <Tabs items={[{ key: "home", label: "Home" }, { key: "opportunities", label: "Opportunities", count: open.length }, { key: "refer", label: "Invite and refer" }, { key: "privacy", label: "Privacy & data" }]} current={tab} base={internal ? `/member?person=${p.id}` : "/member"} />
 
       {tab === "opportunities" ? (
         <><div className="mb-3"><h2 className="text-[15px] font-semibold">Opportunities open to members</h2><p className="text-[12.5px] text-ink-muted">Anonymised. Pitch with your own profile, or refer someone you would put your name behind. You are only ever named to a client with your consent.</p></div>{open.length ? <div className="space-y-3">{open.map((b) => <OppCard key={b.id} b={b} />)}</div> : <EmptyState title="Nothing open right now" description="When a requirement is opened to members, it appears here." />}</>
       ) : tab === "refer" ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2"><Card><CardHeader title="Refer someone" description="This is what makes the network compound." action={<InviteLinkButton asPersonId={internal ? p.id : undefined} />} /><CardBody>
+          <div className="xl:col-span-2 space-y-4">
+            <Card>
+              <CardHeader title="Invite someone yourself" description="Send them your link and they can join straight away. They are shown as invited by you." />
+              <CardBody>
+                {canInvite ? (
+                  <div className="space-y-6">
+                    <div><div className="label-caps text-ink-faint mb-2.5">Your link, for anyone you trust</div><MyLinkShare asPersonId={internal ? p.id : undefined} network={user.tenantName} from={p.preferredName ?? p.firstName} /></div>
+                    <div className="border-t border-line pt-5"><div className="label-caps text-ink-faint mb-3">Or invite one person by name</div><InviteComposer asPersonId={internal ? p.id : undefined} network={user.tenantName} from={p.preferredName ?? p.firstName} /></div>
+                  </div>
+                ) : (
+                  <EmptyState title="Available once you are approved" description={submitted ? "Your screening is with us for review. As soon as it is approved you get your own invitation link here." : `Have your ${SCREENING_MINUTES}-minute screening first. Once a person has reviewed it, you can bring in people you would stand behind.`} />
+                )}
+              </CardBody>
+            </Card>
+            <Card><CardHeader title="Recommend someone to us" description="Tell us about someone good and we will take it from there." /><CardBody>
             <form action={submitReferral} className="space-y-4">
               {internal ? <input type="hidden" name="asPersonId" value={p.id} /> : null}
               <p className="text-[12.5px] text-ink-muted">Only people you would genuinely stand behind. Your referral is anonymous to clients; we tell the person you sent them only if you say we can.</p>
@@ -105,7 +126,10 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
               <div className="flex justify-end"><SubmitButton pendingText="Sending…">Send referral</SubmitButton></div>
             </form>
           </CardBody></Card></div>
+          <div className="space-y-4">
           <Card><CardHeader title="Your referrals" description={`${accepted} accepted into the network`} /><CardBody>{p.referralsMade.length ? <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.map((r) => <li key={r.id} className="py-2 first:pt-0 last:pb-0"><div className="flex justify-between gap-2"><b>{r.name}</b><Badge tone={r.status === "ACCEPTED" ? "teal" : r.status === "DECLINED" ? "neutral" : "amber"} filled>{REF_STATUS[r.status]}</Badge></div><div className="text-ink-muted">{r.context}</div></li>)}</ul> : <div className="text-xs text-ink-muted">None yet.</div>}</CardBody></Card>
+          <Card><CardHeader title="Your invitations" description={`${myInvites.filter((i) => i.status === "JOINED").length} joined`} /><CardBody>{myInvites.length ? <ul className="divide-y divide-line">{myInvites.map((i) => { const open = (i.status === "SENT" || i.status === "OPENED") && i.expiresAt > now; return <li key={i.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between gap-2"><b className="text-[13.5px]">{i.name}</b><Badge tone={i.status === "JOINED" ? "teal" : open ? (i.status === "OPENED" ? "navy" : "amber") : "neutral"} filled={i.status === "JOINED"}>{i.status === "JOINED" ? "Joined" : i.status === "REVOKED" ? "Cancelled" : !open ? "Expired" : i.status === "OPENED" ? "Opened" : "Sent"}</Badge></div>{open ? <div className="mt-2 flex items-center gap-2"><CopyInviteLink inviteId={i.id} /><form action={revokeInvite}><input type="hidden" name="inviteId" value={i.id} /><SubmitButton size="sm" variant="ghost" pendingText="…">Cancel</SubmitButton></form></div> : null}</li>; })}</ul> : <div className="text-[12.5px] text-ink-muted">Nobody invited yet.</div>}</CardBody></Card>
+          </div>
         </div>
       ) : tab === "privacy" ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

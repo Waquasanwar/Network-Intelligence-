@@ -3,6 +3,7 @@ import { TrustMini } from "@/components/domain/trust";
 import { trustScore } from "@/lib/trust";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 import { getAIProvider } from "@/lib/ai";
 import { textSearchClauses } from "@/server/network-search";
 import { assessFreshness } from "@/lib/availability";
@@ -37,7 +38,10 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
   }
 
   // Natural-language search: the AI provider turns the query into structured intent (heuristic provider offline).
-  const intent = filters.q ? await getAIProvider().parseSearch(filters.q) : null;
+  // Capped per person; over the cap the search still runs, on the words as typed.
+  const q = filters.q ? String(filters.q).slice(0, 300) : "";
+  if (q) filters = { ...filters, q };
+  const intent = q && (await rateLimit("ai", `search:${user.id}`)).success ? await getAIProvider().parseSearch(q) : null;
 
   const where: Prisma.PersonWhereInput = { tenantId: user.tenantId };
   const and: Prisma.PersonWhereInput[] = [];

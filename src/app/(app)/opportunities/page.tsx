@@ -17,7 +17,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   const view = sp.view === "board" ? "board" : "list";
   const [opps, partners] = await Promise.all([
     prisma.opportunity.findMany({ where: { tenantId: user.tenantId, ...(sp.route ? { engagementRoute: sp.route as never } : {}), ...(sp.source ? { sourceType: sp.source as never } : {}) }, include: { matches: { select: { humanDecision: true } }, introductions: { select: { status: true } }, partner: { select: { name: true } } }, orderBy: { updatedAt: "desc" } }),
-    prisma.partner.findMany({ select: { id: true, name: true } }),
+    prisma.partner.findMany({ where: { networkTenantId: user.tenantId }, select: { id: true, name: true } }),
   ]);
 
 

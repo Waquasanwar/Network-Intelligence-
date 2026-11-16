@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
+import { limitOrThrow } from "@/lib/rate-limit";
 import { requireInternalAction } from "@/server/session";
 import { getAIProvider, ExtractedSummarySchema } from "@/lib/ai";
 import { getSchedulingProvider } from "@/lib/scheduling";
@@ -25,7 +26,7 @@ const scheduleSchema = z.object({
   provider: z.enum(["MANUAL", "MICROSOFT_GRAPH", "CALENDLY"]).default("MANUAL"),
   startAt: z.string().min(1),
   durationMinutes: z.coerce.number().int().min(15).max(240).default(45),
-  meetingType: z.string().default("INTRO_CALL"),
+  meetingType: z.enum(["SCREENING", "INTRO_CALL", "CATCH_UP", "OPPORTUNITY_DISCUSSION", "REFERENCE", "IN_PERSON", "MESSAGE_THREAD"]).default("INTRO_CALL"),
   timezone: z.string().default("Europe/London"),
 });
 
@@ -63,7 +64,7 @@ const captureSchema = z.object({
   personId: z.string(),
   scheduledEventId: z.string().optional().or(z.literal("")),
   date: z.string().optional(),
-  type: z.string().default("CATCH_UP"),
+  type: z.enum(["SCREENING", "INTRO_CALL", "CATCH_UP", "OPPORTUNITY_DISCUSSION", "REFERENCE", "IN_PERSON", "MESSAGE_THREAD"]).default("CATCH_UP"),
   rawNotes: z.string().max(20000).optional(),
   transcript: z.string().max(200000).optional(),
   consentReference: z.string().max(120).optional(),
@@ -76,6 +77,11 @@ export async function captureConversation(formData: FormData) {
   const d = captureSchema.parse(Object.fromEntries(formData));
   const person = await ownedPerson(user.tenantId, d.personId);
   if (!d.rawNotes && !d.transcript) throw new Error("Add notes or a transcript");
+  // A booked meeting can only be closed off by a conversation with that same person, in this network.
+  const scheduled = d.scheduledEventId ? await prisma.scheduledConversation.findFirst({ where: { id: d.scheduledEventId, tenantId: user.tenantId, personId: person.id }, select: { id: true, conversation: { select: { id: true } } } }) : null;
+  if (d.scheduledEventId && !scheduled) throw new Error("That booking was not found");
+  const scheduledEventId = scheduled && !scheduled.conversation ? scheduled.id : null;
+  await limitOrThrow("ai", `capture:${user.id}`);
 
   let aiSummary: Prisma.InputJsonValue | undefined;
   if (d.runAI !== false) {
@@ -86,7 +92,7 @@ export async function captureConversation(formData: FormData) {
     data: {
       personId: person.id,
       conductedById: user.id,
-      scheduledEventId: d.scheduledEventId || null,
+      scheduledEventId,
       date: d.date ? new Date(d.date) : new Date(),
       type: d.type as ConversationType,
       rawNotes: d.rawNotes || null,
@@ -96,7 +102,7 @@ export async function captureConversation(formData: FormData) {
       consentReference: d.consentReference || null,
     },
   });
-  if (d.scheduledEventId) await prisma.scheduledConversation.update({ where: { id: d.scheduledEventId }, data: { status: "COMPLETED" } }).catch(() => null);
+  if (scheduled) await prisma.scheduledConversation.update({ where: { id: scheduled.id }, data: { status: "COMPLETED" } });
   await prisma.relationship.updateMany({ where: { personId: person.id, networkOwnerId: user.id }, data: { lastContactDate: new Date() } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: d.transcript ? "conversation.transcript" : "conversation.create", entityType: "Conversation", entityId: conv.id, metadata: { personId: person.id, ai: Boolean(aiSummary) } });
   if (aiSummary) await audit({ tenantId: user.tenantId, actorId: user.id, action: "summary.generate", entityType: "Conversation", entityId: conv.id, metadata: { provider: getAIProvider().name } });
@@ -111,6 +117,7 @@ export async function regenerateSummary(formData: FormData) {
   const conv = await prisma.conversation.findUnique({ where: { id }, include: { person: true } });
   if (!conv) throw new Error("Not found");
   assertSameTenant(user, conv.person.tenantId);
+  await limitOrThrow("ai", `capture:${user.id}`);
   const summary = await getAIProvider().structureConversation({ personName: fullName(conv.person), notes: conv.rawNotes, transcript: conv.transcript });
   await prisma.conversation.update({ where: { id }, data: { aiSummary: summary as unknown as Prisma.InputJsonValue, approvalStatus: "NEEDS_REVIEW" } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "summary.generate", entityType: "Conversation", entityId: id });
@@ -218,5 +225,6 @@ export async function cancelScheduled(formData: FormData) {
     try { await getSchedulingProvider(sc.provider, async () => null).cancelMeeting(sc.externalEventId); } catch { /* recorded below regardless */ }
   }
   await prisma.scheduledConversation.update({ where: { id }, data: { status: "CANCELLED" } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "conversation.schedule", entityType: "ScheduledConversation", entityId: id, metadata: { cancelled: true, personId: sc.personId } });
   revalidatePath("/conversations");
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
+import { limitOrThrow } from "@/lib/rate-limit";
 import { requireUser } from "@/server/session";
 import { resolveMemberPerson } from "@/server/queries";
 import { CONSENTS, privacyOf, type Consents, type ConsentKey, type Privacy } from "@/lib/privacy";
@@ -26,17 +27,42 @@ function writePrivacy(current: Privacy, patch: Partial<Privacy>): Prisma.InputJs
   return { ...current, ...patch, consents: { ...current.consents, ...(patch.consents ?? {}) } } as unknown as Prisma.InputJsonValue;
 }
 
-/** A machine-readable copy of everything we hold about this person — their right to portability. */
+/**
+ * A machine-readable copy of what we hold about this person — their right to portability.
+ *
+ * What a member downloads for themselves is their own data: their profile, what they told us, the
+ * vouches given for them, where they have been put forward, and their own referrals and pitches.
+ * It does not include the team's private working notes or anything recorded in confidence by
+ * someone else (a caution, a reference). Those are released through a reviewed request to the
+ * network, where each can be checked for other people's information first — the export says so.
+ */
 export async function exportMyData(asPersonId?: string): Promise<string> {
   const user = await requireUser();
-  const me = await selfPerson(user, asPersonId);
+  const me = await selfPerson(user, typeof asPersonId === "string" ? asPersonId : null);
+  await limitOrThrow("mutate", `export:${user.id}`);
   const person = await prisma.person.findUnique({
     where: { id: me.id },
-    include: { relationships: true, evidence: true, conversations: true, vouches: true, referralsMade: true, pitches: true, relocationProfile: true },
+    include: {
+      relationships: { select: { relationshipType: true, sourceType: true, workedTogether: true, yearsKnown: true, lastContactDate: true, createdAt: true } },
+      evidence: { where: { evidenceType: { not: "CAUTION" }, visibility: { not: "PRIVATE" } }, select: { evidenceType: true, context: true, description: true, createdAt: true } },
+      conversations: { where: { approvalStatus: { in: ["APPROVED", "NEEDS_REVIEW", "DRAFT"] }, type: "SCREENING" }, select: { date: true, type: true, screening: true, approvalStatus: true } },
+      vouches: { select: { context: true, statement: true, wouldRecommend: true, voucherKind: true, createdAt: true } },
+      referralsMade: { select: { name: true, email: true, context: true, note: true, status: true, createdAt: true } },
+      pitches: { select: { note: true, status: true, createdAt: true, brief: { select: { memberSummary: true, engagementRoute: true } } } },
+      shortlistItems: { select: { decision: true, createdAt: true, brief: { select: { engagementRoute: true, locations: true } } } },
+      relocationProfile: true,
+    },
   });
   if (!person) throw new Error("Not found");
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "person.export", entityType: "Person", entityId: me.id, metadata: { self: true } });
-  return JSON.stringify({ exportedAt: new Date().toISOString(), person }, null, 2);
+  // Internal fields that are not the person's own data to take away.
+  const { tenantId: _t, id: _i, nextAction: _n, nextActionDate: _d, amanaBench: _a, usedByAmana: _u, ...profile } = person;
+  void _t; void _i; void _n; void _d; void _a; void _u;
+  return JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    about: "Your profile, what you told us, vouches given for you, where you have been put forward, and your own referrals and pitches. Notes the team keeps for its own work, and anything given to us in confidence by someone else, are not in this file. Ask us and we will review and send what you are entitled to within 30 days.",
+    person: profile,
+  }, null, 2);
 }
 
 /** Turn individual permissions on or off. Withdrawal is immediate and as easy as giving it. */
@@ -77,6 +103,8 @@ export async function requestMyErasure(formData: FormData) {
     where: { id: me.id },
     data: { privacy: writePrivacy(current, { erasureRequestedAt: new Date().toISOString() }), referralConsent: "no" },
   });
+  // Their open invitations stop working too: nobody should be joining on the word of someone leaving.
+  await prisma.invite.updateMany({ where: { inviterPersonId: me.id, status: { in: ["SENT", "OPENED"] } }, data: { status: "REVOKED" } });
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "data.deletion_request", entityType: "Person", entityId: me.id, metadata: { self: true, reason: d.reason ?? null } });
   revalidatePath("/member"); revalidatePath("/settings/privacy"); revalidatePath("/settings/security"); revalidatePath(`/network/${me.id}`);
 }
@@ -86,7 +114,8 @@ export async function cancelMyErasure(formData: FormData) {
   const user = await requireUser();
   const me = await selfPerson(user, String(formData.get("asPersonId") || "") || null);
   const current = privacyOf({ privacy: me.privacy as Partial<Privacy> | null });
-  await prisma.person.update({ where: { id: me.id }, data: { privacy: writePrivacy(current, { erasureRequestedAt: null }) } });
+  // The request switched "put me forward" off. Coming back means "ask me each time", the safe default.
+  await prisma.person.update({ where: { id: me.id }, data: { privacy: writePrivacy(current, { erasureRequestedAt: null }), ...(me.referralConsent === "no" ? { referralConsent: "ask" } : {}) } });
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "consent.update", entityType: "Person", entityId: me.id, metadata: { erasureCancelled: true } });
   revalidatePath("/member"); revalidatePath("/settings/privacy"); revalidatePath(`/network/${me.id}`);
 }

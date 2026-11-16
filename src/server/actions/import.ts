@@ -1,6 +1,8 @@
 "use server";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 import { requireInternalAction } from "@/server/session";
 import { parseCsv, mapHeaders, SOURCE_ALIASES, RELATIONSHIP_ALIASES, type ImportColumnKey } from "@/lib/csv";
 import type { RelationshipType, SourceType } from "@prisma/client";
@@ -121,18 +123,48 @@ export async function previewImport(_prev: ImportPreview | null, formData: FormD
   return { ok: true, rows, unknownHeaders: unknown, mappedColumns: Object.keys(map), totals: { total: rows.length, ready: rows.length - blocked - duplicates, blocked, duplicates } };
 }
 
+const optText = (n: number) => z.string().max(n * 4).nullish().transform((v) => (v ? v.trim().slice(0, n) || null : null));
+const strList = z.array(z.string().max(400)).max(60).catch([]);
+/** One row as the server is prepared to write it. Unknown keys are dropped. */
+const commitRow = z.object({
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
+  email: z.string().trim().toLowerCase().email().max(200).nullish().catch(null).transform((v) => v ?? null),
+  phone: optText(40), headline: optText(200), company: optText(120), role: optText(120), city: optText(80), country: optText(80),
+  capabilities: strList, sectors: strList, workRights: strList, linkedin: optText(300),
+  source: z.enum([...VALID_SOURCES] as [SourceType, ...SourceType[]]).catch("OTHER" as SourceType),
+  relationship: z.enum([...VALID_RELS] as [RelationshipType, ...RelationshipType[]]).catch("KNOWS_OF" as RelationshipType),
+  introducedBy: optText(160), workedTogether: z.boolean().catch(false), notes: optText(4000),
+});
+
 export type ImportResult = { ok: boolean; error?: string; created: number; skipped: number; linkedIntroducers: number };
 
 /** Write the previewed rows. Skips rows with issues and existing duplicates. */
 export async function commitImport(_prev: ImportResult | null, formData: FormData): Promise<ImportResult> {
   const user = await requireInternalAction();
-  let rows: ImportRow[];
+  const bad = { ok: false, error: "Preview data was not readable. Run the preview again.", created: 0, skipped: 0, linkedIntroducers: 0 };
+  if (!(await rateLimit("mutate", `import:${user.id}`)).success) return { ...bad, error: "One import at a time. Wait a minute and try again." };
+  const raw = String(formData.get("rows") || "[]");
+  if (raw.length > 6_000_000) return { ...bad, error: "That file is too large to import in one go. Split it and try again." };
+  // The preview comes back from the browser, so it is checked again here as if it were new:
+  // shape, lengths, enums and email format. What the preview said about a row is not trusted.
+  let rows: z.infer<typeof commitRow>[];
   try {
-    rows = JSON.parse(String(formData.get("rows") || "[]")) as ImportRow[];
+    const parsed = z.array(commitRow).max(5000).safeParse(JSON.parse(raw));
+    if (!parsed.success) return bad;
+    rows = parsed.data;
   } catch {
-    return { ok: false, error: "Preview data was not readable. Run the preview again.", created: 0, skipped: 0, linkedIntroducers: 0 };
+    return bad;
   }
-  const toCreate = rows.filter((r) => r.issues.length === 0 && (!r.duplicateOf || r.duplicateOf === "file") && r.firstName && r.lastName).slice(0, 2000);
+  // Duplicates are worked out again against the network as it is now, and within the file.
+  const current = await prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { firstName: true, lastName: true, email: true } });
+  const haveEmail = new Set(current.map((p) => p.email?.toLowerCase()).filter(Boolean)), haveName = new Set(current.map((p) => `${p.firstName} ${p.lastName}`.toLowerCase()));
+  const seen = new Set<string>();
+  const toCreate = rows.filter((r) => {
+    const name = `${r.firstName} ${r.lastName}`.toLowerCase(); const key = r.email ?? name;
+    if (seen.has(key) || (r.email && haveEmail.has(r.email)) || haveName.has(name)) return false;
+    seen.add(key); return true;
+  }).slice(0, 2000);
   if (!toCreate.length) return { ok: false, error: "Nothing to import: every row is blocked or already in the network.", created: 0, skipped: rows.length, linkedIntroducers: 0 };
 
   const createdIds = new Map<string, string>();
@@ -152,7 +184,7 @@ export async function commitImport(_prev: ImportResult | null, formData: FormDat
         capabilities: r.capabilities.slice(0, 30).map((c) => c.slice(0, 80)),
         sectors: r.sectors.slice(0, 20).map((c) => c.slice(0, 80)),
         workRights: r.workRights.slice(0, 10).map((c) => c.slice(0, 80)),
-        linkedinUrl: r.linkedin && /^https?:\/\//i.test(r.linkedin) ? r.linkedin.slice(0, 300) : null,
+        linkedinUrl: r.linkedin && /^https:\/\/([a-z0-9-]+\.)?linkedin\.com\//i.test(r.linkedin) ? r.linkedin.slice(0, 300) : null,
         availabilityStatus: "NEEDS_REFRESH",
         nextAction: "Book first conversation",
         relationships: {

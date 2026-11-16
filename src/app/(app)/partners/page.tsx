@@ -2,6 +2,9 @@ import Link from "next/link";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { redactForPartner } from "@/lib/authz";
+import { partnerRef } from "@/lib/refs";
+import { mayShowCard } from "@/lib/reveal";
+import { partnerHidden } from "@/lib/privacy";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Chip } from "@/components/ui/badge";
@@ -21,7 +24,7 @@ export const metadata = { title: "Partners" };
 export default async function PartnersPage({ searchParams }: { searchParams: Promise<{ partner?: string }> }) {
   const user = await requireInternal();
   const sp = await searchParams;
-  const partners = await prisma.partner.findMany({ include: { requirements: { orderBy: { createdAt: "desc" } }, introductions: { include: { person: true, opportunity: { select: { title: true } } } }, tenant: { select: { users: { select: { id: true, name: true, email: true, lastLoginAt: true } } } } }, orderBy: { name: "asc" } });
+  const partners = await prisma.partner.findMany({ where: { networkTenantId: user.tenantId }, include: { requirements: { orderBy: { createdAt: "desc" } }, introductions: { include: { person: true, opportunity: { select: { title: true } } } }, tenant: { select: { users: { select: { id: true, name: true, email: true, lastLoginAt: true } } } } }, orderBy: { name: "asc" } });
   const selected = partners.find((p) => p.id === sp.partner) ?? partners[0];
   const opportunities = await prisma.opportunity.findMany({ where: { tenantId: user.tenantId }, select: { id: true, title: true }, orderBy: { updatedAt: "desc" } });
   const audit = selected ? await prisma.auditLog.findMany({ where: { tenantId: selected.tenantId }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 20 }) : [];
@@ -30,8 +33,8 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
   const previews = selected
     ? await Promise.all(
         selected.requirements.filter((r) => r.linkedOpportunityId).map(async (r) => {
-          const opp = await prisma.opportunity.findUnique({ where: { id: r.linkedOpportunityId! }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: true } } } } } });
-          return { requirement: r, results: opp ? opp.matches.map((m) => redactForPartner({ ...m.person, seniority: m.person.seniority, engagementPreferences: m.person.engagementPreferences })) : [] };
+          const opp = await prisma.opportunity.findFirst({ where: { id: r.linkedOpportunityId!, tenantId: user.tenantId }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: true } } } } } });
+          return { requirement: r, results: opp ? opp.matches.filter((m) => mayShowCard(m.person)).map((m) => redactForPartner({ ...m.person, seniority: m.person.seniority, engagementPreferences: m.person.engagementPreferences }, { ref: partnerRef(selected!.id, m.person.id), hideRegion: partnerHidden({ privacy: m.person.privacy as never }).region })) : [] };
         }),
       )
     : [];

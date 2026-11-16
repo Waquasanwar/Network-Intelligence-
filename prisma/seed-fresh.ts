@@ -48,7 +48,7 @@ async function main() {
   // --- One sample agency (recruitment partner) + its portal ---
   const agencyTenant = await prisma.tenant.create({ data: { slug: "harbour-search", name: "Harbour Search", type: "RECRUITMENT_PARTNER", brandName: "Harbour Search" } });
   await prisma.user.create({ data: { tenantId: agencyTenant.id, email: "partner@harboursearch.local", name: "Jo Harbour", role: "PARTNER", passwordHash } });
-  const partner = await prisma.partner.create({ data: { tenantId: agencyTenant.id, name: "Harbour Search", contactName: "Jo Harbour", contactEmail: "partner@harboursearch.local", subscriptionStatus: "ACTIVE", subscriptionTier: "Standard", commercialModel: "SUCCESS_SHARE", commercialSharePct: 15, monthlyFee: 1500, currency: "GBP", licensedForPermanent: true, notes: "Sample agency." } });
+  const partner = await prisma.partner.create({ data: { tenantId: agencyTenant.id, networkTenantId: ownerTenant.id, name: "Harbour Search", contactName: "Jo Harbour", contactEmail: "partner@harboursearch.local", subscriptionStatus: "ACTIVE", subscriptionTier: "Standard", commercialModel: "SUCCESS_SHARE", commercialSharePct: 15, monthlyFee: 1500, currency: "GBP", licensedForPermanent: true, notes: "Sample agency." } });
   await prisma.commercialAccount.create({ data: { tenantId: ownerTenant.id, name: "Harbour Search", kind: "AGENCY", status: "ACTIVE", contactName: "Jo Harbour", contactEmail: "partner@harboursearch.local", currency: "GBP", monthlyFee: 1500, partnerId: partner.id, portalTenantId: agencyTenant.id, portalEnabled: true, notes: "Sample agency." } });
 
   // --- Three sample experts in the owner's network (so you can send a screening request) ---

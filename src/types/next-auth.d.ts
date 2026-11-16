@@ -8,6 +8,8 @@ declare module "next-auth" {
     role?: Role;
     tenantType?: TenantType;
     tenantName?: string;
+    /** User.sessionVersion at sign-in. */
+    sv?: number;
   }
   interface Session {
     user: {
@@ -18,6 +20,7 @@ declare module "next-auth" {
       role: Role;
       tenantType: TenantType;
       tenantName: string;
+      sv: number;
     };
   }
 }
@@ -28,5 +31,6 @@ declare module "next-auth/jwt" {
     role?: Role;
     tenantType?: TenantType;
     tenantName?: string;
+    sv?: number;
   }
 }

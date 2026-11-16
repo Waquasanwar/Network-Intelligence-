@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUser } from "@/server/session";
+import { isInternal } from "@/lib/authz";
+import { checkOauthState } from "@/lib/secrets";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 
@@ -8,9 +10,12 @@ import { audit } from "@/lib/audit";
  * credential; the token itself belongs in the platform's secret store (KMS) in production.
  */
 export async function GET(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.redirect(new URL("/login", req.url));
+  const user = await getUser();
+  if (!user) return NextResponse.redirect(new URL("/login", req.url));
+  if (!isInternal(user)) return NextResponse.redirect(new URL("/forbidden", req.url));
   const url = new URL(req.url);
+  // The authorisation must have been started by this same user, moments ago.
+  if (!checkOauthState(url.searchParams.get("state"), user.id, "MICROSOFT_GRAPH")) return NextResponse.redirect(new URL("/settings/integrations?error=microsoft", req.url));
   const code = url.searchParams.get("code");
   if (!code || !process.env.MICROSOFT_GRAPH_CLIENT_ID || !process.env.MICROSOFT_GRAPH_CLIENT_SECRET) return NextResponse.redirect(new URL("/settings/integrations?error=microsoft", req.url));
   const tenant = process.env.MICROSOFT_GRAPH_TENANT_ID || "common";
@@ -22,10 +27,10 @@ export async function GET(req: Request) {
   if (!res.ok) return NextResponse.redirect(new URL("/settings/integrations?error=microsoft", req.url));
   const token = (await res.json()) as { scope?: string };
   await prisma.schedulingConnection.upsert({
-    where: { userId_provider: { userId: session.user.id, provider: "MICROSOFT_GRAPH" } },
-    create: { userId: session.user.id, provider: "MICROSOFT_GRAPH", scopes: token.scope?.split(" ") ?? [], encryptedCredentialReference: `kms://scheduling/${session.user.id}/microsoft` },
-    update: { revokedAt: null, scopes: token.scope?.split(" ") ?? [], connectedAt: new Date(), encryptedCredentialReference: `kms://scheduling/${session.user.id}/microsoft` },
+    where: { userId_provider: { userId: user.id, provider: "MICROSOFT_GRAPH" } },
+    create: { userId: user.id, provider: "MICROSOFT_GRAPH", scopes: token.scope?.split(" ") ?? [], encryptedCredentialReference: `kms://scheduling/${user.id}/microsoft` },
+    update: { revokedAt: null, scopes: token.scope?.split(" ") ?? [], connectedAt: new Date(), encryptedCredentialReference: `kms://scheduling/${user.id}/microsoft` },
   });
-  await audit({ tenantId: session.user.tenantId, actorId: session.user.id, action: "integration.connect", entityType: "SchedulingConnection", metadata: { provider: "MICROSOFT_GRAPH", live: true } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "integration.connect", entityType: "SchedulingConnection", metadata: { provider: "MICROSOFT_GRAPH", live: true } });
   return NextResponse.redirect(new URL("/settings/integrations", req.url));
 }

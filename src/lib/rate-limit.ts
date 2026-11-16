@@ -22,10 +22,22 @@ const redisLimiters = hasRedis
   ? {
       signin: new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(12, "5 m"), prefix: "rl:signin", analytics: false }),
       mutate: new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(60, "1 m"), prefix: "rl:mutate", analytics: false }),
+      ai: new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(30, "1 m"), prefix: "rl:ai", analytics: false }),
+      join: new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(8, "10 m"), prefix: "rl:join", analytics: false }),
+      voice: new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(90, "10 m"), prefix: "rl:voice", analytics: false }),
     }
   : null;
 
-const WINDOWS = { signin: { limit: 12, windowMs: 5 * 60_000 }, mutate: { limit: 60, windowMs: 60_000 } } as const;
+const WINDOWS = {
+  signin: { limit: 12, windowMs: 5 * 60_000 },
+  mutate: { limit: 60, windowMs: 60_000 },
+  // Anything that calls a language model or does comparable work per request.
+  ai: { limit: 30, windowMs: 60_000 },
+  // Public registration and the public "autofill my profile" helper.
+  join: { limit: 8, windowMs: 10 * 60_000 },
+  // Spoken screening questions: a full screening is about 30 lines.
+  voice: { limit: 90, windowMs: 10 * 60_000 },
+} as const;
 export type LimiterName = keyof typeof WINDOWS;
 
 // In-process fallback: key -> hit timestamps within the window.
@@ -59,9 +71,20 @@ export async function rateLimit(name: LimiterName, key: string): Promise<RateRes
   return memoryLimit(name, key);
 }
 
-/** Best-effort client IP from the proxy headers Vercel sets. */
+/**
+ * Client address for throttling. Prefers the header the hosting platform sets itself and a client
+ * cannot forge (Vercel's x-real-ip / x-vercel-forwarded-for), then falls back to the last hop a
+ * proxy appended to x-forwarded-for — never the first, which is whatever the caller typed.
+ */
 export function clientIp(headers: Headers): string {
+  const direct = headers.get("x-vercel-forwarded-for") ?? headers.get("x-real-ip");
+  if (direct) return direct.split(",")[0]!.trim();
   const xff = headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
-  return headers.get("x-real-ip") ?? "unknown";
+  if (xff) return xff.split(",").pop()!.trim();
+  return "unknown";
+}
+
+/** Throw a plain, user-readable error when the caller is over the limit. */
+export async function limitOrThrow(name: LimiterName, key: string, message = "You are doing that too quickly. Wait a moment and try again."): Promise<void> {
+  if (!(await rateLimit(name, key)).success) throw new Error(message);
 }

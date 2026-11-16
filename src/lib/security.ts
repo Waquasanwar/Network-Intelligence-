@@ -69,8 +69,8 @@ export const SECURITY_PROPERTIES: SecurityProperty[] = [
     key: "refs",
     label: "Opaque references outward",
     principle: "An identifier shown outside the tenant cannot be walked back to a record or counted.",
-    how: "Internal ids are never sent to a partner surface; a derived opaque reference is used instead.",
-    where: "opaqueRef() in src/lib/authz.ts",
+    how: "Internal ids are never sent to a partner surface. Each client or agency sees a reference that is a keyed hash specific to them, so it cannot be recomputed from an id or compared between two agencies. Invitation links are encrypted and carry no readable id either.",
+    where: "partnerRef() in src/lib/refs.ts · src/lib/invite.ts",
     basis: "both",
     article: "UK GDPR Art. 32(1)(a)",
   },
@@ -113,9 +113,9 @@ export const SECURITY_PROPERTIES: SecurityProperty[] = [
   {
     key: "vendor",
     label: "A stated vendor boundary",
-    principle: "You can see exactly what leaves the platform, and answers never do.",
-    how: "Only the interviewer's own questions are sent for speech, with names and exact figures removed first. The vendor key stays on the server and is never handed to a browser.",
-    where: "redactForSpeech() in src/lib/voice-config.ts · src/app/api/voice/*",
+    principle: "You can see exactly what leaves the platform, and to whom.",
+    how: "Speech: only the interviewer's own questions are sent, with names and exact figures removed first, and only for a tenant that chose the natural voice and a person who switched it on. Summaries: with the built-in provider nothing leaves; if you turn on an AI provider (AI_PROVIDER), conversation notes are sent to it to be structured. Vendor keys stay on the server and are never handed to a browser.",
+    where: "voiceAccess() in src/lib/voice-access.ts · redactForSpeech() in src/lib/voice-config.ts · src/lib/ai/*",
     basis: "both",
     article: "UK GDPR Art. 28 · PDPL Art. 10",
   },
@@ -166,25 +166,25 @@ export type SecurityControl = {
 
 export const SECURITY_CONTROLS: SecurityControl[] = [
   {
-    key: "mfaRequired", label: "Require a second factor to sign in", group: "identity",
-    does: "Everybody in your tenant sets up an authenticator before they can open the network again.",
+    key: "mfaRequired", label: "A second factor at sign-in", group: "identity",
+    does: "Each person can add an authenticator in Settings → Security. Once on, a code is needed at every sign-in, a used code cannot be replayed, and it cannot be swapped or switched off without a current code.",
     ifOff: "A leaked password is enough to read every profile you hold.",
     defaultOn: true, weakensIfOff: true,
-    enforcedBy: "auth.ts verifies a TOTP or recovery code at sign-in when the account has MFA on; users enrol in Settings → Security",
+    enforcedBy: "auth.ts verifies a TOTP or recovery code at sign-in for accounts with MFA on. It is opt-in per person; it is not yet forced on everyone.",
   },
   {
-    key: "sessionTimeout", label: "Sign people out after 8 hours idle", group: "identity",
-    does: "A session that has not been used for eight hours has to be started again.",
+    key: "sessionTimeout", label: "Sign people out after 8 hours", group: "identity",
+    does: "Every session ends eight hours after sign-in. A role change, a removed account or a merged profile ends that person's sessions at once.",
     ifOff: "An unlocked laptop stays signed in indefinitely.",
     defaultOn: true, weakensIfOff: false,
-    enforcedBy: "auth.config.ts — JWT sessions expire after 8 hours"
+    enforcedBy: "auth.config.ts — sessions last 8 hours at most; requireUser() in server/session.ts re-checks the account and its sessionVersion on every request"
   },
   {
     key: "approveBeforeReveal", label: "An owner approves every identity reveal", group: "disclosure",
     does: "A contributor can propose anybody, but releasing a name to a client waits for you.",
     ifOff: "Any contributor can release a name once the person has consented.",
     defaultOn: true, weakensIfOff: true,
-    enforcedBy: "updateIntroductionStatus() allows IDENTITY_REVEALED only for an owner/admin",
+    enforcedBy: "updateIntroductionStatus() and decideShortlist() allow a naming stage only for an owner/admin, with the person's recorded consent; every page that shows a name re-checks it (src/lib/reveal.ts)",
   },
   {
     key: "alertOnReveal", label: "Tell me whenever a name is released", group: "disclosure",
@@ -205,7 +205,7 @@ export const SECURITY_CONTROLS: SecurityControl[] = [
     does: "Relationship notes are stripped from anything shown to a client, an agency or the person themselves.",
     ifOff: "Notes written in confidence could appear on a shared profile.",
     defaultOn: true, weakensIfOff: true,
-    enforcedBy: "redactForPartner() in authz.ts strips relationshipNotes"
+    enforcedBy: "redactForPartner() in authz.ts strips relationshipNotes; exportMyData() leaves team notes and cautions out of a member's own download"
   },
   {
     key: "autoRedactSpeech", label: "Redact names and figures before speech", group: "disclosure",

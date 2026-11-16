@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal, Lock } from "lucide-react";
+import { Search, LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, MicVocal, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/ui/brand-mark";
 import type { Role } from "@prisma/client";
@@ -15,19 +15,19 @@ const SHOW_PHASE23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 !== "false";
 const INTERNAL_NAV = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/network", label: "Network", icon: Users },
+  { href: "/invite", label: "Grow the network", icon: UserPlus },
   { href: "/conversations", label: "Conversations", icon: MessagesSquare },
 ];
 const WORKSPACES = [
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/requirements", label: "Requirements", icon: ListChecks },
-  { href: "/referrals", label: "Referrals & pitches", icon: UserPlus },
-  { href: "/amana", label: "Amana Expert Network", icon: Building2 },
+  { href: "/referrals", label: "Referrals & pitches", icon: Handshake },
+  { href: "/amana", label: "Amana Expert Network", icon: BadgeCheck },
   { href: "/portal", label: "Client & agency portal", icon: MonitorSmartphone },
-  { href: "/partners", label: "Partners", icon: Handshake },
+  { href: "/partners", label: "Partners", icon: Building2 },
   { href: "/relocation", label: "Relocation", icon: Plane },
 ];
 const SETTINGS_NAV = [
-  { href: "/invite", label: "Invite link", icon: Link2 },
   { href: "/network/import", label: "Import contacts", icon: Upload },
   { href: "/settings/screening", label: "Screening", icon: MicVocal },
   ...(SHOW_PHASE23 ? [{ href: "/settings/commercials", label: "Commercials", icon: Percent }] : []),
@@ -35,7 +35,7 @@ const SETTINGS_NAV = [
   { href: "/settings/security", label: "Security", icon: ShieldCheck },
 ];
 const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
-const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Refer someone", icon: UserPlus }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
+const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Invite and refer", icon: UserPlus }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 
 export function Sidebar({ user }: { user: { name: string; email: string; role: Role; tenantName: string } }) {

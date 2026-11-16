@@ -57,7 +57,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)}>
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Search the network" onClick={() => setOpen(false)}>
       <div className="absolute inset-0 bg-[#0f172a]/30 backdrop-blur-[2px] anim-fade" />
       <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-[22px] bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 px-3 border-b border-line">

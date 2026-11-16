@@ -11,7 +11,8 @@ import { PersonLink } from "@/components/domain/person-link";
 import { DateText } from "@/components/domain/date";
 import { TrustMini, ScreeningBadge } from "@/components/domain/trust";
 import { BookScreeningDrawer } from "@/components/domain/member-drawers";
-import { triageReferral, triagePitch, trustFor, startScreening } from "@/server/actions/members";
+import { triageReferral, triagePitch, startScreening } from "@/server/actions/members";
+import { trustFor } from "@/lib/trust-for";
 import { SOURCE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 
@@ -49,7 +50,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: Pr
       ); }))}</div>)
       : tab === "joining" ? (joiners.length === 0 ? <EmptyState title="Nobody joining right now" description="New registrations from the join link appear here and in your alerts." /> : (
         <Card className="overflow-hidden"><table className="data"><thead><tr><th>Person</th><th>Came via</th><th>Status</th><th>Trust</th><th></th></tr></thead><tbody>
-          {await Promise.all(joiners.map(async (p) => { const r = p.relationships[0]; const t = await trustFor(p); return (
+          {await Promise.all(joiners.map(async (p) => { const r = p.relationships[0]; const t = trustFor(p); return (
             <tr key={p.id}><td><PersonLink person={p} sub={p.headline} /></td><td className="text-xs text-ink-muted">{r ? SOURCE_LABELS[r.sourceType] : "—"}{r?.introducedBy ? <div className="text-[12px] text-ink-faint">via {r.introducedBy.firstName} {r.introducedBy.lastName}</div> : null}</td><td><ScreeningBadge status={p.screeningStatus} /></td><td><TrustMini t={t} /></td>
               <td className="text-right whitespace-nowrap"><div className="inline-flex gap-2">{p.screeningStatus === "SUBMITTED" ? <Link href="/conversations?tab=review" className="text-[12.5px] text-navy hover:underline">Review screening</Link> : <><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><SubmitButton size="sm" pendingText="…">Run screening</SubmitButton></form><BookScreeningDrawer personId={p.id} label="Book call" /></>}</div></td></tr>
           ); }))}

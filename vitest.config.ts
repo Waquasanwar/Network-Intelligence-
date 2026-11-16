@@ -6,5 +6,6 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
   },
-  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+  // "server-only" throws outside a React server build; in unit tests it is an empty module.
+  resolve: { alias: { "@": path.resolve(__dirname, "./src"), "server-only": path.resolve(__dirname, "./src/test/server-only.ts") } },
 });

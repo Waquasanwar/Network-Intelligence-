@@ -32,31 +32,42 @@ export function otpauthUri(email: string, secret: string): string {
   return totp(email, secret).toString();
 }
 
-/** True if the 6-digit code matches, allowing one 30-second step of clock drift either way. */
-export function verifyTotp(email: string, secret: string, token: string): boolean {
-  const t = (token ?? "").replace(/\s/g, "");
-  if (!/^\d{6}$/.test(t)) return false;
-  return totp(email, secret).validate({ token: t, window: 1 }) !== null;
+/**
+ * The time-step a 6-digit code belongs to, allowing one 30-second step of clock drift either way,
+ * or null when it does not match. Callers store the step they accepted and refuse anything at or
+ * below it, so a code that was watched over a shoulder cannot be used a second time.
+ */
+export function totpStep(email: string, secret: string, token: unknown): number | null {
+  const t = (typeof token === "string" ? token : "").replace(/\s/g, "");
+  if (!/^\d{6}$/.test(t)) return null;
+  const delta = totp(email, secret).validate({ token: t, window: 1 });
+  return delta === null ? null : Math.floor(Date.now() / 30_000) + delta;
+}
+
+/** True if the 6-digit code matches. Prefer totpStep() where the result is persisted. */
+export function verifyTotp(email: string, secret: string, token: unknown): boolean {
+  return totpStep(email, secret, token) !== null;
 }
 
 /** Ten human-friendly one-time codes, returned as plaintext (shown once) plus their stored hashes. */
 export function newRecoveryCodes(n = 10): { codes: string[]; hashes: string[] } {
   const codes = Array.from({ length: n }, () => {
-    const raw = randomBytes(5).toString("hex").toUpperCase();
-    return `${raw.slice(0, 5)}-${raw.slice(5, 10)}`;
+    // 80 bits each: far beyond offline guessing even though the stored hash is unsalted.
+    const raw = randomBytes(10).toString("hex").toUpperCase();
+    return `${raw.slice(0, 5)}-${raw.slice(5, 10)}-${raw.slice(10, 15)}-${raw.slice(15, 20)}`;
   });
   return { codes, hashes: codes.map(hashRecoveryCode) };
 }
 
-export function hashRecoveryCode(code: string): string {
-  return createHash("sha256").update((code ?? "").replace(/[\s-]/g, "").toUpperCase()).digest("hex");
+export function hashRecoveryCode(code: unknown): string {
+  return createHash("sha256").update((typeof code === "string" ? code : "").replace(/[\s-]/g, "").toUpperCase()).digest("hex");
 }
 
 /**
  * If `input` matches one of the stored hashes, returns the remaining hashes (that code consumed);
  * otherwise null. The caller persists the returned list so each code works exactly once.
  */
-export function consumeRecoveryCode(input: string, hashes: string[]): string[] | null {
+export function consumeRecoveryCode(input: unknown, hashes: string[]): string[] | null {
   const h = hashRecoveryCode(input);
   return hashes.includes(h) ? hashes.filter((x) => x !== h) : null;
 }

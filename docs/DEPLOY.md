@@ -80,14 +80,18 @@ production). Never reuse the demo value.
 |---|---|---|
 | `DATABASE_URL` | Neon **pooled** string + `?sslmode=require` | app queries |
 | `DIRECT_URL` | Neon **direct** string + `?sslmode=require` | migrations |
-| `AUTH_SECRET` | `openssl rand -base64 32` | unique per environment |
+| `AUTH_SECRET` | `openssl rand -base64 32` | unique per environment. The app refuses to start in production with a missing, short or placeholder value. It also keys invitation links, MFA secrets at rest and the references clients see, so changing it signs everyone out, invalidates every invitation link already sent and means people re-enrol MFA |
 | `AUTH_URL` | `https://your-domain.com` | your real public URL (HTTPS) |
 | `AUTH_TRUST_HOST` | `true` | required behind Vercel's proxy |
-| `UPSTASH_REDIS_REST_URL` | from Upstash | sign-in throttle |
-| `UPSTASH_REDIS_REST_TOKEN` | from Upstash | sign-in throttle |
+| `UPSTASH_REDIS_REST_URL` | from Upstash | shared rate limits: sign-in, registration, AI and voice. Without it the limits are per server instance only |
+| `UPSTASH_REDIS_REST_TOKEN` | from Upstash | as above |
 | `CRON_SECRET` | `openssl rand -base64 32` | gates the daily retention sweep (`/api/cron/retention`); Vercel Cron sends it automatically |
 | `AI_PROVIDER` | `heuristic` | no external AI calls; set `anthropic` + `ANTHROPIC_API_KEY` to enable Claude |
 | `SHOW_DEMO_ACCOUNTS` | *(unset / `false`)* | keep the demo panel off the login page |
+
+> **Client addresses.** Rate limits key on the visitor's address from `x-real-ip` (set by Vercel).
+> If you host elsewhere, put the app behind a proxy that sets `x-real-ip` itself and strips any
+> value sent by the client; otherwise only the per-account limits and lockout protect sign-in.
 
 ### Optional
 

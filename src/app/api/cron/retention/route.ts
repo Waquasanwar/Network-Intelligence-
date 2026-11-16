@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { retentionDue } from "@/lib/privacy";
 import { audit } from "@/lib/audit";
+import { safeEqual } from "@/lib/secrets";
 
 export const dynamic = "force-dynamic";
 
@@ -18,27 +19,29 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || !safeEqual(req.headers.get("authorization") ?? "", `Bearer ${secret}`)) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
   const tenants = await prisma.tenant.findMany({ select: { id: true } });
-  const summary: { tenantId: string; itemsDue: number }[] = [];
+  let totalDue = 0;
 
   for (const t of tenants) {
     const people = await prisma.person.findMany({
       where: { tenantId: t.id },
-      select: { id: true, screenedAt: true, availabilityConfirmedAt: true },
+      select: { id: true, screenedAt: true, availabilityConfirmedAt: true, privacy: true },
     });
     let itemsDue = 0;
     for (const p of people) {
       itemsDue += retentionDue({ screenedAt: p.screenedAt, lastContactAt: p.availabilityConfirmedAt }).length;
+      // A person who has asked to be deleted is always due, whatever the retention clock says.
+      if ((p.privacy as { erasureRequestedAt?: string | null } | null)?.erasureRequestedAt) itemsDue += 1;
     }
     if (itemsDue > 0) {
       await audit({ tenantId: t.id, actorId: null, action: "data.retention_review", entityType: "Tenant", entityId: t.id, metadata: { itemsDue } });
     }
-    summary.push({ tenantId: t.id, itemsDue });
+    totalDue += itemsDue;
   }
 
-  return NextResponse.json({ ok: true, ranAt: new Date().toISOString(), tenants: summary.length, summary });
+  return NextResponse.json({ ok: true, ranAt: new Date().toISOString(), tenants: tenants.length, itemsDue: totalDue });
 }

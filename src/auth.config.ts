@@ -6,11 +6,20 @@ import type { Role, TenantType } from "@prisma/client";
  * Edge-safe Auth.js configuration (no database imports) shared by the middleware.
  * The full configuration with the credentials provider lives in auth.ts.
  */
+/** True when Entra sign-in is configured against one specific directory. */
+export function entraIsPinned(): boolean {
+  const issuer = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER ?? "";
+  return !!process.env.AUTH_MICROSOFT_ENTRA_ID_ID && /^https:\/\/login\.microsoftonline\.com\/[0-9a-f-]{36}\/v2\.0\/?$/i.test(issuer);
+}
+
 export const authConfig = {
   pages: { signIn: "/login" },
-  session: { strategy: "jwt", maxAge: 60 * 60 * 8 }, // 8h sessions; revocation handled by sessionVersion
+  session: { strategy: "jwt", maxAge: 60 * 60 * 8 }, // 8h absolute lifetime; requireUser() re-checks User.sessionVersion on every request
   providers: [
-    ...(process.env.AUTH_MICROSOFT_ENTRA_ID_ID
+    // Single sign-on is only switched on against one named Entra tenant. The shared "common",
+    // "organizations" and "consumers" issuers accept accounts from any directory, where the email
+    // claim is set by that directory's admin — so they could be used to sign in as someone else.
+    ...(entraIsPinned()
       ? [
           MicrosoftEntraID({
             clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
@@ -23,7 +32,7 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request }) {
       const { pathname } = request.nextUrl;
-      const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname === "/api/health";
+      const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname === "/join" || pathname.startsWith("/api/webhooks") || pathname.startsWith("/api/cron") || pathname === "/api/health";
       if (isPublic) return true;
       return !!auth?.user;
     },
@@ -33,6 +42,7 @@ export const authConfig = {
         token.role = user.role;
         token.tenantType = user.tenantType;
         token.tenantName = user.tenantName;
+        token.sv = user.sv ?? 0;
       }
       return token;
     },
@@ -43,6 +53,7 @@ export const authConfig = {
         session.user.role = token.role as Role;
         session.user.tenantType = token.tenantType as TenantType;
         session.user.tenantName = token.tenantName as string;
+        session.user.sv = (token.sv as number | undefined) ?? 0;
       }
       return session;
     },

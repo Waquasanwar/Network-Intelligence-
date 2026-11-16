@@ -3,28 +3,37 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { Input, Field } from "@/components/ui/form";
 import { Button, ArrowBadge } from "@/components/ui/button";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { entraIsPinned } from "@/auth.config";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { CirclesMotif } from "@/components/ui/circles-motif";
 
 export const metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; callbackUrl?: string; registered?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; callbackUrl?: string; registered?: string; expired?: string }> }) {
   const sp = await searchParams;
-  const hasEntra = Boolean(process.env.AUTH_MICROSOFT_ENTRA_ID_ID);
+  const hasEntra = entraIsPinned();
   const showDemo = process.env.NODE_ENV !== "production" || process.env.SHOW_DEMO_ACCOUNTS === "true";
 
   async function login(formData: FormData) {
     "use server";
     const requested = String(formData.get("callbackUrl") || "/");
-    const email = String(formData.get("email") || "").toLowerCase();
+    const email = String(formData.get("email") || "").toLowerCase().slice(0, 200);
+    // This form posts to the page, not to /api/auth, so the throttle has to live here as well.
+    const limited = !(await rateLimit("signin", `ip:${clientIp(await headers())}`)).success;
+    if (limited) redirect(`/login?error=throttled`);
+    // Only same-site paths are ever followed after sign-in.
+    // Land on the right home for the role. This only takes effect after a successful sign-in, so it
+    // tells an anonymous caller nothing about whether the address exists.
     const existing = await prisma.user.findUnique({ where: { email }, select: { role: true } });
     const home = existing?.role === "PARTNER" ? "/partner-portal" : existing?.role === "CLIENT" ? "/client-workspace" : existing?.role === "MEMBER" ? "/member" : "/overview";
-    const callbackUrl = requested === "/" || requested === "/login" ? home : requested;
+    const safe = /^\/(?!\/)[\w\-./?=&%]*$/.test(requested) && requested !== "/" && !requested.startsWith("/login") && !requested.startsWith("/api") ? requested : home;
     try {
-      await signIn("credentials", { email, password: String(formData.get("password") || ""), code: String(formData.get("code") || ""), redirectTo: callbackUrl });
+      await signIn("credentials", { email, password: String(formData.get("password") || ""), code: String(formData.get("code") || ""), redirectTo: safe });
     } catch (err) {
-      if (err instanceof AuthError) redirect(`/login?error=invalid&callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      if (err instanceof AuthError) redirect(`/login?error=invalid&callbackUrl=${encodeURIComponent(safe)}`);
       throw err;
     }
   }
@@ -61,7 +70,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="text-[15px] text-ink-muted mt-2.5">Sign in to your network.</p>
 
           {sp.registered ? <div className="mt-5 rounded-[12px] border border-teal/25 bg-teal/5 px-3.5 py-2.5 text-[12.5px] text-ink">Account created. Sign in to start your screening.</div> : null}
-          {sp.error ? <div className="mt-5 rounded-[12px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
+          {sp.expired && !sp.error ? <div className="mt-5 rounded-[12px] border border-line bg-surface-muted px-3.5 py-2.5 text-[12.5px] text-ink">You were signed out because your account changed. Sign in again to carry on.</div> : null}
+          {sp.error ? <div role="alert" className="mt-5 rounded-[12px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">{sp.error === "throttled" ? "Too many attempts from this connection. Wait a few minutes, then try again." : "Those details did not match. After ten wrong attempts an account is paused for fifteen minutes."}</div> : null}
 
           <form action={login} className="mt-7 space-y-3.5">
             <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/"} />

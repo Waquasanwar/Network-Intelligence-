@@ -1,4 +1,5 @@
 "use client";
+import { signOutAction } from "@/server/actions/session";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bell, Menu, ChevronRight, ChevronDown, LogOut } from "lucide-react";
@@ -92,7 +93,7 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
               <div className="text-[13px] font-semibold truncate">{user.name}</div>
               <div className="text-[12px] text-ink-muted truncate capitalize">{user.role.toLowerCase()} · {user.tenantName}</div>
             </div>
-            <form action="/api/auth/signout" method="post" className="p-1.5">
+            <form action={signOutAction} className="p-1.5">
               <button className="flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted cursor-pointer"><LogOut className="h-4 w-4 text-ink-muted" /> Sign out</button>
             </form>
           </div>

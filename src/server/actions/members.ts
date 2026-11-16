@@ -2,59 +2,50 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { hash } from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
+import { limitOrThrow } from "@/lib/rate-limit";
 import { requireInternalAction, requireUser, type SessionUser } from "@/server/session";
 import { assertSameTenant, isInternal, isMember } from "@/lib/authz";
-import { assessFreshness } from "@/lib/availability";
-import { trustScore, type TrustScore } from "@/lib/trust";
-import { fitProfile, ATTRIBUTES, type FitScores, type FitProfileRow } from "@/lib/fit";
+import { ATTRIBUTES, type FitScores } from "@/lib/fit";
 import { SCREENING_SCRIPT, screeningToResult, type ScreeningAnswers, type ScreeningResult } from "@/lib/screening";
 import { matchBrief, type BriefPerson } from "@/lib/demand";
-import { toDomain } from "@/server/actions/demand";
+import { toDomain } from "@/lib/brief-domain";
 import { resolveMemberPerson } from "@/server/queries";
-import { signInvite, signTenantInvite, parseInvite } from "@/lib/invite";
 import type { Prisma } from "@prisma/client";
-import type { TrustPerson } from "@/lib/trust-include";
 import { DEFAULT_VOICE, type VoiceSettings } from "@/lib/voice-config";
-
-// ---------- shared helpers (also used by pages) ----------
-
-export async function trustFor(p: TrustPerson): Promise<TrustScore> {
-  const freshness = assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate });
-  return trustScore({
-    vouches: p.vouches.map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })),
-    workedWith: p.relationships.filter((r) => r.workedTogether).length, wouldWorkAgain: p.relationships.filter((r) => r.wouldWorkTogetherAgain === true).length,
-    evidence: p.evidence.filter((e) => e.evidenceType !== "CAUTION").length, cautions: p.evidence.filter((e) => e.evidenceType === "CAUTION").length,
-    approvedConversations: p.conversations.filter((c) => c.approvalStatus === "APPROVED").length, screened: p.screeningStatus === "APPROVED" || !!p.screenedAt, freshness,
-    referralsAccepted: p.referralsMade?.filter((r) => r.status === "ACCEPTED").length ?? 0,
-  });
-}
-
-export async function fitFor(p: { attributes: Prisma.JsonValue | null; vouches: { attributes: Prisma.JsonValue | null }[] }): Promise<FitProfileRow[]> {
-  return fitProfile((p.attributes as FitScores | null) ?? null, p.vouches.map((v) => v.attributes as FitScores | null).filter((a): a is FitScores => !!a));
-}
-
-/** The person a member user acts as. Internal users may preview any person of their tenant. */
-
-/** Things that need the owner's attention. */
 
 // ---------- vouches ----------
 
-const vouchSchema = z.object({ personId: z.string(), voucher: z.string(), voucherName: z.string().max(160).optional(), context: z.string().trim().min(2).max(300), statement: z.string().max(1000).optional(), wouldRecommend: z.coerce.boolean().optional() });
+const vouchSchema = z.object({ personId: z.string().min(1).max(40), voucher: z.string().max(60).optional(), voucherName: z.string().trim().max(160).optional(), context: z.string().trim().min(2).max(300), statement: z.string().trim().max(1000).optional(), wouldRecommend: z.coerce.boolean().optional() });
 
+/**
+ * Vouch for someone. A member vouches as themselves, for someone in their own network. The
+ * internal team can also record a vouch given by a colleague, by another member, or by someone
+ * outside (a named reference) — but only ever by a real user or person of this same tenant.
+ */
 export async function createVouch(formData: FormData) {
   const user = await requireUser();
   const d = vouchSchema.parse(Object.fromEntries(formData));
   const person = await prisma.person.findUnique({ where: { id: d.personId } });
   if (!person) throw new Error("Not found");
-  if (isInternal(user)) assertSameTenant(user, person.tenantId);
+  let kind: "USER" | "PERSON" | "EXTERNAL", voucherUserId: string | null = null, voucherPersonId: string | null = null;
+  if (isInternal(user)) {
+    assertSameTenant(user, person.tenantId);
+    const [k, id] = (d.voucher ?? `USER:${user.id}`).split(":");
+    if (k === "USER") { if (!id || !(await prisma.user.findFirst({ where: { id, tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true } }))) throw new Error("Choose who is vouching"); kind = "USER"; voucherUserId = id; }
+    else if (k === "PERSON") { if (!id || !(await prisma.person.findFirst({ where: { id, tenantId: user.tenantId }, select: { id: true } }))) throw new Error("Choose who is vouching"); kind = "PERSON"; voucherPersonId = id; }
+    else if (k === "EXTERNAL") { if (!d.voucherName) throw new Error("Name the person giving the reference"); kind = "EXTERNAL"; }
+    else throw new Error("Choose who is vouching");
+  } else {
+    const me = await resolveMemberPerson(user);
+    if (!me || me.tenantId !== person.tenantId) throw new Error("Not permitted");
+    kind = "PERSON"; voucherPersonId = me.id;
+  }
+  if (kind === "PERSON" && voucherPersonId === person.id) throw new Error("You cannot vouch for yourself");
   const attrs: FitScores = {};
-  for (const a of ATTRIBUTES) { const v = Number(formData.get(`attr:${a.key}`) || 0); if (v >= 1 && v <= 5) attrs[a.key] = v; }
-  const [kind, id] = isMember(user) ? ["PERSON", (await prisma.user.findUnique({ where: { id: user.id }, select: { personId: true } }))?.personId ?? ""] : d.voucher.split(":");
-  if (kind === "PERSON" && id === person.id) throw new Error("You cannot vouch for yourself");
-  await prisma.vouch.create({ data: { personId: person.id, voucherKind: kind as "USER" | "PERSON" | "EXTERNAL", voucherUserId: kind === "USER" ? id : null, voucherPersonId: kind === "PERSON" ? id : null, voucherName: d.voucherName || null, source: kind === "EXTERNAL" ? "LinkedIn recommendation" : null, context: d.context, statement: d.statement || null, wouldRecommend: d.wouldRecommend ?? false, attributes: Object.keys(attrs).length ? (attrs as Prisma.InputJsonValue) : undefined } });
+  for (const a of ATTRIBUTES) { const v = Number(formData.get(`attr:${a.key}`) || 0); if (Number.isInteger(v) && v >= 1 && v <= 5) attrs[a.key] = v; }
+  await prisma.vouch.create({ data: { personId: person.id, voucherKind: kind, voucherUserId, voucherPersonId, voucherName: kind === "EXTERNAL" ? d.voucherName || null : null, source: kind === "EXTERNAL" ? "LinkedIn recommendation" : null, context: d.context, statement: d.statement || null, wouldRecommend: d.wouldRecommend ?? false, attributes: Object.keys(attrs).length ? (attrs as Prisma.InputJsonValue) : undefined } });
   await audit({ tenantId: person.tenantId, actorId: user.id, action: "vouch.create", entityType: "Person", entityId: person.id, metadata: { kind, wouldRecommend: d.wouldRecommend ?? false } });
   revalidatePath(`/network/${person.id}`); revalidatePath("/network"); revalidatePath("/member");
 }
@@ -144,13 +135,16 @@ export async function setConsent(formData: FormData) {
   revalidatePath("/member"); revalidatePath(`/network/${p.id}`);
 }
 
-const referSchema = z.object({ name: z.string().trim().min(2).max(120), email: z.string().max(200).optional(), context: z.string().trim().min(5).max(1000), note: z.string().max(500).optional(), briefId: z.string().optional(), tell: z.coerce.boolean().optional() });
+const referSchema = z.object({ name: z.string().trim().min(2).max(120), email: z.string().trim().max(200).optional(), context: z.string().trim().min(5).max(1000), note: z.string().max(500).optional(), briefId: z.string().optional(), tell: z.coerce.boolean().optional() });
 
 export async function submitReferral(formData: FormData) {
   const user = await requireUser();
   const me = await resolveMemberPerson(user, String(formData.get("asPersonId") || "") || null);
   if (!me) throw new Error("No member profile");
   const d = referSchema.parse(Object.fromEntries(formData));
+  await limitOrThrow("mutate", `refer:${user.id}`);
+  // A referral can be attached to a requirement only if it is this network's and open to members.
+  if (d.briefId && !(await prisma.brief.findFirst({ where: { id: d.briefId, tenantId: me.tenantId, ...(isInternal(user) ? {} : { openToMembers: true }) }, select: { id: true } }))) throw new Error("That opportunity is not open");
   const existing = await prisma.person.findFirst({ where: { tenantId: me.tenantId, firstName: { equals: d.name.split(" ")[0], mode: "insensitive" }, lastName: { equals: d.name.split(" ").slice(1).join(" "), mode: "insensitive" } }, select: { id: true } });
   const r = await prisma.referral.create({ data: { tenantId: me.tenantId, referrerPersonId: me.id, referredPersonId: existing?.id ?? null, name: d.name, email: d.email || null, context: d.context, note: [d.note, d.tell ? "May be told who referred them." : "Do not reveal the referrer."].filter(Boolean).join(" "), briefId: d.briefId || null } });
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "referral.create", entityType: "Referral", entityId: r.id, metadata: { referrerPersonId: me.id, briefId: d.briefId || null } });
@@ -200,7 +194,7 @@ export async function triagePitch(formData: FormData) {
   const x = await prisma.pitch.findUnique({ where: { id }, include: { brief: true, person: { include: { relationships: true, evidence: true, conversations: { where: { approvalStatus: "APPROVED" }, select: { id: true } }, vouches: true } } } });
   if (!x) throw new Error("Not found"); assertSameTenant(user, x.brief.tenantId);
   if (action === "shortlist") {
-    const p = x.person; const d = await toDomain(x.brief);
+    const p = x.person; const d = toDomain(x.brief);
     const bp: BriefPerson = { id: p.id, capabilities: p.capabilities, sectors: p.sectors, seniority: p.seniority, engagementPreferences: p.engagementPreferences, primaryCity: p.primaryCity, primaryCountry: p.primaryCountry, targetLocations: p.targetLocations, availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate, rateExpectation: p.rateExpectation, salaryExpectation: p.salaryExpectation, relationships: p.relationships.map((r) => ({ relationshipType: r.relationshipType, workedTogether: r.workedTogether, wouldWorkTogetherAgain: r.wouldWorkTogetherAgain, yearsKnown: r.yearsKnown })), evidence: p.evidence.map((e) => ({ evidenceType: e.evidenceType, confidence: e.confidence, context: e.context })), approvedConversations: p.conversations.length, workRights: p.workRights, relocationInterest: p.relocationInterest, attributes: (p.attributes as FitScores | null) ?? null, observedAttributes: p.vouches.map((v) => v.attributes as FitScores | null).filter((a): a is FitScores => !!a) };
     const res = matchBrief(d, [bp], 1)[0];
     await prisma.shortlistItem.upsert({ where: { briefId_personId: { briefId: x.briefId, personId: x.personId } }, create: { briefId: x.briefId, personId: x.personId, fitScore: res?.match.fitScore ?? 50, fitExplanation: res?.match.fitExplanation ?? "Pitched by the member.", dimensions: (res?.match.dimensions ?? []) as unknown as Prisma.InputJsonValue, uncertainty: res?.match.uncertainty ?? [], checks: (res?.checks ?? []) as unknown as Prisma.InputJsonValue, tier: res?.tier ?? "conversation", decision: "SHORTLISTED", note: `Pitched: ${x.note}` }, update: { decision: "SHORTLISTED", note: `Pitched: ${x.note}` } });
@@ -214,64 +208,14 @@ export async function setBriefMembers(formData: FormData) {
   const user = await requireInternalAction();
   const b = await prisma.brief.findUnique({ where: { id: String(formData.get("briefId")) } });
   if (!b) throw new Error("Not found"); assertSameTenant(user, b.tenantId);
-  const open = formData.get("openToMembers") === "on";
-  await prisma.brief.update({ where: { id: b.id }, data: { openToMembers: open, memberSummary: String(formData.get("memberSummary") || "").trim().slice(0, 1000) || null } });
+  const summary = String(formData.get("memberSummary") || "").trim().slice(0, 1000) || null;
+  // Members only ever read the summary written for them, never the client's own words. Without
+  // one, the requirement stays closed to members.
+  const open = formData.get("openToMembers") === "on" && !!summary;
+  await prisma.brief.update({ where: { id: b.id }, data: { openToMembers: open, memberSummary: summary } });
   await audit({ tenantId: b.tenantId, actorId: user.id, action: "brief.members", entityType: "Brief", entityId: b.id, metadata: { open } });
   revalidatePath(`/requirements/${b.id}`); revalidatePath("/member");
-}
-
-// ---------- invitations ----------
-
-/** Mint a shareable invite link for a member (or, for the owner, on behalf of a member). */
-export async function createInviteLink(personId?: string): Promise<{ ok: true; token: string; inviter: string } | { ok: false; error: string }> {
-  const user = await requireUser();
-  const me = await resolveMemberPerson(user, personId ?? null);
-  if (me) {
-    await audit({ tenantId: me.tenantId, actorId: user.id, action: "member.register", entityType: "Person", entityId: me.id, metadata: { inviteLink: true } });
-    return { ok: true, token: signInvite(me.id), inviter: `${me.firstName} ${me.lastName}` };
-  }
-  // The owner/admin can invite the first members directly into the tenant, before anyone is a member.
-  if (isInternal(user)) {
-    const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { name: true } });
-    await audit({ tenantId: user.tenantId, actorId: user.id, action: "member.register", entityType: "Tenant", metadata: { inviteLink: true, tenant: true } });
-    return { ok: true, token: signTenantInvite(user.tenantId), inviter: tenant?.name ?? "the network" };
-  }
-  return { ok: false, error: "Only members can invite. Finish your own screening first." };
-}
-
-// ---------- registration (public) ----------
-
-const registerSchema = z.object({ firstName: z.string().trim().min(1).max(60), lastName: z.string().trim().min(1).max(60), email: z.string().trim().email().max(200), password: z.string().min(8).max(200), headline: z.string().max(200).optional(), linkedinUrl: z.string().max(300).optional(), referrerId: z.string().optional(), inviteToken: z.string().optional(), consent: z.coerce.boolean() });
-
-/**
- * A new member registers through an invitation — a member who referred them, or the network's
- * own invite link. Invitation-only is preserved: without a valid member referrer or a signed
- * invite token, registration is refused.
- */
-export async function registerMember(formData: FormData) {
-  const d = registerSchema.parse(Object.fromEntries(formData));
-  if (!d.consent) redirect("/join?error=consent");
-
-  const invite = d.inviteToken ? parseInvite(d.inviteToken) : null;
-  let tenantId: string | null = null;
-  let introducer: { id: string; firstName: string; lastName: string } | null = null;
-  const referrerId = d.referrerId || invite?.personId;
-  if (referrerId) {
-    const r = await prisma.person.findFirst({ where: { id: referrerId, memberSince: { not: null } }, select: { id: true, firstName: true, lastName: true, tenantId: true } });
-    if (r) { tenantId = r.tenantId; introducer = { id: r.id, firstName: r.firstName, lastName: r.lastName }; }
-  } else if (invite?.tenantId) {
-    const t = await prisma.tenant.findUnique({ where: { id: invite.tenantId }, select: { id: true } });
-    if (t) tenantId = t.id;
-  }
-  if (!tenantId) redirect("/join?error=referrer");
-
-  const email = d.email.toLowerCase();
-  if (await prisma.user.findUnique({ where: { email } })) redirect("/join?error=exists");
-  const owner = await prisma.user.findFirst({ where: { tenantId, role: "OWNER" }, select: { id: true } });
-  const person = await prisma.person.create({ data: { tenantId, firstName: d.firstName, lastName: d.lastName, email, headline: d.headline || null, linkedinUrl: d.linkedinUrl && /^https?:\/\//i.test(d.linkedinUrl) ? d.linkedinUrl : null, availabilityStatus: "NEEDS_REFRESH", screeningStatus: "REGISTERED", referralConsent: "ask", memberSince: new Date(), nextAction: "Screening call", nextActionDate: new Date(Date.now() + 3 * 86_400_000), relationships: owner ? { create: { networkOwnerId: owner.id, sourceType: "INBOUND", relationshipType: introducer ? "INTRODUCED" : "DIRECT", introducedById: introducer?.id ?? null, relationshipNotes: introducer ? `Registered through ${introducer.firstName} ${introducer.lastName}'s invitation.` : "Registered via the network's invite link.", lastContactDate: new Date() } } : undefined } });
-  await prisma.user.create({ data: { tenantId, email, name: `${d.firstName} ${d.lastName}`, role: "MEMBER", personId: person.id, passwordHash: await hash(d.password, 10) } });
-  await audit({ tenantId, actorId: null, action: "member.register", entityType: "Person", entityId: person.id, metadata: { referrerId: introducer?.id ?? null, viaTenantInvite: !!invite?.tenantId } });
-  redirect(`/login?registered=1&callbackUrl=${encodeURIComponent("/member?welcome=1")}`);
+  if (formData.get("openToMembers") === "on" && !summary) redirect(`/requirements/${b.id}?notice=member-summary`);
 }
 
 /** Which voice the AI interviewer speaks in. The API key itself never leaves the server environment. */

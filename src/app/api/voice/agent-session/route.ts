@@ -6,18 +6,22 @@
  * exactly this: we ask for one with the key, hand back only the URL, and it expires on its own.
  */
 import { NextResponse } from "next/server";
-import { requireUser } from "@/server/session";
-import { prisma } from "@/lib/db";
-import { DEFAULT_VOICE, type VoiceSettings } from "@/lib/voice-config";
+import { getUser } from "@/server/session";
+import { rateLimit } from "@/lib/rate-limit";
+import { voiceAccess } from "@/lib/voice-access";
 
 export async function GET() {
-  const user = await requireUser();
+  const user = await getUser();
+  if (!user) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
+  // A handful of sessions per screening is plenty; each one is billed.
+  if (!(await rateLimit("signin", `voice-session:${user.id}`)).success) return NextResponse.json({ error: "Too many voice sessions. Try again in a few minutes.", fallback: "speak" }, { status: 429 });
   const key = process.env.ELEVENLABS_API_KEY;
   if (!key) return NextResponse.json({ error: "No natural voice configured on this platform.", fallback: "device" }, { status: 503 });
 
-  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { voiceSettings: true } });
-  const v: VoiceSettings = { ...DEFAULT_VOICE, ...((tenant?.voiceSettings as Partial<VoiceSettings> | null) ?? {}) };
-  if (!v.agentId) return NextResponse.json({ error: "No conversational agent configured. Read-aloud will be used instead.", fallback: "speak" }, { status: 503 });
+  const access = await voiceAccess(user);
+  if (!access.ok) return NextResponse.json({ error: access.error, fallback: access.fallback }, { status: access.status });
+  const v = access.settings;
+  if (!v.agentId || !/^[A-Za-z0-9_-]{1,64}$/.test(v.agentId)) return NextResponse.json({ error: "No conversational agent configured. Read-aloud will be used instead.", fallback: "speak" }, { status: 503 });
 
   const res = await fetch(`https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${encodeURIComponent(v.agentId)}`, {
     headers: { "xi-api-key": key },

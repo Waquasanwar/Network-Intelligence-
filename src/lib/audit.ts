@@ -4,6 +4,10 @@ import type { Prisma } from "@prisma/client";
 export type AuditAction =
   | "auth.login"
   | "auth.logout"
+  | "auth.login_failed"
+  | "invite.create"
+  | "invite.revoke"
+  | "invite.reset_link"
   | "person.create"
   | "person.update"
   | "person.enrich"

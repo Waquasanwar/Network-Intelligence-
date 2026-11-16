@@ -5,26 +5,17 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { requireInternalAction, requireUser, type SessionUser } from "@/server/session";
-import { assertSameTenant, isInternal } from "@/lib/authz";
+import { assertSameTenant, canRevealIdentity, isInternal } from "@/lib/authz";
+import { isShortlistNamingDecision, namingBlocked } from "@/lib/reveal";
+import { limitOrThrow } from "@/lib/rate-limit";
 import { parseList } from "@/lib/utils";
 import { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt, type Brief, type BudgetKind, type BriefPerson, type RateCard, type Terms, type FeeModel, type ShortlistDecision, type BriefStatus, type FeeStatus } from "@/lib/demand";
-import { parseFitTraits } from "@/lib/fit";
+import { toDomain } from "@/lib/brief-domain";
 import type { Brief as DbBrief, CommercialAccount, EngagementRoute, Seniority, Prisma } from "@prisma/client";
 import { resolvePortalAccount, loadRateCard } from "@/server/queries";
 
 // ---------- shared helpers (also used by pages) ----------
 
-
-/** Prisma brief → domain brief + terms. */
-export async function toDomain(b: DbBrief): Promise<Brief & { terms: Terms; expertHours: number | null }> {
-  return {
-    rawText: b.rawText, title: b.title, engagementRoute: b.engagementRoute, headcount: b.headcount, roles: b.roles, capabilities: b.capabilities, sectors: b.sectors, seniority: b.seniority,
-    locations: b.locations, mustBeLocal: b.mustBeLocal, workRights: b.workRights, budget: b.budgetAmount ? { kind: (b.budgetKind ?? "DAY_RATE") as BudgetKind, amount: Number(b.budgetAmount), max: b.budgetMax ? Number(b.budgetMax) : null, currency: b.budgetCurrency ?? b.feeCurrency } : null,
-    durationMonths: b.durationMonths, startBy: b.startBy, fitTraits: parseFitTraits(b.rawText), assumptions: b.assumptions, questions: b.questions,
-    terms: { model: b.feeModel as FeeModel, pct: b.feePct ? Number(b.feePct) : null, flat: b.feeFlat ? Number(b.feeFlat) : null, currency: b.feeCurrency },
-    expertHours: b.expertHours,
-  };
-}
 
 async function briefPeople(tenantId: string): Promise<BriefPerson[]> {
   const people = await prisma.person.findMany({ where: { tenantId }, include: { relationships: true, evidence: true, conversations: { where: { approvalStatus: "APPROVED" }, select: { id: true } } } });
@@ -39,7 +30,7 @@ async function briefPeople(tenantId: string): Promise<BriefPerson[]> {
 
 /** Retrieve people for a brief and upsert the shortlist. Human decisions are preserved. */
 async function runShortlist(db: DbBrief, tenantId: string) {
-  const brief = await toDomain(db);
+  const brief = toDomain(db);
   const results = matchBrief(brief, await briefPeople(tenantId), 12);
   for (const r of results) {
     await prisma.shortlistItem.upsert({
@@ -66,7 +57,7 @@ async function termsFor(account: CommercialAccount, route: EngagementRoute | nul
 }
 
 async function forecastFee(db: DbBrief, tenantId: string, card: RateCard) {
-  const d = await toDomain(db);
+  const d = toDomain(db);
   const est = estimateFee(d, d.terms, card, d.expertHours);
   const existing = await prisma.feeLine.findFirst({ where: { briefId: db.id, personId: null, status: "FORECAST" } });
   if (!est.confident) { if (existing) await prisma.feeLine.delete({ where: { id: existing.id } }); return; }
@@ -108,7 +99,7 @@ export async function createAccount(formData: FormData) {
 
 export async function createBrief(formData: FormData) {
   const user = await requireInternalAction();
-  const text = String(formData.get("text") || "").trim();
+  const text = String(formData.get("text") || "").trim().slice(0, 6000);
   const accountId = String(formData.get("accountId") || "");
   if (text.length < 3) throw new Error("Describe the need first");
   const account = await prisma.commercialAccount.findUnique({ where: { id: accountId } });
@@ -188,7 +179,7 @@ export async function updateBrief(formData: FormData) {
     durationMonths: d.durationMonths ? Number(d.durationMonths) : null, startBy: d.startBy || null, mustBeLocal: d.mustBeLocal ?? false, questions: [],
   } });
   // Re-check hard requirements against the corrected brief; keep every human decision.
-  const domain = await toDomain(nb);
+  const domain = toDomain(nb);
   const people = await briefPeople(user.tenantId);
   const items = await prisma.shortlistItem.findMany({ where: { briefId: b.id } });
   for (const it of items) { const p = people.find((x) => x.id === it.personId); if (!p) continue; const checks = hardChecks(domain, p); const tier = checks.some((c) => c.state === "unmet") ? "stretch" : checks.some((c) => c.state === "unknown") ? "conversation" : "meets"; await prisma.shortlistItem.update({ where: { id: it.id }, data: { checks: checks as unknown as Prisma.InputJsonValue, tier } }); }
@@ -204,15 +195,26 @@ export async function decideShortlist(formData: FormData) {
   const id = String(formData.get("itemId"));
   const decision = z.enum(["CANDIDATE", "SHORTLISTED", "PROPOSED", "CLIENT_INTERESTED", "CLIENT_PASSED", "INTRODUCED", "PLACED", "NOT_FOR_THIS"]).parse(formData.get("decision")) as ShortlistDecision;
   const clientNote = String(formData.get("clientNote") || "").trim().slice(0, 300) || null;
-  const item = await prisma.shortlistItem.findUnique({ where: { id }, include: { brief: true, person: { select: { firstName: true, lastName: true } } } });
+  const item = await prisma.shortlistItem.findUnique({ where: { id }, include: { brief: true, person: { select: { firstName: true, lastName: true, privacy: true, referralConsent: true } } } });
   if (!item) throw new Error("Not found");
   assertSameTenant(user, item.brief.tenantId);
+  const back = (notice: string): never => redirect(`/requirements/${item.briefId}?notice=${notice}`);
+  // "Introduced" and "Placed" are the moment the client or agency is given the name. That takes an
+  // owner or admin, the person's yes to this introduction, and their permission still standing.
+  const naming = isShortlistNamingDecision(decision);
+  const newlyNamed = naming && !isShortlistNamingDecision(item.decision);
+  if (newlyNamed) {
+    if (!canRevealIdentity(user)) back("reveal-role");
+    if (namingBlocked(item.person)) back("reveal-withdrawn");
+    if (item.person.referralConsent !== "yes" && formData.get("consentConfirmed") !== "on") back("reveal-consent");
+  }
   await prisma.shortlistItem.update({ where: { id }, data: { decision, clientNote } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "shortlist.decide", entityType: "Brief", entityId: item.briefId, metadata: { personId: item.personId, decision } });
+  if (newlyNamed) await audit({ tenantId: user.tenantId, actorId: user.id, action: "identity.reveal", entityType: "Brief", entityId: item.briefId, metadata: { personId: item.personId, accountId: item.brief.accountId, decision, consent: item.person.referralConsent === "yes" ? "standing" : "confirmed for this introduction" } });
   if (decision === "PLACED") {
     const exists = await prisma.feeLine.findFirst({ where: { briefId: item.briefId, personId: item.personId } });
     if (!exists) {
-      const d = await toDomain(item.brief); const card = await loadRateCard(user.tenantId);
+      const d = toDomain(item.brief); const card = await loadRateCard(user.tenantId);
       const est = estimateFee({ ...d, headcount: 1 }, d.terms, card, d.expertHours);
       await prisma.feeLine.create({ data: { tenantId: user.tenantId, briefId: item.briefId, accountId: item.brief.accountId, personId: item.personId, model: d.terms.model, basis: est.basis, gross: est.gross, ourTake: est.ourTake, currency: est.currency, status: "AGREED" } });
       await audit({ tenantId: user.tenantId, actorId: user.id, action: "fee.create", entityType: "Brief", entityId: item.briefId, metadata: { ourTake: est.ourTake, currency: est.currency, personId: item.personId } });
@@ -267,7 +269,7 @@ export async function referPerson(formData: FormData) {
     await audit({ tenantId: user.tenantId, actorId: user.id, action: "brief.terms", entityType: "Brief", entityId: b.id, metadata: { model, pct: n || null } });
   }
 
-  const domain = await toDomain(b);
+  const domain = toDomain(b);
   const bp = (await briefPeople(user.tenantId)).find((x) => x.id === person.id)!;
   const res = matchBrief(domain, [bp], 1)[0];
   const checks = res?.checks ?? hardChecks(domain, bp);
@@ -313,6 +315,8 @@ export async function addFeeLine(formData: FormData) {
   const b = await ownedBrief(user, String(formData.get("briefId")));
   const d = z.object({ personId: z.string().optional(), status: z.enum(["FORECAST", "AGREED", "INVOICED", "PAID", "WRITTEN_OFF"]).default("FORECAST"), gross: z.string().optional(), ourTake: z.string(), currency: z.string().max(3), basis: z.string().max(200).optional() }).parse(Object.fromEntries(formData));
   const num = (s?: string) => Number((s ?? "0").replace(/[^0-9.]/g, "")) || 0;
+  // A fee can only be recorded against someone in this network who is on this brief's shortlist.
+  if (d.personId && !(await prisma.shortlistItem.findFirst({ where: { briefId: b.id, personId: d.personId, person: { tenantId: user.tenantId } }, select: { id: true } }))) throw new Error("Choose a person from this requirement's shortlist");
   await prisma.feeLine.create({ data: { tenantId: user.tenantId, briefId: b.id, accountId: b.accountId, personId: d.personId || null, model: b.feeModel, basis: d.basis || "Recorded manually", gross: num(d.gross), ourTake: num(d.ourTake), currency: d.currency, status: d.status } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "fee.create", entityType: "Brief", entityId: b.id, metadata: { ourTake: num(d.ourTake), currency: d.currency, status: d.status } });
   revalidatePath(`/requirements/${b.id}`); revalidatePath("/requirements");
@@ -342,8 +346,11 @@ export async function portalSubmitBrief(formData: FormData) {
   const user = await requireUser();
   const account = await resolvePortalAccount(user, String(formData.get("accountId") || "") || null);
   if (!account || !account.portalEnabled) throw new Error("No portal account");
-  const text = String(formData.get("text") || "").trim();
+  const text = String(formData.get("text") || "").trim().slice(0, 6000);
   if (text.length < 3) throw new Error("Describe the requirement first");
+  // A portal user can send requirements, not flood the owner's queue with them.
+  await limitOrThrow("mutate", `portal-brief:${user.id}`);
+  if (!isInternal(user) && (await prisma.brief.count({ where: { accountId: account.id, submittedVia: "PORTAL", createdAt: { gt: new Date(Date.now() - 86_400_000) } } })) >= 25) throw new Error("That is a lot of requirements for one day. Please get in touch with us directly.");
   const card = await loadRateCard(account.tenantId);
   const parsed = parseBrief(text);
   const terms = await termsFor(account, parsed.engagementRoute, card);

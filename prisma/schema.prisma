@@ -33,6 +33,8 @@ model Tenant {
   rateCard  Json? // commercial defaults (see src/lib/demand.ts RateCard); configurable, never hard-coded
   /// Which voice the AI interviewer speaks in (see src/lib/voice-config.ts). Never holds an API key.
   voiceSettings Json?
+  /// Bumped to revoke every network invite link issued so far (see src/lib/invite.ts).
+  inviteVersion Int        @default(0)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -43,7 +45,9 @@ model Tenant {
   users              User[]
   people             Person[]
   opportunities      Opportunity[]
-  partnerProfile     Partner?
+  partnerProfile     Partner?            @relation("PartnerProfile")
+  partners           Partner[]           @relation("PartnerNetwork")
+  invites            Invite[]
   auditLogs          AuditLog[]
   savedViews         SavedView[]
   introductions      Introduction[]
@@ -70,6 +74,11 @@ model User {
   mfaEnabled    Boolean   @default(false)
   mfaSecret         String?    // base32 TOTP secret, set during enrolment, held only while MFA is on
   mfaRecoveryCodes  String[]   @default([]) // sha256 hashes of one-time recovery codes
+  mfaPendingSecret  String?    // a new authenticator being enrolled; promoted to mfaSecret only once a code verifies
+  mfaLastStep       Int?       // last accepted TOTP time-step, so a code cannot be replayed
+  sessionVersion    Int        @default(0) // bumped to sign every device out (role, MFA or erasure)
+  failedLogins      Int        @default(0)
+  lockedUntil       DateTime?  // temporary lock after repeated failed sign-ins
   emailVerified DateTime?
   image         String?
   lastLoginAt   DateTime?
@@ -92,6 +101,7 @@ model User {
   savedViews            SavedView[]
   person                Person?                 @relation(fields: [personId], references: [id])
   vouchesGiven          Vouch[]                 @relation("VoucherUser")
+  invitesCreated        Invite[]                @relation("InviteCreator")
 
   @@index([tenantId])
 }
@@ -246,6 +256,9 @@ model Person {
   referredBy        Referral[]      @relation("ReferredPerson")
   pitches           Pitch[]
   memberUser        User?
+  invitesSent       Invite[]        @relation("InviteInviter")
+  invitesToClaim    Invite[]        @relation("InviteClaim")
+  invitesJoined     Invite[]        @relation("InviteJoined")
 
   @@index([tenantId])
   @@index([tenantId, availabilityStatus])
@@ -540,6 +553,8 @@ enum SubscriptionStatus {
 model Partner {
   id                  String             @id @default(cuid())
   tenantId            String             @unique
+  /// The network that works with this agency. Every internal read and write is scoped by it.
+  networkTenantId     String?
   name                String
   contactName         String?
   contactEmail        String?
@@ -554,10 +569,13 @@ model Partner {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
-  tenant        Tenant               @relation(fields: [tenantId], references: [id])
+  tenant        Tenant               @relation("PartnerProfile", fields: [tenantId], references: [id])
+  networkTenant Tenant?              @relation("PartnerNetwork", fields: [networkTenantId], references: [id])
   requirements  PartnerRequirement[]
   opportunities Opportunity[]
   introductions Introduction[]
+
+  @@index([networkTenantId])
 }
 
 enum RequirementStatus {
@@ -968,4 +986,43 @@ model Pitch {
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@unique([briefId, personId])
+}
+
+// ---------- Invitations: how the network grows ----------
+
+enum InviteStatus {
+  SENT
+  OPENED
+  JOINED
+  REVOKED
+}
+
+/// A personal, single-use invitation. The link carries a signed reference to this row, so it can be
+/// tracked (opened, joined), expired and revoked. `personId` lets an existing contact claim the
+/// profile the network already holds for them instead of creating a duplicate.
+model Invite {
+  id              String       @id @default(cuid())
+  tenantId        String
+  createdById     String? // the internal user who sent it
+  inviterPersonId String? // or the member who sent it
+  personId        String? // an existing profile this invitation lets its owner claim
+  name            String
+  email           String?
+  note            String?
+  status          InviteStatus @default(SENT)
+  openedAt        DateTime?
+  joinedAt        DateTime?
+  joinedPersonId  String?
+  expiresAt       DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  tenant        Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy     User?   @relation("InviteCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  inviterPerson Person? @relation("InviteInviter", fields: [inviterPersonId], references: [id], onDelete: Cascade)
+  person        Person? @relation("InviteClaim", fields: [personId], references: [id], onDelete: Cascade)
+  joinedPerson  Person? @relation("InviteJoined", fields: [joinedPersonId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@index([inviterPersonId])
 }

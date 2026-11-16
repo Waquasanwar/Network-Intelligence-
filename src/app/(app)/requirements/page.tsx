@@ -12,7 +12,8 @@ import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { NewAccountDrawer } from "@/components/domain/demand-drawers";
 import { ReadCard, CheckList, TierBadge, KindBadge, BriefStatusBadge, FeeStatusBadge, FeeBox, routeLabel, KIND_LABEL } from "@/components/domain/demand";
-import { createBrief, toDomain } from "@/server/actions/demand";
+import { createBrief } from "@/server/actions/demand";
+import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard, feeSummary } from "@/server/queries";
 import { parseBrief, matchBrief, estimateFee, defaultFeeModel, defaultTerms, fmt, PORTAL_VISIBLE, FEE_MODEL_LABELS, type BriefPerson, type AccountKind } from "@/lib/demand";
 import { fullName } from "@/lib/utils";
@@ -133,7 +134,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
               <table className="data">
                 <thead><tr><th>Requirement</th><th>Route</th><th>Status</th><th className="text-right">Fee to us</th></tr></thead>
                 <tbody>
-                  {await Promise.all(briefs.map(async (b) => { const d = await toDomain(b); const est = estimateFee(d, d.terms, card, d.expertHours); const meets = b.shortlist.filter((s) => s.tier === "meets").length; const prop = b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision)).length; return (
+                  {await Promise.all(briefs.map(async (b) => { const d = toDomain(b); const est = estimateFee(d, d.terms, card, d.expertHours); const meets = b.shortlist.filter((s) => s.tier === "meets").length; const prop = b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision)).length; return (
                     <tr key={b.id}>
                       <td className="align-top"><Link href={`/requirements/${b.id}`} className="font-medium text-ink hover:underline underline-offset-4">{b.title}</Link><div className="text-[12px] text-ink-faint mt-0.5 flex flex-wrap items-center gap-1.5"><KindBadge kind={b.account.kind} />{b.account.name}{b.submittedVia === "PORTAL" ? " · via portal" : ""} · <DateText date={b.updatedAt} relative /></div></td>
                       <td className="align-top text-xs">{routeLabel(b.engagementRoute)}{b.headcount > 1 ? ` × ${b.headcount}` : ""}<div className="text-[12px] text-ink-faint">{b.locations[0] ?? "location to confirm"}{b.mustBeLocal ? " · already there" : ""}{b.workRights ? " · visa" : ""}</div></td>

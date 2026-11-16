@@ -120,7 +120,11 @@ function availabilityBand(status: string): PartnerSafePerson["availabilityBand"]
   return "not-now";
 }
 
-/** Stable opaque reference so a partner can talk about "NI-4F2A" without learning an id. */
+/**
+ * Unkeyed fallback reference. NOT for anything a partner or client can see: it can be recomputed
+ * from a person id. Outward-facing pages pass `partnerRef()` from src/lib/refs.ts instead, which is
+ * keyed and specific to the audience. Kept for internal previews and tests of the redaction shape.
+ */
 export function opaqueRef(id: string): string {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
@@ -131,7 +135,7 @@ export function opaqueRef(id: string): string {
  * Produce the only representation of a person a recruitment partner may ever see before an
  * approved identity reveal. No name, contact details, employer, notes, or evidence text.
  */
-export function redactForPartner(p: PersonFull): PartnerSafePerson {
+export function redactForPartner(p: PersonFull, opts: { ref?: string; hideRegion?: boolean } = {}): PartnerSafePerson {
   const positive = (p.evidence ?? []).filter((e) => e.evidenceType !== "CAUTION");
   const partnerSafe = positive.filter((e) => e.visibility === "PARTNER_SAFE");
   const evidenceSummary =
@@ -139,7 +143,7 @@ export function redactForPartner(p: PersonFull): PartnerSafePerson {
       ? "No delivery evidence recorded."
       : `${positive.length} piece${positive.length === 1 ? "" : "s"} of observed delivery evidence${partnerSafe.length ? ` (${partnerSafe.length} shareable on request)` : ""}.`;
   return {
-    ref: opaqueRef(p.id),
+    ref: opts.ref ?? opaqueRef(p.id),
     headlineSummary: [p.seniority ? p.seniority.replace(/_/g, " ").toLowerCase() : null, p.capabilities.slice(0, 3).join(", ")]
       .filter(Boolean)
       .join(" · "),
@@ -147,7 +151,7 @@ export function redactForPartner(p: PersonFull): PartnerSafePerson {
     sectors: [...p.sectors],
     seniority: p.seniority ?? null,
     engagementPreferences: [...p.engagementPreferences],
-    region: p.primaryCountry ?? null,
+    region: opts.hideRegion ? null : p.primaryCountry ?? null,
     availabilityBand: availabilityBand(p.availabilityStatus),
     evidenceSummary,
   };

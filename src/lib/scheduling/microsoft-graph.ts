@@ -1,3 +1,4 @@
+import { oauthState } from "@/lib/secrets";
 import type { AvailabilityRequest, CreateMeetingRequest, ScheduledMeeting, SchedulingProvider, TimeSlot, UpdateMeetingRequest } from "./types";
 
 /**
@@ -16,7 +17,7 @@ export class MicrosoftGraphSchedulingProvider implements SchedulingProvider {
     return Boolean(process.env.MICROSOFT_GRAPH_CLIENT_ID && process.env.MICROSOFT_GRAPH_CLIENT_SECRET);
   }
 
-  async connect() {
+  async connect(userId: string) {
     if (!this.isConfigured()) return { authorizationUrl: null };
     const tenant = process.env.MICROSOFT_GRAPH_TENANT_ID || "common";
     const params = new URLSearchParams({
@@ -24,6 +25,7 @@ export class MicrosoftGraphSchedulingProvider implements SchedulingProvider {
       response_type: "code",
       redirect_uri: `${process.env.AUTH_URL ?? ""}/api/integrations/microsoft/callback`,
       response_mode: "query",
+      state: oauthState(userId, "MICROSOFT_GRAPH"),
       scope: this.requestedScopes.join(" "),
     });
     return { authorizationUrl: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?${params}` };

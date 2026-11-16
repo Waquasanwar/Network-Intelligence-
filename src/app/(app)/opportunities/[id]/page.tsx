@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireInternal } from "@/server/session";
+import { requireInternal, getUser } from "@/server/session";
 import { prisma } from "@/lib/db";
+import { Notice } from "@/components/ui/notice";
 import { PageHeader, EmptyState, Score, Section, Facts } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Chip } from "@/components/ui/badge";
@@ -20,11 +21,13 @@ import { ChevronDown, Sparkles } from "lucide-react";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const o = await prisma.opportunity.findUnique({ where: { id }, select: { title: true } });
+  const viewer = await getUser();
+  const o = viewer ? await prisma.opportunity.findFirst({ where: { id, tenantId: viewer.tenantId }, select: { title: true } }) : null;
   return { title: o?.title ?? "Opportunity" };
 }
 
-export default async function OpportunityPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OpportunityPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notice?: string }> }) {
+  const { notice } = await searchParams;
   const user = await requireInternal();
   const { id } = await params;
   const opp = await prisma.opportunity.findUnique({
@@ -39,7 +42,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
   if (!opp || opp.tenantId !== user.tenantId) notFound();
 
   const [partners, benchPeople] = await Promise.all([
-    prisma.partner.findMany({ select: { id: true, name: true, licensedForPermanent: true, commercialSharePct: true } }),
+    prisma.partner.findMany({ where: { networkTenantId: user.tenantId }, select: { id: true, name: true, licensedForPermanent: true, commercialSharePct: true } }),
     opp.isAmana ? prisma.person.findMany({ where: { tenantId: user.tenantId, amanaBench: true }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }) : Promise.resolve([]),
   ]);
   const partnerOpts = partners.map((p) => ({ ...p, commercialSharePct: p.commercialSharePct ? Number(p.commercialSharePct) : null }));
@@ -48,7 +51,8 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
 
   return (
     <>
-            <PageHeader
+      <Notice code={notice} />
+      <PageHeader
         title={opp.title}
         description={<span className="flex flex-wrap items-center gap-1.5"><RouteBadge route={opp.engagementRoute} /><StageBadge status={opp.status} />{opp.isAmana ? <Badge tone="teal" filled>Amana Expert Network</Badge> : null}<span className="text-ink-faint">· {opp.clientName ?? opp.sourceType.toLowerCase()}{opp.partner ? ` via ${opp.partner.name}` : ""}</span></span>}
         actions={

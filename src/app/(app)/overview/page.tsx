@@ -5,7 +5,7 @@ import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { NetworkGraph } from "@/components/domain/network-graph";
 import { buildNetworkMap } from "@/server/network-map";
 import { InviteCard } from "@/components/domain/invite-card";
-import { signTenantInvite } from "@/lib/invite";
+import { networkInviteToken } from "@/server/invites";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/page";
 import { PersonLink } from "@/components/domain/person-link";
@@ -44,7 +44,7 @@ export default async function OverviewPage() {
     prisma.introduction.findMany({ where: { tenantId: t }, include: { person: true, opportunity: { select: { title: true } } }, orderBy: { updatedAt: "desc" } }),
     prisma.scheduledConversation.findMany({ where: { tenantId: t, status: "SCHEDULED", startAt: { gte: now, lte: weekAhead } }, include: { person: true }, orderBy: { startAt: "asc" } }),
     prisma.conversation.findMany({ where: { person: { tenantId: t }, approvalStatus: { in: ["NEEDS_REVIEW", "DRAFT"] } }, include: { person: true }, orderBy: { date: "desc" }, take: 6 }),
-    prisma.partnerRequirement.findMany({ where: { status: { in: ["SUBMITTED", "REVIEWING", "INTRO_REQUESTED"] } }, include: { partner: { select: { name: true } } }, orderBy: { updatedAt: "desc" }, take: 5 }),
+    prisma.partnerRequirement.findMany({ where: { partner: { networkTenantId: user.tenantId }, status: { in: ["SUBMITTED", "REVIEWING", "INTRO_REQUESTED"] } }, include: { partner: { select: { name: true } } }, orderBy: { updatedAt: "desc" }, take: 5 }),
     prisma.person.findMany({ where: { tenantId: t }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }),
   ]);
 
@@ -280,7 +280,7 @@ export default async function OverviewPage() {
         </div>
 
         <div className="space-y-4">
-          <InviteCard token={signTenantInvite(user.tenantId)} />
+          <InviteCard token={await networkInviteToken(user.tenantId)} />
           {showP23 ? (
           <Card>
             <CardHeader title="Amana Expert Network" description="Bench and live demand" action={<Link href="/amana" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Open</Link>} />

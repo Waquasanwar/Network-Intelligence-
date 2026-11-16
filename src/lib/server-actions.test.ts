@@ -34,11 +34,44 @@ describe("server-action surface", () => {
     expect(offenders.map((f) => f.name), `${file} exports action(s) keyed on a client-supplied tenantId`).toEqual([]);
   });
 
-  it("every action file re-authorises: it imports a requireUser/requireInternal guard", () => {
+  /**
+   * The few actions that are deliberately reachable without a session, each with the protection
+   * that stands in for one. Adding a name here is a security decision and should read like one.
+   */
+  const PUBLIC: Record<string, RegExp[]> = {
+    // Joining: the encrypted invitation decides the tenant, and the endpoint is throttled.
+    registerMember: [/resolveInvite\(/, /rateLimit\("join"/],
+    enrichSelfDraft: [/resolveInvite\(/, /rateLimit\("join"/],
+    // Signing out needs no permission; it only ever ends the caller's own session.
+    signOutAction: [/signOut\(/],
+  };
+  const GUARD = /\b(requireUser|requireInternal|requireInternalAction|requireAdminAction)\(/;
+
+  /** The source of each exported action, from its declaration to the next export. */
+  const bodies = (src: string) => {
+    const starts = [...src.matchAll(/^export async function (\w+)/gm)].map((m) => ({ name: m[1], at: m.index! }));
+    const ends = [...src.matchAll(/^export /gm)].map((m) => m.index!);
+    return starts.map((f) => ({ name: f.name, body: src.slice(f.at, ends.find((e) => e > f.at) ?? src.length) }));
+  };
+
+  it.each(files)("%s: every exported action authenticates its caller itself", (file) => {
+    const src = readFileSync(join(ACTION_DIR, file), "utf8");
+    if (!src.includes('"use server"')) return;
+    for (const f of bodies(src)) {
+      if (PUBLIC[f.name]) {
+        for (const needed of PUBLIC[f.name]) expect(needed.test(f.body), `${file}: public action ${f.name} must contain ${needed}`).toBe(true);
+        continue;
+      }
+      expect(GUARD.test(f.body), `${file}: ${f.name} is a public endpoint and does not call an auth guard`).toBe(true);
+    }
+  });
+
+  it("only async functions are exported from action files (nothing else becomes an endpoint by accident)", () => {
     for (const file of files) {
       const src = readFileSync(join(ACTION_DIR, file), "utf8");
       if (!src.includes('"use server"')) continue;
-      expect(/require(User|Internal|InternalAction)/.test(src), `${file} imports no auth guard`).toBe(true);
+      const other = [...src.matchAll(/^export (?!async function |type |interface )(.*)$/gm)].map((m) => m[1].slice(0, 40));
+      expect(other, `${file} exports something other than an async action or a type`).toEqual([]);
     }
   });
 });

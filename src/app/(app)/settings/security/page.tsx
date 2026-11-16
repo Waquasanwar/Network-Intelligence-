@@ -13,18 +13,37 @@ import { DateText } from "@/components/domain/date";
 
 export const metadata = { title: "Security" };
 
+const SENSITIVE = ["identity.reveal", "introduction.approve", "summary.approve", "person.export", "user.role_change", "integration.connect", "integration.disconnect", "data.deletion_request", "auth.login", "auth.login_failed", "invite.create", "member.register"];
+
 export default async function SecurityPage({ searchParams }: { searchParams: Promise<{ action?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   const internal = isInternal(user);
-  const [users, me, audit, deletionRequests] = await Promise.all([
-    prisma.user.findMany({ where: { tenantId: user.tenantId }, orderBy: { name: "asc" } }),
-    prisma.user.findUnique({ where: { id: user.id } }),
-    prisma.auditLog.findMany({ where: { tenantId: user.tenantId, ...(sp.action ? { action: { startsWith: sp.action } } : {}) }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 }),
-    prisma.auditLog.findMany({ where: { tenantId: user.tenantId, action: { in: ["data.deletion_request", "person.export"] } }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 20 }),
-  ]);
+  // The directory, the audit trail and data requests belong to the internal team. A member,
+  // partner or client reaching this page manages their own sign-in and nothing else.
+  const me = await prisma.user.findUnique({ where: { id: user.id }, select: { mfaEnabled: true } });
+  const [users, audit, deletionRequests] = internal
+    ? await Promise.all([
+        prisma.user.findMany({ where: { tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true, name: true, email: true, role: true, mfaEnabled: true, lastLoginAt: true }, orderBy: { name: "asc" } }),
+        prisma.auditLog.findMany({ where: { tenantId: user.tenantId, ...(sp.action && SENSITIVE.includes(sp.action) ? { action: sp.action } : {}) }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 }),
+        prisma.auditLog.findMany({ where: { tenantId: user.tenantId, action: { in: ["data.deletion_request", "person.export"] } }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 20 }),
+      ])
+    : [[], [], []];
   const canManage = user.role === "OWNER" || user.role === "ADMIN";
-  const sensitive = ["identity.reveal", "introduction.approve", "summary.approve", "person.export", "user.role_change", "integration.connect", "integration.disconnect", "data.deletion_request", "auth.login"];
+  const isOwner = user.role === "OWNER";
+  const sensitive = SENSITIVE;
+
+  if (!internal) {
+    return (
+      <div className="max-w-[560px] mx-auto">
+        <PageHeader title="Sign-in security" description="Add a second step when you sign in. Your data and privacy choices are on your profile." />
+        <Card>
+          <CardHeader title="Your account" description="Sessions end after 8 hours. Turning on a second step protects your profile even if your password is guessed." />
+          <CardBody><MfaCard enabled={!!me?.mfaEnabled} /></CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -32,7 +51,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
           <Card>
-            <CardHeader title="Users & roles" description="Server-side RBAC. Partners and clients live in their own tenants." />
+            <CardHeader title="Users & roles" description="Your internal team. Members, clients and agencies sign in to their own areas and are not listed here." />
             <CardBody className="px-0 pb-0">
               <table className="data">
                 <thead><tr><th className="pl-4">User</th><th>Role</th><th>MFA</th><th>Last sign-in</th>{canManage && internal ? <th></th> : null}</tr></thead>
@@ -43,7 +62,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
                       <td><Badge tone={u.role === "OWNER" ? "navy" : "neutral"}>{u.role.toLowerCase()}</Badge></td>
                       <td>{u.mfaEnabled ? <Badge tone="teal">enabled</Badge> : <Badge tone="amber">off</Badge>}</td>
                       <td className="text-xs"><DateText date={u.lastLoginAt} relative /></td>
-                      {canManage && internal ? <td className="text-right">{u.id !== user.id ? <form action={changeUserRole} className="inline-flex items-center gap-1.5"><input type="hidden" name="userId" value={u.id} /><Select name="role" defaultValue={u.role} className="h-7 text-[12px] w-[130px]"><option value="OWNER">Owner</option><option value="ADMIN">Admin</option><option value="CONTRIBUTOR">Contributor</option></Select><SubmitButton size="sm" variant="secondary" pendingText="…">Set</SubmitButton></form> : <span className="text-[12px] text-ink-faint">you</span>}</td> : null}
+                      {canManage && internal ? <td className="text-right">{u.id !== user.id && (isOwner || u.role !== "OWNER") ? <form action={changeUserRole} className="inline-flex items-center gap-1.5"><input type="hidden" name="userId" value={u.id} /><Select name="role" defaultValue={u.role} className="h-7 text-[12px] w-[130px]">{isOwner ? <option value="OWNER">Owner</option> : null}<option value="ADMIN">Admin</option><option value="CONTRIBUTOR">Contributor</option></Select><SubmitButton size="sm" variant="secondary" pendingText="…">Set</SubmitButton></form> : <span className="text-[12px] text-ink-faint">you</span>}</td> : null}
                     </tr>
                   ))}
                 </tbody>
@@ -74,7 +93,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
         </div>
         <div className="space-y-4">
           <Card>
-            <CardHeader title="Your account" description="Sessions expire after 8 hours; signing out revokes the current session." />
+            <CardHeader title="Your account" description="Sessions end after 8 hours. A role change signs that person out everywhere." />
             <CardBody>
               <MfaCard enabled={!!me?.mfaEnabled} />
             </CardBody>

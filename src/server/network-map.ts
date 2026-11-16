@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { trustScore, trustBand, TRUST_BAND_LABEL } from "@/lib/trust";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { matchBrief, type BriefPerson } from "@/lib/demand";
-import { toDomain } from "@/server/actions/demand";
+import { toDomain } from "@/lib/brief-domain";
 import { AVAILABILITY_LABELS, ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import type { FitScores } from "@/lib/fit";
@@ -52,7 +52,7 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
   }));
   const rolesFor = new Map<string, GRole[]>();
   for (const b of briefs) {
-    const domain = await toDomain(b);
+    const domain = toDomain(b);
     for (const m of matchBrief(domain, briefPeople, 12, now)) {
       if (m.tier === "stretch") continue;
       const list = rolesFor.get(m.match.personId) ?? [];

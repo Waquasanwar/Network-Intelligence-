@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireInternal } from "@/server/session";
+import { requireInternal, getUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { canViewRelationshipNotes } from "@/lib/authz";
 import { assessFreshness } from "@/lib/availability";
@@ -15,22 +15,26 @@ import { AvailabilityDrawer, EditProfileDrawer, AddRelationshipDrawer, AddEviden
 import { fullName } from "@/lib/utils";
 import { TrustCard, FitCard, VouchList, ScreeningBadge } from "@/components/domain/trust";
 import { VouchDrawer } from "@/components/domain/member-drawers";
-import { trustFor, fitFor, startScreening } from "@/server/actions/members";
+import { InviteContactDrawer } from "@/components/domain/invite-drawers";
+import { mergeRegistration } from "@/server/actions/invites";
+import { startScreening } from "@/server/actions/members";
+import { trustFor, fitFor } from "@/lib/trust-for";
 import { ReferDrawer, type ReferTarget } from "@/components/domain/refer";
 import { ReferredCard, type ReferredRow } from "@/components/domain/referred-card";
-import { toDomain } from "@/server/actions/demand";
+import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard } from "@/server/queries";
 import { estimateFee, PORTAL_VISIBLE, FEE_STATUS_LABELS, type AccountKind, type ShortlistDecision } from "@/lib/demand";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { ClipboardList, MessagesSquare } from "lucide-react";
+import { ClipboardList, GitMerge, MessagesSquare } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const p = await prisma.person.findUnique({ where: { id }, select: { firstName: true, lastName: true, preferredName: true } });
+  const viewer = await getUser();
+  const p = viewer ? await prisma.person.findFirst({ where: { id, tenantId: viewer.tenantId }, select: { firstName: true, lastName: true, preferredName: true } }) : null;
   return { title: p ? fullName(p) : "Person" };
 }
 
@@ -53,9 +57,16 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       scheduledMeetings: { where: { status: "SCHEDULED" }, orderBy: { startAt: "asc" } },
       introducedPeople: { include: { person: { select: { id: true, firstName: true, lastName: true, headline: true } } } },
       teamMemberships: { include: { opportunity: { select: { id: true, title: true } } } },
+      memberUser: { select: { id: true } },
     },
   });
   if (!person || person.tenantId !== user.tenantId) notFound(); // object-level check; never reveal existence across tenants
+  // Someone who registered themselves may already have been a contact here. Offer to join the two
+  // up — a person decides, because an email typed into a form is not proof of who someone is.
+  const twin = person.memberUser
+    ? await prisma.person.findFirst({ where: { tenantId: user.tenantId, id: { not: person.id }, memberUser: null, OR: [...(person.email ? [{ email: { equals: person.email, mode: "insensitive" as const } }] : []), { firstName: { equals: person.firstName, mode: "insensitive" as const }, lastName: { equals: person.lastName, mode: "insensitive" as const } }] }, select: { id: true, firstName: true, lastName: true, headline: true } })
+    : null;
+  const canMerge = user.role === "OWNER" || user.role === "ADMIN";
 
   const [trust, fit, users] = await Promise.all([trustFor(person), fitFor(person), prisma.user.findMany({ where: { tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true, name: true } })]);
   const [audit, allPeople, connections] = await Promise.all([
@@ -71,7 +82,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
     loadRateCard(user.tenantId),
   ]);
   const referredRows: ReferredRow[] = await Promise.all(shortlisted.map(async (s) => {
-    const d = await toDomain(s.brief);
+    const d = toDomain(s.brief);
     const est = estimateFee({ ...d, headcount: 1 }, d.terms, card, d.expertHours);
     const fee = s.brief.feeLines[0];
     return {
@@ -105,6 +116,12 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
   return (
     <>
+      {twin ? (
+        <div className="mb-4 flex flex-col gap-3 rounded-[18px] border border-amber/30 bg-amber-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2.5 text-[13.5px] text-ink"><GitMerge className="h-4 w-4 flex-none mt-0.5 text-amber" /><span><b>{fullName(person)} registered, and you already had <Link href={`/network/${twin.id}`} className="underline underline-offset-4">{fullName(twin)}</Link> as a contact.</b> If they are the same person, join them up: the new login moves onto the existing profile and nothing you recorded is lost.</span></div>
+          {canMerge ? <form action={mergeRegistration} className="flex-none"><input type="hidden" name="newPersonId" value={person.id} /><input type="hidden" name="existingPersonId" value={twin.id} /><SubmitButton size="sm" pendingText="Joining up…">Same person: join them up</SubmitButton></form> : <span className="text-[12.5px] text-ink-muted flex-none">An owner or admin can join them up.</span>}
+        </div>
+      ) : null}
       <div className="rounded-[22px] border border-line bg-surface p-5 sm:p-6 mb-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4 min-w-0">
@@ -133,6 +150,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               <CaptureConversationDrawer personId={person.id} />
               <AvailabilityDrawer person={person} />
               <EditProfileDrawer person={person} />
+              {person.memberUser ? null : <InviteContactDrawer person={{ id: person.id, name: fullName(person), email: person.email }} network={user.tenantName} from={user.name.split(" ")[0]} label="Invite to join" />}
             </MoreMenu>
           </div>
         </div>
