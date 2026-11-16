@@ -109,14 +109,16 @@ export function scoreLead(p: Person, icp: Icp, now = Date.now()): Lead {
   if (ck) { fit += 10; reasons.push(`Company matches “${ck}”`); }
   if (!anyIcp) fit = { "Founder / Owner": 60, "C-suite": 60, VP: 50, "Director / Head": 45, "Manager / Lead": 30, "Senior IC": 20, IC: 15, "Student / Early": 5, Unknown: 10 }[p.seniority];
 
+  const warmReasons: string[] = [];
   let warmth = Math.min(60, p.engagedCount * 20);
-  if (p.engagedCount) reasons.push(`Engaged with ${p.engagedCount} of your post${p.engagedCount === 1 ? "" : "s"}`);
-  if (p.lastEngaged && now - new Date(p.lastEngaged).getTime() < 30 * DAY) { warmth += 20; reasons.push("Engaged in the last 30 days"); }
-  if (p.connectedOn && now - new Date(p.connectedOn).getTime() < 90 * DAY) { warmth += 10; reasons.push("Connected in the last 90 days"); }
-  if (p.watch) { warmth += 10; reasons.push("On your watchlist"); }
+  if (p.engagedCount) warmReasons.push(`Engaged with ${p.engagedCount} of your post${p.engagedCount === 1 ? "" : "s"}`);
+  if (p.lastEngaged && now - new Date(p.lastEngaged).getTime() < 30 * DAY) { warmth += 20; warmReasons.push("Engaged in the last 30 days"); }
+  if (p.connectedOn && now - new Date(p.connectedOn).getTime() < 90 * DAY) { warmth += 10; warmReasons.push("Connected in the last 90 days"); }
+  if (p.watch) { warmth += 10; warmReasons.push("On your watchlist"); }
   warmth = Math.min(100, warmth);
   fit = Math.min(100, fit);
   const score = Math.round(0.6 * fit + 0.4 * warmth);
+  reasons.unshift(...warmReasons); // warmth explains "why now", so it leads
 
   let action = "Keep in view";
   if (fit >= 50 && warmth >= 40) action = p.engagedOn ? `Message them. Open with “${p.engagedOn.split(" | ")[0].slice(0, 60)}”` : "Message them now";
@@ -125,10 +127,13 @@ export function scoreLead(p: Person, icp: Icp, now = Date.now()): Lead {
   return { person: p, fit, warmth, score, reasons, action };
 }
 
+const hasIcp = (i: Icp) => i.functions.length + i.seniorities.length + i.titleKeywords.length + i.companyKeywords.length > 0;
+
 export function rankLeads(people: Person[], icp: Icp, limit = 50): Lead[] {
   return people
     .map((p) => scoreLead(p, icp))
-    .filter((l) => l.score > 0)
+    // With a target profile set, someone needs some fit (or to have engaged) to count as a lead.
+    .filter((l) => l.score > 0 && (l.fit > 0 || l.person.engagedCount > 0 || !hasIcp(icp)))
     .sort((a, b) => b.score - a.score || b.warmth - a.warmth)
     .slice(0, limit);
 }

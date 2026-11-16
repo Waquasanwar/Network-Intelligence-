@@ -121,9 +121,12 @@ Posts are ranked by score. Top 10% (once you have 10+ posts) are **Breakout**; 7
 ## Development
 
 ```bash
-npm test          # parser, scoring and text-check tests
+npm test          # unit tests: parsers, scoring, leads, text checks
+npm run e2e       # Playwright: builds the app and drives it in Chromium
 npm run typecheck
 npm run build
 ```
+
+The Playwright suite (`e2e/`) runs against a production build with Notion replaced by an in-memory mock (`e2e/support/mock-notion.mjs`), so it never touches your workspace, LinkedIn or Anthropic. It covers every page (one heading, no sideways scroll on desktop or a 390px phone, dark mode), the dashboard rankings and coaching charts, importing a LinkedIn analytics export, writing and saving a rated draft, importing connections, scoring leads, logging engagers, the watchlist, CSV export, the "Who will care" panel, the post page and the swipe file. Any uncaught browser error fails the test.
 
 Code map: `lib/notion.ts` (all Notion reads/writes), `lib/schema.ts` (database columns), `lib/linkedin-export.ts` (xlsx parsers), `lib/linkedin-api.ts` (OAuth, publishing, analytics), `lib/sync.ts` (daily job), `lib/scoring.ts` (ranking and insights), `lib/ai.ts` (Claude), `app/` (pages and server actions).

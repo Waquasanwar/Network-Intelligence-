@@ -17,7 +17,8 @@ export const dynamic = "force-dynamic";
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   if (!notionReady()) return <SetupNeeded />;
   const { id } = await params;
-  const [post, all, snaps, audience] = await Promise.all([getPost(id), listPosts(), listSnapshots(id), listAudience().catch(() => [])]);
+  const [fetched, all, snaps, audience] = await Promise.all([getPost(id), listPosts(), listSnapshots(id), listAudience().catch(() => [])]);
+  const post = all.find((p) => p.id === id) ?? fetched;
   if (!post) notFound();
   const total = all.filter((p) => p.rank != null).length;
   const m = post.metrics;

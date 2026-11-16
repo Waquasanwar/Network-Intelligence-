@@ -72,3 +72,11 @@ describe("network", () => {
     expect(matchEngagers("Jane Doe • 1st\nGreat post!\n\nSomeone Else\nAgree", ppl).map((p) => p.name)).toEqual(["Jane Doe"]);
   });
 });
+
+describe("lead filtering", () => {
+  it("drops people with no fit once a target profile is set, unless they engaged", () => {
+    const icp = { ...EMPTY_ICP, functions: ["Sales"] };
+    const leads = rankLeads([person({ name: "New grad", connectedOn: new Date().toISOString().slice(0, 10) }), person({ name: "Fan", engagedCount: 1 })], icp);
+    expect(leads.map((l) => l.person.name)).toEqual(["Fan"]);
+  });
+});

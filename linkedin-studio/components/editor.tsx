@@ -100,7 +100,8 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
       setMessage({ kind: "success", text: status === "Ready" ? "Marked ready to post." : "Saved to Notion." });
       if (!id) {
         setId(res.data.id);
-        router.replace(`/write?id=${res.data.id}`);
+        // Update the address without re-rendering, so the confirmation stays on screen.
+        window.history.replaceState(null, "", `/write?id=${res.data.id}`);
       }
     });
   }

@@ -5,6 +5,7 @@
 import { Client, isFullPage } from "@notionhq/client";
 import type { PageObjectResponse } from "@notionhq/client";
 import { env } from "./env";
+import { engagementRate, scorePosts } from "./scoring";
 import { classifyFunction, classifySeniority, EMPTY_ICP, type Func, type Icp, type Person, type Seniority } from "./people";
 import type { ArchiveConnection } from "./archive";
 import type { DailyMetric, MetricSource, Metrics, Post, Ratings, Snapshot, Status, SwipeItem } from "./types";
@@ -136,7 +137,21 @@ export async function listPosts(): Promise<Post[]> {
   const pages = await queryAll(env.ds.posts(), {
     sorts: [{ timestamp: "created_time", direction: "descending" }],
   });
-  return pages.map(toPost);
+  return withLiveScores(pages.map(toPost));
+}
+
+/**
+ * Scores and ranks are always recomputed from the metrics on read, so a post whose numbers were
+ * typed straight into Notion ranks immediately, without waiting for a sync or import.
+ */
+export function withLiveScores(posts: Post[]): Post[] {
+  const scored = new Map(scorePosts(posts.filter((p) => p.status === "Published")).map((s) => [s.id, s]));
+  return posts.map((p) => {
+    const s = scored.get(p.id);
+    return s
+      ? { ...p, performanceScore: s.performanceScore, rank: s.rank, engagementRate: s.engagementRate }
+      : { ...p, performanceScore: null, rank: null, engagementRate: engagementRate(p.metrics) };
+  });
 }
 
 export async function getPost(id: string): Promise<Post | null> {
