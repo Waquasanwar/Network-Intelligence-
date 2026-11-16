@@ -1,0 +1,32 @@
+{
+  "name": "linkedin-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Write, rate, rank and track your LinkedIn posts, with Notion as the database.",
+  "scripts": {
+    "dev": "next dev -p 3100",
+    "build": "next build",
+    "start": "next start -p 3100",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "setup:notion": "tsx --env-file-if-exists=.env scripts/setup-notion.ts",
+    "sync": "tsx --env-file-if-exists=.env scripts/sync.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@notionhq/client": "^5.31.1",
+    "exceljs": "^4.4.0",
+    "next": "^15.5.25",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}
