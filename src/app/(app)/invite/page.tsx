@@ -144,7 +144,7 @@ export default async function InvitePage() {
                 {weeks.map((n, i) => (
                   <div key={i} className="flex-1 h-full flex flex-col items-center justify-end gap-1.5" title={`${i === 7 ? "This week" : `${7 - i} week${7 - i === 1 ? "" : "s"} ago`}: ${n}`}>
                     <span className="text-[12px] font-semibold text-ink">{n || ""}</span>
-                    <span className="w-full rounded-t-[6px] rounded-b-[2px]" style={{ height: `${Math.max(3, (n / maxWeek) * 76)}px`, background: n ? "var(--color-series-1)" : "var(--color-series-track)" }} />
+                    <span className="w-full rounded-t-[6px] rounded-b-[2px]" style={{ height: `${Math.max(3, (n / maxWeek) * 76)}px`, background: !n ? "var(--color-series-track)" : i === 7 ? "var(--color-coral)" : "var(--color-series-1)" }} />
                   </div>
                 ))}
               </div>

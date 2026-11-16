@@ -26,7 +26,7 @@ export function Field({ label, hint, children, required, className }: { label: s
     <label className={cn("block", className)}>
       <span className="block text-[12.5px] font-semibold text-ink mb-1.5">
         {label}
-        {required ? <span className="text-amber ml-0.5">*</span> : null}
+        {required ? <span className="text-coral-ink ml-0.5">*</span> : null}
       </span>
       {children}
       {hint ? <span className="block text-[12px] text-ink-faint mt-1 leading-4">{hint}</span> : null}

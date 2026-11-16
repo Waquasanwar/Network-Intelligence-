@@ -71,7 +71,7 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
       <div className="relative flex-none">
         <button type="button" onClick={() => setOpen(open === "alerts" ? null : "alerts")} aria-label={`Alerts${alerts.length ? `, ${alerts.length} waiting` : ""}`} aria-expanded={open === "alerts"} className="relative h-10 w-10 rounded-full border border-line bg-surface grid place-items-center text-ink shadow-[var(--shadow-card)] hover:border-line-strong transition-colors duration-200 cursor-pointer">
           <Bell className="h-[18px] w-[18px]" />
-          {alerts.length ? <span className="absolute top-0.5 right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-pink text-white text-[10px] font-bold leading-[17px] text-center ring-2 ring-canvas">{alerts.length}</span> : null}
+          {alerts.length ? <span className="absolute top-0.5 right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-coral text-accent-ink text-[10px] font-bold leading-[17px] text-center ring-2 ring-canvas">{alerts.length}</span> : null}
         </button>
         {open === "alerts" ? (
           <div className="absolute right-0 top-12 z-50 w-[380px] max-w-[calc(100vw-24px)] rounded-[22px] border border-line bg-surface text-ink shadow-[var(--shadow-pop)] overflow-hidden anim-fade">

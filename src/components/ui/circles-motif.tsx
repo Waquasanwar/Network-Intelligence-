@@ -17,8 +17,8 @@ export function CirclesMotif({ className }: { className?: string }) {
         const a = (deg * Math.PI) / 180, x = 170 + R[ring] * Math.cos(a), y = 170 + R[ring] * Math.sin(a);
         return (
           <g key={i}>
-            <circle cx={x} cy={y} r={strong ? 7 : 5.5} fill="#0c1b33" stroke={strong ? "#7ee3bc" : "rgba(255,255,255,0.55)"} strokeWidth="1.5" />
-            {strong ? <circle cx={x} cy={y} r="2.6" fill="#7ee3bc" /> : null}
+            <circle cx={x} cy={y} r={strong ? 7 : 5.5} fill="#0c1b33" stroke={strong ? (i % 2 ? "#ff5440" : "#7ee3bc") : "rgba(255,255,255,0.55)"} strokeWidth="1.5" />
+            {strong ? <circle cx={x} cy={y} r="2.6" fill={i % 2 ? "#ff5440" : "#7ee3bc"} /> : null}
           </g>
         );
       })}

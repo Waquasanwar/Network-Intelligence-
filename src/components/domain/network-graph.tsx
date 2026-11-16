@@ -188,7 +188,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
               {links.map((l, i) => {
                 const fromHub = l.source === hub?.id;
                 const on = !!focus && (l.source === focus || l.target === focus);
-                return <path key={i} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-accent)" : "rgba(255,255,255,0.55)"} strokeWidth={on ? 1.8 : 1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.07 : 0.2} strokeLinecap="round" />;
+                return <path key={i} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "rgba(255,255,255,0.55)"} strokeWidth={on ? 1.8 : 1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.07 : 0.2} strokeLinecap="round" />;
               })}
             </svg>
 
@@ -202,7 +202,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
 
             {/* You, at the centre, with a slow pulse so the eye starts here. */}
             <div className="pointer-events-none absolute z-[6] -translate-x-1/2 -translate-y-1/2" style={{ left: layout.cx, top: layout.cy, width: layout.hub, height: layout.hub }}>
-              <span className="orbit-pulse absolute inset-0 rounded-full border border-accent" />
+              <span className="orbit-pulse absolute inset-0 rounded-full border border-coral" />
               <span className="orbit-pulse absolute inset-0 rounded-full border border-accent" style={{ animationDelay: "1.6s" }} />
               <span className="absolute inset-0 grid place-items-center rounded-full bg-accent text-accent-ink"><span className="label-caps !tracking-[0.1em]" style={layout.hub < 44 ? { fontSize: 8.5 } : undefined}>You</span></span>
             </div>
@@ -230,7 +230,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
                     <span className={cn("absolute inset-[4.5px] grid place-items-center rounded-full font-semibold leading-none transition-[transform,background-color,color] duration-200 group-hover:scale-110", trusted ? "bg-accent text-accent-ink" : active ? "bg-white text-[#0c1b33]" : "bg-white/[0.12] text-stage-ink", selected === p.id && "ring-2 ring-white ring-offset-2 ring-offset-stage")} style={{ fontSize: Math.max(8, Math.round(p.size * 0.29)) }}>
                       {p.size >= 22 ? initials(p.name) : ""}
                     </span>
-                    {p.open ? <span className="absolute right-0 bottom-0 h-[10px] w-[10px] rounded-full bg-accent ring-2 ring-stage" aria-hidden="true" /> : null}
+                    {p.open ? <span className="absolute right-0 bottom-0 h-[10px] w-[10px] rounded-full bg-coral ring-2 ring-stage" aria-hidden="true" /> : null}
                     {showNames ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none transition-colors duration-200", active ? "text-white font-semibold" : "text-stage-muted")}>{shortName(p.name)}</span> : null}
                   </span>
                 </button>
@@ -275,7 +275,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
           <div className="hidden md:flex flex-none items-center gap-4 text-[11.5px] text-stage-muted">
             <span className="inline-flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 14 14" className="-rotate-90" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" /><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeDasharray="20 40" strokeLinecap="round" /></svg> arc shows trust</span>
             <span className="inline-flex items-center gap-1.5"><span className="grid h-3.5 w-3.5 place-items-center rounded-full bg-accent text-[7px] font-bold text-accent-ink">A</span> trusted</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-white/20" /> open to work</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-coral ring-2 ring-white/20" /> open to work</span>
           </div>
         </div>
       </div>

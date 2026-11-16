@@ -109,7 +109,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         <div className="brand-panel m-3 mt-0 rounded-[22px] p-4">
           <div className="font-display is-small text-[14.5px] leading-[1.3]">Ask your network anything</div>
           <p className="text-[12.5px] text-stage-muted leading-[1.45] mt-1">One question, answered from people you know, ranked by trust.</p>
-          <button type="button" onClick={openSearch} className="mt-3 inline-flex h-8 items-center rounded-full bg-white px-3.5 text-[12.5px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-95 cursor-pointer">Ask now</button>
+          <button type="button" onClick={openSearch} className="mt-3 inline-flex h-8 items-center rounded-full bg-coral px-3.5 text-[12.5px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-105 cursor-pointer">Ask now</button>
         </div>
       ) : null}
     </aside>

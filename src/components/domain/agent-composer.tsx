@@ -76,7 +76,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
           placeholder={suggestions.length ? `Ask your network — “${suggestions[hint % suggestions.length]}”` : "Ask your network a question"}
           className="agent-input h-11 min-w-0 flex-1 text-[15.5px] text-[#0c1b33] placeholder:text-[#5b6576]" autoComplete="off"
         />
-        <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="group inline-flex h-11 flex-none items-center gap-1.5 rounded-[12px] bg-accent px-4 text-[14px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-95 cursor-pointer disabled:cursor-default">
+        <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="group inline-flex h-11 flex-none items-center gap-1.5 rounded-[12px] bg-coral px-4 text-[14px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-105 cursor-pointer disabled:cursor-default">
           Ask
           <span aria-hidden="true" className="arrow-badge inline-flex"><ArrowRight className="h-4 w-4" strokeWidth={2} /></span>
         </button>
