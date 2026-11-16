@@ -28,54 +28,23 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${status}`}>{status}</span>;
 }
 
-export function Bars({ rows, value, label }: { rows: { key: string; count: number }[]; value: (r: never) => number; label: (r: never) => string }) {
-  const vals = rows.map((r) => value(r as never));
-  const max = Math.max(1, ...vals);
+/** Horizontal bars for one measure. The leader is drawn in the second series hue and every bar has a hover tooltip. */
+export function Bars({ rows, max = 100 }: { rows: { key: string; count: number; value: number; tip: string }[]; max?: number }) {
+  const top = Math.max(max, ...rows.map((r) => r.value)) || 1;
   return (
-    <div>
+    <div className="bars">
       {rows.map((r, i) => (
-        <div className="bar-row" key={r.key}>
-          <div className="clamp" title={r.key}>
+        <div className="bar-row" key={r.key} data-tip={r.tip}>
+          <div className="name" title={r.key}>
             {r.key} <span className="faint">· {r.count}</span>
           </div>
           <div className="bar-track">
-            <div className="bar" style={{ width: `${(vals[i] / max) * 100}%` }} />
+            <div className={`bar ${i === 0 ? "lead" : ""}`} style={{ width: `${(r.value / top) * 100}%` }} />
           </div>
-          <div className="num" style={{ textAlign: "right" }}>
-            {label(r as never)}
-          </div>
+          <div className="val">{r.value}</div>
         </div>
       ))}
     </div>
-  );
-}
-
-/** Small dependency-free line chart. */
-export function LineChart({ points, height = 140, label }: { points: { x: string; y: number | null }[]; height?: number; label?: string }) {
-  const pts = points.filter((p) => p.y != null) as { x: string; y: number }[];
-  if (pts.length < 2) return <div className="empty small">Not enough data for a chart yet.</div>;
-  const W = 600;
-  const pad = { l: 40, r: 8, t: 10, b: 22 };
-  const max = Math.max(...pts.map((p) => p.y)) || 1;
-  const sx = (i: number) => pad.l + (i / (pts.length - 1)) * (W - pad.l - pad.r);
-  const sy = (v: number) => pad.t + (1 - v / max) * (height - pad.t - pad.b);
-  const d = pts.map((p, i) => `${i ? "L" : "M"}${sx(i).toFixed(1)},${sy(p.y).toFixed(1)}`).join(" ");
-  const area = `${d} L${sx(pts.length - 1)},${height - pad.b} L${sx(0)},${height - pad.b} Z`;
-  const ticks = [0, Math.round(pts.length / 2), pts.length - 1];
-  return (
-    <svg viewBox={`0 0 ${W} ${height}`} width="100%" role="img" aria-label={label}>
-      <line x1={pad.l} x2={W - pad.r} y1={sy(max)} y2={sy(max)} stroke="var(--line)" />
-      <line x1={pad.l} x2={W - pad.r} y1={sy(0)} y2={sy(0)} stroke="var(--line)" />
-      <text x={pad.l - 6} y={sy(max) + 4} textAnchor="end">{fmt(max, { notation: "compact" })}</text>
-      <text x={pad.l - 6} y={sy(0) + 4} textAnchor="end">0</text>
-      <path d={area} fill="var(--accent)" opacity="0.1" />
-      <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2" />
-      {ticks.map((i) => (
-        <text key={i} x={sx(i)} y={height - 6} textAnchor={i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"}>
-          {pts[i].x.slice(5)}
-        </text>
-      ))}
-    </svg>
   );
 }
 

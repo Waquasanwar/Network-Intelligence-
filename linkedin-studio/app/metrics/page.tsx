@@ -1,5 +1,6 @@
+import { AreaChart } from "@/components/area-chart";
 import { ImportForm, LogDayForm, SyncButton } from "@/components/metrics-tools";
-import { fmt, Kpi, LineChart, SetupNeeded } from "@/components/ui";
+import { fmt, Kpi, SetupNeeded } from "@/components/ui";
 import { notionReady } from "@/lib/env";
 import { canReadAnalytics, getToken } from "@/lib/linkedin-api";
 import { listDaily } from "@/lib/notion";
@@ -33,19 +34,19 @@ export default async function MetricsPage() {
       <div className="grid g2" style={{ marginBottom: 16 }}>
         <div className="panel">
           <h2>Impressions per day</h2>
-          <LineChart points={daily.map((d) => ({ x: d.day, y: d.impressions }))} />
+          <AreaChart points={daily.map((d) => ({ x: d.day, y: d.impressions }))} label="Impressions per day" unit="impressions" />
         </div>
         <div className="panel">
           <h2>Engagements per day</h2>
-          <LineChart points={daily.map((d) => ({ x: d.day, y: d.engagements }))} />
+          <AreaChart points={daily.map((d) => ({ x: d.day, y: d.engagements }))} label="Engagements per day" unit="engagements" />
         </div>
         <div className="panel">
           <h2>New followers per day</h2>
-          <LineChart points={daily.map((d) => ({ x: d.day, y: d.newFollowers }))} />
+          <AreaChart points={daily.map((d) => ({ x: d.day, y: d.newFollowers }))} label="New followers per day" unit="new followers" />
         </div>
         <div className="panel">
           <h2>Total followers</h2>
-          <LineChart points={daily.map((d) => ({ x: d.day, y: d.totalFollowers }))} />
+          <AreaChart points={daily.map((d) => ({ x: d.day, y: d.totalFollowers }))} label="Total followers" unit="followers" />
         </div>
       </div>
 

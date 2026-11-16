@@ -289,7 +289,7 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
           )}
         </div>
 
-        <div className="panel stack">
+        <div className="panel stack ai-surface">
           <div className="row between">
             <h2 style={{ margin: 0 }}>Writing assistant</h2>
             {aiScore != null ? <span className="badge">AI score {aiScore}</span> : null}

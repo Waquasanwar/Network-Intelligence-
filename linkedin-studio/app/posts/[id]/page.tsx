@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { AreaChart } from "@/components/area-chart";
 import { notFound } from "next/navigation";
 import { archive } from "@/app/actions";
 import { MetricsForm, RatingPanel, StatusPanel } from "@/components/post-panels";
-import { fmt, fmtDate, Kpi, LineChart, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
+import { fmt, fmtDate, Kpi, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
 import { getPost, listPosts, listSnapshots } from "@/lib/notion";
 import { totalEngagements } from "@/lib/scoring";
@@ -84,7 +85,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </div>
           <div className="panel">
             <h2>Impressions over time</h2>
-            <LineChart points={snaps.map((s) => ({ x: s.capturedAt.slice(0, 10), y: s.impressions }))} label="Impressions per snapshot" />
+            <AreaChart points={snaps.map((s) => ({ x: s.capturedAt.slice(0, 10), y: s.impressions }))} label="Impressions per snapshot" unit="impressions" />
             <p className="small faint">{snaps.length} snapshot{snaps.length === 1 ? "" : "s"} from sync, imports and manual updates.</p>
           </div>
           {post.aiNotes ? (
