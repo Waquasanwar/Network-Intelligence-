@@ -65,6 +65,13 @@ export async function requireAdminAction(): Promise<SessionUser> {
   return user;
 }
 
+/** The owner alone: fees, commercial terms and the rate card. */
+export async function requireOwnerAction(): Promise<SessionUser> {
+  const user = await requireInternalAction();
+  if (user.role !== "OWNER") throw new AuthorizationError("Only the owner can see or change fees and commercial terms");
+  return user;
+}
+
 /** Sign every device of this user out. The caller's own cookie stops working on its next request too. */
 export async function revokeSessions(userId: string) {
   await prisma.user.update({ where: { id: userId }, data: { sessionVersion: { increment: 1 } } });

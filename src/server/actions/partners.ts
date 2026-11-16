@@ -3,7 +3,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
-import { requireAdminAction, requireInternalAction, requireUser } from "@/server/session";
+import { requireInternalAction, requireOwnerAction, requireUser } from "@/server/session";
 import { partnerRef } from "@/lib/refs";
 import { mayShowCard } from "@/lib/reveal";
 import { limitOrThrow } from "@/lib/rate-limit";
@@ -25,7 +25,7 @@ const partnerSchema = z.object({
 
 // Commercial model is configurable per partner; percentages are never hard-coded (spec §4).
 export async function updatePartner(formData: FormData) {
-  const user = await requireAdminAction();
+  const user = await requireOwnerAction();
   const d = partnerSchema.parse(Object.fromEntries(formData));
   // Only an agency this network works with — the id on the form is not proof of that.
   if (!(await prisma.partner.findFirst({ where: { id: d.partnerId, networkTenantId: user.tenantId }, select: { id: true } }))) throw new Error("Partner not found");

@@ -21,7 +21,7 @@ import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard } from "@/server/queries";
 import { estimateFee, fmt, PORTAL_VISIBLE, FEE_MODEL_LABELS, SHORTLIST_LABELS, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS, type HardCheck } from "@/lib/demand";
 import type { MatchResult } from "@/lib/matching";
-import { redactForPartner } from "@/lib/authz";
+import { canSeeMoney, redactForPartner } from "@/lib/authz";
 import { partnerRef } from "@/lib/refs";
 import { partnerHidden } from "@/lib/privacy";
 import { SENIORITY_LABELS } from "@/lib/labels";
@@ -40,6 +40,7 @@ const TIER_ORDER: Record<string, number> = { meets: 0, conversation: 1, stretch:
 export default async function RequirementPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notice?: string }> }) {
   const { notice } = await searchParams;
   const user = await requireInternal();
+  const money = canSeeMoney(user);
   const { id } = await params;
   const b = await prisma.brief.findUnique({ where: { id }, include: { account: true, shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: true } } } }, pitches: { include: { person: { select: { id: true, firstName: true, lastName: true, headline: true } } } }, referrals: { include: { referrer: { select: { firstName: true, lastName: true } } } }, feeLines: { include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } } } });
   if (!b || b.tenantId !== user.tenantId) notFound();
@@ -117,7 +118,8 @@ export default async function RequirementPage({ params, searchParams }: { params
               {b.pitches.length || b.referrals.length ? <ul className="mt-3 divide-y divide-line text-[12.5px]">{b.pitches.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><PersonLink person={x.person} sub={null} /><small className="block text-ink-faint">pitched · {x.status.toLowerCase()}</small></span><Link href="/referrals?tab=pitches" className="text-navy hover:underline text-[12px]">Review</Link></li>)}{b.referrals.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><b>{x.name}</b><small className="block text-ink-faint">referred by {x.referrer.firstName} {x.referrer.lastName} · {x.status.toLowerCase()}</small></span><Link href="/referrals" className="text-navy hover:underline text-[12px]">Review</Link></li>)}</ul> : null}
             </CardBody>
           </Card>
-          <Card>
+          {money ? (
+<Card>
             <CardHeader title="Commercials" description={`Who pays: ${b.account.name}. Change the model or the % here for this brief only.`} />
             <CardBody>
               <form action={saveBriefTerms} className="space-y-3">
@@ -134,11 +136,14 @@ export default async function RequirementPage({ params, searchParams }: { params
               </form>
             </CardBody>
           </Card>
+) : null}
 
-          <Card>
+          {money ? (
+<Card>
             <CardHeader title="Fees on this requirement" action={<AddFeeDrawer briefId={b.id} people={items.map((s) => ({ id: s.personId, name: fullName(s.person) }))} defaults={{ gross: est.gross, ourTake: est.perHead, currency: est.currency, basis: est.basis }} />} />
             <CardBody>{b.feeLines.length === 0 ? <div className="text-xs text-ink-muted">A fee line is created when someone is placed, or add one now.</div> : <ul className="divide-y divide-line">{b.feeLines.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.person ? `${fullName(f.person)} · ` : ""}{f.basis}</div><form action={setFeeStatus} className="flex items-center gap-2 mt-1.5"><input type="hidden" name="feeId" value={f.id} /><Select name="status" defaultValue={f.status} className="h-7 text-xs w-[130px]">{Object.entries(FEE_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton></form></li>)}</ul>}</CardBody>
           </Card>
+) : null}
 
           <Card>
             <CardHeader title="What the client sees" description="Anonymised. Names only after introduction and consent." />

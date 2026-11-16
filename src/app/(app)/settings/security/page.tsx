@@ -31,6 +31,13 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
     : [[], [], []];
   const canManage = user.role === "OWNER" || user.role === "ADMIN";
   const isOwner = user.role === "OWNER";
+  // Fee and commercial entries, and any amounts inside other entries, are shown to the owner only.
+  const MONEY_KEYS = ["ourTake", "pct", "sharePct", "permPct", "contractMarginPct", "expertHourlyTakePct", "gross", "flat"];
+  const detailOf = (a: { action: string; metadata: unknown }) => {
+    if (isOwner || !a.metadata || typeof a.metadata !== "object") return a.metadata;
+    return Object.fromEntries(Object.entries(a.metadata as Record<string, unknown>).filter(([k]) => !MONEY_KEYS.includes(k)));
+  };
+  const visibleAudit = isOwner ? audit : audit.filter((a) => !/^(fee\.|ratecard\.|brief\.terms|terms\.accept)/.test(a.action));
   const sensitive = SENSITIVE;
 
   if (!internal) {
@@ -74,16 +81,16 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
               <form className="flex items-center gap-1.5"><Select name="action" defaultValue={sp.action ?? ""} className="h-7 text-[12px] w-[180px]"><option value="">All actions</option>{sensitive.map((s) => <option key={s} value={s}>{s}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Filter</SubmitButton></form>
             } />
             <CardBody className="px-0 pb-0">
-              {audit.length === 0 ? <div className="px-6 pb-6"><EmptyState icon={ShieldCheck} title="Nothing logged yet" description="Sign-ins, record changes, exports and approvals appear here as they happen." /></div> : (
+              {visibleAudit.length === 0 ? <div className="px-6 pb-6"><EmptyState icon={ShieldCheck} title="Nothing logged yet" description="Sign-ins, record changes, exports and approvals appear here as they happen." /></div> : (
                 <>
                   <table className="data">
                     <thead><tr><th className="pl-6">When</th><th>Who</th><th>Action</th><th>Record</th><th>Detail</th></tr></thead>
-                    <tbody>{audit.slice(0, 10).map((a) => <tr key={a.id}><td className="pl-6 text-[13px] whitespace-nowrap text-ink-muted"><DateText date={a.createdAt} relative /></td><td className="text-[13px]">{a.actor?.name ?? "system"}</td><td><span className={`font-mono text-[12px] ${a.action === "identity.reveal" ? "text-amber font-medium" : ""}`}>{a.action}</span></td><td className="text-[13px] text-ink-muted">{a.entityType}</td><td className="text-[12px] text-ink-muted font-mono max-w-[260px] truncate">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody>
+                    <tbody>{visibleAudit.slice(0, 10).map((a) => <tr key={a.id}><td className="pl-6 text-[13px] whitespace-nowrap text-ink-muted"><DateText date={a.createdAt} relative /></td><td className="text-[13px]">{a.actor?.name ?? "system"}</td><td><span className={`font-mono text-[12px] ${a.action === "identity.reveal" ? "text-amber font-medium" : ""}`}>{a.action}</span></td><td className="text-[13px] text-ink-muted">{a.entityType}</td><td className="text-[12px] text-ink-muted font-mono max-w-[260px] truncate">{a.metadata ? JSON.stringify(detailOf(a)) : ""}</td></tr>)}</tbody>
                   </table>
-                  {audit.length > 10 ? (
+                  {visibleAudit.length > 10 ? (
                     <details className="group border-t border-line">
-                      <summary className="flex items-center justify-between px-6 py-3 text-[13px] font-semibold text-ink cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-surface-hover">Show {audit.length - 10} earlier entries <ChevronDown className="h-4 w-4 text-ink-faint transition-transform duration-200 group-open:rotate-180" /></summary>
-                      <table className="data"><tbody>{audit.slice(10).map((a) => <tr key={a.id}><td className="pl-6 text-[13px] whitespace-nowrap text-ink-muted"><DateText date={a.createdAt} relative /></td><td className="text-[13px]">{a.actor?.name ?? "system"}</td><td><span className={`font-mono text-[12px] ${a.action === "identity.reveal" ? "text-amber font-medium" : ""}`}>{a.action}</span></td><td className="text-[13px] text-ink-muted">{a.entityType}</td><td className="text-[12px] text-ink-muted font-mono max-w-[260px] truncate">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody></table>
+                      <summary className="flex items-center justify-between px-6 py-3 text-[13px] font-semibold text-ink cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-surface-hover">Show {visibleAudit.length - 10} earlier entries <ChevronDown className="h-4 w-4 text-ink-faint transition-transform duration-200 group-open:rotate-180" /></summary>
+                      <table className="data"><tbody>{visibleAudit.slice(10).map((a) => <tr key={a.id}><td className="pl-6 text-[13px] whitespace-nowrap text-ink-muted"><DateText date={a.createdAt} relative /></td><td className="text-[13px]">{a.actor?.name ?? "system"}</td><td><span className={`font-mono text-[12px] ${a.action === "identity.reveal" ? "text-amber font-medium" : ""}`}>{a.action}</span></td><td className="text-[13px] text-ink-muted">{a.entityType}</td><td className="text-[12px] text-ink-muted font-mono max-w-[260px] truncate">{a.metadata ? JSON.stringify(detailOf(a)) : ""}</td></tr>)}</tbody></table>
                     </details>
                   ) : null}
                 </>

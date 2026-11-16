@@ -18,7 +18,7 @@ export type ReferTarget = {
  * Put someone we know in front of a client or an agency — for a live requirement, perm or contract,
  * or on spec where there is no brief yet. They land in that portal as an anonymised card.
  */
-export function ReferDrawer({ personId, personName, targets, suggestion, variant = "primary", size = "md", label = "Refer to a client or agency" }: {
+export function ReferDrawer({ personId, personName, targets, suggestion, variant = "primary", size = "md", label = "Refer to a client or agency", showFees = false }: { showFees?: boolean;
   personId: string; personName: string; targets: ReferTarget[]; suggestion?: string | null;
   variant?: "primary" | "secondary" | "ghost"; size?: "sm" | "md"; label?: string;
 }) {
@@ -44,19 +44,21 @@ export function ReferDrawer({ personId, personName, targets, suggestion, variant
           </Select>
         </Field>
         {onSpec ? (
-          <Field label="Route for the on-spec introduction" hint="Perm, contract, interim or advisory. This sets the fee model.">
+          <Field label="Route for the on-spec introduction" hint="Perm, contract, interim or advisory.">
             <Select name="route" defaultValue=""><option value="">— their stated preference —</option>{Object.entries(ROUTE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
           </Field>
         ) : null}
         <Field label="What they read on the card" hint="No names, no employers — this is the line the client or agency sees.">
           <Textarea name="clientNote" defaultValue={suggestion ?? ""} placeholder="Why this person, in a sentence they can read." maxLength={300} />
         </Field>
+        {showFees ? (<>
         <div className="label-caps tracking-[0.08em] text-ink-faint pt-1">Fee</div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Fee model"><Select name="model" defaultValue=""><option value="">— keep the requirement&rsquo;s terms —</option>{Object.entries(FEE_MODEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
           <Field label="Our %"><Input name="pct" type="number" step="0.5" min={0} placeholder="from the rate card" /></Field>
         </div>
         <Checkbox name="createFee" label="Create a forecast fee line against this person" defaultChecked />
+        </>) : null}
         <div className="flex justify-end"><SubmitButton pendingText="Referring…">Refer them</SubmitButton></div>
       </form>
     </Drawer>

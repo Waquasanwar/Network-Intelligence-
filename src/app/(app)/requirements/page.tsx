@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
+import { canSeeMoney } from "@/lib/authz";
 import { PageHeader, EmptyState, Pill, Section, Score } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ const EXAMPLES = [
 
 export default async function RequirementsPage({ searchParams }: { searchParams: Promise<{ q?: string; kind?: string }> }) {
   const user = await requireInternal();
+  const money = canSeeMoney(user);
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const kind = sp.kind as AccountKind | undefined;
@@ -64,7 +66,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
 
   return (
     <>
-      <PageHeader eyebrow="Demand" title="Requirements" description="Clients, agencies and Amana tell us what they need. The co-pilot structures it, you decide who to propose, and the fee is worked out as you go." actions={<NewAccountDrawer defaultCurrency={card.currency} />} />
+      <PageHeader eyebrow="Demand" title="Requirements" description={money ? "Clients, agencies and Amana tell us what they need. The co-pilot structures it, you decide who to propose, and the fee is worked out as you go." : "Clients, agencies and Amana tell us what they need. The co-pilot structures it and you decide who to propose."} actions={<NewAccountDrawer defaultCurrency={card.currency} />} />
 
       <Card className="mb-5 border-navy-400/30 shadow-[var(--shadow-card),0_0_0_4px_rgba(79,111,214,0.06)]">
         <CardBody className="pt-4">
@@ -104,7 +106,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
                     <input type="hidden" name="text" value={q} />
                     <Field label="Account" required><Select name="accountId" defaultValue={copilot.defaultAccountId ?? ""} required>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name} · {KIND_LABEL[a.kind]}</option>)}</Select></Field>
                     <Field label="Title"><Input name="title" defaultValue={copilot.brief.title} /></Field>
-                    {defEst && defModel ? <FeeBox est={defEst} model={defModel} pct={defaultTerms(card, defModel).pct} label={`Estimated fee to us · ${defAccount?.name}`} /> : null}
+                    {money && defEst && defModel ? <FeeBox est={defEst} model={defModel} pct={defaultTerms(card, defModel).pct} label={`Estimated fee to us · ${defAccount?.name}`} /> : null}
                     <SubmitButton pendingText="Saving…" className="w-full">Save requirement</SubmitButton>
                   </form>
                 </CardBody></Card>
@@ -129,17 +131,17 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2">
           <Card className="overflow-hidden">
-            <CardHeader title="Requirements" description="Every brief, who it is from, and what it is worth if it fills." />
+            <CardHeader title="Requirements" description={money ? "Every brief, who it is from, and what it is worth if it fills." : "Every brief, who it is from, and where it stands."} />
             {briefs.length === 0 ? <CardBody><EmptyState title="No requirements yet" description="Ask the co-pilot above, then save the brief against a client, agency or Amana." /></CardBody> : (
               <table className="data">
-                <thead><tr><th>Requirement</th><th>Route</th><th>Status</th><th className="text-right">Fee to us</th></tr></thead>
+                <thead><tr><th>Requirement</th><th>Route</th><th>Status</th>{money ? <th className="text-right">Fee to us</th> : null}</tr></thead>
                 <tbody>
                   {await Promise.all(briefs.map(async (b) => { const d = toDomain(b); const est = estimateFee(d, d.terms, card, d.expertHours); const meets = b.shortlist.filter((s) => s.tier === "meets").length; const prop = b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision)).length; return (
                     <tr key={b.id}>
                       <td className="align-top"><Link href={`/requirements/${b.id}`} className="font-medium text-ink hover:underline underline-offset-4">{b.title}</Link><div className="text-[12px] text-ink-faint mt-0.5 flex flex-wrap items-center gap-1.5"><KindBadge kind={b.account.kind} />{b.account.name}{b.submittedVia === "PORTAL" ? " · via portal" : ""} · <DateText date={b.updatedAt} relative /></div></td>
                       <td className="align-top text-xs">{routeLabel(b.engagementRoute)}{b.headcount > 1 ? ` × ${b.headcount}` : ""}<div className="text-[12px] text-ink-faint">{b.locations[0] ?? "location to confirm"}{b.mustBeLocal ? " · already there" : ""}{b.workRights ? " · visa" : ""}</div></td>
                       <td className="align-top"><BriefStatusBadge status={b.status} /><div className="text-[12px] text-ink-faint">{b.shortlist.length ? `${meets} meet the brief · ${prop} proposed` : "not searched yet"}</div></td>
-                      <td className="align-top text-right">{est.confident ? <><div className="font-semibold tabular">{fmt(est.ourTake, est.currency)}</div><div className="text-[12px] text-ink-faint">{FEE_MODEL_LABELS[d.terms.model].split(" (")[0]}</div></> : <span className="text-xs text-ink-faint">needs a budget</span>}</td>
+                      {money ? <td className="align-top text-right">{est.confident ? <><div className="font-semibold tabular">{fmt(est.ourTake, est.currency)}</div><div className="text-[12px] text-ink-faint">{FEE_MODEL_LABELS[d.terms.model].split(" (")[0]}</div></> : <span className="text-xs text-ink-faint">needs a budget</span>}</td> : null}
                     </tr>
                   ); }))}
                 </tbody>
@@ -148,13 +150,15 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
           </Card>
         </div>
         <div className="space-y-4">
-          <Card>
+          {money ? (
+<Card>
             <CardHeader title="Fee pipeline" description="Our revenue: forecast, agreed, invoiced, paid." />
             <CardBody>{fees.length === 0 ? <div className="text-xs text-ink-muted">Fees appear as briefs are saved and people are placed.</div> : <ul className="divide-y divide-line">{fees.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.account.name} · <Link href={`/requirements/${f.briefId}`} className="hover:underline">{f.brief.title}</Link>{f.person ? ` · ${fullName(f.person)}` : ""}</div><div className="text-[12px] text-ink-faint">{f.basis}</div></li>)}</ul>}</CardBody>
           </Card>
+) : null}
           <Card>
-            <CardHeader title="Accounts" description="Who pays, and on what terms." action={<Link href="/settings/commercials" className="text-[12px] text-ink-muted hover:text-ink">Rate card →</Link>} />
-            <CardBody><ul className="divide-y divide-line">{accounts.map((a) => <li key={a.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"><div><div className="text-[13px] font-medium">{a.name}</div><div className="text-[12px] text-ink-faint">{KIND_LABEL[a.kind]} · {a._count.briefs} requirements{a.monthlyFee ? ` · ${fmt(Number(a.monthlyFee), a.currency)}/mo access` : ""}{a.portalTenantId ? " · portal login" : ""}</div></div><Badge tone={a.status === "ACTIVE" ? "teal" : "amber"}>{a.status.toLowerCase()}</Badge></li>)}</ul></CardBody>
+            <CardHeader title="Accounts" description="Who pays, and on what terms." action={money ? <Link href="/settings/commercials" className="text-[12px] text-ink-muted hover:text-ink">Rate card →</Link> : undefined} />
+            <CardBody><ul className="divide-y divide-line">{accounts.map((a) => <li key={a.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"><div><div className="text-[13px] font-medium">{a.name}</div><div className="text-[12px] text-ink-faint">{KIND_LABEL[a.kind]} · {a._count.briefs} requirements{money && a.monthlyFee ? ` · ${fmt(Number(a.monthlyFee), a.currency)}/mo access` : ""}{a.portalTenantId ? " · portal login" : ""}</div></div><Badge tone={a.status === "ACTIVE" ? "teal" : "amber"}>{a.status.toLowerCase()}</Badge></li>)}</ul></CardBody>
           </Card>
         </div>
       </div>

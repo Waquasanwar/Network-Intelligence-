@@ -101,7 +101,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
             {INTERNAL_NAV.map((i) => <Item key={i.href} {...i} />)}
             {SHOW_PHASE23 ? <><Group label="Workspaces" />{WORKSPACES.map((i) => <Item key={i.href} {...i} />)}</> : null}
             <Group label="Setup" />
-            {SETTINGS_NAV.map((i) => <Item key={i.href} {...i} />)}
+            {SETTINGS_NAV.filter((i) => i.href !== "/settings/commercials" || user.role === "OWNER").map((i) => <Item key={i.href} {...i} />)}
           </>
         )}
       </nav>

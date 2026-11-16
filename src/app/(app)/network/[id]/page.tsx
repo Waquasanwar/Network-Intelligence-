@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireInternal, getUser } from "@/server/session";
 import { prisma } from "@/lib/db";
+import { canSeeMoney } from "@/lib/authz";
 import { canViewRelationshipNotes } from "@/lib/authz";
 import { assessFreshness } from "@/lib/availability";
 import { Avatar } from "@/components/ui/avatar";
@@ -40,6 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function PersonPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const user = await requireInternal();
+  const money = canSeeMoney(user);
   const { id } = await params;
   const { tab = "overview" } = await searchParams;
 
@@ -143,7 +145,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             </div>
           </div>
           <div className="flex flex-none flex-wrap items-center gap-2">
-            <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} />
+            <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} showFees={money} />
             <ScheduleDrawer personId={person.id} connections={connections.map((c) => c.provider)} />
             <MoreMenu>
               <form action={startScreening}><input type="hidden" name="personId" value={person.id} /><SubmitButton size="sm" variant="secondary" pendingText="Starting…"><ClipboardList className="h-3.5 w-3.5" /> Start screening call</SubmitButton></form>
@@ -217,7 +219,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
           <div className="space-y-4">
             <TrustCard t={trust} firstName={person.firstName} screened={person.screeningStatus === "APPROVED" || !!person.screenedAt} workedWith={person.relationships.some((r) => r.workedTogether)} action={<VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} />} />
-            <ReferredCard rows={referredRows} action={<ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} variant="secondary" size="sm" label="Refer" />} />
+            <ReferredCard rows={referredRows} showFees={money} action={<ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} variant="secondary" size="sm" label="Refer" showFees={money} />} />
             {person.vouches.length ? <VouchList vouches={person.vouches} /> : null}
             <Card>
               <CardHeader title="Details" />

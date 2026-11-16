@@ -281,5 +281,27 @@ kbd {
 /* The map's stage: deep navy, lit teal from the centre, with a slow radar sweep. */
 .orbit-stage { background: radial-gradient(58% 64% at 50% 50%, #145864 0%, rgba(20, 88, 100, 0) 72%), #091730; }
 @keyframes orbit-sweep { to { transform: rotate(360deg); } }
-.orbit-sweep { position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 0deg, rgba(126, 227, 188, 0) 0deg, rgba(126, 227, 188, 0) 292deg, rgba(126, 227, 188, 0.22) 357deg, rgba(126, 227, 188, 0) 360deg); animation: orbit-sweep 9s linear infinite; }
+.orbit-sweep { position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 0deg, rgba(126, 227, 188, 0) 0deg, rgba(126, 227, 188, 0) 292deg, rgba(126, 227, 188, 0.14) 357deg, rgba(126, 227, 188, 0) 360deg); animation: orbit-sweep 9s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .orbit-sweep { animation: none; display: none; } }
+
+/* The heartbeat. One rhythm (2.4s) drives everything: the centre beats, a wave leaves it and crosses
+   the circles in three beats, and each person glows as the wave reaches them. */
+@keyframes orbit-ripple { 0% { transform: scale(0.04); opacity: 0; } 6% { opacity: 0.6; } 70% { opacity: 0.22; } 100% { transform: scale(1.1); opacity: 0; } }
+.orbit-ripple { position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid rgba(126, 227, 188, 0.95); box-shadow: 0 0 28px rgba(126, 227, 188, 0.28), inset 0 0 36px rgba(126, 227, 188, 0.14); opacity: 0; animation: orbit-ripple 7.2s linear infinite; will-change: transform, opacity; }
+@keyframes orbit-beat { 0%, 34%, 100% { transform: scale(1); } 7% { transform: scale(1.1); } 15% { transform: scale(1); } 23% { transform: scale(1.055); } }
+.orbit-beat { background: radial-gradient(circle at 34% 28%, #d6fbec 0%, #7ee3bc 52%, #49c99a 100%); box-shadow: 0 0 0 5px rgba(126, 227, 188, 0.16), 0 0 34px rgba(126, 227, 188, 0.55); animation: orbit-beat 2.4s ease-in-out infinite; }
+@keyframes orbit-halo { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 10% { opacity: 0.8; transform: scale(1.06); } 40% { opacity: 0.4; transform: scale(1); } }
+.orbit-halo { background: radial-gradient(circle, rgba(126, 227, 188, 0.42) 0%, rgba(126, 227, 188, 0.12) 42%, rgba(126, 227, 188, 0) 70%); animation: orbit-halo 2.4s ease-in-out infinite; }
+@keyframes orbit-glow { 0%, 60%, 100% { opacity: 0; transform: scale(0.86); } 10% { opacity: var(--glow, 0.75); transform: scale(1.12); } 36% { opacity: 0; transform: scale(1.28); } }
+.orbit-glow { position: absolute; inset: -7px; border-radius: 9999px; pointer-events: none; opacity: 0; --glow: 0.7; background: radial-gradient(circle, rgba(126, 227, 188, 0.85) 0%, rgba(126, 227, 188, 0.3) 45%, rgba(126, 227, 188, 0) 72%); animation: orbit-glow 2.4s ease-out infinite; will-change: transform, opacity; }
+.orbit-glow.is-near { --glow: 0.95; }
+.orbit-glow.is-far { --glow: 0.4; }
+@keyframes orbit-ping { 0% { transform: scale(1); opacity: 0.9; } 65%, 100% { transform: scale(3); opacity: 0; } }
+.orbit-ping::after { content: ""; position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid var(--color-coral); animation: orbit-ping 2.4s ease-out infinite; animation-delay: inherit; }
+@keyframes orbit-drift { to { stroke-dashoffset: -160; } }
+.orbit-drift { animation: orbit-drift 36s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .orbit-ripple, .orbit-glow, .orbit-signals { display: none; }
+  .orbit-beat, .orbit-halo, .orbit-drift { animation: none; }
+  .orbit-ping::after { display: none; }
+}

@@ -8,7 +8,7 @@ import { requireInternalAction } from "@/server/session";
 import { parseList, fullName } from "@/lib/utils";
 import { retrieveMatches, type MatchPerson } from "@/lib/matching";
 import { getAIProvider } from "@/lib/ai";
-import { assertSameTenant, canApprove, canRevealIdentity } from "@/lib/authz";
+import { assertSameTenant, canApprove, canRevealIdentity, canSeeMoney } from "@/lib/authz";
 import { isIntroNamingStatus, namingBlocked } from "@/lib/reveal";
 import { limitOrThrow, rateLimit } from "@/lib/rate-limit";
 import { ROUTE_LABELS } from "@/lib/labels";
@@ -192,17 +192,21 @@ export async function approveIntroduction(formData: FormData) {
     const partner = await ownPartner(user.tenantId, d.recruitmentPartnerId);
     if (d.route === "PERMANENT" && !partner?.licensedForPermanent) throw new Error("Selected partner is not licensed for permanent placements");
   }
-  const terms = {
-    commercialModel: d.commercialModel as CommercialModel,
-    commercialSharePct: d.commercialSharePct ? Number(d.commercialSharePct) : null,
-  };
+  // Commercial terms on an introduction are the owner's to set. Anyone else approving one leaves
+  // them open (or on the agency's standing terms) for the owner to fill in.
+  const money = canSeeMoney(user);
+  const viaPartner = !money && d.recruitmentPartnerId ? await ownPartner(user.tenantId, d.recruitmentPartnerId) : null;
+  const terms = money
+    ? { commercialModel: d.commercialModel as CommercialModel, commercialSharePct: d.commercialSharePct ? Number(d.commercialSharePct) : null }
+    : { commercialModel: (viaPartner?.commercialModel ?? "NONE") as CommercialModel, commercialSharePct: viaPartner?.commercialSharePct ? Number(viaPartner.commercialSharePct) : null };
+  if (!money) d.commercialValue = undefined;
   // An existing introduction is only ever updated when it is this tenant's, for this same
   // opportunity and person — the id comes from the form and proves nothing by itself.
   const existingId = String(formData.get("introductionId") || "");
   const existing = existingId ? await prisma.introduction.findFirst({ where: { id: existingId, tenantId: user.tenantId, opportunityId: d.opportunityId, personId: d.personId } }) : null;
   if (existingId && !existing) throw new Error("Introduction not found");
   const intro = existing
-    ? await prisma.introduction.update({ where: { id: existing.id }, data: { approvedById: user.id, status: ["REQUESTED", "DECLINED", "WITHDRAWN"].includes(existing.status) ? "APPROVED" : existing.status, notes: d.notes || null, ...terms } })
+    ? await prisma.introduction.update({ where: { id: existing.id }, data: { approvedById: user.id, status: ["REQUESTED", "DECLINED", "WITHDRAWN"].includes(existing.status) ? "APPROVED" : existing.status, notes: d.notes || null, ...(money ? terms : {}) } })
     : await prisma.introduction.create({
         data: {
           tenantId: user.tenantId,

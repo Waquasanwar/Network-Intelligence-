@@ -39,7 +39,7 @@ export function NewOpportunityDrawer({ partners }: { partners: { id: string; nam
   );
 }
 
-export function ApproveIntroductionDrawer({ opportunityId, personId, personName, route, partners, existingId }: { opportunityId: string; personId: string; personName: string; route: EngagementRoute; partners: { id: string; name: string; licensedForPermanent: boolean; commercialSharePct: number | null }[]; existingId?: string }) {
+export function ApproveIntroductionDrawer({ opportunityId, personId, personName, route, partners, existingId, showTerms = false }: { showTerms?: boolean; opportunityId: string; personId: string; personName: string; route: EngagementRoute; partners: { id: string; name: string; licensedForPermanent: boolean; commercialSharePct: number | null }[]; existingId?: string }) {
   return (
     <Drawer trigger={<Button size="sm" variant="teal"><Handshake className="h-3.5 w-3.5" /> Approve introduction</Button>} title={`Introduce ${personName}`} description="Consent is requested from the person before any identity is shared. Permanent placements route through a licensed partner.">
       <form action={approveIntroduction} className="space-y-4">
@@ -48,11 +48,13 @@ export function ApproveIntroductionDrawer({ opportunityId, personId, personName,
         {existingId ? <input type="hidden" name="introductionId" value={existingId} /> : null}
         <Field label="Route" required><Select name="route" defaultValue={route}>{Object.entries(ROUTE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
         <Field label="Recruitment partner" hint="Required for permanent placements"><Select name="recruitmentPartnerId" defaultValue=""><option value="">— none (direct / Amana) —</option>{partners.map((p) => <option key={p.id} value={p.id} disabled={!p.licensedForPermanent}>{p.name}{p.commercialSharePct ? ` · ${p.commercialSharePct}%` : ""}{!p.licensedForPermanent ? " (not licensed)" : ""}</option>)}</Select></Field>
+        {showTerms ? (
         <div className="grid grid-cols-3 gap-3">
           <Field label="Commercial model"><Select name="commercialModel" defaultValue={route === "PERMANENT" ? "SUCCESS_SHARE" : route === "SOW" ? "AMANA_SOW" : "INTRODUCTION_FEE"}><option value="NONE">None</option><option value="INTRODUCTION_FEE">Introduction fee</option><option value="SUCCESS_SHARE">Success share</option><option value="SUBSCRIPTION_INCLUDED">Included in subscription</option><option value="AMANA_SOW">Amana SOW</option></Select></Field>
           <Field label="Share %"><Input name="commercialSharePct" type="number" step="0.5" min={0} max={100} placeholder="15" /></Field>
           <Field label="Value"><Input name="commercialValue" placeholder="150000" /></Field>
         </div>
+        ) : null}
         <Field label="Notes"><Textarea name="notes" placeholder="How the introduction will be made and by whom." /></Field>
         <div className="flex justify-end"><SubmitButton variant="teal" pendingText="Approving…">Approve and request consent</SubmitButton></div>
       </form>

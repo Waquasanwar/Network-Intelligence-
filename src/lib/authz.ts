@@ -47,6 +47,14 @@ export function canApprove(actor: Actor) {
   return isInternal(actor);
 }
 
+/**
+ * Money is the owner's alone: the fee pipeline, what a requirement is worth, commercial terms with
+ * clients and agencies, and the rate card. The rest of the team does the work without seeing it.
+ */
+export function canSeeMoney(actor: Actor) {
+  return actor.role === "OWNER" && isInternal(actor);
+}
+
 export function canRevealIdentity(actor: Actor) {
   return actor.role === "OWNER" || actor.role === "ADMIN";
 }

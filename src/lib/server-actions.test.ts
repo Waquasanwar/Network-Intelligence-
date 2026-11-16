@@ -45,7 +45,7 @@ describe("server-action surface", () => {
     // Signing out needs no permission; it only ever ends the caller's own session.
     signOutAction: [/signOut\(/],
   };
-  const GUARD = /\b(requireUser|requireInternal|requireInternalAction|requireAdminAction)\(/;
+  const GUARD = /\b(requireUser|requireInternal|requireInternalAction|requireAdminAction|requireOwnerAction)\(/;
 
   /** The source of each exported action, from its declaration to the next export. */
   const bodies = (src: string) => {
@@ -63,6 +63,14 @@ describe("server-action surface", () => {
         continue;
       }
       expect(GUARD.test(f.body), `${file}: ${f.name} is a public endpoint and does not call an auth guard`).toBe(true);
+    }
+  });
+
+  it("fees, commercial terms and the rate card can only be changed by the owner", () => {
+    const owner: Record<string, string[]> = { "demand.ts": ["saveBriefTerms", "setFeeStatus", "addFeeLine", "saveRateCard"], "partners.ts": ["updatePartner"] };
+    for (const [file, names] of Object.entries(owner)) {
+      const all = bodies(readFileSync(join(ACTION_DIR, file), "utf8"));
+      for (const n of names) expect(/requireOwnerAction\(/.test(all.find((f) => f.name === n)?.body ?? ""), `${file}: ${n} must require the owner`).toBe(true);
     }
   });
 

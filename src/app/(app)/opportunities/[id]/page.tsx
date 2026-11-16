@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { canSeeMoney } from "@/lib/authz";
 import { requireInternal, getUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { Notice } from "@/components/ui/notice";
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function OpportunityPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notice?: string }> }) {
   const { notice } = await searchParams;
   const user = await requireInternal();
+  const money = canSeeMoney(user);
   const { id } = await params;
   const opp = await prisma.opportunity.findUnique({
     where: { id },
@@ -45,7 +47,7 @@ export default async function OpportunityPage({ params, searchParams }: { params
     prisma.partner.findMany({ where: { networkTenantId: user.tenantId }, select: { id: true, name: true, licensedForPermanent: true, commercialSharePct: true } }),
     opp.isAmana ? prisma.person.findMany({ where: { tenantId: user.tenantId, amanaBench: true }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }) : Promise.resolve([]),
   ]);
-  const partnerOpts = partners.map((p) => ({ ...p, commercialSharePct: p.commercialSharePct ? Number(p.commercialSharePct) : null }));
+  const partnerOpts = partners.map((p) => ({ ...p, commercialSharePct: money && p.commercialSharePct ? Number(p.commercialSharePct) : null }));
   const recommended = opp.matches.filter((m) => m.humanDecision === "RECOMMEND");
   const undecided = opp.matches.filter((m) => m.humanDecision === "UNDECIDED");
 
@@ -137,7 +139,7 @@ export default async function OpportunityPage({ params, searchParams }: { params
                             <SubmitButton variant="secondary" pendingText="Saving…" className="h-10">Save decision</SubmitButton>
                           </form>
                           <div className="flex items-center gap-2">
-                            {intro ? <div className="text-[12.5px] flex items-center gap-1.5"><IntroBadge status={intro.status} /><span className="text-ink-faint">{intro.consentStatus.toLowerCase()} consent</span></div> : m.humanDecision === "RECOMMEND" ? <ApproveIntroductionDrawer opportunityId={opp.id} personId={m.personId} personName={fullName(m.person)} route={opp.engagementRoute} partners={partnerOpts} /> : null}
+                            {intro ? <div className="text-[12.5px] flex items-center gap-1.5"><IntroBadge status={intro.status} /><span className="text-ink-faint">{intro.consentStatus.toLowerCase()} consent</span></div> : m.humanDecision === "RECOMMEND" ? <ApproveIntroductionDrawer opportunityId={opp.id} personId={m.personId} personName={fullName(m.person)} route={opp.engagementRoute} partners={partnerOpts} showTerms={money} /> : null}
                             {opp.isAmana && !opp.teamShortlist.some((t) => t.personId === m.personId) ? <form action={addToTeam}><input type="hidden" name="opportunityId" value={opp.id} /><input type="hidden" name="personId" value={m.personId} /><input type="hidden" name="roleOnTeam" value="Team member" /><Button size="sm" variant="ghost" type="submit">Add to team</Button></form> : null}
                           </div>
                         </div>
@@ -173,7 +175,7 @@ export default async function OpportunityPage({ params, searchParams }: { params
                   {opp.introductions.map((i) => (
                     <li key={i.id} className="text-xs border border-line rounded-md p-2.5">
                       <div className="flex items-center justify-between gap-2"><span className="font-medium text-[13px]">{fullName(i.person)}</span><IntroBadge status={i.status} /></div>
-                      <div className="text-ink-faint mt-1">{ROUTE_LABELS[i.route]} · {i.commercialModel.replace(/_/g, " ").toLowerCase()}{i.commercialSharePct ? ` ${Number(i.commercialSharePct)}%` : ""}{i.commercialValue ? ` · ${formatMoney(Number(i.commercialValue), i.currency ?? "GBP")}` : ""}{i.recruitmentPartner ? ` · via ${i.recruitmentPartner.name}` : ""}</div>
+                      <div className="text-ink-faint mt-1">{ROUTE_LABELS[i.route]}{money ? <> · {i.commercialModel.replace(/_/g, " ").toLowerCase()}{i.commercialSharePct ? ` ${Number(i.commercialSharePct)}%` : ""}{i.commercialValue ? ` · ${formatMoney(Number(i.commercialValue), i.currency ?? "GBP")}` : ""}</> : null}{i.recruitmentPartner ? ` · via ${i.recruitmentPartner.name}` : ""}</div>
                       <div className="text-ink-faint">Consent: {i.consentStatus.toLowerCase()}{i.approvedBy ? ` · approved by ${i.approvedBy.name.split(" ")[0]}` : ""}</div>
                       {i.notes ? <div className="mt-1 text-ink-muted">{i.notes}</div> : null}
                       <form action={updateIntroductionStatus} className="flex items-center gap-1.5 mt-2">

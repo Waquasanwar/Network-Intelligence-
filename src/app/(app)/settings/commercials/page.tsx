@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { requireInternal } from "@/server/session";
+import { canSeeMoney } from "@/lib/authz";
 import { PageHeader } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Input, Select, Field } from "@/components/ui/form";
@@ -11,6 +13,7 @@ export const metadata = { title: "Commercials" };
 
 export default async function CommercialsPage() {
   const user = await requireInternal();
+  if (!canSeeMoney(user)) redirect("/forbidden");
   const rc = await loadRateCard(user.tenantId);
   const F = ({ name, label, hint }: { name: keyof RateCard; label: string; hint?: string }) => <Field label={label} hint={hint}><Input name={name} type="number" step="0.5" min={0} defaultValue={String(rc[name])} /></Field>;
   const H = ({ children }: { children: React.ReactNode }) => <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint pt-2">{children}</div>;

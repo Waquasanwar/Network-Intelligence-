@@ -5,7 +5,7 @@ const b = await launch();
 const tenant = sql(`select "tenantId" from "User" where email='waqas@networkintelligence.local'`);
 const hashOf = sql(`select "passwordHash" from "User" where email='waqas@networkintelligence.local'`);
 const cEmail = `contrib${stamp}@example.com`;
-sql(`insert into "User" (id,"tenantId",email,name,role,"passwordHash","updatedAt") values ('e2e-c-${stamp}','${tenant}','${cEmail}','Casey Contributor','CONTRIBUTOR','${hashOf.replace(/\$/g, "\\$")}',now())`);
+sql(`insert into "User" (id,"tenantId",email,name,role,"passwordHash","updatedAt") values ('e2e-c-${stamp}','${tenant}','${cEmail}','Casey Contributor','CONTRIBUTOR','${hashOf}',now())`);
 const o = await session(b, "waqas@networkintelligence.local");
 const c = await session(b, cEmail);
 const ana = sql(`select email from "User" where email like 'ana%' order by "createdAt" desc limit 1`);
@@ -72,7 +72,7 @@ await stepIf("client: workspace and portal load, internal areas closed", null, a
   if (p.errs.length) throw new Error(p.errs.join("; ")); await p.context().close();
 });
 await stepIf("MFA: enrol, sign in with a code, replay refused, device cannot be swapped silently", null, async () => {
-  const email = `mfa${stamp}@example.com`; sql(`insert into "User" (id,"tenantId",email,name,role,"passwordHash","updatedAt") values ('e2e-m-${stamp}','${tenant}','${email}','Morgan Mfa','CONTRIBUTOR','${hashOf.replace(/\$/g, "\\$")}',now())`);
+  const email = `mfa${stamp}@example.com`; sql(`insert into "User" (id,"tenantId",email,name,role,"passwordHash","updatedAt") values ('e2e-m-${stamp}','${tenant}','${email}','Morgan Mfa','CONTRIBUTOR','${hashOf}',now())`);
   const p = await session(b, email); await p.goto(`${BASE}/settings/security`, { waitUntil: "networkidle" }); await p.getByRole("button", { name: "Set up MFA" }).click();
   const secret = (await p.locator("span.font-mono.break-all").innerText()).trim();
   assert(sql(`select "mfaSecret" is null, "mfaPendingSecret" like 'enc:v1:%' from "User" where email='${email}'`) === "t|t", "pending secret stored encrypted, live secret untouched");
@@ -89,7 +89,7 @@ await stepIf("MFA: enrol, sign in with a code, replay refused, device cannot be 
   await q.context().close();
 });
 await stepIf("sign-in: ten wrong passwords pause the account", null, async () => {
-  const email = `lock${stamp}@example.com`; sql(`insert into "User" (id,"tenantId",email,name,role,"passwordHash","updatedAt") values ('e2e-l-${stamp}','${tenant}','${email}','Lee Locked','CONTRIBUTOR','${hashOf.replace(/\$/g, "\\$")}',now())`);
+  const email = `lock${stamp}@example.com`; sql(`insert into "User" (id,"tenantId",email,name,role,"passwordHash","updatedAt") values ('e2e-l-${stamp}','${tenant}','${email}','Lee Locked','CONTRIBUTOR','${hashOf}',now())`);
   // A client address of its own, as every real visitor has behind the hosting platform.
   const q = await (await b.newContext({ extraHTTPHeaders: { "x-real-ip": "203.0.113." + (Number(stamp) % 250) } })).newPage();
   for (let i = 0; i < 10; i++) { await q.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" }); await q.fill('input[name="email"]', email); await q.fill('input[name="password"]', "wrong-password-" + i); await q.click('button[type="submit"]'); await q.waitForURL(/error=/, { timeout: 15000 }); }

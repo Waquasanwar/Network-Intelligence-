@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
-import { requireInternalAction, requireUser, type SessionUser } from "@/server/session";
-import { assertSameTenant, canRevealIdentity, isInternal } from "@/lib/authz";
+import { requireInternalAction, requireOwnerAction, requireUser, type SessionUser } from "@/server/session";
+import { assertSameTenant, canRevealIdentity, canSeeMoney, isInternal } from "@/lib/authz";
 import { isShortlistNamingDecision, namingBlocked } from "@/lib/reveal";
 import { limitOrThrow } from "@/lib/rate-limit";
 import { parseList } from "@/lib/utils";
@@ -90,7 +90,7 @@ const accountSchema = z.object({
 export async function createAccount(formData: FormData) {
   const user = await requireInternalAction();
   const d = accountSchema.parse(Object.fromEntries(formData));
-  const a = await prisma.commercialAccount.create({ data: { tenantId: user.tenantId, name: d.name, kind: d.kind, status: d.status, contactName: d.contactName || null, contactEmail: d.contactEmail || null, currency: d.currency, monthlyFee: d.monthlyFee ? Number(d.monthlyFee.replace(/[^0-9.]/g, "")) : null, notes: d.notes || null, portalEnabled: d.portalEnabled ?? false } });
+  const a = await prisma.commercialAccount.create({ data: { tenantId: user.tenantId, name: d.name, kind: d.kind, status: d.status, contactName: d.contactName || null, contactEmail: d.contactEmail || null, currency: d.currency, monthlyFee: canSeeMoney(user) && d.monthlyFee ? Number(d.monthlyFee.replace(/[^0-9.]/g, "")) : null, notes: d.notes || null, portalEnabled: d.portalEnabled ?? false } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "account.create", entityType: "CommercialAccount", entityId: a.id, metadata: { kind: a.kind } });
   revalidatePath("/requirements");
 }
@@ -146,7 +146,7 @@ const termsSchema = z.object({
 });
 
 export async function saveBriefTerms(formData: FormData) {
-  const user = await requireInternalAction();
+  const user = await requireOwnerAction();
   const d = termsSchema.parse(Object.fromEntries(formData));
   const b = await ownedBrief(user, d.briefId);
   const card = await loadRateCard(user.tenantId);
@@ -240,6 +240,9 @@ const referSchema = z.object({
 export async function referPerson(formData: FormData) {
   const user = await requireInternalAction();
   const d = referSchema.parse(Object.fromEntries(formData));
+  // Fee terms are the owner's to set. Anyone else refers on the requirement's standing terms, and
+  // the forecast line is still recorded for the owner to see.
+  if (!canSeeMoney(user)) { d.model = ""; d.pct = undefined; d.createFee = true; }
   const person = await prisma.person.findUnique({ where: { id: d.personId } });
   if (!person) throw new Error("Not found");
   assertSameTenant(user, person.tenantId);
@@ -299,7 +302,7 @@ export async function referPerson(formData: FormData) {
 // ---------- fees ----------
 
 export async function setFeeStatus(formData: FormData) {
-  const user = await requireInternalAction();
+  const user = await requireOwnerAction();
   const id = String(formData.get("feeId"));
   const status = z.enum(["FORECAST", "AGREED", "INVOICED", "PAID", "WRITTEN_OFF"]).parse(formData.get("status")) as FeeStatus;
   const f = await prisma.feeLine.findUnique({ where: { id } });
@@ -311,7 +314,7 @@ export async function setFeeStatus(formData: FormData) {
 }
 
 export async function addFeeLine(formData: FormData) {
-  const user = await requireInternalAction();
+  const user = await requireOwnerAction();
   const b = await ownedBrief(user, String(formData.get("briefId")));
   const d = z.object({ personId: z.string().optional(), status: z.enum(["FORECAST", "AGREED", "INVOICED", "PAID", "WRITTEN_OFF"]).default("FORECAST"), gross: z.string().optional(), ourTake: z.string(), currency: z.string().max(3), basis: z.string().max(200).optional() }).parse(Object.fromEntries(formData));
   const num = (s?: string) => Number((s ?? "0").replace(/[^0-9.]/g, "")) || 0;
@@ -325,8 +328,7 @@ export async function addFeeLine(formData: FormData) {
 // ---------- rate card ----------
 
 export async function saveRateCard(formData: FormData) {
-  const user = await requireInternalAction();
-  if (user.role !== "OWNER" && user.role !== "ADMIN") throw new Error("Not permitted");
+  const user = await requireOwnerAction();
   const current = await loadRateCard(user.tenantId);
   const next: RateCard = { ...current };
   for (const k of Object.keys(DEFAULT_RATE_CARD) as (keyof RateCard)[]) {

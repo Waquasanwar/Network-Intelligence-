@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
+import { canSeeMoney } from "@/lib/authz";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { NetworkGraph } from "@/components/domain/network-graph";
 import { buildNetworkMap } from "@/server/network-map";
@@ -125,7 +126,10 @@ export default async function OverviewPage() {
               { label: "People in the network", value: total, hint: `${workedWith} you've worked with`, href: "/network", delta: last7(peopleDates), icon: Users },
               { label: "Live opportunities", value: activeOpps.length, hint: amanaDemand ? `${amanaDemand} via Amana` : "open requirements", href: "/opportunities", delta: last7(oppDates), icon: Briefcase },
               { label: "Introductions in flight", value: liveIntros.length, hint: "waiting on a reply or a meeting", href: "/opportunities", delta: last7(introDates), icon: Handshake },
-              { label: "Indicative pipeline", value: formatMoneyCompact(pipeline), hint: "rough, not a forecast", href: "/requirements", delta: 0, icon: TrendingUp },
+              // The money line is the owner's alone; everyone else sees how the network is growing instead.
+              canSeeMoney(user)
+                ? { label: "Indicative pipeline", value: formatMoneyCompact(pipeline), hint: "rough, not a forecast · only you see this", href: "/requirements", delta: 0, icon: TrendingUp }
+                : { label: "Members joined", value: members, hint: `${awaitingScreening} waiting on screening`, href: "/invite", delta: 0, icon: TrendingUp },
             ]
           : [
               { label: "People in the network", value: total, hint: `${workedWith} you've worked with`, href: "/network", delta: last7(peopleDates), icon: Users },

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,15 @@ const shortName = (name: string) => { const [first, ...rest] = name.split(/\s+/)
 const TONE: Record<string, string> = { teal: "text-teal border-teal/30 bg-teal-50", amber: "text-amber border-amber/30 bg-amber-50", neutral: "text-ink-muted border-line bg-surface-muted" };
 
 const RINGS = CIRCLES;
+
+/**
+ * The map's heartbeat, in seconds. A wave leaves "You" on every beat and takes three beats to cross
+ * the orbits, so three are always in flight. Each person glows as the wave reaches their circle.
+ */
+const BEAT = 2.4;
+const WAVE = { from: 0.04, to: 1.1, beats: 3 };
+/** When, within a beat, the wave reaches an orbit of the given relative size. */
+const beatDelay = (scale: number) => (((scale - WAVE.from) / (WAVE.to - WAVE.from)) * WAVE.beats * BEAT) % BEAT;
 const ringOf = circleOf;
 
 type Placed = GNode & { ring: number; angle: number; size: number; a: number; b: number };
@@ -163,6 +172,9 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, paused, links]);
 
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  // A handful of introductions carry a moving signal, so the threads between people read as live.
+  const signals = useMemo(() => { const step = Math.max(1, Math.ceil(links.length / 16)); return links.map((_, i) => i).filter((i) => i % step === 0); }, [links]);
   const showNames = !layout?.narrow && people.length <= (compact ? 26 : 44);
   const matches = (n: GNode) => !cap || (n.capabilities ?? []).some((c) => c.trim().toLowerCase() === cap);
   const lit = (id: string) => !focus || id === focus || neighbours.get(focus)?.has(id);
@@ -179,17 +191,30 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
           <>
             {/* A slow radar sweep across the orbits. It is squashed to the same tilt as they are. */}
             <div className="pointer-events-none absolute" aria-hidden="true" style={{ left: layout.cx, top: layout.cy, width: layout.rx * 2, height: layout.rx * 2, transform: `translate(-50%, -50%) scaleY(${(layout.ry / layout.rx).toFixed(4)})` }}><div className="orbit-sweep" /></div>
+            {/* The heartbeat: a wave leaves the centre on every beat and crosses the three circles. */}
+            <div className="pointer-events-none absolute" aria-hidden="true" style={{ left: layout.cx, top: layout.cy, width: layout.rx * 2, height: layout.rx * 2, transform: `translate(-50%, -50%) scaleY(${(layout.ry / layout.rx).toFixed(4)})` }}>
+              {[0, 1, 2].map((k) => <span key={k} className="orbit-ripple" style={{ animationDelay: `${k * BEAT}s` }} />)}
+            </div>
             <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
               {/* The orbits, widest first: each a faint plate with a fine edge, so the three bands read as depth. */}
               {[2, 1, 0].map((r) => (
-                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" strokeWidth={1} strokeDasharray={r === 2 ? "1 7" : undefined} strokeLinecap="round" />
+                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" strokeWidth={1} strokeDasharray={r === 2 ? "1 7" : undefined} strokeLinecap="round" className={r === 2 ? "orbit-drift" : undefined} />
               ))}
               {/* Who introduced whom: a faint thread by default, a moving mint line for the person in focus. */}
               {links.map((l, i) => {
                 const fromHub = l.source === hub?.id;
                 const on = !!focus && (l.source === focus || l.target === focus);
-                return <path key={i} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "rgba(255,255,255,0.55)"} strokeWidth={on ? 1.8 : 1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.07 : 0.2} strokeLinecap="round" />;
+                return <path key={i} id={`${uid}-l${i}`} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "rgba(255,255,255,0.55)"} strokeWidth={on ? 1.8 : 1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.07 : 0.2} strokeLinecap="round" />;
               })}
+              {/* Signals running along the threads, from whoever made the introduction to the person. */}
+              <g className="orbit-signals" opacity={focus ? 0.12 : 1}>
+                {signals.map((i, k) => { const begin = `${((k * 0.53) % (BEAT * 2)).toFixed(2)}s`; const dur = `${BEAT * 2}s`; return (
+                  <circle key={i} r={2.3} opacity={0} fill={links[i].source === hub?.id ? "var(--color-accent)" : "var(--color-coral)"}>
+                    <animateMotion dur={dur} begin={begin} repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keyPoints="0;1;1" keySplines="0.4 0 0.2 1;0 0 1 1"><mpath href={`#${uid}-l${i}`} /></animateMotion>
+                    <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.42;0.5;1" dur={dur} begin={begin} repeatCount="indefinite" />
+                  </circle>
+                ); })}
+              </g>
             </svg>
 
             {/* Each orbit carries its name as a tag at the top, in the gap its people leave. */}
@@ -200,11 +225,10 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
               </div>
             ) : null)}
 
-            {/* You, at the centre, with a slow pulse so the eye starts here. */}
+            {/* You, at the centre: a soft halo and a two-part beat that sets the rhythm for everything else. */}
             <div className="pointer-events-none absolute z-[6] -translate-x-1/2 -translate-y-1/2" style={{ left: layout.cx, top: layout.cy, width: layout.hub, height: layout.hub }}>
-              <span className="orbit-pulse absolute inset-0 rounded-full border border-coral" />
-              <span className="orbit-pulse absolute inset-0 rounded-full border border-accent" style={{ animationDelay: "1.6s" }} />
-              <span className="absolute inset-0 grid place-items-center rounded-full bg-accent text-accent-ink"><span className="label-caps !tracking-[0.1em]" style={layout.hub < 44 ? { fontSize: 8.5 } : undefined}>You</span></span>
+              <span className="orbit-halo absolute -inset-[55%] rounded-full" />
+              <span className="orbit-beat absolute inset-0 grid place-items-center rounded-full text-accent-ink"><span className="label-caps !tracking-[0.1em]" style={layout.hub < 44 ? { fontSize: 8.5 } : undefined}>You</span></span>
             </div>
 
             {layout.placed.map((p, i) => {
@@ -223,6 +247,8 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
                   style={{ width: p.size, height: p.size, transform: st.transform, zIndex: active ? 60 : st.zIndex }}
                 >
                   <span className="node-in absolute inset-0 block" style={{ animationDelay: `${Math.min(i * 22, 600)}ms` }}>
+                    {/* Lights up as the wave from the centre reaches this person's circle. */}
+                    <span className={cn("orbit-glow", p.ring === 0 ? "is-near" : p.ring === 2 ? "is-far" : "")} style={{ animationDelay: `${beatDelay(layout.scale[p.ring]).toFixed(2)}s` }} aria-hidden="true" />
                     <svg viewBox={`0 0 ${p.size} ${p.size}`} className="absolute inset-0 -rotate-90" aria-hidden="true">
                       <circle cx={p.size / 2} cy={p.size / 2} r={r} fill="var(--color-stage)" stroke="rgba(255,255,255,0.22)" strokeWidth={1.5} />
                       {p.trust > 0 ? <circle cx={p.size / 2} cy={p.size / 2} r={r} fill="none" stroke="var(--color-accent)" strokeWidth={2.2} strokeLinecap="round" strokeDasharray={`${(Math.min(100, p.trust) / 100) * c} ${c}`} /> : null}
@@ -230,7 +256,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
                     <span className={cn("absolute inset-[4.5px] grid place-items-center rounded-full font-semibold leading-none transition-[transform,background-color,color] duration-200 group-hover:scale-110", trusted ? "bg-accent text-accent-ink" : active ? "bg-white text-[#0c1b33]" : "bg-white/[0.12] text-stage-ink", selected === p.id && "ring-2 ring-white ring-offset-2 ring-offset-stage")} style={{ fontSize: Math.max(8, Math.round(p.size * 0.29)) }}>
                       {p.size >= 22 ? initials(p.name) : ""}
                     </span>
-                    {p.open ? <span className="absolute right-0 bottom-0 h-[10px] w-[10px] rounded-full bg-coral ring-2 ring-stage" aria-hidden="true" /> : null}
+                    {p.open ? <span className="orbit-ping absolute right-0 bottom-0 h-[10px] w-[10px] rounded-full bg-coral ring-2 ring-stage" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
                     {showNames ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none transition-colors duration-200", active ? "text-white font-semibold" : "text-stage-muted")}>{shortName(p.name)}</span> : null}
                   </span>
                 </button>

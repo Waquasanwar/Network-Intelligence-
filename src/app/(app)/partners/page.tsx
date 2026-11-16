@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { canSeeMoney } from "@/lib/authz";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { redactForPartner } from "@/lib/authz";
@@ -23,6 +24,7 @@ export const metadata = { title: "Partners" };
 
 export default async function PartnersPage({ searchParams }: { searchParams: Promise<{ partner?: string }> }) {
   const user = await requireInternal();
+  const money = canSeeMoney(user);
   const sp = await searchParams;
   const partners = await prisma.partner.findMany({ where: { networkTenantId: user.tenantId }, include: { requirements: { orderBy: { createdAt: "desc" } }, introductions: { include: { person: true, opportunity: { select: { title: true } } } }, tenant: { select: { users: { select: { id: true, name: true, email: true, lastLoginAt: true } } } } }, orderBy: { name: "asc" } });
   const selected = partners.find((p) => p.id === sp.partner) ?? partners[0];
@@ -38,7 +40,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
         }),
       )
     : [];
-  const canEdit = user.role === "OWNER" || user.role === "ADMIN";
+  const canEdit = money;
 
   return (
     <>
@@ -60,7 +62,8 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
         {selected ? (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
+              {money ? (
+<Card>
                 <CardHeader title="Subscription & commercial model" description="Configurable. Nothing is hard-coded." />
                 <CardBody>
                   <form action={updatePartner} className="space-y-3">
@@ -75,10 +78,11 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                     </div>
                     <Checkbox name="licensedForPermanent" label="Licensed for permanent placements" defaultChecked={selected.licensedForPermanent} disabled={!canEdit} />
                     <Field label="Notes"><Textarea name="notes" defaultValue={selected.notes ?? ""} disabled={!canEdit} /></Field>
-                    {canEdit ? <div className="flex justify-end"><SubmitButton>Save terms</SubmitButton></div> : <div className="text-[12px] text-ink-faint">Only owners and admins can change commercial terms.</div>}
+                    {canEdit ? <div className="flex justify-end"><SubmitButton>Save terms</SubmitButton></div> : <div className="text-[12px] text-ink-faint">Only the owner can change commercial terms.</div>}
                   </form>
                 </CardBody>
               </Card>
+) : null}
               <div className="space-y-4">
                 <Card>
                   <CardHeader title="Data boundary" description="What this partner can and cannot see" />
@@ -146,7 +150,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                 <CardHeader title="Introduction requests & commercial tracking" />
                 <CardBody>
                   {selected.introductions.length === 0 ? <div className="text-xs text-ink-faint">No introductions yet.</div> : (
-                    <ul className="space-y-2">{selected.introductions.map((i) => <li key={i.id} className="text-xs border border-line rounded-md px-2.5 py-2"><div className="flex items-center justify-between"><span className="font-medium text-[13px]">{fullName(i.person)}</span><IntroBadge status={i.status} /></div><div className="text-ink-faint">{i.opportunity.title}</div><div className="text-ink-muted mt-0.5">{ROUTE_LABELS[i.route]} · {i.commercialModel.replace(/_/g, " ").toLowerCase()}{i.commercialSharePct ? ` ${Number(i.commercialSharePct)}%` : ""}{i.commercialValue ? ` of ${formatMoney(Number(i.commercialValue), i.currency ?? "GBP")} ≈ ${formatMoney(Number(i.commercialValue) * (Number(i.commercialSharePct ?? 0) / 100), i.currency ?? "GBP")}` : ""}</div><div className="text-ink-faint">Consent {i.consentStatus.toLowerCase()} · identity {i.status === "IDENTITY_REVEALED" || i.status === "INTRODUCED" || i.status === "ENGAGED" ? "revealed" : "hidden"}</div></li>)}</ul>
+                    <ul className="space-y-2">{selected.introductions.map((i) => <li key={i.id} className="text-xs border border-line rounded-md px-2.5 py-2"><div className="flex items-center justify-between"><span className="font-medium text-[13px]">{fullName(i.person)}</span><IntroBadge status={i.status} /></div><div className="text-ink-faint">{i.opportunity.title}</div><div className="text-ink-muted mt-0.5">{ROUTE_LABELS[i.route]}{money ? <> · {i.commercialModel.replace(/_/g, " ").toLowerCase()}{i.commercialSharePct ? ` ${Number(i.commercialSharePct)}%` : ""}</> : null}{money && i.commercialValue ? ` of ${formatMoney(Number(i.commercialValue), i.currency ?? "GBP")} ≈ ${formatMoney(Number(i.commercialValue) * (Number(i.commercialSharePct ?? 0) / 100), i.currency ?? "GBP")}` : ""}</div><div className="text-ink-faint">Consent {i.consentStatus.toLowerCase()} · identity {i.status === "IDENTITY_REVEALED" || i.status === "INTRODUCED" || i.status === "ENGAGED" ? "revealed" : "hidden"}</div></li>)}</ul>
                   )}
                 </CardBody>
               </Card>

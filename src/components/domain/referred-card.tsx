@@ -14,10 +14,10 @@ export type ReferredRow = {
 };
 
 /** Every client and agency this person has been put in front of, with the fee that rides on it. Internal view only. */
-export function ReferredCard({ rows, action }: { rows: ReferredRow[]; action?: React.ReactNode }) {
+export function ReferredCard({ rows, action, showFees = false }: { rows: ReferredRow[]; action?: React.ReactNode; showFees?: boolean }) {
   return (
     <Card>
-      <CardHeader title="Referred to" description="Perm or contract. They see the card, never the name — the fee is agreed with us." action={action} />
+      <CardHeader title="Referred to" description={showFees ? "Perm or contract. They see the card, never the name. The fee is agreed with us." : "Perm or contract. They see the card, never the name."} action={action} />
       <CardBody className="pt-0">
         {rows.length === 0 ? (
           <p className="text-[12.5px] text-ink-faint">Not yet put forward to anyone. Refer them and the client or agency sees an anonymised card.</p>
@@ -36,6 +36,7 @@ export function ReferredCard({ rows, action }: { rows: ReferredRow[]; action?: R
                   <Link href={`/requirements/${r.briefId}`} className="text-navy hover:underline">{r.briefTitle}</Link> · {r.routeLabel} · <DateText date={r.updatedAt} relative />
                   {r.referred ? <> · <span className="text-teal">referred by hand</span></> : null}
                 </div>
+                {showFees ? (
                 <div className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5">
                     <Coins className={`h-3.5 w-3.5 ${r.fee ? "text-teal" : "text-ink-faint"}`} />
@@ -43,6 +44,7 @@ export function ReferredCard({ rows, action }: { rows: ReferredRow[]; action?: R
                   </span>
                   <small className="label-caps tracking-[0.06em] text-ink-faint">{r.fee ? r.fee.statusLabel : r.estimate.confident ? "estimated, no line yet" : r.estimate.basis}</small>
                 </div>
+                ) : null}
                 {r.clientNote ? <p className="text-[12px] text-ink-muted italic">“{r.clientNote}”</p> : null}
               </li>
             ))}
