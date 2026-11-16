@@ -2,14 +2,14 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export function Card({ className, interactive = false, ...props }: React.HTMLAttributes<HTMLDivElement> & { interactive?: boolean }) {
-  return <div className={cn("rounded-[20px] border border-line bg-surface shadow-[var(--shadow-card)]", interactive && "lift cursor-pointer", className)} {...props} />;
+  return <div className={cn("rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)]", interactive && "lift cursor-pointer", className)} {...props} />;
 }
 
 export function CardHeader({ className, title, description, action }: { className?: string; title: React.ReactNode; description?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className={cn("flex items-start justify-between gap-3 px-6 pt-6 pb-3", className)}>
+    <div className={cn("flex items-start justify-between gap-3 px-6 pt-5 pb-3", className)}>
       <div className="min-w-0">
-        <h3 className="font-display is-small text-[18px] text-ink leading-[1.15]">{title}</h3>
+        <h3 className="font-display is-small text-[16px] text-ink leading-[1.25]">{title}</h3>
         {description ? <p className="text-[12.5px] text-ink-muted mt-1 leading-[1.45]">{description}</p> : null}
       </div>
       {action ? <div className="flex-none">{action}</div> : null}

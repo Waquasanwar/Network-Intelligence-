@@ -59,7 +59,7 @@ export function KpiCard({
   const sparkTone: Tone = dir === "down" ? "amber" : tone;
 
   const body = (
-    <div className={cn("rounded-[20px] px-6 py-5 h-full flex flex-col transition-[border-color,box-shadow,transform] duration-200", glass ? "bg-accent text-accent-ink" : "border border-line bg-surface shadow-[var(--shadow-card)]", href && "hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]")}>
+    <div className={cn("rounded-[12px] px-6 py-5 h-full flex flex-col transition-[border-color,box-shadow,transform] duration-200", glass ? "bg-accent text-accent-ink" : "border border-line bg-surface shadow-[var(--shadow-card)]", href && "hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]")}>
       <div className="flex items-center justify-between gap-2">
         <div className={cn("text-[12.5px] font-semibold leading-tight", glass ? "text-accent-ink" : "text-ink-muted")}>{label}</div>
         {delta ? (

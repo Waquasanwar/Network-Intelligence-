@@ -7,8 +7,8 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-6">
       <div className="min-w-0">
         {eyebrow ? <div className="eyebrow text-ink-faint mb-2.5">{eyebrow}</div> : null}
-        <h1 className="font-display text-[32px] sm:text-[42px] text-ink leading-[1]">{title}</h1>
-        {description ? <p className="text-[14.5px] text-ink-muted mt-2.5 max-w-2xl leading-[1.5]">{description}</p> : null}
+        <h1 className="font-display text-[26px] sm:text-[32px] text-ink leading-[1.1]">{title}</h1>
+        {description ? <p className="text-[14.5px] text-ink-muted mt-2 max-w-2xl leading-[1.55]">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2 sm:flex-none">{actions}</div> : null}
     </div>
@@ -17,7 +17,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
 
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
   return (
-    <div className="rounded-[16px] border border-dashed border-line-strong px-6 py-10 text-center bg-surface-muted/60">
+    <div className="rounded-[10px] border border-dashed border-line-strong px-6 py-10 text-center bg-surface-muted/60">
       <div className="text-[14px] font-semibold text-ink">{title}</div>
       {description ? <div className="text-[12.5px] text-ink-muted mt-1 max-w-sm mx-auto leading-5">{description}</div> : null}
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
@@ -27,18 +27,18 @@ export function EmptyState({ title, description, action }: { title: string; desc
 
 export function Tabs({ items, current, base }: { items: { key: string; label: string; count?: number }[]; current: string; base: string }) {
   return (
-    <div className="mb-5 max-w-full overflow-x-auto"><div className="inline-flex items-center gap-1 rounded-full border border-line bg-surface p-1 shadow-[var(--shadow-card)]">
+    <div className="mb-5 max-w-full overflow-x-auto border-b border-line"><div className="flex items-center gap-5">
       {items.map((t) => (
         <Link
           key={t.key}
           href={t.key === items[0].key ? base : `${base}?tab=${t.key}`}
           className={cn(
-            "px-4 h-9 inline-flex items-center text-[13px] whitespace-nowrap transition-colors rounded-full",
-            current === t.key ? "bg-navy text-white font-semibold dark:text-canvas" : "text-ink-muted font-medium hover:text-ink hover:bg-surface-muted",
+            "h-10 inline-flex items-center text-[13.5px] whitespace-nowrap transition-colors duration-200 border-b-2 -mb-px",
+            current === t.key ? "border-ink text-ink font-semibold" : "border-transparent text-ink-muted font-medium hover:text-ink",
           )}
         >
           {t.label}
-          {typeof t.count === "number" ? <span className={cn("ml-1.5 text-[11px] tabular rounded-full px-1.5 py-px font-semibold", current === t.key ? "bg-accent text-accent-ink" : "bg-surface-muted text-ink-faint")}>{t.count}</span> : null}
+          {typeof t.count === "number" ? <span className={cn("ml-1.5 text-[11px] tabular rounded-full px-1.5 py-px font-semibold", current === t.key ? "bg-navy text-white dark:text-canvas" : "bg-surface-muted text-ink-faint")}>{t.count}</span> : null}
         </Link>
       ))}
     </div></div>
@@ -50,7 +50,7 @@ export function Section({ title, description, children, action, className }: { t
     <section className={cn("mb-6", className)}>
       <div className="flex items-end justify-between mb-2.5 gap-4">
         <div>
-          <h2 className="font-display is-small text-[18px] text-ink">{title}</h2>
+          <h2 className="font-display is-small text-[16px] text-ink">{title}</h2>
           {description ? <p className="text-[12px] text-ink-muted mt-0.5 leading-4 max-w-2xl">{description}</p> : null}
         </div>
         {action ? <div className="flex-none">{action}</div> : null}

@@ -5,6 +5,7 @@ import { Input, Field } from "@/components/ui/form";
 import { Button, ArrowBadge } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { CirclesMotif } from "@/components/ui/circles-motif";
 
 export const metadata = { title: "Sign in" };
 
@@ -33,41 +34,17 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     await signIn("microsoft-entra-id", { redirectTo: "/" });
   }
 
-  // A network drawn from real relationships — hand-placed so it reads as a path, not a blob.
-  const nodes = [
-    { x: 70, y: 250, r: 7, label: "You", strong: true },
-    { x: 190, y: 160, r: 6, label: "Sarah" },
-    { x: 320, y: 210, r: 6, label: "Ben" },
-    { x: 205, y: 335, r: 6, label: "Daniel" },
-    { x: 345, y: 380, r: 6, label: "Hannah" },
-    { x: 440, y: 270, r: 6.5, label: "Priya", accent: true },
-    { x: 545, y: 185, r: 5, label: "" },
-    { x: 560, y: 355, r: 5, label: "" },
-  ];
-  const edges: [number, number, boolean?][] = [[0, 1, true], [1, 2], [0, 3], [3, 4], [1, 5, true], [5, 6], [5, 7], [4, 7]];
-
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]">
-      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[32px]">
+      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[16px]">
         <div className="flex items-center gap-2.5 relative z-10">
           <BrandMark className="h-7 w-auto" />
-          <span className="font-display is-small text-[18px]">Network Intelligence</span>
+          <span className="font-display is-small text-[16px]">Network Intelligence</span>
         </div>
-        <svg viewBox="0 0 620 500" preserveAspectRatio="xMidYMid meet" className="absolute inset-x-0 top-[6%] h-[34%] w-full" aria-hidden="true">
-          {edges.map(([a, b, strong], i) => (
-            <line key={i} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} stroke={strong ? "rgba(126,227,188,0.9)" : "rgba(243,244,240,0.28)"} strokeWidth={strong ? 1.5 : 1} strokeDasharray={strong ? undefined : "3 5"} />
-          ))}
-          {nodes.map((n, i) => (
-            <g key={i}>
-              <circle cx={n.x} cy={n.y} r={n.r + 7} fill={n.accent ? "rgba(126,227,188,0.16)" : "rgba(243,244,240,0.07)"} />
-              <circle cx={n.x} cy={n.y} r={n.r} fill={n.strong ? "#7ee3bc" : n.accent ? "#7ee3bc" : "rgba(243,244,240,0.5)"} />
-              {n.label ? <text x={n.x + 14} y={n.y + 4} fontSize="12.5" fill="rgba(243,244,240,0.75)" fontFamily="var(--font-sans)">{n.label}</text> : null}
-            </g>
-          ))}
-        </svg>
+        <CirclesMotif className="pointer-events-none absolute right-[-70px] top-[-80px] h-[430px] w-[430px]" />
         <div className="relative z-10">
-          <div className="eyebrow mb-5">Invitation only</div>
-          <h1 className="font-display text-[72px] leading-[0.92]">Known.<br />Not just matched.</h1>
+          <div className="eyebrow text-stage-muted mb-5">Invitation only</div>
+          <h1 className="font-display text-[52px] leading-[1.05]">Known.<br />Not just matched.</h1>
           <p className="mt-6 text-stage-muted text-[16px] max-w-[42ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
         </div>
         <div className="text-[12.5px] text-stage-muted relative z-10">Human-led. AI-enhanced. The relationship intelligence is the asset.</div>
@@ -80,18 +57,18 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <BrandMark className="h-6 w-auto text-ink" />
             <span className="font-display is-small text-[17px] text-ink">Network Intelligence</span>
           </div>
-          <h2 className="font-display text-[40px] leading-[1]">Welcome back</h2>
+          <h2 className="font-display text-[30px] leading-[1.1]">Welcome back</h2>
           <p className="text-[15px] text-ink-muted mt-2.5">Sign in to your network.</p>
 
-          {sp.registered ? <div className="mt-5 rounded-[14px] border border-teal/25 bg-teal/5 px-3.5 py-2.5 text-[12.5px] text-ink">Account created. Sign in to start your screening.</div> : null}
-          {sp.error ? <div className="mt-5 rounded-[14px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
+          {sp.registered ? <div className="mt-5 rounded-[10px] border border-teal/25 bg-teal/5 px-3.5 py-2.5 text-[12.5px] text-ink">Account created. Sign in to start your screening.</div> : null}
+          {sp.error ? <div className="mt-5 rounded-[10px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
 
           <form action={login} className="mt-7 space-y-3.5">
             <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/"} />
             <Field label="Email" required><Input name="email" type="email" autoComplete="email" required placeholder="you@company.com" className="h-10" /></Field>
             <Field label="Password" required><Input name="password" type="password" autoComplete="current-password" required minLength={8} className="h-10" /></Field>
             <Field label="Authentication code" hint="Only if you've set up MFA — the 6-digit code from your authenticator."><Input name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="123 456" className="h-10" /></Field>
-            <Button type="submit" size="lg" variant="accent" className="w-full mt-2 justify-between pl-6 pr-4">Sign in <ArrowBadge className="mr-[-8px]" /></Button>
+            <Button type="submit" size="lg" className="w-full mt-2">Sign in <ArrowBadge /></Button>
           </form>
           {hasEntra ? (
             <>
@@ -101,7 +78,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           ) : null}
 
           {showDemo ? (
-            <div className="mt-6 rounded-[14px] border border-line bg-surface/60 p-3.5 text-[11.5px] text-ink-muted leading-5">
+            <div className="mt-6 rounded-[10px] border border-line bg-surface/60 p-3.5 text-[11.5px] text-ink-muted leading-5">
               <div className="font-medium text-ink mb-1.5">Demo accounts · password <span className="mono">Password123!</span></div>
               <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                 <span className="mono">waqas@networkintelligence.local</span><span>Owner</span>

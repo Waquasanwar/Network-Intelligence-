@@ -15,12 +15,12 @@ export function InviteCard({ token, className }: { token: string; className?: st
   }
 
   return (
-    <div className={`rounded-[20px] border border-line bg-surface shadow-[var(--shadow-card)] px-6 py-5 flex h-full flex-col ${className ?? ""}`}>
-      <div className="text-[12.5px] font-semibold text-ink-muted flex items-center gap-2"><Link2 className="h-4 w-4" /> Invite link</div>
-      <div className="font-display is-small text-[20px] leading-[1.1] text-ink mt-3">Bring someone into the network</div>
+    <div className={`rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] px-6 py-5 flex flex-col ${className ?? ""}`}>
+      <div className="label-caps text-ink-faint flex items-center gap-2"><Link2 className="h-3.5 w-3.5" /> Invite link</div>
+      <div className="font-display is-small text-[16px] leading-[1.25] text-ink mt-3">Bring someone into the network</div>
       <div className="text-[12.5px] text-ink-muted mt-1.5 leading-[1.5]">They register and do their screening; you review before they go live.</div>
-      <div className="mt-auto flex items-center gap-2 pt-4">
-        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 h-9 rounded-full border border-line bg-surface-muted px-3.5 text-[12px] text-ink-muted outline-none truncate" aria-label="Your invite link" />
+      <div className="flex items-center gap-2 pt-4">
+        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 h-9 rounded-[8px] border border-line bg-surface-muted px-3 text-[12px] text-ink-muted outline-none truncate" aria-label="Your invite link" />
         <Button type="button" onClick={copy} className="flex-none">{copied ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}</Button>
       </div>
     </div>

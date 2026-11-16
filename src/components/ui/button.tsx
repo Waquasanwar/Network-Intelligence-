@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold transition-[background-color,border-color,box-shadow,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none active:scale-[0.98]",
+  "group inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] font-semibold transition-[background-color,border-color,box-shadow,color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none active:scale-[0.98]",
   {
     variants: {
       variant: {
@@ -16,8 +16,8 @@ const buttonVariants = cva(
         link: "text-ink underline decoration-accent decoration-2 underline-offset-4 px-0 h-auto rounded-none",
       },
       size: {
-        sm: "h-8 px-3.5 text-[12.5px]",
-        md: "h-9 px-4 text-[13px]",
+        sm: "h-8 px-3 text-[12.5px] rounded-[6px]",
+        md: "h-9 px-3.5 text-[13px]",
         lg: "h-11 px-5 text-[14px]",
         icon: "h-9 w-9",
       },
@@ -26,11 +26,11 @@ const buttonVariants = cva(
   },
 );
 
-/** The navy circle with a mint arrow that closes a call to action — the Amana site's signature. */
+/** The arrow that closes a call to action: inline, not a chip, and it nudges forward on hover. */
 export function ArrowBadge({ className }: { className?: string }) {
   return (
-    <span aria-hidden="true" className={cn("arrow-badge -mr-2.5 ml-1 grid h-7 w-7 flex-none place-items-center rounded-full bg-stage text-accent", className)}>
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    <span aria-hidden="true" className={cn("arrow-badge ml-1 inline-flex flex-none", className)}>
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
     </span>
   );
 }

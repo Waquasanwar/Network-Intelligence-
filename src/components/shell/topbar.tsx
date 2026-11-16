@@ -24,8 +24,8 @@ export function TopBar({ crumbs, alerts = [] }: { crumbs?: { label: string; href
   }, [pathname]);
   const items = (crumbs ?? auto).map((c, i, arr) => (i === arr.length - 1 && c.label === "Detail" && docTitle ? { ...c, label: docTitle } : c));
   return (
-    <header className="h-16 flex items-center justify-between gap-3 px-4 lg:px-8 sticky top-0 z-20 glass">
-      <button type="button" aria-label="Open menu" aria-controls="app-nav" onClick={() => window.dispatchEvent(new CustomEvent("ni:toggle-nav"))} className="lg:hidden h-10 w-10 flex-none grid place-items-center rounded-full border border-line-strong bg-surface text-ink cursor-pointer">
+    <header className="h-[60px] flex items-center justify-between gap-3 px-4 lg:px-8 sticky top-0 z-20 glass border-b border-line">
+      <button type="button" aria-label="Open menu" aria-controls="app-nav" onClick={() => window.dispatchEvent(new CustomEvent("ni:toggle-nav"))} className="lg:hidden h-9 w-9 flex-none grid place-items-center rounded-[8px] border border-line bg-surface text-ink cursor-pointer">
         <Menu className="h-5 w-5" />
       </button>
       <nav className="flex flex-1 items-center gap-1.5 text-[13px] text-ink-muted min-w-0" aria-label="Breadcrumb">
@@ -39,21 +39,21 @@ export function TopBar({ crumbs, alerts = [] }: { crumbs?: { label: string; href
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette"))}
-        aria-label="Search people and opportunities" className="group flex flex-none items-center justify-center md:justify-start gap-2 h-10 w-10 md:w-[320px] md:max-w-[40vw] rounded-full border border-line bg-surface px-0 md:px-4 text-[13px] text-ink-faint hover:border-line-strong transition-colors duration-200 cursor-pointer md:cursor-text shadow-[var(--shadow-card)]"
+        aria-label="Search people and opportunities" className="group flex flex-none items-center justify-center md:justify-start gap-2 h-9 w-9 md:w-[300px] md:max-w-[40vw] rounded-[8px] border border-line bg-surface px-0 md:px-3 text-[13px] text-ink-faint hover:border-line-strong transition-colors duration-200 cursor-pointer md:cursor-text"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="hidden md:block flex-1 text-left">Search people, opportunities…</span>
         <span className="hidden md:flex items-center gap-0.5"><kbd>⌘</kbd><kbd>K</kbd></span>
       </button>
       <div className="relative flex-none">
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Alerts" className="relative h-10 w-10 rounded-full border border-line bg-surface grid place-items-center text-ink hover:border-line-strong transition-colors duration-200 cursor-pointer shadow-[var(--shadow-card)]">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Alerts" className="relative h-9 w-9 rounded-[8px] border border-line bg-surface grid place-items-center text-ink hover:border-line-strong transition-colors duration-200 cursor-pointer">
           <Bell className="h-4 w-4" />
           {alerts.length ? <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-coral text-[#0c1b33] text-[10.5px] font-bold leading-[18px] text-center ring-2 ring-canvas">{alerts.length}</span> : null}
         </button>
         {open ? (
-          <div className="absolute right-0 top-11 z-30 w-[380px] max-w-[calc(100vw-32px)] rounded-[20px] border border-line bg-surface shadow-[var(--shadow-drawer)] overflow-hidden anim-fade">
+          <div className="absolute right-0 top-11 z-30 w-[380px] max-w-[calc(100vw-32px)] rounded-[12px] border border-line bg-surface shadow-[var(--shadow-drawer)] overflow-hidden anim-fade">
             <div className="flex items-center justify-between px-4 py-3 border-b border-line text-[13px]"><b>Needs your attention</b><small className="text-ink-faint">{alerts.length} item{alerts.length === 1 ? "" : "s"}</small></div>
-            {alerts.length ? <ul className="p-1.5 max-h-[60vh] overflow-auto">{alerts.map((a, i) => <li key={i}><Link href={a.href} onClick={() => setOpen(false)} className="grid grid-cols-[auto_1fr_auto] gap-2.5 items-center px-2.5 py-2 rounded-[14px] text-[12.5px] hover:bg-surface-muted"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${a.tone === "teal" ? "bg-teal-100 text-teal" : a.tone === "amber" ? "bg-amber-100 text-amber" : "bg-navy-100 text-navy"}`}>{a.kind}</span><span>{a.text}</span><small className="text-ink-faint whitespace-nowrap">{a.when}</small></Link></li>)}</ul> : <p className="px-4 py-3.5 text-[12.5px] text-ink-muted">Nothing waiting. New registrations, screenings, referrals, pitches and client requests appear here.</p>}
+            {alerts.length ? <ul className="p-1.5 max-h-[60vh] overflow-auto">{alerts.map((a, i) => <li key={i}><Link href={a.href} onClick={() => setOpen(false)} className="grid grid-cols-[auto_1fr_auto] gap-2.5 items-center px-2.5 py-2 rounded-[10px] text-[12.5px] hover:bg-surface-muted"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${a.tone === "teal" ? "bg-teal-100 text-teal" : a.tone === "amber" ? "bg-amber-100 text-amber" : "bg-navy-100 text-navy"}`}>{a.kind}</span><span>{a.text}</span><small className="text-ink-faint whitespace-nowrap">{a.when}</small></Link></li>)}</ul> : <p className="px-4 py-3.5 text-[12.5px] text-ink-muted">Nothing waiting. New registrations, screenings, referrals, pitches and client requests appear here.</p>}
           </div>
         ) : null}
       </div>

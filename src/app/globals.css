@@ -2,100 +2,99 @@
 
 /*
   Network Intelligence — visual system.
-  Shares its identity with the Amana site: off-white ground, deep navy ink, one mint accent, and a
-  condensed bold grotesque for anything that should be read first. Flat colour only — depth comes
-  from shape, scale and a hairline, never from a gradient or a glow.
+  The same system as the Amana site: cool white ground, navy ink, mint as the first accent and
+  coral as the second, Mona Sans throughout, and squared, architectural shapes. Depth comes from
+  a hairline and a soft lift on hover; colour is used sparingly so it means something.
 */
 @theme {
-  --color-canvas: #f3f4f0;
+  --color-canvas: #f7f9fc;
   --color-surface: #ffffff;
-  --color-surface-muted: #f0f1ed;
-  --color-surface-hover: #f7f8f5;
-  --color-line: rgba(12, 27, 51, 0.1);
-  --color-line-strong: rgba(12, 27, 51, 0.2);
+  --color-surface-muted: #f1f4f8;
+  --color-surface-hover: #f8fafc;
+  --color-line: #dce3ec;
+  --color-line-strong: #c3cedb;
   --color-ink: #0c1b33;
-  --color-ink-muted: #4a5466;
+  --color-ink-muted: #3b475b;
   --color-ink-faint: #5b6576;
-  /* "navy" is the primary: the same navy as the ink, so the interface reads as one colour plus mint */
   --color-navy: #0c1b33;
-  --color-navy-600: #1c2d4c;
-  --color-navy-400: #6b7892;
-  --color-navy-100: #dfe3e8;
-  --color-navy-50: #eceeed;
-  /* "teal" is the positive signal as text; the mint accent is its fill */
+  --color-navy-600: #1a2c4d;
+  --color-navy-400: #6b7a93;
+  --color-navy-100: #dce3ec;
+  --color-navy-50: #eef2f7;
   --color-teal: #0b6e4f;
-  --color-teal-400: #34c28f;
-  --color-teal-100: #d3f3e5;
-  --color-teal-50: #e9f9f1;
+  --color-teal-400: #2fb389;
+  --color-teal-100: #d5f3e6;
+  --color-teal-50: #ecf9f3;
   --color-accent: #7ee3bc;
   --color-accent-ink: #0c1b33;
   --color-coral: #ff6b5b;
-  /* the one dark surface: the home hero and the sign-in / join panels */
+  --color-deep-blue: #1b4a86;
+  /* the navy surface: the home hero and the sign-in / join panels */
   --color-stage: #0c1b33;
-  --color-stage-ink: #f3f4f0;
-  --color-stage-muted: #b9c0cb;
-  --color-stage-line: rgba(243, 244, 240, 0.18);
+  --color-stage-ink: #ffffff;
+  --color-stage-muted: #c7d0dc;
+  --color-stage-line: rgba(243, 244, 240, 0.16);
   --color-amber: #8a5a0b;
   --color-amber-100: #fbe9cc;
   --color-amber-50: #fdf6ea;
-  --color-risk: #b8321f;
-  --color-risk-100: #fde3de;
-  --color-rail: #f3f4f0;
-  --color-rail-ink: #4a5466;
+  --color-risk: #9b1c1c;
+  --color-risk-100: #fbe2df;
+  --color-rail: #f7f9fc;
+  --color-rail-ink: #3b475b;
   --color-rail-ink-strong: #0c1b33;
-  --color-rail-line: rgba(12, 27, 51, 0.1);
+  --color-rail-line: #dce3ec;
   --color-rail-active: #ffffff;
   --color-chart-a: #0c1b33;
-  --color-chart-b: #34c28f;
-  --font-display: var(--font-display-bricolage), var(--font-sans-inter), system-ui, sans-serif;
-  --font-sans: var(--font-sans-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --color-chart-b: #2fb389;
+  --font-display: var(--font-sans-mona), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-sans-mona), "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-mono-fallback), ui-monospace, SFMono-Regular, Menlo, monospace;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --shadow-card: 0 1px 2px rgba(11, 31, 58, 0.05);
-  --shadow-card-hover: 0 1px 2px rgba(11, 31, 58, 0.05), 0 14px 30px -14px rgba(11, 31, 58, 0.22);
-  --shadow-drawer: 0 32px 80px -16px rgba(11, 31, 58, 0.32), 0 0 0 1px rgba(11, 31, 58, 0.05);
-  --shadow-pop: 0 20px 60px -12px rgba(11, 31, 58, 0.26), 0 0 0 1px rgba(11, 31, 58, 0.05);
-  --shadow-button: 0 1px 2px rgba(11, 31, 58, 0.12);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --shadow-card: 0 1px 2px rgba(12, 27, 51, 0.04);
+  --shadow-card-hover: 0 18px 40px rgba(12, 27, 51, 0.08);
+  --shadow-drawer: 0 32px 80px -16px rgba(12, 27, 51, 0.3), 0 0 0 1px rgba(12, 27, 51, 0.05);
+  --shadow-pop: 0 14px 40px rgba(12, 27, 51, 0.14), 0 0 0 1px rgba(12, 27, 51, 0.04);
+  --shadow-button: 0 1px 2px rgba(12, 27, 51, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-canvas: #081326;
-    --color-surface: #0f2038;
-    --color-surface-muted: #162a47;
-    --color-surface-hover: #142642;
-    --color-line: rgba(243, 244, 240, 0.1);
-    --color-line-strong: rgba(243, 244, 240, 0.2);
-    --color-ink: #f3f4f0;
-    --color-ink-muted: #b9c0cb;
-    --color-ink-faint: #a7afbc;
-    --color-navy: #f3f4f0;
-    --color-navy-600: #dfe3e8;
-    --color-navy-400: #a7afbc;
-    --color-navy-100: #1c2d4c;
-    --color-navy-50: #142642;
+    --color-canvas: #060d1d;
+    --color-surface: #0c1b33;
+    --color-surface-muted: #12264a;
+    --color-surface-hover: #10213f;
+    --color-line: rgba(243, 244, 240, 0.12);
+    --color-line-strong: rgba(243, 244, 240, 0.22);
+    --color-ink: #f7f9fc;
+    --color-ink-muted: #c7d0dc;
+    --color-ink-faint: #9fb0c6;
+    --color-navy: #f7f9fc;
+    --color-navy-600: #dce3ec;
+    --color-navy-400: #9fb0c6;
+    --color-navy-100: #1a2c4d;
+    --color-navy-50: #10213f;
     --color-teal: #7ee3bc;
     --color-teal-400: #7ee3bc;
     --color-teal-100: #12382d;
     --color-teal-50: #0d2820;
-    --color-stage: #0f2038;
+    --color-stage: #12264a;
     --color-amber: #f0a64a;
     --color-amber-100: #3e2a10;
     --color-amber-50: #2a1f0f;
     --color-risk: #ff8a7d;
     --color-risk-100: #3b1814;
-    --color-rail: #081326;
-    --color-rail-ink: #b9c0cb;
-    --color-rail-ink-strong: #f3f4f0;
-    --color-rail-line: rgba(243, 244, 240, 0.1);
-    --color-rail-active: #0f2038;
-    --color-chart-a: #f3f4f0;
+    --color-rail: #060d1d;
+    --color-rail-ink: #c7d0dc;
+    --color-rail-ink-strong: #f7f9fc;
+    --color-rail-line: rgba(243, 244, 240, 0.12);
+    --color-rail-active: #0c1b33;
+    --color-chart-a: #f7f9fc;
     --color-chart-b: #7ee3bc;
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 40px -20px rgba(0, 0, 0, 0.7);
+    --shadow-card-hover: 0 18px 40px rgba(0, 0, 0, 0.5);
     --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 }
@@ -104,46 +103,50 @@ html, body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-variation-settings: "wdth" 100;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Display type: Bricolage Grotesque set condensed and bold, as on the Amana site. */
-.font-display { font-family: var(--font-display); font-variation-settings: "opsz" 96, "wdth" 84; font-weight: 700; letter-spacing: -0.03em; }
-.font-display.is-small { font-variation-settings: "opsz" 36, "wdth" 88; letter-spacing: -0.02em; }
+/* Headlines: Mona Sans a touch wider than the text, semibold, lightly tightened — the site's setting. */
+.font-display { font-family: var(--font-display); font-variation-settings: "wdth" 104; font-weight: 600; letter-spacing: -0.014em; }
+.font-display.is-small { font-variation-settings: "wdth" 102; letter-spacing: -0.006em; }
 
-/* Eyebrow: the mint square and a spaced label that opens every section on the site. */
-.eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1.2; }
-.eyebrow::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 2px; background: var(--color-accent); }
+/* Small uppercase labels: wider and calmer. */
+.label-caps { font-variation-settings: "wdth" 118; font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.2; }
+/* Section label: a short rule, then the label. */
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; font-variation-settings: "wdth" 118; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.2; }
+.eyebrow::before { content: ""; flex: none; width: 22px; height: 2px; background: currentColor; opacity: 0.55; }
 
 .ambient { display: none; }
 
-/* The one dark surface. Flat navy, off-white type. */
+/* The navy surface. */
 .brand-panel { color: var(--color-stage-ink); background: var(--color-stage); }
 .brand-panel.is-edge { border: 0; }
 
-/* Tiles: plain white, hairline, sharpen on hover. */
 .glass-tile { position: relative; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-ink); transition: border-color 160ms ease, box-shadow 160ms ease; }
 .glass-tile:hover { border-color: var(--color-line-strong); }
 a > .glass-tile:hover { box-shadow: var(--shadow-card-hover); }
 .rail-surface { background: var(--color-rail); }
 
-/* Agentic surfaces carry a mint hairline. */
+/* Agentic surfaces carry a short mint rule at the top-left, like the site's cards. */
 .ai-surface { position: relative; }
-.ai-surface::before { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1.5px solid var(--color-accent); pointer-events: none; }
+.ai-surface::before { content: ""; position: absolute; left: 20px; top: 0; width: 28px; height: 3px; border-radius: 0 0 2px 2px; background: var(--color-accent); pointer-events: none; }
 .gradient-text { color: var(--color-navy); }
 
-/* The arrow badge inside a call to action nudges forward on hover. */
 .arrow-badge { transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .group:hover > .arrow-badge, .group:focus-visible > .arrow-badge { transform: translateX(3px); }
-@media (prefers-reduced-motion: reduce) { .arrow-badge { transition: none; } .group:hover > .arrow-badge { transform: none; } }
+@keyframes node-in { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
+.node-in { animation: node-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+@media (prefers-reduced-motion: reduce) { .arrow-badge { transition: none; } .group:hover > .arrow-badge { transform: none; } .node-in { animation: none; } }
 
 ::selection { background: var(--color-accent); color: var(--color-accent-ink); }
-:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 8px; }
+:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 6px; }
 
-.tabular { font-variant-numeric: tabular-nums; }
+/* Mona Sans draws its tabular figures with a slashed zero, which reads as code. Keep the ordinary figures. */
+.tabular { font-variant-numeric: lining-nums; font-feature-settings: "zero" 0, "tnum" 0; }
 .mono { font-family: var(--font-mono); font-size: 12px; letter-spacing: -0.01em; }
 h1, h2, h3 { letter-spacing: -0.02em; }
 
@@ -156,15 +159,15 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 table.data th {
   position: sticky; top: 0; z-index: 1;
-  text-align: left; font-weight: 700; color: var(--color-ink-faint);
+  text-align: left; font-weight: 600; color: var(--color-ink-faint);
   padding: 12px 16px; background: var(--color-surface); border-bottom: 1px solid var(--color-line);
-  white-space: nowrap; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; font-variation-settings: "wdth" 118;
 }
 table.data td { padding: 14px 16px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
 table.data tbody tr { transition: background-color 90ms ease; }
 table.data tbody tr:hover td { background: var(--color-surface-hover); }
 table.data tr:last-child td { border-bottom: none; }
-table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.data td.num, table.data th.num { text-align: right; }
 table.data .row-actions { opacity: 0; transition: opacity 120ms ease; }
 table.data tr:hover .row-actions, table.data tr:focus-within .row-actions { opacity: 1; }
 table.data th[data-sort] { user-select: none; transition: color 90ms ease; }
@@ -216,7 +219,7 @@ kbd {
 .thread > .link.worked::after { color: var(--color-teal); }
 
 /* Gradient ring for avatars */
-.ring { background: var(--color-accent); padding: 3px; border-radius: 999px; }
+.ring { background: var(--color-accent); padding: 2px; border-radius: 999px; }
 
 /* ---------- Agent surfaces ---------- */
 /* The step the agent is on: its label sweeps from muted to ink. */
@@ -227,7 +230,7 @@ kbd {
 @keyframes dot-pulse { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
 .stream-caret::after { content: ""; display: inline-block; width: 1.5px; height: 1em; margin-left: 2px; vertical-align: -0.15em; background: var(--color-navy); }
 @keyframes caret-blink { 50% { opacity: 0; } }
-.live-dot { width: 9px; height: 9px; border-radius: 2px; background: var(--color-accent); flex: none; }
+.live-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--color-teal-400); box-shadow: 0 0 0 3px var(--color-teal-100); flex: none; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .rise-in { animation: rise-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
 @media (prefers-reduced-motion: no-preference) {

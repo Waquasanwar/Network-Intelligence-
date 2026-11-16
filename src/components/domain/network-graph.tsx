@@ -14,28 +14,46 @@ export type GNode = {
 };
 export type GLink = { source: string; target: string; worked: boolean };
 
-type SimNode = GNode & { x: number; y: number; vx: number; vy: number; r: number; fx?: number; fy?: number };
-
 const TRUSTED = 60; // the "trusted" band and above — see lib/trust.ts
 const initials = (name: string) => name.split(/\s+/).map((s) => s[0]).join("").slice(0, 2).toUpperCase();
-const TONE: Record<string, string> = { teal: "text-teal border-teal/30 bg-teal/10", amber: "text-amber border-amber/30 bg-amber/10", neutral: "text-ink-muted border-line bg-surface-muted" };
+const shortName = (name: string) => { const [first, ...rest] = name.split(/\s+/); return rest.length ? `${first} ${rest[rest.length - 1][0]}.` : first; };
+const TONE: Record<string, string> = { teal: "text-teal border-teal/30 bg-teal-50", amber: "text-amber border-amber/30 bg-amber-50", neutral: "text-ink-muted border-line bg-surface-muted" };
+
+// Three circles, closest first. A person sits in exactly one.
+const RINGS = [
+  { label: "Worked together", hint: "You have delivered with them" },
+  { label: "Known to us", hint: "Screened, vouched for or in conversation" },
+  { label: "New to the network", hint: "Introduced, not yet known" },
+] as const;
+const ringOf = (n: GNode) => (n.worked ? 0 : n.screened || n.trust >= 10 ? 1 : 2);
+
+type Placed = GNode & { ring: number; x: number; y: number; size: number; angle: number };
+const base0 = (ring: number, compact: boolean, narrow = false) => (narrow ? [30, 26, 22] : compact ? [36, 32, 28] : [44, 38, 32])[ring];
 
 /**
- * The network as a living map — no chart dependency. People are sized by trust; edges are
- * provenance (who introduced whom) and the stronger "worked together" links, which carry a slow
- * pulse. Drag to reshape, hover to light up a neighbourhood, scroll to zoom, filter by capability,
- * and click a person to see why you'd trust them and which open roles they fit.
+ * The network as circles of trust — no chart dependency. You are at the centre; the people you have
+ * worked with sit closest, people the network knows in the middle, new introductions on the edge.
+ * Each person carries a ring showing their trust score and a mint dot when they are open to work.
+ * Hover to see who introduced whom; filter by capability; click a person for the open roles they fit.
  */
-export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)] min-h-[520px]", openRoles, compact = false }: { nodes: GNode[]; links: GLink[]; heightClass?: string; openRoles?: number; compact?: boolean }) {
+export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)] min-h-[560px]", openRoles, compact = false }: { nodes: GNode[]; links: GLink[]; heightClass?: string; openRoles?: number; compact?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [tip, setTip] = useState<{ x: number; y: number; node: SimNode } | null>(null);
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  const [hover, setHover] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [cap, setCap] = useState<string | null>(null);
-  const selRef = useRef<string | null>(null);
-  const capRef = useRef<string | null>(null);
-  const drawRef = useRef<(() => void) | null>(null);
 
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const hub = useMemo(() => nodes.find((n) => n.hub) ?? null, [nodes]);
   const people = useMemo(() => nodes.filter((n) => !n.hub), [nodes]);
   const stats = useMemo(() => ({ total: people.length, trusted: people.filter((n) => n.trust >= TRUSTED).length, open: people.filter((n) => n.open).length }), [people]);
   const topCaps = useMemo(() => {
@@ -48,315 +66,171 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
     for (const l of links) { d.set(l.source, (d.get(l.source) ?? 0) + 1); d.set(l.target, (d.get(l.target) ?? 0) + 1); }
     return d;
   }, [links]);
+  const neighbours = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    const add = (a: string, b: string) => { if (!m.has(a)) m.set(a, new Set()); m.get(a)!.add(b); };
+    for (const l of links) { add(l.source, l.target); add(l.target, l.source); }
+    return m;
+  }, [links]);
   const selectedNode = useMemo(() => (selected ? nodes.find((n) => n.id === selected) ?? null : null), [nodes, selected]);
 
-  // Selection and filter live in React; the canvas reads them through refs so the simulation never restarts.
-  useEffect(() => { selRef.current = selected; capRef.current = cap; drawRef.current?.(); }, [selected, cap]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const wrap = wrapRef.current;
-    if (!canvas || !wrap) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const cs = getComputedStyle(canvas);
-    const C = (n: string, fb: string) => cs.getPropertyValue(n).trim() || fb;
-    const col = {
-      ink: C("--color-ink", "#1a1d29"),
-      muted: C("--color-ink-muted", "#5a5f6e"),
-      navy: C("--color-navy", "#3d3f7a"),
-      navy400: C("--color-navy-400", "#7276b2"),
-      line: C("--color-line-strong", "rgba(20,24,45,0.13)"),
-      surface: C("--color-surface", "#ffffff"),
-      accent: C("--color-accent", "#7ee3bc"),
-    };
-    const stage = C("--graph-glow", "") === "1"; // on the dark stage, trusted people are drawn as light
-
-    const byId = new Map<string, SimNode>();
-    const sim: SimNode[] = nodes.map((n, i) => {
-      const a = (i / Math.max(1, nodes.length)) * Math.PI * 2;
-      const node: SimNode = { ...n, x: Math.cos(a) * 240 + (Math.random() - 0.5) * 40, y: Math.sin(a) * 240 + (Math.random() - 0.5) * 40, vx: 0, vy: 0, r: n.hub ? 20 : 4.5 + Math.sqrt(Math.max(0, n.trust)) * 1.35 };
-      if (n.hub) { node.x = 0; node.y = 0; node.fx = 0; node.fy = 0; }
-      byId.set(n.id, node);
-      return node;
-    });
-    const edges = links.map((l) => ({ s: byId.get(l.source), t: byId.get(l.target), worked: l.worked })).filter((e): e is { s: SimNode; t: SimNode; worked: boolean } => !!e.s && !!e.t);
-    const neighbours = new Map<string, Set<string>>();
-    for (const e of edges) {
-      (neighbours.get(e.s.id) ?? neighbours.set(e.s.id, new Set()).get(e.s.id)!).add(e.t.id);
-      (neighbours.get(e.t.id) ?? neighbours.set(e.t.id, new Set()).get(e.t.id)!).add(e.s.id);
-    }
-    const capKeys = new Map<string, Set<string>>(sim.map((n) => [n.id, new Set((n.capabilities ?? []).map((c) => c.trim().toLowerCase()))]));
-    const topTrust = new Set([...sim].filter((n) => !n.hub).sort((a, b) => b.trust - a.trust).slice(0, 8).map((n) => n.id));
-
-    const view = { x: 0, y: 0, k: 1 };
-    let W = 0, H = 0, dpr = 1;
-    let alpha = 1, clock = 0;
-    let hover: SimNode | null = null;
-    let drag: SimNode | null = null;
-    let dragMoved = false;
-    let downAt = { x: 0, y: 0 };
-    let panning = false;
-    let last = { x: 0, y: 0 };
-    let raf = 0;
-    let visible = true;
-    let autoFit = true; // frame the whole network until the person takes the camera themselves
-    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const dimmed = (n: SimNode) => { const c = capRef.current; return !!c && !n.hub && !capKeys.get(n.id)?.has(c); };
-
-    /** Scale and centre so every node sits inside the frame, clear of the overlays. */
-    function fit(instant = false) {
-      if (!autoFit || !W || !sim.length) return;
-      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      for (const n of sim) { minX = Math.min(minX, n.x - n.r); maxX = Math.max(maxX, n.x + n.r); minY = Math.min(minY, n.y - n.r); maxY = Math.max(maxY, n.y + n.r + 16); }
-      const padX = 56, padT = compact ? 24 : 92, padB = 62;
-      const availW = Math.max(120, W - padX * 2), availH = Math.max(120, H - padT - padB);
-      const k = Math.min(1.7, Math.max(0.3, Math.min(availW / Math.max(1, maxX - minX), availH / Math.max(1, maxY - minY))));
-      const tx = padX + availW / 2 - ((minX + maxX) / 2) * k, ty = padT + availH / 2 - ((minY + maxY) / 2) * k;
-      if (instant) { view.k = k; view.x = tx; view.y = ty; }
-      else { view.k += (k - view.k) * 0.12; view.x += (tx - view.x) * 0.12; view.y += (ty - view.y) * 0.12; }
-    }
-
-    function resize() {
-      const rect = wrap!.getBoundingClientRect();
-      const first = !W;
-      W = rect.width; H = rect.height; dpr = Math.min(2, devicePixelRatio || 1);
-      canvas!.width = W * dpr; canvas!.height = H * dpr;
-      canvas!.style.width = W + "px"; canvas!.style.height = H + "px";
-      if (first) { view.x = W / 2; view.y = H / 2; }
-      fit(true);
-      draw();
-    }
-
-    function tick() {
-      // Repulsion (all pairs) + spring (edges) + mild centering.
-      for (let i = 0; i < sim.length; i++) {
-        const a = sim[i];
-        for (let j = i + 1; j < sim.length; j++) {
-          const b = sim[j];
-          const dx = a.x - b.x, dy = a.y - b.y;
-          const d2 = dx * dx + dy * dy || 0.01;
-          const f = (1600 * alpha) / d2;
-          const d = Math.sqrt(d2);
-          const fx = (dx / d) * f, fy = (dy / d) * f;
-          a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
-        }
-        a.vx -= a.x * 0.002 * alpha; a.vy -= a.y * 0.002 * alpha;
-      }
-      for (const e of edges) {
-        const target = e.worked ? 64 : 92;
-        const dx = e.t.x - e.s.x, dy = e.t.y - e.s.y;
-        const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-        const f = ((d - target) / d) * 0.045 * (e.worked ? 1.5 : 1) * alpha;
-        const fx = dx * f, fy = dy * f;
-        e.s.vx += fx; e.s.vy += fy; e.t.vx -= fx; e.t.vy -= fy;
-      }
-      for (const n of sim) {
-        if (n.fx != null) { n.x = n.fx; n.vx = 0; } else { n.vx *= 0.82; n.x += n.vx; }
-        if (n.fy != null) { n.y = n.fy; n.vy = 0; } else { n.vy *= 0.82; n.y += n.vy; }
-      }
-      alpha *= 0.985;
-    }
-
-    function toScreen(n: SimNode) { return { x: n.x * view.k + view.x, y: n.y * view.k + view.y }; }
-
-    function draw() {
-      if (!W) return;
-      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx!.clearRect(0, 0, W, H);
-      ctx!.save();
-      ctx!.translate(view.x, view.y); ctx!.scale(view.k, view.k);
-      // Hover focuses a neighbourhood and quietens the rest; a selection only marks the person, so
-      // the map stays readable while their card is open.
-      const sel = selRef.current;
-      const active = hover ? new Set([hover.id, ...(neighbours.get(hover.id) ?? [])]) : null;
-
-      edges.forEach((e, i) => {
-        const on = !active || (active.has(e.s.id) && active.has(e.t.id));
-        const off = dimmed(e.s) || dimmed(e.t);
-        const mine = !!sel && (e.s.id === sel || e.t.id === sel);
-        ctx!.beginPath();
-        ctx!.moveTo(e.s.x, e.s.y); ctx!.lineTo(e.t.x, e.t.y);
-        ctx!.lineWidth = (e.worked || mine ? 1.8 : 1.1) / view.k;
-        ctx!.strokeStyle = mine ? col.navy : col.navy400;
-        ctx!.globalAlpha = off ? 0.05 : !on ? 0.07 : mine ? 0.85 : e.worked ? 0.6 : 0.3;
-        ctx!.stroke();
-        // A slow pulse travels the links you've actually worked across — the map is alive, not a diagram.
-        if (e.worked && on && !off && !reduce) {
-          const m = (Math.sin(clock * 1.2 + i * 1.7) + 1) / 2;
-          ctx!.globalAlpha = 0.85; ctx!.fillStyle = col.navy;
-          ctx!.beginPath(); ctx!.arc(e.s.x + (e.t.x - e.s.x) * m, e.s.y + (e.t.y - e.s.y) * m, 1.8 / view.k, 0, Math.PI * 2); ctx!.fill();
-        }
+  // Geometry: three ellipses that fill the frame, so a wide card gets wide orbits rather than a small circle.
+  const layout = useMemo(() => {
+    if (!box || box.w < 120 || box.h < 120) return null;
+    const narrow = box.w < 560; // a phone: smaller people, no name captions, circles never taller than wide
+    const padX = narrow ? 26 : compact ? 46 : 64, padTop = compact ? 30 : 92, padBottom = compact ? 80 : 108;
+    const cx = box.w / 2, cy = padTop + (box.h - padTop - padBottom) / 2;
+    const rx0 = Math.max(60, box.w / 2 - padX);
+    const ry = Math.max(60, Math.min((box.h - padTop - padBottom) / 2, rx0 * 1.12));
+    const rx = Math.min(rx0, ry * 2.1);
+    const scale = [0.4, 0.71, 1];
+    const groups: GNode[][] = [[], [], []];
+    for (const p of people) groups[ringOf(p)].push(p);
+    const placed: Placed[] = [];
+    const labelled: boolean[] = [false, false, false];
+    const where = new Map<string, number>();
+    const introducer = new Map<string, string>();
+    for (const l of links) if (hub && l.source !== hub.id) introducer.set(l.target, l.source);
+    groups.forEach((group, ring) => {
+      const n = group.length;
+      if (!n) return;
+      const a = rx * scale[ring], b = ry * scale[ring];
+      // People introduced by someone sit near that person's angle; everyone else is ordered by trust.
+      const ordered = [...group].sort((p, q) => {
+        const ap = where.get(introducer.get(p.id) ?? ""), aq = where.get(introducer.get(q.id) ?? "");
+        if (ap != null && aq != null && ap !== aq) return ap - aq;
+        if (ap != null && aq == null) return -1;
+        if (aq != null && ap == null) return 1;
+        return q.trust - p.trust;
       });
+      // Each circle keeps a gap at the top for its name tag; people are spread round the rest.
+      const need = RINGS[ring].label.length * 8.2 + 44 + base0(ring, compact, narrow);
+      const gap = need / a <= 1.7 ? need / a : 0;
+      labelled[ring] = gap > 0;
+      const span = Math.PI * 2 - gap;
+      const step = gap && n > 1 ? span / (n - 1) : span / n;
+      const circumference = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+      const base = base0(ring, compact, narrow);
+      const size = Math.round(Math.max(14, Math.min(base, (circumference / n) * 0.62)));
+      ordered.forEach((p, i) => {
+        const angle = gap ? (n > 1 ? -Math.PI / 2 + gap / 2 + i * step : Math.PI / 2) : -Math.PI / 2 + step / 2 + i * step;
+        where.set(p.id, angle);
+        placed.push({ ...p, ring, angle, size, x: cx + a * Math.cos(angle), y: cy + b * Math.sin(angle) });
+      });
+    });
+    return { cx, cy, rx, ry, scale, placed, labelled, narrow, hub: Math.round(Math.max(30, Math.min(compact ? 44 : 56, rx * scale[0] * 0.62))), counts: groups.map((g) => g.length) };
+  }, [box, people, links, hub, compact]);
 
-      for (const n of sim) {
-        const on = !active || active.has(n.id);
-        const off = dimmed(n);
-        const a = off ? 0.12 : on ? 1 : 0.2;
-        const trusted = n.hub || n.trust >= TRUSTED;
-        if (trusted && !off && on) { ctx!.globalAlpha = 0.45; ctx!.fillStyle = col.accent; ctx!.beginPath(); ctx!.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2); ctx!.fill(); }
-        ctx!.globalAlpha = a;
-        if (stage && trusted && !off && on) { ctx!.shadowColor = col.navy; ctx!.shadowBlur = 22 * dpr; }
-        ctx!.beginPath();
-        ctx!.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        if (n.hub) { ctx!.fillStyle = col.navy; ctx!.fill(); ctx!.lineWidth = 3 / view.k; ctx!.strokeStyle = col.surface; ctx!.stroke(); }
-        else if (trusted) { ctx!.fillStyle = col.navy; ctx!.fill(); }
-        else if (n.worked) { ctx!.fillStyle = col.accent; ctx!.fill(); ctx!.lineWidth = 1.6 / view.k; ctx!.strokeStyle = col.navy; ctx!.stroke(); }
-        else { ctx!.fillStyle = col.surface; ctx!.fill(); ctx!.lineWidth = 1.8 / view.k; ctx!.strokeStyle = col.navy400; ctx!.stroke(); }
-        ctx!.shadowBlur = 0;
-        if (hover === n || sel === n.id) {
-          ctx!.globalAlpha = 1;
-          ctx!.beginPath(); ctx!.arc(n.x, n.y, n.r + 4 / view.k, 0, Math.PI * 2); ctx!.lineWidth = (sel === n.id ? 2.4 : 1.6) / view.k; ctx!.strokeStyle = col.navy; ctx!.stroke();
-        }
-      }
+  const byId = useMemo(() => new Map((layout?.placed ?? []).map((p) => [p.id, p])), [layout]);
+  const focus = hover ?? selected;
+  const showNames = !layout?.narrow && people.length <= (compact ? 26 : 44);
+  const matches = (n: GNode) => !cap || (n.capabilities ?? []).some((c) => c.trim().toLowerCase() === cap);
+  const lit = (id: string) => !focus || id === focus || neighbours.get(focus)?.has(id);
 
-      // Labels, most important first, skipping any that would sit on top of one already placed:
-      // the hub, whoever is selected or hovered, their neighbourhood, then everyone by trust.
-      ctx!.globalAlpha = 1; ctx!.textAlign = "center"; ctx!.textBaseline = "top";
-      const rank = (n: SimNode) => (n.hub ? 0 : sel === n.id || hover === n ? 1 : active?.has(n.id) ? 2 : 3);
-      const placed: { x: number; y: number; w: number; h: number }[] = [];
-      const wantAll = sim.length <= 60 || !!capRef.current;
-      for (const n of [...sim].sort((a, b) => rank(a) - rank(b) || b.trust - a.trust)) {
-        if (dimmed(n) || (active && !active.has(n.id) && !n.hub && sel !== n.id)) continue;
-        const r = rank(n);
-        if (r === 3 && !wantAll && !topTrust.has(n.id)) continue;
-        const size = (n.hub ? 12 : 10.5) / view.k;
-        ctx!.font = `${r <= 1 ? "600 " : ""}${size}px Inter, system-ui, sans-serif`;
-        const w = ctx!.measureText(n.name).width + 8 / view.k, h = size * 1.35;
-        const box = { x: n.x - w / 2, y: n.y + n.r + 5 / view.k, w, h };
-        if (r > 1 && placed.some((p) => box.x < p.x + p.w && box.x + box.w > p.x && box.y < p.y + p.h && box.y + box.h > p.y)) continue;
-        placed.push(box);
-        ctx!.fillStyle = r <= 1 ? col.ink : col.muted;
-        ctx!.fillText(n.name, n.x, box.y);
-      }
-      ctx!.restore();
-    }
-    drawRef.current = draw;
-
-    function frame() {
-      raf = 0;
-      if (alpha > 0.004 || drag) { tick(); fit(); }
-      clock += 0.016;
-      draw();
-      if (visible) raf = requestAnimationFrame(frame);
-    }
-    function ensure() { if (!reduce && visible && !raf) raf = requestAnimationFrame(frame); }
-    function kick(a = 0.5) {
-      alpha = Math.max(alpha, a);
-      if (reduce) { for (let i = 0; i < 40; i++) tick(); draw(); } else ensure();
-    }
-
-    function worldPos(ev: PointerEvent | WheelEvent) {
-      const rect = canvas!.getBoundingClientRect();
-      return { x: (ev.clientX - rect.left - view.x) / view.k, y: (ev.clientY - rect.top - view.y) / view.k, sx: ev.clientX - rect.left, sy: ev.clientY - rect.top };
-    }
-    function pick(wx: number, wy: number): SimNode | null {
-      for (let i = sim.length - 1; i >= 0; i--) { const n = sim[i]; const dx = n.x - wx, dy = n.y - wy; if (dx * dx + dy * dy <= (n.r + 4) * (n.r + 4)) return n; }
-      return null;
-    }
-
-    const onMove = (ev: PointerEvent) => {
-      const p = worldPos(ev);
-      if (drag) {
-        if (!dragMoved && Math.hypot(ev.clientX - downAt.x, ev.clientY - downAt.y) < 4) return; // a click, not a drag
-        drag.fx = p.x; drag.fy = p.y; dragMoved = true; autoFit = false; kick(0.3); setTip(null); return;
-      }
-      if (panning) { autoFit = false; view.x += ev.clientX - last.x; view.y += ev.clientY - last.y; last = { x: ev.clientX, y: ev.clientY }; draw(); return; }
-      const hit = pick(p.x, p.y);
-      if (hit !== hover) { hover = hit; canvas!.style.cursor = hit ? "pointer" : "grab"; draw(); }
-      if (hit) { const s = toScreen(hit); setTip({ x: s.x, y: s.y - hit.r * view.k - 8, node: hit }); } else setTip(null);
-    };
-    const onDown = (ev: PointerEvent) => {
-      canvas!.setPointerCapture(ev.pointerId);
-      const p = worldPos(ev); const hit = pick(p.x, p.y);
-      downAt = { x: ev.clientX, y: ev.clientY };
-      if (hit && !hit.hub) { drag = hit; dragMoved = false; hit.fx = hit.x; hit.fy = hit.y; }
-      else { panning = true; last = { x: ev.clientX, y: ev.clientY }; canvas!.style.cursor = "grabbing"; }
-    };
-    const onUp = (ev: PointerEvent) => {
-      if (drag) { const d = drag; d.fx = undefined; d.fy = undefined; if (!dragMoved) { setSelected(d.id); setTip(null); } drag = null; }
-      panning = false; canvas!.style.cursor = hover ? "pointer" : "grab";
-      try { canvas!.releasePointerCapture(ev.pointerId); } catch {}
-    };
-    const onLeave = () => { if (hover) { hover = null; draw(); } setTip(null); };
-    const onWheel = (ev: WheelEvent) => {
-      ev.preventDefault(); autoFit = false;
-      const p = worldPos(ev); const k = Math.min(3, Math.max(0.3, view.k * (ev.deltaY < 0 ? 1.1 : 0.9)));
-      view.x = p.sx - p.x * k; view.y = p.sy - p.y * k; view.k = k; draw();
-    };
-
-    const ro = new ResizeObserver(resize);
-    ro.observe(wrap);
-    const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) ensure(); });
-    io.observe(wrap);
-    resize();
-    canvas.style.cursor = "grab";
-    canvas.addEventListener("pointermove", onMove);
-    canvas.addEventListener("pointerdown", onDown);
-    canvas.addEventListener("pointerup", onUp);
-    canvas.addEventListener("pointerleave", onLeave);
-    canvas.addEventListener("wheel", onWheel, { passive: false });
-    if (reduce) { for (let i = 0; i < 300; i++) tick(); alpha = 0; fit(true); draw(); } else ensure();
-
-    return () => {
-      drawRef.current = null;
-      ro.disconnect(); io.disconnect();
-      cancelAnimationFrame(raf);
-      canvas.removeEventListener("pointermove", onMove);
-      canvas.removeEventListener("pointerdown", onDown);
-      canvas.removeEventListener("pointerup", onUp);
-      canvas.removeEventListener("pointerleave", onLeave);
-      canvas.removeEventListener("wheel", onWheel);
-    };
-  }, [nodes, links, compact]);
-
-  const card =selectedNode ? <PersonCard n={selectedNode} connections={degree.get(selectedNode.id) ?? 0} onClose={() => setSelected(null)} /> : null;
+  const card = selectedNode ? <PersonCard n={selectedNode} connections={degree.get(selectedNode.id) ?? 0} onClose={() => setSelected(null)} /> : null;
+  const hovered = hover ? byId.get(hover) : null;
 
   return (
-    <div className={cn("relative w-full flex rounded-[20px] border border-line bg-surface overflow-hidden", heightClass)}>
-      <div ref={wrapRef} className="relative flex-1 min-w-0 bg-surface">
-        <canvas ref={canvasRef} className="block touch-none" />
+    <div className={cn("relative w-full flex rounded-[12px] border border-line bg-surface overflow-hidden", heightClass)}>
+      <div ref={wrapRef} className="relative flex-1 min-w-0" onClick={() => setSelected(null)}>
+        {layout ? (
+          <>
+            <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
+              {/* The circles, widest first so each sits on the one outside it. */}
+              {[2, 1, 0].map((r) => (
+                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} fill={r === 2 ? "var(--color-surface-muted)" : r === 1 ? "var(--color-canvas)" : "var(--color-surface)"} stroke="var(--color-line)" strokeWidth={1} />
+              ))}
+              {/* Who introduced whom: a quiet curve by default, drawn in ink for the person in focus. */}
+              {links.map((l, i) => {
+                const a = l.source === hub?.id ? { x: layout.cx, y: layout.cy } : byId.get(l.source);
+                const b = byId.get(l.target);
+                if (!a || !b) return null;
+                const fromHub = l.source === hub?.id;
+                const on = !!focus && (l.source === focus || l.target === focus);
+                if (fromHub && !on) return null;
+                const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+                const qx = mx + (layout.cx - mx) * 0.28, qy = my + (layout.cy - my) * 0.28;
+                return <path key={i} d={`M${a.x},${a.y} Q${qx},${qy} ${b.x},${b.y}`} fill="none" stroke={on ? "var(--color-ink)" : "var(--color-navy-400)"} strokeWidth={on ? 1.5 : 1} strokeOpacity={on ? 0.9 : focus ? 0.08 : 0.28} strokeDasharray={l.worked || on ? undefined : "2 4"} strokeLinecap="round" />;
+              })}
+            </svg>
 
-        {!compact ? (
-          <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-2">
-            {[[stats.total, "in the network"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
-              <div key={String(l)} className="rounded-[12px] border border-line bg-surface/90 backdrop-blur px-3.5 py-2 shadow-[var(--shadow-card)]">
-                <div className="font-display text-[20px] font-semibold tabular leading-6 tracking-[-0.02em] text-ink">{v}</div>
-                <div className="text-[11px] text-ink-faint">{l}</div>
+            {/* Each circle carries its name as a tag at the top, in the gap its people leave. */}
+            {RINGS.map((r, i) => layout.labelled[i] ? (
+              <div key={r.label} className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface px-2.5 py-[5px]" style={{ left: layout.cx, top: layout.cy - layout.ry * layout.scale[i] }}>
+                <span className="label-caps text-ink-muted">{r.label}</span>
+                <span className="text-[10.5px] font-semibold leading-none text-ink">{layout.counts[i]}</span>
               </div>
-            ))}
-          </div>
+            ) : null)}
+
+            {/* You, at the centre. */}
+            <div className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 grid place-items-center rounded-full bg-stage text-stage-ink ring-4 ring-surface" style={{ left: layout.cx, top: layout.cy, width: layout.hub, height: layout.hub }}>
+              <span className="label-caps !tracking-[0.1em]" style={layout.hub < 40 ? { fontSize: 8.5 } : undefined}>You</span>
+            </div>
+
+            {layout.placed.map((p, i) => {
+              const dim = !matches(p) || !lit(p.id);
+              const trusted = p.trust >= TRUSTED;
+              const r = p.size / 2 - 1.5, c = 2 * Math.PI * r;
+              return (
+                <button
+                  key={p.id} type="button" aria-label={`${p.name}, trust ${Math.round(p.trust)}`} aria-pressed={selected === p.id}
+                  onClick={(e) => { e.stopPropagation(); setSelected(selected === p.id ? null : p.id); }}
+                  onPointerEnter={() => setHover(p.id)} onPointerLeave={() => setHover(null)} onFocus={() => setHover(p.id)} onBlur={() => setHover(null)}
+                  className={cn("node-in group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full transition-opacity duration-200", dim ? "opacity-25" : "opacity-100", (hover === p.id || selected === p.id) && "z-10")}
+                  style={{ left: p.x, top: p.y, width: p.size, height: p.size, animationDelay: `${Math.min(i * 18, 500)}ms` }}
+                >
+                  <svg viewBox={`0 0 ${p.size} ${p.size}`} className="absolute inset-0 -rotate-90" aria-hidden="true">
+                    <circle cx={p.size / 2} cy={p.size / 2} r={r} fill="var(--color-surface)" stroke="var(--color-line-strong)" strokeWidth={1.5} />
+                    {p.trust > 0 ? <circle cx={p.size / 2} cy={p.size / 2} r={r} fill="none" stroke="var(--color-ink)" strokeWidth={2} strokeLinecap="round" strokeDasharray={`${(Math.min(100, p.trust) / 100) * c} ${c}`} /> : null}
+                  </svg>
+                  <span className={cn("absolute inset-[4px] grid place-items-center rounded-full font-semibold leading-none transition-transform duration-200 group-hover:scale-[1.06]", trusted ? "bg-stage text-stage-ink" : "bg-surface-muted text-ink", selected === p.id && "ring-2 ring-accent ring-offset-2 ring-offset-surface")} style={{ fontSize: Math.max(8, Math.round(p.size * 0.29)) }}>
+                    {p.size >= 22 ? initials(p.name) : ""}
+                  </span>
+                  {p.open ? <span className="absolute right-0 bottom-0 h-[9px] w-[9px] rounded-full bg-accent ring-2 ring-surface" aria-hidden="true" /> : null}
+                  {showNames ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap text-[10.5px] leading-none transition-colors", hover === p.id || selected === p.id ? "text-ink font-semibold" : "text-ink-faint")}>{shortName(p.name)}</span> : null}
+                </button>
+              );
+            })}
+
+            {hovered ? (
+              <div className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-[8px] border border-line bg-surface px-3 py-2 shadow-[var(--shadow-pop)]" style={{ left: Math.min(Math.max(hovered.x, 120), (box?.w ?? 0) - 120), top: hovered.y - hovered.size / 2 - 8 }}>
+                <div className="text-[12.5px] font-semibold text-ink whitespace-nowrap">{hovered.name}</div>
+                {hovered.headline ? <div className="text-[11.5px] text-ink-muted max-w-[230px] truncate">{hovered.headline}</div> : null}
+                <div className="text-[11px] text-ink-faint mt-1 tabular">Trust {Math.round(hovered.trust)} · {RINGS[hovered.ring].label.toLowerCase()}{hovered.roles?.length ? ` · fits ${hovered.roles.length} open role${hovered.roles.length === 1 ? "" : "s"}` : ""}</div>
+              </div>
+            ) : null}
+          </>
         ) : null}
 
-        {tip ? (
-          <div className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-[12px] border border-line bg-surface px-2.5 py-1.5 shadow-[var(--shadow-card)]" style={{ left: tip.x, top: tip.y }}>
-            <div className="text-[12.5px] font-semibold text-ink whitespace-nowrap">{tip.node.name}</div>
-            {tip.node.headline ? <div className="text-[11px] text-ink-muted max-w-[220px] truncate">{tip.node.headline}</div> : null}
-            {tip.node.hub ? null : <div className="text-[10.5px] text-ink-faint mt-0.5">Trust {Math.round(tip.node.trust)}{tip.node.worked ? " · worked together" : ""}{tip.node.roles?.length ? ` · fits ${tip.node.roles.length} open role${tip.node.roles.length === 1 ? "" : "s"}` : ""}</div>}
-          </div>
+        {!compact ? (
+          <dl className="pointer-events-none absolute left-5 top-4 flex gap-6">
+            {[[stats.total, "in the network"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
+              <div key={String(l)}>
+                <dd className="font-display text-[22px] tabular leading-none text-ink">{v}</dd>
+                <dt className="text-[11.5px] text-ink-faint mt-1">{l}</dt>
+              </div>
+            ))}
+          </dl>
         ) : null}
 
         {/* On the home page and on small screens the person opens as a floating card. */}
-        {card ? <div className={cn("absolute right-3 top-3 z-20 w-[300px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[14px] border border-line bg-surface shadow-[var(--shadow-card)]", compact ? "" : "lg:hidden")}>{card}</div> : null}
+        {card ? <div onClick={(e) => e.stopPropagation()} className={cn("absolute right-3 top-3 z-30 w-[300px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[10px] border border-line bg-surface shadow-[var(--shadow-pop)]", compact ? "" : "lg:hidden")}>{card}</div> : null}
 
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
-          <div className="pointer-events-auto flex flex-wrap gap-1.5">
+        <div className="pointer-events-none absolute inset-x-4 bottom-3.5 flex items-end justify-between gap-3">
+          <div className="pointer-events-auto flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
             {topCaps.length ? (
               <>
-                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === null ? "bg-navy border-navy text-white font-medium dark:text-canvas" : "bg-surface/90 backdrop-blur border-line text-ink-muted hover:border-line-strong hover:text-ink")}>Everyone</button>
+                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-ink hover:text-ink")}>Everyone</button>
                 {topCaps.map((c) => (
-                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-2.5 py-1 text-[11.5px] cursor-pointer transition-colors", cap === c.key ? "bg-navy border-navy text-white font-medium dark:text-canvas" : "bg-surface/90 backdrop-blur border-line text-ink-muted hover:border-line-strong hover:text-ink")}>{c.label}</button>
+                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === c.key ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-ink hover:text-ink")}>{c.label}</button>
                 ))}
               </>
             ) : null}
           </div>
-          <div className="hidden md:flex flex-none items-center gap-3 text-[11px] text-ink-faint bg-surface/90 backdrop-blur rounded-[12px] border border-line px-3 py-1.5">
-            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-navy" /> trusted</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-accent ring-1 ring-navy" /> worked together</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full border-[1.5px] border-navy-400 bg-surface" /> introduced</span>
-            {compact ? null : <span>· size = trust</span>}
+          <div className="hidden md:flex flex-none items-center gap-4 text-[11.5px] text-ink-faint">
+            <span className="inline-flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 14 14" className="-rotate-90" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--color-line-strong)" strokeWidth="1.5" /><circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--color-ink)" strokeWidth="2" strokeDasharray="20 40" strokeLinecap="round" /></svg> ring shows trust</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-stage" /> trusted</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-accent" /> open to work</span>
           </div>
         </div>
       </div>
@@ -364,10 +238,17 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
       {!compact ? (
         <aside className="hidden lg:block w-[320px] flex-none border-l border-line overflow-y-auto">
           {card ?? (
-            <div className="h-full flex flex-col items-center justify-center text-center px-7">
-              <div className="h-10 w-10 rounded-full border border-dashed border-line-strong mb-3" aria-hidden="true" />
-              <div className="text-[13px] font-medium text-ink">Pick a person</div>
-              <p className="text-[12px] text-ink-muted mt-1 leading-[1.5]">Click anyone on the map to see why you&apos;d trust them, whether they&apos;re free, and the open roles they fit. Drag to reshape; hover to light up who they know.</p>
+            <div className="h-full flex flex-col justify-center px-7">
+              <div className="label-caps text-ink-faint">How to read it</div>
+              <ul className="mt-4 space-y-4">
+                {RINGS.map((r, i) => (
+                  <li key={r.label} className="flex gap-3">
+                    <span className="mt-0.5 font-display text-[18px] tabular leading-none text-ink w-6 flex-none">{layout?.counts[i] ?? 0}</span>
+                    <span><span className="block text-[13px] font-semibold text-ink">{r.label}</span><span className="block text-[12px] text-ink-muted leading-[1.45] mt-0.5">{r.hint}</span></span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[12px] text-ink-muted mt-6 pt-5 border-t border-line leading-[1.5]">Click anyone to see why you&apos;d trust them, whether they&apos;re free, and the open roles they fit. Hover to see who introduced them.</p>
             </div>
           )}
         </aside>
@@ -380,8 +261,8 @@ function PersonCard({ n, connections, onClose }: { n: GNode; connections: number
   const roles = n.roles ?? [];
   return (
     <div>
-      <div className="flex items-start gap-3 p-5">
-        <span className="h-12 w-12 flex-none rounded-full bg-accent text-accent-ink text-[14px] font-bold inline-flex items-center justify-center">{initials(n.name)}</span>
+      <div className="flex items-start gap-3 p-4">
+        <span className="h-11 w-11 flex-none rounded-full bg-surface-muted text-ink text-[13px] font-semibold inline-flex items-center justify-center ring-1 ring-line">{initials(n.name)}</span>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-semibold tracking-[-0.01em] truncate">{n.name}</div>
           <div className="text-[12px] text-ink-muted leading-[1.4] line-clamp-2">{n.headline || "No headline yet"}</div>
@@ -432,7 +313,7 @@ function PersonCard({ n, connections, onClose }: { n: GNode; connections: number
       </div>
 
       <div className="p-4 border-t border-line">
-        <Link href={`/network/${n.id}`} className="flex h-9 items-center justify-center gap-1.5 rounded-[12px] bg-navy text-white text-[13px] font-medium hover:bg-navy-600 dark:text-canvas">Open profile <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+        <Link href={`/network/${n.id}`} className="flex h-9 items-center justify-center gap-1.5 rounded-[8px] bg-navy text-white text-[13px] font-semibold transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">Open profile <ArrowUpRight className="h-3.5 w-3.5" /></Link>
       </div>
     </div>
   );

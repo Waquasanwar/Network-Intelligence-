@@ -3,6 +3,7 @@ import { JoinForm } from "@/components/domain/join-form";
 import { parseInvite } from "@/lib/invite";
 import { SCREENING_MINUTES } from "@/lib/screening";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { CirclesMotif } from "@/components/ui/circles-motif";
 
 export const metadata = { title: "Join the network" };
 export const dynamic = "force-dynamic";
@@ -26,36 +27,25 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1fr_1.05fr]">
-      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[32px]">
-        {/* The same constellation as sign-in, pushed to the far edge so it frames the copy rather than competing with it. */}
-        <svg viewBox="0 0 300 620" preserveAspectRatio="xMaxYMid meet" className="pointer-events-none absolute right-0 top-0 h-full w-[40%] opacity-80" aria-hidden="true">
-          {([[232, 96, 150, 188], [150, 188, 248, 300], [150, 188, 92, 318], [248, 300, 176, 428], [92, 318, 176, 428], [176, 428, 256, 536]] as const).map(([x1, y1, x2, y2], i) => (
-            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={i % 2 ? "rgba(243,244,240,0.28)" : "rgba(243,244,240,0.5)"} strokeWidth={i % 2 ? 1 : 1.4} strokeDasharray={i % 2 ? "3 5" : undefined} />
-          ))}
-          {([[232, 96, 4.5, false], [150, 188, 6.5, true], [248, 300, 5, false], [92, 318, 4, false], [176, 428, 6, true], [256, 536, 4.5, false]] as const).map(([cx, cy, r, strong], i) => (
-            <g key={i}>
-              <circle cx={cx} cy={cy} r={r + 7} fill={strong ? "rgba(126,227,188,0.16)" : "rgba(243,244,240,0.07)"} />
-              <circle cx={cx} cy={cy} r={r} fill={strong ? "#7ee3bc" : "rgba(243,244,240,0.5)"} />
-            </g>
-          ))}
-        </svg>
+      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[16px]">
+        <CirclesMotif className="pointer-events-none absolute right-[-150px] bottom-[-110px] h-[520px] w-[520px] opacity-90" />
         <div className="relative flex items-center gap-2.5">
           <BrandMark className="h-7 w-auto" />
-          <span className="font-display is-small text-[18px]">Network Intelligence</span>
+          <span className="font-display is-small text-[16px]">Network Intelligence</span>
         </div>
 
         <div className="relative max-w-[460px]">
-          <div className="eyebrow mb-5">By invitation</div>
-          <h1 className="font-display text-[52px] leading-[0.95]">Be in the network for when the right work comes up.</h1>
+          <div className="eyebrow text-stage-muted mb-5">By invitation</div>
+          <h1 className="font-display text-[38px] leading-[1.1] text-balance">Be in the network for when the right work comes up.</h1>
           <p className="mt-5 text-stage-muted text-[15.5px] leading-[1.55] max-w-[44ch]">We place people we actually know. Join once, and when something fits we already know who you are and why we&apos;d put our name behind you.</p>
 
           <ol className="mt-9 relative">
-            <span aria-hidden="true" className="absolute left-[17px] top-3 bottom-8 w-px bg-stage-line" />
+            <span aria-hidden="true" className="absolute left-[14.5px] top-3 bottom-8 w-px bg-stage-line" />
             {STEPS.map((s, i) => (
               <li key={s.title} className="relative flex gap-4 pb-6 last:pb-0">
-                <span className={`font-display is-small relative z-[1] h-9 w-9 flex-none rounded-full inline-flex items-center justify-center text-[15px] ${i === 0 ? "bg-accent text-accent-ink" : "bg-stage text-stage-ink ring-1 ring-stage-line"}`}>{i + 1}</span>
+                <span className={`relative z-[1] h-[30px] w-[30px] flex-none rounded-full inline-flex items-center justify-center text-[13px] font-semibold tabular ${i === 0 ? "bg-accent text-accent-ink" : "bg-stage text-stage-ink ring-1 ring-stage-line"}`}>{i + 1}</span>
                 <span>
-                  <span className="block font-display is-small text-[19px] leading-[1.15] mt-1">{s.title}</span>
+                  <span className="block font-display is-small text-[16px] leading-[1.3] mt-[3px]">{s.title}</span>
                   <span className="block text-[13.5px] text-stage-muted leading-[1.55] mt-1 max-w-[40ch]">{s.detail}</span>
                 </span>
               </li>
@@ -74,11 +64,11 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
               <BrandMark className="h-6 w-auto text-ink" />
               <span className="font-display is-small text-[17px] text-ink">Network Intelligence</span>
             </div>
-            <h1 className="font-display text-[34px] leading-[1]">Be in the network for when the right work comes up.</h1>
+            <h1 className="font-display text-[27px] leading-[1.12]">Be in the network for when the right work comes up.</h1>
             <p className="text-[13.5px] text-ink-muted mt-2 leading-[1.55]">Create your account, have a {SCREENING_MINUTES}-minute screening, and you&apos;re on the radar — fractional, contract or permanent.</p>
           </div>
           <div className="hidden lg:block">
-            <h2 className="font-display text-[36px] leading-[1]">Create your account</h2>
+            <h2 className="font-display text-[28px] leading-[1.1]">Create your account</h2>
             <p className="text-[14.5px] text-ink-muted mt-2.5">Step 1 of 3 · about two minutes</p>
           </div>
           <JoinForm members={members} referrer={referrer} tenantInvite={tenantInvite} inviteToken={inviteToken} error={error} />

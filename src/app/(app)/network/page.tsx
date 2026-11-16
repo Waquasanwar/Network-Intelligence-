@@ -77,18 +77,18 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
       <form className="flex flex-wrap gap-2 mb-3">
         <div className="relative basis-full lg:basis-0 lg:flex-1">
           <Search className="h-4 w-4 text-ink-faint absolute left-3.5 top-3" />
-          <Input name="q" defaultValue={filters.q ?? ""} placeholder='e.g. "programme director available soon who we have worked with, open to Dubai"' className="pl-9 rounded-full h-10 shadow-[var(--shadow-card)]" />
+          <Input name="q" defaultValue={filters.q ?? ""} placeholder='e.g. "programme director available soon who we have worked with, open to Dubai"' className="pl-9 h-10" />
         </div>
-        <Select name="status" defaultValue={filters.status ?? ""} className="flex-1 min-w-[130px] lg:flex-none lg:w-[200px] h-10 rounded-full">
+        <Select name="status" defaultValue={filters.status ?? ""} className="flex-1 min-w-[130px] lg:flex-none lg:w-[200px] h-10">
           <option value="">Any status</option>
           {Object.entries(AVAILABILITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Select name="route" defaultValue={filters.route ?? ""} className="flex-1 min-w-[120px] lg:flex-none lg:w-[150px] h-10 rounded-full">
+        <Select name="route" defaultValue={filters.route ?? ""} className="flex-1 min-w-[120px] lg:flex-none lg:w-[150px] h-10">
           <option value="">Any route</option>
           {Object.entries(ROUTE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Input name="location" defaultValue={filters.location ?? ""} placeholder="Location" className="flex-1 min-w-[120px] lg:flex-none lg:w-[140px] h-10 rounded-full" />
-        <Button type="submit" variant="secondary" size="lg" className="rounded-full">Search</Button>
+        <Input name="location" defaultValue={filters.location ?? ""} placeholder="Location" className="flex-1 min-w-[120px] lg:flex-none lg:w-[140px] h-10" />
+        <Button type="submit" variant="secondary" className="h-10">Search</Button>
       </form>
 
       <div className="flex flex-wrap items-center gap-1.5 mb-4">
@@ -117,7 +117,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      <div data-sortable className="rounded-[20px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
+      <div data-sortable className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
         {people.length === 0 ? (
           <EmptyState title="No one matches" description="Try a broader search, or add the person you have in mind." />
         ) : (
