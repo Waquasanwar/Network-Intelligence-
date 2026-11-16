@@ -5,6 +5,8 @@
 import { Client, isFullPage } from "@notionhq/client";
 import type { PageObjectResponse } from "@notionhq/client";
 import { env } from "./env";
+import { classifyFunction, classifySeniority, EMPTY_ICP, type Func, type Icp, type Person, type Seniority } from "./people";
+import type { ArchiveConnection } from "./archive";
 import type { DailyMetric, MetricSource, Metrics, Post, Ratings, Snapshot, Status, SwipeItem } from "./types";
 
 let client: Client | null = null;
@@ -398,4 +400,155 @@ export async function deleteConfig(key: string) {
   if (!env.ds.config()) return;
   const pages = await queryAll(env.ds.config(), { filter: { property: "Key", title: { equals: key } } });
   for (const p of pages) await notion().pages.update({ page_id: p.id, in_trash: true } as Parameters<Client["pages"]["update"]>[0]);
+}
+
+// ── network (connections) ────────────────────────────────────────────
+
+
+// Shared on globalThis: Next.js can load this module once for pages and once for server actions,
+// and both must see the same cache or a fresh import looks empty for two minutes.
+const g = globalThis as unknown as { __studioPeople?: { at: number; rows: Person[] } | null };
+export const clearPeopleCache = () => { g.__studioPeople = null; };
+
+function toPerson(page: PageObjectResponse): Person {
+  const p = page.properties as Props;
+  const position = r.text(p, "Position");
+  return {
+    id: page.id,
+    name: r.title(p, "Name"),
+    url: r.url(p, "Profile URL"),
+    email: p.Email?.email ?? null,
+    company: r.text(p, "Company"),
+    position,
+    connectedOn: r.date(p, "Connected on"),
+    seniority: (r.select(p, "Seniority") as Seniority) ?? classifySeniority(position),
+    function: (r.select(p, "Function") as Func) ?? classifyFunction(position),
+    engagedCount: r.num(p, "Engaged count") ?? 0,
+    lastEngaged: r.date(p, "Last engaged"),
+    engagedOn: r.text(p, "Engaged on"),
+    watch: Boolean(p.Watch?.checkbox),
+    leadStatus: r.select(p, "Lead status"),
+    notes: r.text(p, "Notes"),
+  };
+}
+
+/** Everyone in your network. Cached for two minutes because networks run to thousands of rows. */
+export async function listPeople(): Promise<Person[]> {
+  if (!env.ds.connections()) return [];
+  const hit = g.__studioPeople;
+  if (hit && Date.now() - hit.at < 120_000) return hit.rows;
+  const rows = (await queryAll(env.ds.connections())).map(toPerson);
+  g.__studioPeople = rows.length ? { at: Date.now(), rows } : null; // never cache an empty network
+  return rows;
+}
+
+function personProps(c: ArchiveConnection): Props {
+  return {
+    Name: w.title(c.name),
+    "Profile URL": w.url(c.url),
+    ...(c.email ? { Email: { email: c.email } } : {}),
+    Company: w.text(c.company),
+    Position: w.text(c.position),
+    "Connected on": w.date(c.connectedOn),
+    Seniority: w.select(classifySeniority(c.position)),
+    Function: w.select(classifyFunction(c.position)),
+  };
+}
+
+/**
+ * Inserts new connections and updates changed ones, `limit` at a time so each request stays short.
+ * Returns how far it got; the caller loops until `done`.
+ */
+export async function upsertPeople(conns: ArchiveConnection[], offset: number, limit = 60) {
+  const existing = new Map((await listPeople()).map((p) => [p.url ?? p.name.toLowerCase(), p]));
+  let created = 0, updated = 0, unchanged = 0;
+  const slice = conns.slice(offset, offset + limit);
+  for (const c of slice) {
+    const key = c.url ?? c.name.toLowerCase();
+    const prior = existing.get(key);
+    if (!prior) { await createPage(env.ds.connections(), personProps(c)); created++; }
+    else if (prior.position !== c.position || prior.company !== c.company) { await updatePage(prior.id, personProps(c)); updated++; }
+    else unchanged++;
+  }
+  clearPeopleCache();
+  const next = offset + slice.length;
+  return { created, updated, unchanged, next, total: conns.length, done: next >= conns.length };
+}
+
+export async function updatePerson(id: string, patch: { watch?: boolean; leadStatus?: string | null; notes?: string }) {
+  const p: Props = {};
+  if (patch.watch !== undefined) p.Watch = { checkbox: patch.watch };
+  if (patch.leadStatus !== undefined) p["Lead status"] = w.select(patch.leadStatus);
+  if (patch.notes !== undefined) p.Notes = w.text(patch.notes);
+  await updatePage(id, p);
+  clearPeopleCache();
+}
+
+export async function recordEngagement(people: Person[], postTitle: string, day: string) {
+  for (const p of people) {
+    const on = [postTitle.slice(0, 80), ...p.engagedOn.split(" | ").filter(Boolean)].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8).join(" | ");
+    await updatePage(p.id, { "Engaged count": w.num(p.engagedCount + 1), "Last engaged": w.date(day), "Engaged on": w.text(on) });
+  }
+  clearPeopleCache();
+}
+
+export async function getIcp(): Promise<Icp> {
+  try {
+    const v = await getConfig("icp");
+    return v ? { ...EMPTY_ICP, ...JSON.parse(v) } : EMPTY_ICP;
+  } catch {
+    return EMPTY_ICP;
+  }
+}
+export const saveIcp = (icp: Icp) => setConfig("icp", JSON.stringify(icp));
+
+// ── audience demographics ────────────────────────────────────────────
+
+export interface AudienceRow {
+  category: string;
+  value: string;
+  percent: number | null;
+  scope: "Account" | "Post";
+  postId: string | null;
+  capturedOn: string;
+}
+
+export async function listAudience(): Promise<AudienceRow[]> {
+  if (!env.ds.audience()) return [];
+  const pages = await queryAll(env.ds.audience());
+  return pages.map((page) => {
+    const p = page.properties as Props;
+    return {
+      category: r.select(p, "Category") ?? "Other",
+      value: r.text(p, "Value"),
+      percent: r.num(p, "Percent"),
+      scope: (r.select(p, "Scope") ?? "Account") as "Account" | "Post",
+      postId: r.text(p, "Post ID") || null,
+      capturedOn: r.date(p, "Captured on") ?? page.created_time.slice(0, 10),
+    };
+  });
+}
+
+const CATEGORY_MAP: [RegExp, string][] = [
+  [/job title|title/i, "Job titles"], [/senior/i, "Seniority"], [/industr/i, "Industries"],
+  [/company size|size/i, "Company size"], [/location|countr|region/i, "Locations"], [/compan/i, "Companies"],
+];
+export const audienceCategory = (raw: string) => CATEGORY_MAP.find(([re]) => re.test(raw))?.[1] ?? "Other";
+
+export async function addAudience(rows: AudienceRow[]) {
+  if (!env.ds.audience()) return 0;
+  const list = rows;
+  for (const a of list) {
+    const category = audienceCategory(a.category);
+    await createPage(env.ds.audience(), {
+      Name: w.title(`${category} · ${a.value}`),
+      Category: w.select(category),
+      Value: w.text(a.value),
+      Percent: w.num(a.percent),
+      Scope: w.select(a.scope),
+      "Post ID": w.text(a.postId ?? ""),
+      "Captured on": w.date(a.capturedOn),
+    });
+  }
+  return list.length;
 }

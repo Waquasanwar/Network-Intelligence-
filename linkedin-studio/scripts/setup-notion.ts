@@ -4,7 +4,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { Client } from "@notionhq/client";
-import { CONFIG_SCHEMA, DAILY_SCHEMA, POSTS_SCHEMA, SWIPE_SCHEMA, snapshotsSchema } from "../lib/schema";
+import { AUDIENCE_SCHEMA, CONFIG_SCHEMA, CONNECTIONS_SCHEMA, DAILY_SCHEMA, POSTS_SCHEMA, SWIPE_SCHEMA, snapshotsSchema } from "../lib/schema";
 
 const token = process.env.NOTION_TOKEN;
 const parent = process.env.NOTION_PARENT_PAGE_ID?.replace(/-/g, "").match(/[0-9a-f]{32}/i)?.[0];
@@ -28,22 +28,22 @@ async function create(title: string, emoji: string, properties: Record<string, u
 }
 
 async function main() {
-  const existing = ["NOTION_POSTS_DS", "NOTION_SNAPSHOTS_DS", "NOTION_DAILY_DS", "NOTION_SWIPE_DS", "NOTION_CONFIG_DS"].filter(
-    (k) => process.env[k],
-  );
-  if (existing.length && !process.argv.includes("--force")) {
-    console.error(`Already configured (${existing.join(", ")}). Re-run with --force to create a fresh set.`);
-    process.exit(1);
+  // Creates only what's missing, so re-running after an upgrade adds the new databases.
+  const force = process.argv.includes("--force");
+  const have = (k: string) => !force && process.env[k];
+  console.log("Checking Notion databases…");
+  const ids: Record<string, string> = {};
+  const posts = have("NOTION_POSTS_DS") || (ids.NOTION_POSTS_DS = await create("LinkedIn Posts", "✍️", POSTS_SCHEMA));
+  if (!have("NOTION_SNAPSHOTS_DS")) ids.NOTION_SNAPSHOTS_DS = await create("LinkedIn Metric Snapshots", "📈", snapshotsSchema(posts as string));
+  if (!have("NOTION_DAILY_DS")) ids.NOTION_DAILY_DS = await create("LinkedIn Daily Metrics", "📅", DAILY_SCHEMA);
+  if (!have("NOTION_SWIPE_DS")) ids.NOTION_SWIPE_DS = await create("LinkedIn Swipe File", "🗂️", SWIPE_SCHEMA);
+  if (!have("NOTION_CONFIG_DS")) ids.NOTION_CONFIG_DS = await create("LinkedIn Studio Config", "⚙️", CONFIG_SCHEMA);
+  if (!have("NOTION_CONNECTIONS_DS")) ids.NOTION_CONNECTIONS_DS = await create("LinkedIn Network", "🤝", CONNECTIONS_SCHEMA);
+  if (!have("NOTION_AUDIENCE_DS")) ids.NOTION_AUDIENCE_DS = await create("LinkedIn Audience", "🎯", AUDIENCE_SCHEMA);
+  if (!Object.keys(ids).length) {
+    console.log("Everything is already set up.");
+    return;
   }
-  console.log("Creating Notion databases…");
-  const posts = await create("LinkedIn Posts", "✍️", POSTS_SCHEMA);
-  const ids: Record<string, string> = {
-    NOTION_POSTS_DS: posts,
-    NOTION_SNAPSHOTS_DS: await create("LinkedIn Metric Snapshots", "📈", snapshotsSchema(posts)),
-    NOTION_DAILY_DS: await create("LinkedIn Daily Metrics", "📅", DAILY_SCHEMA),
-    NOTION_SWIPE_DS: await create("LinkedIn Swipe File", "🗂️", SWIPE_SCHEMA),
-    NOTION_CONFIG_DS: await create("LinkedIn Studio Config", "⚙️", CONFIG_SCHEMA),
-  };
 
   if (existsSync(".env")) {
     let env = readFileSync(".env", "utf8");

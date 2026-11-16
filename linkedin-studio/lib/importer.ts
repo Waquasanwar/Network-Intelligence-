@@ -1,6 +1,6 @@
 /** Applies a parsed LinkedIn export to Notion: daily totals, post metrics, snapshots, then re-ranks. */
 import { activityIdFrom, parseWorkbook } from "./linkedin-export";
-import { addSnapshot, createPost, listPosts, upsertDaily, writePostMetrics } from "./notion";
+import { addAudience, addSnapshot, createPost, listPosts, upsertDaily, writePostMetrics } from "./notion";
 import { recomputeRanks } from "./sync";
 import type { Metrics, Post } from "./types";
 
@@ -69,6 +69,9 @@ export async function importExport(buf: ArrayBuffer): Promise<ImportResult> {
     summary.push(
       `${parsed.topPosts.length} top posts: ${matched} matched to your library, ${created} added as "Imported post" (open them to paste the text and rate them).`,
     );
+    const today = now.slice(0, 10);
+    const n = await addAudience(parsed.demographics.map((d) => ({ ...d, scope: "Account" as const, postId: null, capturedOn: parsed.period.end ?? today })));
+    if (n) summary.push(`${n} audience demographic rows saved (job titles, seniority, industries, locations, companies).`);
     if (parsed.totals.impressions != null)
       summary.push(`Period ${parsed.period.start ?? "?"} to ${parsed.period.end ?? "?"}: ${parsed.totals.impressions.toLocaleString()} impressions, ${parsed.totals.membersReached?.toLocaleString() ?? "?"} members reached.`);
   } else {
@@ -87,6 +90,8 @@ export async function importExport(buf: ArrayBuffer): Promise<ImportResult> {
       sends: parsed.metrics.sends,
       source: "Import",
     });
+    const n = await addAudience(parsed.demographics.map((d) => ({ ...d, scope: "Post" as const, postId: target.id, capturedOn: now.slice(0, 10) })));
+    if (n) summary.push(`${n} viewer demographic rows saved for this post.`);
     summary.push(`${target.created ? "Added" : "Updated"} "${target.title}" with ${parsed.metrics.impressions?.toLocaleString() ?? "?"} impressions.`);
   }
 

@@ -7,6 +7,7 @@ import { Icon } from "./icons";
 const LINKS = [
   ["/", "Dashboard", Icon.grid],
   ["/posts", "Posts", Icon.list],
+  ["/network", "Audience & network", Icon.users],
   ["/swipe", "Ideas & swipe file", Icon.bulb],
   ["/metrics", "Metrics", Icon.chart],
 ] as const;

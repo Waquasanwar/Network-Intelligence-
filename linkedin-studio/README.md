@@ -23,7 +23,7 @@ cp .env.example .env
    npm run setup:notion
    ```
 
-   This creates five databases (Posts, Metric Snapshots, Daily Metrics, Swipe File, Config) and writes their IDs into `.env`.
+   This creates seven databases (Posts, Metric Snapshots, Daily Metrics, Swipe File, Config, Network, Audience). Re-run it after upgrading; it only adds what is missing and writes their IDs into `.env`.
 
 2. **Writing assistant (optional).** Put an Anthropic API key in `ANTHROPIC_API_KEY`.
 
@@ -87,6 +87,19 @@ What is **not** possible through official routes: who viewed your profile, who e
 The token is encrypted with `APP_SECRET` (AES-256-GCM) before being stored in the Notion Config database. LinkedIn tokens last 60 days; the Connect page tells you when to reconnect.
 
 > The analytics endpoints (`memberCreatorPostAnalytics`, `memberFollowersCount`) follow LinkedIn's Member Post Analytics API launched in 2025. LinkedIn versions its API monthly (`LINKEDIN_API_VERSION`); if a sync reports 4xx errors after approval, check the current docs and bump the version.
+
+## Audience & network
+
+The **Audience & network** page turns your own LinkedIn data into audience and lead intelligence:
+
+- **Import your network.** LinkedIn → Settings & Privacy → Data privacy → *Get a copy of your data*. Upload the ZIP (or `Connections.csv` / `Shares.csv`). Every connection is stored in the Notion "LinkedIn Network" database with company, title, date connected, email where shared, and an inferred seniority and function. Your past posts from `Shares.csv` are added to the library. Messages are never read.
+- **Who sees you vs who you know.** Viewer demographics from analytics exports (job titles, seniority, industries, companies, locations) are saved to "LinkedIn Audience" and compared with your network, so you can see which groups read you but aren't connected yet.
+- **Leads.** Set your target profile (functions, seniority, title and company keywords, exclusions). Every connection gets a fit score, a warmth score (engagement with your posts, recency, watchlist) and a suggested next step. Export the ranked list or your whole network as CSV.
+- **Log who engaged.** LinkedIn doesn't expose who reacts or comments on personal posts. Paste a post's comments or reactions list and the connections named in it become warm leads.
+- **Watchlist.** Star people to get one-click links to their latest posts, so you can comment early.
+- **Who will care (editor).** As you write, the editor lists the people and groups in your network the draft speaks to, so you can tag or send it to them.
+
+Colours: ink blue and off-white with electric coral as the accent and powder blue as the third, interface-only colour. Charts only use the coral and ink-blue pair, which passes colour-blind and contrast checks.
 
 ## How ranking works
 

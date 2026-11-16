@@ -16,6 +16,7 @@
     "@anthropic-ai/sdk": "^1.8.0",
     "@notionhq/client": "^5.31.1",
     "exceljs": "^4.4.0",
+    "jszip": "^3.10.2",
     "next": "^15.5.25",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

@@ -87,3 +87,34 @@ export const CONFIG_SCHEMA = {
   Key: { title: {} },
   Value: text(),
 };
+
+import { FUNCTIONS, SENIORITIES } from "./people";
+
+/** Your network, from LinkedIn's data download. One row per connection, keyed by profile URL. */
+export const CONNECTIONS_SCHEMA = {
+  Name: { title: {} },
+  "Profile URL": { url: {} },
+  Email: { email: {} },
+  Company: text(),
+  Position: text(),
+  "Connected on": date(),
+  Seniority: select(SENIORITIES),
+  Function: select(FUNCTIONS),
+  "Engaged count": number(),
+  "Last engaged": date(),
+  "Engaged on": text(),
+  Watch: { checkbox: {} },
+  "Lead status": select(["Target", "Warming up", "Contacted", "Replied", "Meeting", "Client", "Not a fit"]),
+  Notes: text(),
+};
+
+/** Who sees your content: demographics from LinkedIn's account and per-post exports. */
+export const AUDIENCE_SCHEMA = {
+  Name: { title: {} },
+  Category: select(["Job titles", "Seniority", "Industries", "Company size", "Locations", "Companies", "Other"]),
+  Value: text(),
+  Percent: number(),
+  Scope: select(["Account", "Post"]),
+  "Post ID": text(),
+  "Captured on": date(),
+};

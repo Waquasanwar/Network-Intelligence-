@@ -9,7 +9,7 @@ import { Icon } from "@/components/icons";
 import { Card, Chip, PageHeader, StatCard } from "@/components/kit";
 import { Bars, fmt, fmtDate, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
-import { getPost, listPosts, listSnapshots } from "@/lib/notion";
+import { getPost, listAudience, listPosts, listSnapshots } from "@/lib/notion";
 import { totalEngagements } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   if (!notionReady()) return <SetupNeeded />;
   const { id } = await params;
-  const [post, all, snaps] = await Promise.all([getPost(id), listPosts(), listSnapshots(id)]);
+  const [post, all, snaps, audience] = await Promise.all([getPost(id), listPosts(), listSnapshots(id), listAudience().catch(() => [])]);
   if (!post) notFound();
   const total = all.filter((p) => p.rank != null).length;
   const m = post.metrics;
@@ -103,6 +103,21 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               <p className="small faint">No numbers yet. Add them on the right or import this post&rsquo;s export.</p>
             )}
           </Card>
+          {audience.some((a) => a.postId === id) ? (
+            <Card className="powder" title="Who saw this post" description="Viewer demographics from this post’s LinkedIn export.">
+              <div className="grid g2">
+                {["Job titles", "Seniority", "Industries", "Companies"].map((c) => {
+                  const rows = audience.filter((a) => a.postId === id && a.category === c && a.percent != null).sort((a, b) => b.percent! - a.percent!).slice(0, 5);
+                  return rows.length ? (
+                    <div key={c}>
+                      <h3>{c}</h3>
+                      <Bars rows={rows.map((r) => ({ key: r.value, count: 0, value: Math.round(r.percent!), tip: `${r.percent}% of viewers` }))} max={rows[0].percent!} hideCount />
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </Card>
+          ) : null}
           <Card title="Impressions over time" description={`${snaps.length} snapshot${snaps.length === 1 ? "" : "s"} from sync, imports and manual updates.`}>
             <AreaChart points={snaps.map((s) => ({ x: s.capturedAt.slice(0, 10), y: s.impressions }))} label="Impressions per snapshot" unit="impressions" />
           </Card>

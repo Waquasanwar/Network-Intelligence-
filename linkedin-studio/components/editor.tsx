@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { aiCritique, aiHooks, aiRewrite, publishNow, saveDraft } from "@/app/actions";
+import { aiCritique, aiHooks, aiRewrite, audienceForDraft, publishNow, saveDraft } from "@/app/actions";
 import type { Critique } from "@/lib/ai";
 import { aboveTheFold, checks, firstLine, LINKEDIN_MAX_CHARS, stats } from "@/lib/text";
 import type { Post, Ratings, Status } from "@/lib/types";
@@ -59,6 +59,17 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
       else localStorage.removeItem(DRAFT_KEY);
     } catch {}
   }, [text, id]);
+
+  type Aud = { total: number; matches: number; segments: { function: string; people: number }[]; keywords: string[]; top: { id: string; name: string; position: string; company: string; url: string | null; why: string }[] };
+  const [aud, setAud] = useState<Aud | null>(null);
+  useEffect(() => {
+    if (text.trim().length < 60) return setAud(null);
+    const t = setTimeout(async () => {
+      const r = await audienceForDraft(text);
+      if (r.ok) setAud(r.data);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [text]);
 
   const s = useMemo(() => stats(text), [text]);
   const list = useMemo(() => checks(text), [text]);
@@ -269,6 +280,32 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
               <span className="faint">Your post appears here the way it shows in the feed.</span>
             )}
           </div>
+        </Card>
+
+        <Card className="powder" title="Who will care" description="People in your network this draft speaks to. Updates as you type." action={aud ? <Chip tone="neutral">{aud.matches.toLocaleString("en-GB")} matches</Chip> : null}>
+          {!aud ? (
+            <p className="small faint">Write a few lines{" "}to see who in your network this is for.</p>
+          ) : aud.total === 0 ? (
+            <p className="small faint">Import your connections on the Audience &amp; network page to see who this reaches.</p>
+          ) : (
+            <div className="stack" style={{ gap: 10 }}>
+              {aud.segments.length ? (
+                <div className="chips">
+                  {aud.segments.map((g) => <span key={g.function} className="chip powder">{g.function} · {g.people}</span>)}
+                </div>
+              ) : null}
+              <ul className="who-list">
+                {aud.top.slice(0, 6).map((p) => (
+                  <li key={p.id}>
+                    <b>{p.url ? <a href={p.url} target="_blank" rel="noreferrer">{p.name}</a> : p.name}</b>
+                    <span>{[p.position, p.company].filter(Boolean).join(" · ")}</span>
+                    <em>{p.why}</em>
+                  </li>
+                ))}
+              </ul>
+              <p className="small faint" style={{ margin: 0 }}>Tag one or two of them, or send it to them after posting. Early comments from the right people lift reach.</p>
+            </div>
+          )}
         </Card>
 
         <Card title="Checks" description="Run as you type.">

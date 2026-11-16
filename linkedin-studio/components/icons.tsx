@@ -16,5 +16,6 @@ export const Icon = {
   clock: () => (<svg {...base} aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>),
   ruler: () => (<svg {...base} aria-hidden><path d="M3 17 17 3l4 4L7 21Z" /><path d="m7 13 2 2M10 10l2 2M13 7l2 2" /></svg>),
   spark: () => (<svg {...base} aria-hidden><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" /></svg>),
+  users: () => (<svg {...base} aria-hidden><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7" /><path d="M18 14a6.5 6.5 0 0 1 3.5 6" /></svg>),
   arrow: () => (<svg {...base} aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>),
 };

@@ -32,7 +32,7 @@ function postSummary(p: Post): string {
 }
 
 /** Context block built from your history. Stable between calls, so it's cached. */
-export function buildContext(posts: Post[], swipe: SwipeItem[] = []): string {
+export function buildContext(posts: Post[], swipe: SwipeItem[] = [], audienceNote = ""): string {
   const ranked = posts.filter((p) => p.performanceScore != null && p.text.trim()).sort((a, b) => b.performanceScore! - a.performanceScore!);
   const best = ranked.slice(0, 6);
   const worst = ranked.length > 8 ? ranked.slice(-3) : [];
@@ -47,6 +47,7 @@ export function buildContext(posts: Post[], swipe: SwipeItem[] = []): string {
         .map((s) => `By ${s.author || "someone"}${s.whyItWorks ? ` (why they saved it: ${s.whyItWorks})` : ""}\n${s.text.trim()}`)
         .join("\n\n---\n\n")}\n</posts_they_admire_by_others>`,
     );
+  if (audienceNote) parts.push(`<their_audience_and_goals>\n${audienceNote}\nJudge relevance to these people and say who in this audience the draft speaks to.\n</their_audience_and_goals>`);
   if (!parts.length) parts.push("<note>They have no published posts with metrics yet. Judge on craft alone.</note>");
   return parts.join("\n\n");
 }

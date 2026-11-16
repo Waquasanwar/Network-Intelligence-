@@ -724,3 +724,78 @@ input:focus, select:focus, textarea:focus { border-color: var(--coral); box-shad
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .card, .panel { background: var(--panel); }
 }
+
+/* ══ Third colour: powder blue (UI only, never a data mark) ══════════ */
+:root {
+  --powder: #a9c8e8;
+  --powder-soft: #e6f0fa;
+  --powder-tint: rgba(169, 200, 232, 0.28);
+  --powder-ink: #1d4a78;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --powder: #a9c8e8; --powder-soft: rgba(169, 200, 232, 0.14); --powder-tint: rgba(169, 200, 232, 0.12); --powder-ink: #cfe2f6; }
+}
+.chip.powder, .badge.powder { background: var(--powder-soft); color: var(--powder-ink); }
+.aurora .b2 { background: radial-gradient(circle, rgba(169, 200, 232, 0.55), transparent 65%); }
+.nav a.active svg { color: var(--powder); }
+.nav-section { color: var(--powder); opacity: 0.8; }
+.segmented a.on { box-shadow: 0 1px 2px rgba(14, 26, 51, 0.08), 0 0 0 1px var(--powder); }
+.card.powder { background: linear-gradient(180deg, var(--powder-tint), transparent 70%), var(--glass); }
+.hero-stat:nth-child(2) { border-color: rgba(169, 200, 232, 0.35); }
+.move.info .icon, .move:not(.good):not(.warn) .icon { background: var(--powder-soft); color: var(--powder-ink); }
+.feed li.metrics > i { border-color: var(--powder); }
+.delta-pill.good, .chip.up { background: var(--powder-soft); color: var(--powder-ink); }
+.badge.Solid { background: var(--powder-soft); color: var(--powder-ink); }
+.excerpt { border-left-color: var(--powder); }
+.legend i.powder { background: var(--powder); }
+
+/* network page */
+.people { display: flex; flex-direction: column; }
+.person { display: grid; grid-template-columns: 36px minmax(0, 1.5fr) minmax(120px, 0.9fr) 76px minmax(0, 1.2fr) auto; gap: 14px; align-items: center; padding: 12px 20px; border-top: 1px solid var(--line); transition: background-color 120ms ease; }
+.person:hover { background: var(--panel-hover); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; background: var(--powder-soft); color: var(--powder-ink); box-shadow: inset 0 0 0 1px var(--powder); }
+.person .who b { display: block; font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person .who span { display: block; font-size: 12px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meter { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 6px; align-items: center; font-size: 11px; color: var(--faint); }
+.meter i { display: block; height: 5px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.meter i span { display: block; height: 100%; border-radius: 999px; background: var(--series); }
+.meter.warm i span { background: var(--coral-mark); }
+.person .score { font-size: 18px; font-weight: 700; text-align: center; font-variant-numeric: lining-nums; }
+.person .why { font-size: 12px; color: var(--muted); }
+.person .why b { color: var(--ink); font-weight: 600; display: block; }
+.person .ctrl { display: flex; gap: 6px; align-items: center; }
+.person select { height: 30px; font-size: 12px; padding: 0 8px; width: 120px; }
+.icon-btn { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass-strong); display: grid; place-items: center; cursor: pointer; color: var(--faint); }
+.icon-btn[aria-pressed="true"] { background: var(--powder-soft); color: var(--powder-ink); border-color: var(--powder); }
+@media (max-width: 1020px) { .person { grid-template-columns: 36px minmax(0, 1fr) 60px; } .person .meters, .person .why, .person .ctrl { grid-column: 2 / -1; } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips label { margin: 0; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass-strong); font-size: 12.5px; color: var(--muted); cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; width: auto; }
+.chips label:has(input:checked) { background: var(--powder-soft); border-color: var(--powder); color: var(--powder-ink); font-weight: 600; }
+.chips label:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.progress { height: 8px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--powder), var(--coral)); transition: width 300ms var(--ease-out); }
+.compare-row { display: grid; grid-template-columns: minmax(100px, 150px) minmax(0, 1fr) 92px; gap: 12px; align-items: center; font-size: 13px; padding: 5px 0; }
+.compare-bars { display: flex; flex-direction: column; gap: 3px; }
+.compare-bars i { display: block; height: 7px; border-radius: 999px; min-width: 2px; }
+.compare-bars i.aud { background: var(--coral-mark); }
+.compare-bars i.net { background: var(--series); }
+.compare-row .v { text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: lining-nums; }
+.compare-row .v b { color: var(--ink); }
+.who-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.who-list li { display: grid; gap: 1px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+.who-list li:first-child { border-top: 0; padding-top: 0; }
+.who-list b { font-size: 13px; font-weight: 600; }
+.who-list span { color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who-list em { font-style: normal; color: var(--powder-ink); font-size: 11.5px; }
+/* lead rows: two lines that fit a half-width card */
+.person { grid-template-columns: 36px minmax(0, 1fr) 48px auto; grid-template-areas: "av who score ctrl" "av meters meters meters" "av why why why"; row-gap: 8px; column-gap: 12px; align-items: center; }
+.person > .avatar { grid-area: av; align-self: start; }
+.person > .who { grid-area: who; min-width: 0; }
+.person > .score { grid-area: score; }
+.person > .ctrl { grid-area: ctrl; }
+.person > .meters { grid-area: meters; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.person > .why { grid-area: why; }
+.person .why b { display: inline; margin-right: 6px; }
+@media (max-width: 1020px) { .person { grid-template-columns: 36px minmax(0, 1fr) 44px; grid-template-areas: "av who score" "av meters meters" "av why why" "av ctrl ctrl"; } .person .meters, .person .why, .person .ctrl { grid-column: auto; } }
+.person.compact { grid-template-areas: "av who ctrl"; grid-template-columns: 36px minmax(0, 1fr) auto; }

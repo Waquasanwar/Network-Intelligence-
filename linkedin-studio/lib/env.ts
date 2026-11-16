@@ -8,6 +8,8 @@ export const env = {
     daily: () => process.env.NOTION_DAILY_DS ?? "",
     swipe: () => process.env.NOTION_SWIPE_DS ?? "",
     config: () => process.env.NOTION_CONFIG_DS ?? "",
+    connections: () => process.env.NOTION_CONNECTIONS_DS ?? "",
+    audience: () => process.env.NOTION_AUDIENCE_DS ?? "",
   },
   anthropicKey: () => process.env.ANTHROPIC_API_KEY ?? "",
   linkedin: {

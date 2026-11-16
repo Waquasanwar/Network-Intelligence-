@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { readArchive, type ArchiveConnection, type ArchiveShare } from "@/lib/archive";
+import { draftAudience, matchEngagers, type Icp } from "@/lib/people";
 import * as ai from "@/lib/ai";
 import { aiReady } from "@/lib/env";
 import { importExport } from "@/lib/importer";
@@ -139,8 +141,16 @@ export async function archive(id: string) {
 
 async function context() {
   if (!aiReady()) throw new Error("Add ANTHROPIC_API_KEY to turn on the writing assistant.");
-  const [posts, swipe] = await Promise.all([db.listPosts(), db.listSwipe().catch(() => [])]);
-  return ai.buildContext(posts, swipe);
+  const [posts, swipe, audience, icp] = await Promise.all([db.listPosts(), db.listSwipe().catch(() => []), db.listAudience().catch(() => []), db.getIcp()]);
+  const last = audience.filter((a) => a.scope === "Account").map((a) => a.capturedOn).sort().pop();
+  const top = (c: string) => audience.filter((a) => a.scope === "Account" && a.capturedOn === last && a.category === c).sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0)).slice(0, 5).map((a) => `${a.value} ${a.percent ?? "?"}%`).join(", ");
+  const note = [
+    last ? `Viewers by job title: ${top("Job titles")}` : "",
+    last ? `Viewers by seniority: ${top("Seniority")}` : "",
+    last ? `Viewers by industry: ${top("Industries")}` : "",
+    icp.functions.length || icp.seniorities.length ? `People they want to reach: ${[...icp.functions, ...icp.seniorities, ...icp.titleKeywords].join(", ")}` : "",
+  ].filter(Boolean).join("\n");
+  return ai.buildContext(posts, swipe, note);
 }
 
 export async function aiCritique(text: string): Promise<Result<ai.Critique>> {
@@ -259,4 +269,104 @@ export async function syncNow() {
 export async function disconnectLinkedIn() {
   await disconnect();
   revalidatePath("/connect");
+}
+
+// ── network & audience ───────────────────────────────────────────────
+
+
+export async function parseArchive(form: FormData) {
+  try {
+    const file = form.get("file");
+    if (!(file instanceof File) || file.size === 0) throw new Error("Choose LinkedIn's data download (.zip) or Connections.csv / Shares.csv.");
+    const a = await readArchive(file.name, await file.arrayBuffer());
+    return { ok: true as const, data: { connections: a.connections, shares: a.shares, invitations: a.invitations.length, files: a.files } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function importPeopleChunk(conns: ArchiveConnection[]) {
+  try {
+    const r = await db.upsertPeople(conns, 0, conns.length);
+    return { ok: true as const, data: { created: r.created, updated: r.updated, unchanged: r.unchanged } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Adds posts from Shares.csv that aren't in your library yet, so they can be rated and learned from. */
+export async function importSharesChunk(shares: ArchiveShare[]) {
+  try {
+    const posts = await db.listPosts();
+    const known = new Set(posts.map((p) => activityIdFrom(p.linkedinUrn) ?? activityIdFrom(p.linkedinUrl)).filter(Boolean));
+    const knownText = new Set(posts.map((p) => p.text.trim().slice(0, 120)).filter(Boolean));
+    let created = 0;
+    for (const s of shares) {
+      const id = activityIdFrom(s.link ? decodeURIComponent(s.link) : null);
+      if ((id && known.has(id)) || knownText.has(s.text.trim().slice(0, 120))) continue;
+      await db.createPost({
+        title: titleFrom(s.text),
+        status: "Published",
+        text: s.text,
+        publishedAt: s.date,
+        linkedinUrl: s.link,
+        linkedinUrn: id ? `urn:li:share:${id}` : null,
+      });
+      created++;
+    }
+    refresh();
+    return { ok: true as const, data: { created } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function saveIcpAction(icp: Icp): Promise<Result> {
+  try {
+    await db.saveIcp(icp);
+    revalidatePath("/network");
+    return { ok: true, data: undefined };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function setPerson(id: string, patch: { watch?: boolean; leadStatus?: string | null }) {
+  await db.updatePerson(id, patch);
+  revalidatePath("/network");
+}
+
+/** Paste the comments or reactions list from a post; connections named in it are marked as engaged. */
+export async function logEngagers(postId: string, pasted: string) {
+  try {
+    const [post, people] = await Promise.all([db.getPost(postId), db.listPeople()]);
+    if (!post) throw new Error("Post not found.");
+    if (!people.length) throw new Error("Import your connections on the Network page first.");
+    const found = matchEngagers(pasted, people);
+    await db.recordEngagement(found, post.title, new Date().toISOString().slice(0, 10));
+    revalidatePath("/network");
+    revalidatePath(`/posts/${postId}`);
+    return { ok: true as const, data: { matched: found.map((p) => p.name) } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function audienceForDraft(text: string) {
+  try {
+    const people = await db.listPeople();
+    const r = draftAudience(text, people, 10);
+    return {
+      ok: true as const,
+      data: {
+        total: people.length,
+        matches: r.matches,
+        segments: r.segments.filter((g) => g.people > 0).slice(0, 4),
+        keywords: r.keywords.slice(0, 6),
+        top: r.top.map((t) => ({ id: t.person.id, name: t.person.name, position: t.person.position, company: t.person.company, url: t.person.url, why: t.why.join(" · ") })),
+      },
+    };
+  } catch (e) {
+    return fail(e);
+  }
 }
