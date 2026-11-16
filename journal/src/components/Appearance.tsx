@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FONTS, PRESETS, type Corners, type Font, type Mode, type Tint } from "@/lib/theme";
+import { FONTS, PRESETS, type Corners, type Font, type Headings, type Mode, type Tint } from "@/lib/theme";
 import { useTheme } from "./ThemeProvider";
 import { Chip, PageHeader, TypeBadge } from "./ui";
 
@@ -108,7 +108,8 @@ export function AppearanceSettings() {
           <Options<Mode> label="Mode" value={theme.mode} onChange={(mode) => setTheme({ mode })} options={[["system", "🌓 System"], ["light", "☀️ Light"], ["dark", "🌙 Dark"]]} />
           <Options<Tint> label="Background tint" value={theme.tint} onChange={(tint) => setTheme({ tint })} options={[["off", "Off"], ["subtle", "Subtle"], ["vivid", "Vivid"]]} />
           <Options<Corners> label="Corners" value={theme.corners} onChange={(corners) => setTheme({ corners })} options={[["sharp", "Sharp"], ["soft", "Soft"], ["round", "Round"]]} />
-          <Options<Font> label="Font" value={theme.font} onChange={(font) => setTheme({ font })} options={(Object.keys(FONTS) as Font[]).map((f) => [f, FONTS[f].label])} />
+          <Options<Headings> label="Headings" value={theme.headings} onChange={(headings) => setTheme({ headings })} options={[["serif", "Elegant serif"], ["sans", "Same as text"]]} />
+          <Options<Font> label="Body text" value={theme.font} onChange={(font) => setTheme({ font })} options={(Object.keys(FONTS) as Font[]).map((f) => [f, FONTS[f].label])} />
         </div>
 
         {/* Live preview */}
@@ -117,8 +118,8 @@ export function AppearanceSettings() {
           <div className="card glow-focus space-y-3 p-4" tabIndex={-1}>
             <div className="flex items-center gap-2">
               <span className="brand-mark grid size-8 place-items-center rounded-[calc(var(--radius)*0.6)]">✎</span>
-              <span className="text-lg font-semibold">
-                Good <span className="text-gradient">morning</span>
+              <span className="font-display text-2xl">
+                Good <span className="text-gradient italic">morning</span>
               </span>
             </div>
             <p className="text-sm text-ink-2">Went with vendor B for the migration, cheaper and SOC2 ready.</p>

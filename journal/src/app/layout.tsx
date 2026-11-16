@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Shell } from "@/components/Shell";
 import { loadAll } from "@/lib/journal";
 import { SESSION_COOKIE, authEnabled, safeEqual, sessionToken } from "@/lib/auth";
 import { THEME_COOKIE, parseTheme, themeVars } from "@/lib/theme";
 import { ThemeProvider } from "@/components/ThemeProvider";
+
+// Self-hosted at build time, so headings look the same on every device.
+const display = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-cormorant", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Work Journal",
@@ -17,8 +21,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f6f8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e0e12" },
+    { media: "(prefers-color-scheme: light)", color: "#fbf7f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#151013" },
   ],
 };
 
@@ -39,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const tags = data ? [...new Set(data.entries.flatMap((e) => e.tags))].sort() : [];
 
   return (
-    <html lang="en" suppressHydrationWarning data-mode={theme.mode} style={themeVars(theme) as React.CSSProperties}>
+    <html lang="en" suppressHydrationWarning className={display.variable} data-mode={theme.mode} style={themeVars(theme) as React.CSSProperties}>
       <body>
         <ThemeProvider initial={theme}>
         <Shell

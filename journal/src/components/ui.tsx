@@ -1,31 +1,31 @@
 import type { ReactNode } from "react";
 import { TYPE_STYLE, type EntryType } from "@/lib/schema";
 
-// Full class strings so Tailwind can see them.
+// Full class strings so Tailwind can see them. Dusty, coordinated tones that sit with any accent.
 const TYPE_CLASS: Record<EntryType, string> = {
-  Note: "bg-slate-500/12 text-slate-700 dark:text-slate-300",
-  Decision: "bg-violet-500/14 text-violet-700 dark:text-violet-300",
-  Request: "bg-orange-500/14 text-orange-700 dark:text-orange-300",
-  "Comment / Feedback": "bg-sky-500/14 text-sky-700 dark:text-sky-300",
-  Idea: "bg-amber-500/16 text-amber-800 dark:text-amber-300",
-  Meeting: "bg-stone-500/14 text-stone-700 dark:text-stone-300",
-  "Blocker / Risk": "bg-rose-500/14 text-rose-700 dark:text-rose-300",
-  Win: "bg-emerald-500/14 text-emerald-700 dark:text-emerald-300",
-  Question: "bg-pink-500/14 text-pink-700 dark:text-pink-300",
-  Learning: "bg-teal-500/14 text-teal-700 dark:text-teal-300",
+  Note: "bg-[#6f6470]/12 text-[#6f6470] dark:bg-[#c9bcc6]/14 dark:text-[#c9bcc6]",
+  Decision: "bg-[#7a4a8c]/12 text-[#7a4a8c] dark:bg-[#d2a8e0]/14 dark:text-[#d2a8e0]",
+  Request: "bg-[#a8582a]/12 text-[#a8582a] dark:bg-[#f0b088]/14 dark:text-[#f0b088]",
+  "Comment / Feedback": "bg-[#4f6f99]/12 text-[#4f6f99] dark:bg-[#a9c2e6]/14 dark:text-[#a9c2e6]",
+  Idea: "bg-[#8a6716]/12 text-[#8a6716] dark:bg-[#e8c878]/14 dark:text-[#e8c878]",
+  Meeting: "bg-[#7d6a5c]/12 text-[#7d6a5c] dark:bg-[#cdb9aa]/14 dark:text-[#cdb9aa]",
+  "Blocker / Risk": "bg-[#b4233c]/12 text-[#b4233c] dark:bg-[#ff8a9b]/14 dark:text-[#ff8a9b]",
+  Win: "bg-[#3f7d5c]/12 text-[#3f7d5c] dark:bg-[#8fd1ac]/14 dark:text-[#8fd1ac]",
+  Question: "bg-[#ad4677]/12 text-[#ad4677] dark:bg-[#f0a2c4]/14 dark:text-[#f0a2c4]",
+  Learning: "bg-[#3f7676]/12 text-[#3f7676] dark:bg-[#93cfcf]/14 dark:text-[#93cfcf]",
 };
 
 export const TYPE_HEX: Record<EntryType, string> = {
-  Note: "#868e96",
-  Decision: "#7950f2",
-  Request: "#f76707",
-  "Comment / Feedback": "#1c7ed6",
-  Idea: "#f59f00",
-  Meeting: "#8d6e63",
-  "Blocker / Risk": "#e03131",
-  Win: "#2f9e44",
-  Question: "#d6336c",
-  Learning: "#0c8599",
+  Note: "#6f6470",
+  Decision: "#7a4a8c",
+  Request: "#a8582a",
+  "Comment / Feedback": "#4f6f99",
+  Idea: "#8a6716",
+  Meeting: "#7d6a5c",
+  "Blocker / Risk": "#b4233c",
+  Win: "#3f7d5c",
+  Question: "#ad4677",
+  Learning: "#3f7676",
 };
 
 export function TypeBadge({ type, short }: { type?: EntryType; short?: boolean }) {
@@ -57,7 +57,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-[1.75rem] leading-tight font-semibold">{title}</h1>
         {subtitle && <p className="mt-0.5 text-sm text-ink-3">{subtitle}</p>}
       </div>
       {actions}
