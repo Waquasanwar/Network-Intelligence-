@@ -48,7 +48,7 @@ export function LogDayForm() {
         })
       }
     >
-      <div className="grid g2">
+      <div className="form-grid">
         <div className="field">
           <label htmlFor="day">Day</label>
           <input id="day" name="day" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />

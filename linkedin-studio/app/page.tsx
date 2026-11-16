@@ -7,6 +7,7 @@ import { LivePill, Ticker, TimeAgo } from "@/components/live";
 import { PulseLine } from "@/components/pulse-line";
 import { postingPulse, recentActivity } from "@/lib/activity";
 import { Dumbbell, ScoreRing, Sparkline } from "@/components/mini-charts";
+import { Card, CardLink, Chip, PageHeader, SectionTitle } from "@/components/kit";
 import { Bars, Empty, fmt, fmtDate, SetupNeeded, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
 import { nextMoves, type Move } from "@/lib/insights";
@@ -29,12 +30,12 @@ function toBars(rows: GroupInsight[]) {
   }));
 }
 
-function Delta({ pct }: { pct: number | null }) {
+function HeroDelta({ pct }: { pct: number | null }) {
   if (pct == null) return <span className="delta flat">No earlier period yet</span>;
   const dir = pct > 1 ? "up" : pct < -1 ? "down" : "flat";
   return (
     <span className={`delta ${dir}`}>
-      {dir === "up" ? "▲" : dir === "down" ? "▼" : "•"} {Math.abs(pct)}% vs previous 30 days
+      {dir === "up" ? "↑" : dir === "down" ? "↓" : "•"} {Math.abs(pct)}% vs previous 30 days
     </span>
   );
 }
@@ -46,13 +47,9 @@ function MoveIcon({ m }: { m: Move }) {
 
 function Insight({ title, rows, empty }: { title: string; rows: GroupInsight[]; empty: string }) {
   return (
-    <div className="panel lift">
-      <div className="panel-head">
-        <h2>{title}</h2>
-        <span className="caps faint">avg score</span>
-      </div>
+    <Card title={title} description="Average score, 0–100">
       {rows.length ? <Bars rows={toBars(rows)} /> : <p className="small faint">{empty}</p>}
-    </div>
+    </Card>
   );
 }
 
@@ -60,11 +57,7 @@ function Weekdays({ posts }: { posts: Post[] }) {
   const rows = new Map(groupBy(posts, (p) => weekdayOf(p.publishedAt)).map((g) => [g.key, g]));
   const order = [1, 2, 3, 4, 5, 6, 0].map((i) => WEEKDAYS[i]);
   return (
-    <div className="panel lift">
-      <div className="panel-head">
-        <h2>Best day to post</h2>
-        <span className="caps faint">avg score</span>
-      </div>
+    <Card title="Best day to post" description="Average score by weekday. Darker is better.">
       <div className="heat">
         {order.map((d) => {
           const g = rows.get(d);
@@ -86,8 +79,7 @@ function Weekdays({ posts }: { posts: Post[] }) {
           );
         })}
       </div>
-      <p className="small faint" style={{ marginTop: 10, marginBottom: 0 }}>Darker means better. Hover a day for the detail.</p>
-    </div>
+    </Card>
   );
 }
 
@@ -155,27 +147,25 @@ export default async function Dashboard() {
 
   return (
     <div className="reveal">
-      <div className="page-head">
-        <div>
-          <div className="row" style={{ marginBottom: 12, gap: 12 }}>
-            <div className="eyebrow">{today}</div>
-            <LivePill updatedAt={updatedAt} />
-          </div>
-          <h1>What&rsquo;s working on LinkedIn</h1>
-          <p className="muted">Your reach, your best posts and what to write next, from the numbers in Notion.</p>
-        </div>
-        <div className="row">
-          <Link className="btn" href="/metrics"><Icon.upload /> Import analytics</Link>
-          <Link className="btn coral" href="/write"><Icon.plus /> New post</Link>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={today}
+        meta={<LivePill updatedAt={updatedAt} />}
+        title="What’s working on LinkedIn"
+        description="Your reach, your best posts and what to write next, from the numbers in Notion."
+        actions={
+          <>
+            <Link className="btn" href="/metrics"><Icon.upload /> Import analytics</Link>
+            <Link className="btn primary" href="/write"><Icon.plus /> New post</Link>
+          </>
+        }
+      />
 
       <section className="hero" aria-label="Last 30 days">
         <div style={{ minWidth: 0 }}>
           <div className="eyebrow">Impressions · last 30 days</div>
           <div className="hero-figure">
             <span className="big">{imp30 ? <Ticker value={imp30} /> : "–"}</span>
-            {imp30 ? <Delta pct={change} /> : <span className="unit">Import or sync to see your reach</span>}
+            {imp30 ? <HeroDelta pct={change} /> : <span className="unit">Import or sync to see your reach</span>}
           </div>
           <p className="small" style={{ color: "var(--stage-muted)", marginBottom: 14 }}>
             {recent.length} post{recent.length === 1 ? "" : "s"} published in this period
@@ -184,7 +174,7 @@ export default async function Dashboard() {
           <AreaChart tone="stage" height={180} points={last30.map((d) => ({ x: d.day, y: d.impressions }))} label="Daily impressions, last 30 days" unit="impressions" />
           <div className="pulse-strip">
             <div className="row">
-              <span className="caps"><span className="beat" aria-hidden>♥</span>&nbsp; Posting pulse · last 30 days</span>
+              <span className="hero-label"><span className="beat" aria-hidden>♥</span> Posting pulse · last 30 days</span>
               <span className="pulse-stats">
                 <span><b>{pulse.beats.length}</b>posts</span>
                 <span><b>{pulse.avgGap ?? "–"}</b>days apart</span>
@@ -196,7 +186,7 @@ export default async function Dashboard() {
         </div>
         <div className="hero-side">
           <div className={`hero-stat ${newFollowers30 ? "hot" : ""}`}>
-            <div className="caps">Followers</div>
+            <div className="hero-label">Followers</div>
             <div className="row">
               <div>
                 <div className="v">{followers != null ? <Ticker value={followers} /> : "–"}</div>
@@ -206,7 +196,7 @@ export default async function Dashboard() {
             </div>
           </div>
           <div className="hero-stat">
-            <div className="caps">Engagement rate</div>
+            <div className="hero-label">Engagement rate</div>
             <div className="row">
               <div>
                 <div className="v">{ers.length ? `${avg(ers).toFixed(2)}%` : "–"}</div>
@@ -216,7 +206,7 @@ export default async function Dashboard() {
             </div>
           </div>
           <div className="hero-stat">
-            <div className="caps">Profile viewers</div>
+            <div className="hero-label">Profile viewers</div>
             <div className="row">
               <div>
                 <div className="v">{compact(views)}</div>
@@ -228,49 +218,35 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <div className="split" style={{ marginBottom: 16, alignItems: "stretch" }}>
-        <div className="panel lift" style={{ display: "flex", flexDirection: "column" }}>
-          <div className="panel-head">
-            <h2>Your best post</h2>
-            {best ? <Link href={`/posts/${best.id}`}>Open →</Link> : null}
-          </div>
+      <div className="split stretch">
+        <Card title="Your best post" description={best ? `#1 of ${ranked.length} · ${fmtDate(best.publishedAt)}` : undefined} action={best ? <CardLink href={`/posts/${best.id}`}>Open</CardLink> : null}>
           {best ? (
-            <div className="spotlight">
-              <ScoreRing score={best.performanceScore} />
-              <div style={{ minWidth: 0 }}>
-                <div className="row small">
+            <div className="best">
+              <div className="spotlight">
+                <ScoreRing score={best.performanceScore} />
+                <div style={{ minWidth: 0 }}>
                   <TierBadge post={best} total={ranked.length} />
-                  <span className="faint">#1 of {ranked.length} · {fmtDate(best.publishedAt)}</span>
-                </div>
-                <div className="quote">&ldquo;{best.title}&rdquo;</div>
-                <div className="metric-strip">
-                  <span><b>{fmt(best.metrics.impressions)}</b>impressions</span>
-                  <span><b>{best.engagementRate != null ? `${best.engagementRate}%` : "–"}</b>engagement</span>
-                  <span><b>{fmt(best.metrics.comments)}</b>comments</span>
-                  <span><b>{fmt(best.metrics.followersGained)}</b>followers gained</span>
+                  <div className="quote">&ldquo;{best.title}&rdquo;</div>
+                  <div className="metric-strip">
+                    <span><b>{fmt(best.metrics.impressions)}</b>impressions</span>
+                    <span><b>{best.engagementRate != null ? `${best.engagementRate}%` : "–"}</b>engagement</span>
+                    <span><b>{fmt(best.metrics.comments)}</b>comments</span>
+                    <span><b>{fmt(best.metrics.followersGained)}</b>followers gained</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : null}
-          {best ? (
-            <>
               {best.text.trim() ? <blockquote className="excerpt">{best.text.trim().split("\n").filter(Boolean).slice(0, 4).join("\n")}</blockquote> : null}
               <div className="row" style={{ marginTop: "auto", paddingTop: 16 }}>
                 <Link className="btn small" href={`/write?text=${encodeURIComponent(`Following up on my post about "${best.title.slice(0, 60)}"\n\n`)}`}>
                   <Icon.pen /> Write a follow-up
                 </Link>
-                <Link className="btn small ghost" href={`/posts/${best.id}`}>See the numbers <Icon.arrow /></Link>
               </div>
-            </>
+            </div>
           ) : (
             <Empty>Your top post shows here once some posts have numbers. <Link href="/metrics">Import analytics</Link></Empty>
           )}
-        </div>
-        <div className="panel ai-surface">
-          <div className="panel-head">
-            <h2>Your next moves</h2>
-            <span className="caps faint">from your data</span>
-          </div>
+        </Card>
+        <Card accent title="Your next moves" description="Worked out from your own numbers.">
           <div className="moves">
             {moves.map((m) => (
               <div key={m.id} className={`move ${m.tone}`}>
@@ -282,95 +258,68 @@ export default async function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
-      <div className="row between" style={{ margin: "28px 0 14px" }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Get better</div>
-          <h2 style={{ fontSize: 20, margin: 0 }}>Where to improve</h2>
-        </div>
-        <span className="small faint">Coral is your top 25% of posts, blue the rest. Click any mark to open the post.</span>
-      </div>
-      <div className="grid g2" style={{ marginBottom: 16 }}>
-        <div className="panel lift">
-          <div className="coach-head">
-            <div>
-              <h2>Are you getting better?</h2>
-              <p>Every post&rsquo;s score in the order you published, with a 3-post average.</p>
-            </div>
-            {delta != null ? <span className={`verdict ${delta > 2 ? "up" : delta < -2 ? "down" : ""}`}>{delta > 2 ? "▲" : delta < -2 ? "▼" : "•"} {delta > 0 ? "+" : ""}{delta} pts</span> : null}
-          </div>
-          <Legend items={[...coachLegend.map((l) => ({ ...l, kind: "bar" as const })), { label: "3-post average", color: "var(--ink)", kind: "line" }]} />
-          <TrendColumns bars={trend} />
-          <div className="takeaway">
-            {delta == null ? (
+      <SectionTitle eyebrow="Get better" title="Where to improve" note="Coral is your top 25% of posts, blue the rest. Click any mark to open the post." />
+      <div className="grid g2">
+        <Card
+          title="Are you getting better?"
+          description="Every post’s score in publishing order, with a 3-post average."
+          action={delta != null ? <Chip tone={delta > 2 ? "up" : delta < -2 ? "down" : "neutral"}>{delta > 0 ? "↑ +" : delta < 0 ? "↓ " : ""}{delta} pts</Chip> : null}
+          takeaway={
+            delta == null ? (
               <>Score a few more posts to see your trend.</>
             ) : delta > 2 ? (
-              <><b>You&rsquo;re improving.</b> Your latest posts score {delta} points higher than your first ones. Keep doing what changed.</>
+              <><b>You’re improving.</b> Your latest posts score {delta} points higher than your first ones. Keep doing what changed.</>
             ) : delta < -2 ? (
-              <><b>You&rsquo;ve slipped {Math.abs(delta)} points.</b> Reread your top posts below and compare them with your last three.</>
+              <><b>You’ve slipped {Math.abs(delta)} points.</b> Reread your top posts and compare them with your last three.</>
             ) : (
-              <><b>Holding steady.</b> To move up, copy one thing your top posts do (see &ldquo;What your best posts do differently&rdquo;).</>
-            )}
-          </div>
-        </div>
-        <div className="panel lift">
-          <div className="coach-head">
-            <div>
-              <h2>Reach vs engagement</h2>
-              <p>Each dot is a post. Lines are your medians.</p>
-            </div>
-          </div>
+              <><b>Holding steady.</b> To move up, copy one thing your top posts do differently.</>
+            )
+          }
+        >
+          <Legend items={[...coachLegend.map((l) => ({ ...l, kind: "bar" as const })), { label: "3-post average", color: "var(--ink)", kind: "line" }]} />
+          <TrendColumns bars={trend} />
+        </Card>
+        <Card
+          title="Reach vs engagement"
+          description="Each dot is a post. The lines are your medians."
+          takeaway={<><b>Top left</b> resonated but wasn’t seen: repost the idea with a sharper first line. <b>Bottom right</b> was seen but not felt: end with a real question or a stronger opinion.</>}
+        >
           <Legend items={coachLegend} />
           <Scatter points={reach} xLabel="Impressions" yLabel="Engagement rate" yFmt="pct" quadrants={["Loved, small reach", "Hits", "Missed", "Seen, not felt"]} />
-          <div className="takeaway">
-            <b>Top left</b> posts resonated but weren&rsquo;t seen: repost the idea with a sharper first line. <b>Bottom right</b> got seen but not felt: end with a real question or a stronger opinion.
-          </div>
-        </div>
-        <div className="panel lift">
-          <div className="coach-head">
-            <div>
-              <h2>What your best posts do differently</h2>
-              <p>Average for your top 25% against the rest. Hover a row for what to try.</p>
-            </div>
-          </div>
+        </Card>
+        <Card
+          title="What your best posts do differently"
+          description="Your top 25% against the rest. Hover a row for what to try."
+          takeaway={topGap ? <><b>Biggest gap: {topGap.label.toLowerCase()}</b> ({topGap.ratio!.toFixed(1)}× higher on your top posts). {topGap.hint}</> : undefined}
+        >
           <Legend items={coachLegend} />
           {compare.length ? <Dumbbell rows={compare} /> : <p className="small faint">Needs 4+ posts with numbers.</p>}
-          {topGap ? (
-            <div className="takeaway">
-              <b>Biggest gap: {topGap.label.toLowerCase()}</b> ({topGap.ratio!.toFixed(1)}× higher on your top posts). {topGap.hint}
-            </div>
-          ) : null}
-        </div>
-        <div className="panel lift">
-          <div className="coach-head">
-            <div>
-              <h2>Does your gut know a winner?</h2>
-              <p>Your 1–10 guess before posting against the real score.</p>
-            </div>
-            {cal.gut != null ? <span className={`verdict ${cal.gut >= 0.5 ? "up" : cal.gut < 0.2 ? "down" : ""}`}>r = {cal.gut}</span> : null}
-          </div>
-          <Legend items={[...coachLegend, { label: "Trend", color: "var(--ink)", kind: "line" }]} />
-          <Scatter points={gutPts} xLabel="Your gut score" yLabel="Actual score" xFmt="int" yMax={100} fitLine />
-          <div className="takeaway">
-            {cal.gut == null ? (
-              <>Rate your gut score on {Math.max(0, 5 - cal.gutN)} more published posts to see this.</>
+        </Card>
+        <Card
+          title="Does your gut know a winner?"
+          description="Your 1–10 guess before posting against the real score."
+          action={cal.gut != null ? <Chip tone={cal.gut >= 0.5 ? "up" : cal.gut < 0.2 ? "down" : "neutral"}>r = {cal.gut}</Chip> : null}
+          takeaway={
+            cal.gut == null ? (
+              <>Give a gut score on {Math.max(0, 5 - cal.gutN)} more published posts to see this.</>
             ) : cal.gut >= 0.5 ? (
               <><b>Your instinct is reliable.</b> If a draft feels like a 5, rework it before posting.</>
             ) : (
               <><b>Your instinct is off.</b> Use the AI score and these charts, not your feeling, to pick what to post.</>
-            )}
-          </div>
-        </div>
+            )
+          }
+        >
+          <Legend items={[...coachLegend, { label: "Trend", color: "var(--ink)", kind: "line" }]} />
+          <Scatter points={gutPts} xLabel="Your gut score" yLabel="Actual score" xFmt="int" yMax={100} fitLine />
+        </Card>
       </div>
 
-      <div className="split" style={{ marginBottom: 28 }}>
-        <div className="panel flush">
-          <div className="panel-head" style={{ padding: "18px 20px 0" }}>
-            <h2>Leaderboard</h2>
-            <Link href="/posts?status=Published&sort=rank">All ranked posts →</Link>
-          </div>
+      <SectionTitle eyebrow="Rankings" title="Leaderboard and pipeline" />
+      <div className="split">
+        <Card flush title="Leaderboard" description="Every published post, ranked against your own history." action={<CardLink href="/posts?status=Published&sort=rank">All posts</CardLink>}>
           {ranked.length ? (
             ranked.slice(0, 7).map((p) => (
               <Link key={p.id} href={`/posts/${p.id}`} className="leader">
@@ -384,7 +333,7 @@ export default async function Dashboard() {
                   </div>
                 </div>
                 <div className="bar-track" data-tip={`Score ${p.performanceScore} of 100`}>
-                  <div className={`bar ${p.rank === 1 ? "lead" : ""}`} style={{ width: `${p.performanceScore}%` }} />
+                  <div className={`bar ${winnerIds.has(p.id) ? "lead" : ""}`} style={{ width: `${p.performanceScore}%` }} />
                 </div>
                 <div className="score">{p.performanceScore}<small>/ 100</small></div>
               </Link>
@@ -392,28 +341,20 @@ export default async function Dashboard() {
           ) : (
             <Empty>No ranked posts yet.</Empty>
           )}
-        </div>
-        <div className="stack">
-          <div className="panel lift">
-            <div className="panel-head">
-              <h2>Pipeline</h2>
-              <Link href="/posts">Posts →</Link>
-            </div>
+        </Card>
+        <div className="stack" style={{ gap: "var(--gap)" }}>
+          <Card title="Pipeline" description="Posts waiting to go out." action={<CardLink href="/posts">Posts</CardLink>}>
             <div className="pipeline">
               {stages.map((s, i) => (
                 <Link key={s} href={`/posts?status=${s}`} className="stage-cell">
-                  <div className="caps">{s}</div>
+                  <div className="stage-name">{s}</div>
                   <b>{counts[i]}</b>
                   <i><span style={{ width: `${(counts[i] / maxStage) * 100}%` }} /></i>
                 </Link>
               ))}
             </div>
-          </div>
-          <div className="panel lift">
-            <div className="panel-head">
-              <h2>Activity</h2>
-              <span className="caps faint">live</span>
-            </div>
+          </Card>
+          <Card title="Activity" description="Updates every 2 minutes.">
             {activity.length ? (
               <ul className="feed">
                 {activity.map((e) => (
@@ -429,23 +370,15 @@ export default async function Dashboard() {
             ) : (
               <p className="small faint">Nothing yet. Write a draft or import your analytics.</p>
             )}
-          </div>
+          </Card>
         </div>
       </div>
 
-      <div className="row between" style={{ marginBottom: 14 }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Patterns</div>
-          <h2 style={{ fontSize: 20, margin: 0 }}>What works for you</h2>
-        </div>
-        <span className="small faint">Average performance score, 0–100. Hover a bar for the detail.</span>
-      </div>
-      <div className="grid g3" style={{ marginBottom: 16 }}>
+      <SectionTitle eyebrow="Patterns" title="What works for you" note="Hover a bar for post counts, impressions and engagement." />
+      <div className="grid g3">
         <Insight title="Hook type" rows={groupBy(published, (p) => p.hookType)} empty="Tag hook types on your posts to see a pattern." />
         <Insight title="Pillar" rows={groupBy(published, (p) => p.pillar)} empty="Give posts a pillar to see which topics land." />
         <Insight title="Format" rows={groupBy(published, (p) => p.format)} empty="Set a format on your posts." />
-      </div>
-      <div className="grid g3">
         <Weekdays posts={published} />
         <Insight title="Length" rows={groupBy(published, (p) => lengthBucket(p.text))} empty="Paste post text in to compare lengths." />
         <Insight title="Your hook rating" rows={groupBy(published, (p) => (p.ratings.hook ? `${p.ratings.hook} ★` : null))} empty="Rate hooks before posting to see if you can spot a winner." />

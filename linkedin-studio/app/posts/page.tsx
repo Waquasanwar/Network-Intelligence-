@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Legend, Scatter } from "@/components/coach-charts";
+import { Icon } from "@/components/icons";
+import { Card, PageHeader } from "@/components/kit";
 import { Empty, fmt, fmtDate, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
 import { splitWinners } from "@/lib/coach";
 import { notionReady } from "@/lib/env";
@@ -42,24 +44,17 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>Posts</h1>
-          <p className="muted">Every idea, draft and published post. Lives in your Notion &ldquo;LinkedIn Posts&rdquo; database.</p>
-        </div>
-        <Link className="btn primary" href="/write">New post</Link>
-      </div>
+      <PageHeader
+        eyebrow="Library"
+        title="Posts"
+        description="Every idea, draft and published post, ranked. Stored in your Notion “LinkedIn Posts” database."
+        actions={<Link className="btn primary" href="/write"><Icon.plus /> New post</Link>}
+      />
       {dayPts.length >= 2 ? (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <div className="coach-head">
-            <div>
-              <h2>Every published post</h2>
-              <p>Score over time. Click a dot to open the post.</p>
-            </div>
-          </div>
+        <Card title="Every published post" description="Score over time. Click a dot to open the post." className="mb">
           <Legend items={[{ label: "Your top 25%", color: "var(--coral-mark)" }, { label: "Other posts", color: "var(--series)" }]} />
           <Scatter points={dayPts} xLabel={`Days since ${fmtDate(new Date(t0).toISOString())}`} yLabel="Score" yMax={100} height={240} width={1120} xFmt="int" />
-        </div>
+        </Card>
       ) : null}
       <div className="tabs">
         {["all", ...STATUSES].map((s) => (
@@ -76,7 +71,7 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
         </select>
         <button className="btn">Apply</button>
       </form>
-      <div className="panel" style={{ padding: 0 }}>
+      <div className="card flush">
         {posts.length ? (
           <div className="table-wrap">
             <table>

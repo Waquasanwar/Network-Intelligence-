@@ -7,6 +7,7 @@ import type { Critique } from "@/lib/ai";
 import { aboveTheFold, checks, firstLine, LINKEDIN_MAX_CHARS, stats } from "@/lib/text";
 import type { Post, Ratings, Status } from "@/lib/types";
 import { FORMATS, HOOK_TYPES } from "@/lib/types";
+import { Card, Chip } from "./kit";
 import { RATING_FIELDS, Scale, Stars } from "./rating";
 
 interface Props {
@@ -158,8 +159,8 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
 
   return (
     <div className="split">
-      <div className="stack">
-        <div className="panel stack">
+      <div className="stack" style={{ gap: "var(--gap)" }}>
+        <div className="card stack">
           <div className="field">
             <label htmlFor="text">Post</label>
             <textarea
@@ -216,11 +217,8 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
           </div>
         </div>
 
-        <div className="panel stack">
-          <h2>Rate it yourself</h2>
-          <p className="small muted" style={{ marginTop: -8 }}>
-            Rate before you post. Later the dashboard shows how well your gut predicted the real numbers.
-          </p>
+        <Card title="Rate it yourself" description="Rate before you post. The dashboard later shows how well your gut predicted the result.">
+        <div className="stack">
           {RATING_FIELDS.map(([key, label, hint]) => (
             <div key={key} className="row between">
               <div>
@@ -238,6 +236,7 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
             <Scale label="Gut score" value={ratings.gut} onChange={(v) => setRatings({ ...ratings, gut: v })} />
           </div>
         </div>
+        </Card>
 
         <div className="row">
           <button className="btn primary" disabled={pending || !text.trim()} onClick={() => save()}>
@@ -258,9 +257,8 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
         {message ? <p className={message.kind}>{message.text}</p> : null}
       </div>
 
-      <div className="stack">
-        <div className="panel">
-          <h2>Preview</h2>
+      <div className="stack" style={{ gap: "var(--gap)" }}>
+        <Card title="Preview" description="What shows in the feed before “see more”.">
           <div className="preview">
             {text.trim() ? (
               <>
@@ -271,10 +269,9 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
               <span className="faint">Your post appears here the way it shows in the feed.</span>
             )}
           </div>
-        </div>
+        </Card>
 
-        <div className="panel">
-          <h2>Checks</h2>
+        <Card title="Checks" description="Run as you type.">
           {list.length ? (
             <ul className="checks">
               {list.map((c) => (
@@ -287,20 +284,14 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
           ) : (
             <p className="small faint">Start writing to see checks.</p>
           )}
-        </div>
+        </Card>
 
-        <div className="panel stack ai-surface">
-          <div className="row between">
-            <h2 style={{ margin: 0 }}>Writing assistant</h2>
-            {aiScore != null ? <span className="badge">AI score {aiScore}</span> : null}
-          </div>
+        <Card accent title="Writing assistant" description="Compares the draft with your best and weakest posts." action={aiScore != null ? <Chip>AI score {aiScore}</Chip> : null}>
+        <div className="stack">
           {!aiEnabled ? (
             <p className="small muted">Add ANTHROPIC_API_KEY to score drafts against your best posts, get alternative hooks and rewrites.</p>
           ) : (
             <>
-              <p className="small muted" style={{ marginTop: -6 }}>
-                Compares the draft with your highest- and lowest-ranked posts and your saved swipe file.
-              </p>
               <div className="row">
                 <button className="btn small" disabled={!!busy || !text.trim()} onClick={scoreIt}>
                   {busy === "critique" ? "Scoring…" : "Score this draft"}
@@ -371,6 +362,7 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
             </div>
           ) : null}
         </div>
+        </Card>
       </div>
     </div>
   );

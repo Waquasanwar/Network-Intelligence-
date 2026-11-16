@@ -1,3 +1,4 @@
+import { Card, Chip, PageHeader } from "@/components/kit";
 import { disconnectLinkedIn } from "@/app/actions";
 import { fmtDate } from "@/components/ui";
 import { aiReady, env, linkedinReady, notionReady } from "@/lib/env";
@@ -7,13 +8,9 @@ export const dynamic = "force-dynamic";
 
 function Item({ ok, title, children }: { ok: boolean; title: string; children: React.ReactNode }) {
   return (
-    <div className="panel stack" style={{ gap: 6 }}>
-      <div className="row between">
-        <h2 style={{ margin: 0 }}>{title}</h2>
-        <span className={`badge ${ok ? "Strong" : "Below"}`}>{ok ? "Ready" : "Not set up"}</span>
-      </div>
-      <div className="small">{children}</div>
-    </div>
+    <Card title={title} action={<Chip tone={ok ? "up" : "down"}>{ok ? "✓ Ready" : "Not set up"}</Chip>}>
+      <div className="small prose">{children}</div>
+    </Card>
   );
 }
 
@@ -23,16 +20,11 @@ export default async function ConnectPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>Connect &amp; setup</h1>
-          <p className="muted">What&rsquo;s connected, and what each connection unlocks.</p>
-        </div>
-      </div>
+      <PageHeader eyebrow="Setup" title="Connect & setup" description="What’s connected, and what each connection unlocks." />
       {error ? <div className="notice warn" style={{ marginBottom: 16 }}>LinkedIn: {error}</div> : null}
       {connected ? <div className="notice" style={{ marginBottom: 16 }}>LinkedIn connected.</div> : null}
 
-      <div className="stack">
+      <div className="stack" style={{ gap: "var(--gap)", maxWidth: 820 }}>
         <Item ok={notionReady()} title="Notion (required)">
           <p>The database for everything: posts, ratings, metric snapshots, daily metrics, swipe file.</p>
           {!notionReady() ? (

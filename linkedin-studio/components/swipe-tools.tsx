@@ -33,9 +33,9 @@ export function IdeaGenerator({ enabled }: { enabled: boolean }) {
       </div>
       {error ? <p className="error">{error}</p> : null}
       {ideas.length ? (
-        <div className="grid g2">
+        <div className="form-grid">
           {ideas.map((i) => (
-            <div key={i.title} className="panel stack" style={{ gap: 6 }}>
+            <div key={i.title} className="idea">
               <div className="row between">
                 <strong>{i.title}</strong>
                 <span className="badge">{i.pillar}</span>
@@ -79,7 +79,7 @@ export function SwipeForm() {
         <label htmlFor="s-text">Post text</label>
         <textarea id="s-text" name="text" rows={6} placeholder="Paste a post you wish you'd written" />
       </div>
-      <div className="grid g2">
+      <div className="form-grid">
         <div className="field">
           <label htmlFor="s-author">Author</label>
           <input id="s-author" name="author" />
@@ -93,7 +93,7 @@ export function SwipeForm() {
         <label htmlFor="s-why">Why it works</label>
         <input id="s-why" name="why" placeholder="e.g. specific number in line one, ends on a real question" />
       </div>
-      <div className="grid g2">
+      <div className="form-grid">
         <div className="field">
           <label htmlFor="s-hook">Hook type</label>
           <select id="s-hook" name="hookType" defaultValue="">

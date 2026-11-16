@@ -29,19 +29,19 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 /** Horizontal bars for one measure. The leader is drawn in the second series hue and every bar has a hover tooltip. */
-export function Bars({ rows, max = 100 }: { rows: { key: string; count: number; value: number; tip: string }[]; max?: number }) {
+export function Bars({ rows, max = 100, hideCount = false }: { rows: { key: string; count: number; value: number; tip: string }[]; max?: number; hideCount?: boolean }) {
   const top = Math.max(max, ...rows.map((r) => r.value)) || 1;
   return (
     <div className="bars">
       {rows.map((r, i) => (
         <div className="bar-row" key={r.key} data-tip={r.tip}>
           <div className="name" title={r.key}>
-            {r.key} <span className="faint">· {r.count}</span>
+            {r.key} {hideCount ? null : <span className="faint">· {r.count}</span>}
           </div>
           <div className="bar-track">
-            <div className={`bar ${i === 0 ? "lead" : ""}`} style={{ width: `${(r.value / top) * 100}%` }} />
+            <div className={`bar ${i === 0 && !hideCount ? "lead" : ""}`} style={{ width: `${(r.value / top) * 100}%` }} />
           </div>
-          <div className="val">{r.value}</div>
+          <div className="val">{r.value.toLocaleString("en-GB")}</div>
         </div>
       ))}
     </div>

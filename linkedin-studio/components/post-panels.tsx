@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { markPublished, ratePost, saveManualMetrics, setStatus } from "@/app/actions";
 import type { Metrics, Post, Ratings, Status } from "@/lib/types";
 import { STATUSES } from "@/lib/types";
+import { Card } from "./kit";
 import { RATING_FIELDS, Scale, Stars } from "./rating";
 
 export function RatingPanel({ post }: { post: Post }) {
@@ -19,11 +20,8 @@ export function RatingPanel({ post }: { post: Post }) {
     });
   };
   return (
-    <div className="panel stack">
-      <div className="row between">
-        <h2 style={{ margin: 0 }}>Your rating</h2>
-        <span className="small faint">{pending ? "Saving…" : saved ? "Saved" : ""}</span>
-      </div>
+    <Card title="Your rating" description="Rate before posting; compare with the result later." action={<span className="small faint" aria-live="polite">{pending ? "Saving…" : saved ? "Saved" : ""}</span>}>
+      <div className="stack">
       {RATING_FIELDS.map(([key, label]) => (
         <div key={key} className="row between">
           <span>{label}</span>
@@ -34,7 +32,8 @@ export function RatingPanel({ post }: { post: Post }) {
         <div className="small muted" style={{ marginBottom: 4 }}>Gut score (1–10)</div>
         <Scale label="Gut score" value={ratings.gut} onChange={(v) => update({ ...ratings, gut: v })} />
       </div>
-    </div>
+      </div>
+    </Card>
   );
 }
 
@@ -45,8 +44,8 @@ export function StatusPanel({ post }: { post: Post }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, start] = useTransition();
   return (
-    <div className="panel stack">
-      <h2 style={{ margin: 0 }}>Status &amp; link</h2>
+    <Card title="Status & link" description="Paste the LinkedIn link so analytics can be matched.">
+      <div className="stack">
       <div className="field">
         <label htmlFor="status">Status</label>
         <select
@@ -86,7 +85,8 @@ export function StatusPanel({ post }: { post: Post }) {
         Save as published
       </button>
       {msg ? <p className="small muted">{msg}</p> : null}
-    </div>
+      </div>
+    </Card>
   );
 }
 
@@ -110,12 +110,9 @@ export function MetricsForm({ post }: { post: Post }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
   return (
-    <div className="panel stack">
-      <h2 style={{ margin: 0 }}>Update numbers</h2>
-      <p className="small muted" style={{ marginTop: -6 }}>
-        Copy them from the post&rsquo;s analytics on LinkedIn, or import its export on the Metrics page. Each save is kept as a snapshot.
-      </p>
-      <div className="grid g2">
+    <Card title="Update numbers" description="Copy them from the post’s analytics on LinkedIn, or import its export. Each save is kept as a snapshot.">
+      <div className="stack">
+      <div className="form-grid">
         {METRIC_FIELDS.map(([k, label]) => (
           <div className="field" key={k}>
             <label htmlFor={`m-${k}`}>{label}</label>
@@ -141,6 +138,7 @@ export function MetricsForm({ post }: { post: Post }) {
         {pending ? "Saving…" : "Save numbers"}
       </button>
       {msg ? <p className={msg.ok ? "success" : "error"}>{msg.text}</p> : null}
-    </div>
+      </div>
+    </Card>
   );
 }

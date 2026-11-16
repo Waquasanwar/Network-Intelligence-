@@ -5,7 +5,9 @@ import { archive } from "@/app/actions";
 import { Diverging } from "@/components/mini-charts";
 import { MetricsForm, RatingPanel, StatusPanel } from "@/components/post-panels";
 import { vsTypical } from "@/lib/coach";
-import { fmt, fmtDate, Kpi, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Card, Chip, PageHeader, StatCard } from "@/components/kit";
+import { Bars, fmt, fmtDate, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
 import { getPost, listPosts, listSnapshots } from "@/lib/notion";
 import { totalEngagements } from "@/lib/scoring";
@@ -24,40 +26,54 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const best = [...vs].sort((a, b) => b.pct - a.pct)[0];
   const worst = [...vs].sort((a, b) => a.pct - b.pct)[0];
 
+  const vsOf = (k: string) => vs.find((r) => r.key === k)?.pct ?? null;
+  const mix = (
+    [
+      ["Reactions", m.reactions],
+      ["Comments", m.comments],
+      ["Reposts", m.reposts],
+      ["Saves", m.saves],
+      ["Sends", m.sends],
+      ["Profile views", m.profileViews],
+      ["Followers gained", m.followersGained],
+      ["Link clicks", m.linkClicks],
+    ] as const
+  ).filter(([, v]) => v != null) as [string, number][];
+  const mixMax = Math.max(1, ...mix.map(([, v]) => v));
+
   return (
     <>
-      <div className="page-head">
-        <div style={{ maxWidth: 720 }}>
-          <div className="row small" style={{ marginBottom: 6 }}>
-            <Link href="/posts">← Posts</Link>
-            <StatusBadge status={post.status} />
-            <TierBadge post={post} total={total} />
-          </div>
-          <h1>{post.title}</h1>
-          <p className="muted small">
+      <PageHeader
+        eyebrow={<Link href="/posts">Posts</Link>}
+        meta={<><StatusBadge status={post.status} /><TierBadge post={post} total={total} /></>}
+        title={post.title}
+        description={
+          <>
             {[post.pillar, post.format, post.hookType].filter(Boolean).join(" · ") || "No pillar or format yet"} · Published {fmtDate(post.publishedAt)}
             {post.metricsSource ? ` · numbers from ${post.metricsSource.toLowerCase()}, ${fmtDate(post.lastSynced)}` : ""}
-          </p>
-        </div>
-        <div className="row">
-          <Link className="btn" href={`/write?id=${post.id}`}>Edit text</Link>
-          {post.linkedinUrl ? <a className="btn" href={post.linkedinUrl} target="_blank" rel="noreferrer">Open on LinkedIn</a> : null}
-          <a className="btn" href={post.url} target="_blank" rel="noreferrer">Open in Notion</a>
-          <form action={archiveThis}><button className="btn ghost">Archive</button></form>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            <form action={archiveThis}><button className="btn ghost">Archive</button></form>
+            <a className="btn" href={post.url} target="_blank" rel="noreferrer">Open in Notion</a>
+            {post.linkedinUrl ? <a className="btn" href={post.linkedinUrl} target="_blank" rel="noreferrer">Open on LinkedIn</a> : null}
+            <Link className="btn primary" href={`/write?id=${post.id}`}><Icon.pen /> Edit text</Link>
+          </>
+        }
+      />
 
-      <div className="grid g4" style={{ marginBottom: 16 }}>
-        <Kpi label="Rank" value={post.rank ? `#${post.rank}` : "–"} sub={total ? `of ${total} ranked posts` : undefined} />
-        <Kpi label="Performance score" value={fmt(post.performanceScore)} sub="0–100 vs your own posts" />
-        <Kpi label="Impressions" value={fmt(m.impressions)} sub={m.membersReached ? `${fmt(m.membersReached)} people reached` : undefined} />
-        <Kpi label="Engagement rate" value={post.engagementRate != null ? `${post.engagementRate}%` : "–"} sub={`${fmt(totalEngagements(m) || null)} engagements`} />
+      <div className="stats-row">
+        <StatCard label="Rank" value={post.rank ? `#${post.rank}` : "–"} sub={total ? `of ${total} ranked posts` : "Not ranked yet"} />
+        <StatCard label="Performance score" value={fmt(post.performanceScore)} sub="0–100, against your own posts" />
+        <StatCard label="Impressions" value={fmt(m.impressions)} delta={vs.length ? { pct: vsOf("impressions") } : undefined} sub={m.membersReached ? `${fmt(m.membersReached)} people reached` : undefined} />
+        <StatCard label="Engagement rate" value={post.engagementRate != null ? `${post.engagementRate}%` : "–"} delta={vs.length ? { pct: vsOf("er") } : undefined} sub={`${fmt(totalEngagements(m) || null)} engagements`} />
       </div>
+      {vs.length ? <p className="small faint" style={{ margin: "-6px 0 16px" }}>Arrows compare this post with your typical post.</p> : null}
 
       <div className="split">
-        <div className="stack">
-          <div className="panel">
-            <h2>Post</h2>
+        <div className="stack" style={{ gap: "var(--gap)" }}>
+          <Card title="Post" description={post.text ? `${post.text.trim().length.toLocaleString("en-GB")} characters` : undefined}>
             {post.text ? (
               <div className="preview">{post.text}</div>
             ) : (
@@ -65,57 +81,38 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 No text yet. <Link href={`/write?id=${post.id}`}>Paste it in</Link> so the writing assistant can learn from this post.
               </p>
             )}
-          </div>
+          </Card>
           {vs.length ? (
-            <div className="panel">
-              <div className="coach-head">
-                <div>
-                  <h2>Versus your typical post</h2>
-                  <p>Compared with the median of your other posts. Hover a bar for the raw numbers.</p>
-                </div>
-              </div>
+            <Card
+              title="Versus your typical post"
+              description="Against the median of your other posts. Hover a bar for the raw numbers."
+              takeaway={
+                <>
+                  {best && best.pct > 0 ? <><b>Strongest: {best.label.toLowerCase()}</b> (+{best.pct}%). </> : null}
+                  {worst && worst.pct < 0 ? <><b>Weakest: {worst.label.toLowerCase()}</b> ({worst.pct}%). Fix that first next time.</> : <>No weak spots against your typical post.</>}
+                </>
+              }
+            >
               <Diverging rows={vs} />
-              <div className="takeaway">
-                {best && best.pct > 0 ? <><b>Strongest: {best.label.toLowerCase()}</b> ({best.pct > 0 ? "+" : ""}{best.pct}%). </> : null}
-                {worst && worst.pct < 0 ? <><b>Weakest: {worst.label.toLowerCase()}</b> ({worst.pct}%). Fix that first next time.</> : null}
-              </div>
-            </div>
+            </Card>
           ) : null}
-          <div className="panel">
-            <h2>Breakdown</h2>
-            <div className="grid g4">
-              {(
-                [
-                  ["Reactions", m.reactions],
-                  ["Comments", m.comments],
-                  ["Reposts", m.reposts],
-                  ["Saves", m.saves],
-                  ["Sends", m.sends],
-                  ["Profile views", m.profileViews],
-                  ["Followers gained", m.followersGained],
-                  ["Link clicks", m.linkClicks],
-                ] as const
-              ).map(([label, v]) => (
-                <div key={label} className="kpi">
-                  <div className="label">{label}</div>
-                  <div className="value" style={{ fontSize: 20 }}>{fmt(v)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="panel">
-            <h2>Impressions over time</h2>
+          <Card title="Engagement mix" description="What people did after seeing this post.">
+            {mix.length ? (
+              <Bars rows={mix.map(([k, v]) => ({ key: k, count: 0, value: v, tip: `${v.toLocaleString("en-GB")} ${k.toLowerCase()}` }))} max={mixMax} hideCount />
+            ) : (
+              <p className="small faint">No numbers yet. Add them on the right or import this post&rsquo;s export.</p>
+            )}
+          </Card>
+          <Card title="Impressions over time" description={`${snaps.length} snapshot${snaps.length === 1 ? "" : "s"} from sync, imports and manual updates.`}>
             <AreaChart points={snaps.map((s) => ({ x: s.capturedAt.slice(0, 10), y: s.impressions }))} label="Impressions per snapshot" unit="impressions" />
-            <p className="small faint">{snaps.length} snapshot{snaps.length === 1 ? "" : "s"} from sync, imports and manual updates.</p>
-          </div>
+          </Card>
           {post.aiNotes ? (
-            <div className="panel">
-              <h2>Assistant notes {post.aiScore != null ? <span className="badge">AI score {post.aiScore}</span> : null}</h2>
+            <Card title="Assistant notes" action={post.aiScore != null ? <Chip>AI score {post.aiScore}</Chip> : null}>
               <div className="preview small">{post.aiNotes}</div>
-            </div>
+            </Card>
           ) : null}
         </div>
-        <div className="stack">
+        <div className="stack" style={{ gap: "var(--gap)" }}>
           <RatingPanel post={post} />
           <StatusPanel post={post} />
           <MetricsForm post={post} />

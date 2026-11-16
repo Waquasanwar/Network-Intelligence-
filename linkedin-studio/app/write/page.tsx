@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { PageHeader } from "@/components/kit";
 import { Editor } from "@/components/editor";
 import { SetupNeeded } from "@/components/ui";
 import { aiReady, notionReady } from "@/lib/env";
@@ -14,12 +16,7 @@ export default async function WritePage({ searchParams }: { searchParams: Promis
   const pillars = [...new Set([...DEFAULT_PILLARS, ...posts.map((p) => p.pillar).filter((p): p is string => !!p)])];
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{post ? "Edit post" : "Write"}</h1>
-          <p className="muted">{post ? post.title : "Draft, check, rate, then post."}</p>
-        </div>
-      </div>
+      <PageHeader eyebrow={post ? <Link href={`/posts/${post.id}`}>Post</Link> : "Studio"} title={post ? "Edit post" : "Write a post"} description={post ? post.title : "Draft it, check it, rate it, then post it."} />
       <Editor key={post?.id ?? "new"} post={post} pillars={pillars} aiEnabled={aiReady()} canPublish={canPublish(token)} initialText={text} />
     </>
   );
