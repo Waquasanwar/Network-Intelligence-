@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import * as journal from "@/lib/journal";
 import { SESSION_COOKIE, safeEqual, sessionToken } from "@/lib/auth";
-import type { Entry, EntryInput } from "@/lib/schema";
+import type { Entry, EntryInput, ProjectInput } from "@/lib/schema";
 
 type Result<T = undefined> = { ok: true; data?: T } | { ok: false; error: string };
 
@@ -59,6 +59,46 @@ export async function archiveAction(id: string): Promise<Result> {
     await journal.archiveEntry(id);
     refresh();
     return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function chaseAction(id: string, note?: string): Promise<Result> {
+  try {
+    await journal.chase(id, note);
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function updateProjectAction(id: string, input: ProjectInput): Promise<Result> {
+  try {
+    await journal.updateProject(id, input);
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function createProjectAction(input: ProjectInput): Promise<Result<{ id: string }>> {
+  try {
+    if (!input.name?.trim()) return { ok: false, error: "Give the project a name." };
+    const p = await journal.createProject(input);
+    refresh();
+    return { ok: true, data: { id: p.id } };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function publishBriefAction(): Promise<Result<{ url: string }>> {
+  try {
+    const b = await journal.publishWeeklyBrief();
+    return { ok: true, data: { url: b.url } };
   } catch (err) {
     return fail(err);
   }

@@ -1,10 +1,11 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
-import type { Entry, EntryInput, Ref } from "./schema";
+import type { Entry, EntryInput, Project, ProjectInput, Ref } from "./schema";
 import type { Repo } from "./repo";
 import { NotionRepo } from "./notion-repo";
 import { MemoryRepo } from "./memory-repo";
 import { parseCapture, todayIn } from "./parse";
+import { weeklyBrief } from "./planning";
 
 let repo: Repo | undefined;
 
@@ -16,6 +17,7 @@ export function getRepo(): Repo {
           entries: process.env.NOTION_ENTRIES_DS || "41aedc4c-0659-81ab-b67a-000b2f61a672",
           projects: process.env.NOTION_PROJECTS_DS || "41aedc4c-0659-81be-82c2-000b62c660ed",
           people: process.env.NOTION_PEOPLE_DS || "41aedc4c-0659-818e-99bf-000b505e1e0c",
+          briefParent: process.env.NOTION_BRIEF_PARENT || "41aedc4c-0659-8197-b3bc-ecb32e41d4ba",
         })
       : new MemoryRepo();
   }
@@ -34,7 +36,7 @@ function cached<T>(key: string, fn: () => Promise<T>) {
 
 export const listEntries = () => cached<Entry[]>("entries", () => getRepo().listEntries());
 export const listPeople = () => cached<Ref[]>("people", () => getRepo().listPeople());
-export const listProjects = () => cached<Ref[]>("projects", () => getRepo().listProjects());
+export const listProjects = () => cached<Project[]>("projects", () => getRepo().listProjects());
 export const getEntry = (id: string) => getRepo().getEntry(id);
 
 export async function loadAll() {
@@ -87,7 +89,11 @@ export async function captureText(text: string, overrides: EntryInput = {}): Pro
   const p = parseCapture(text, today);
   const type = p.type ?? "Note";
   return createEntry({
-    status: type === "Request" || type === "Question" || type === "Blocker / Risk" ? "Open" : "Inbox",
+    status: ["Request", "Purchase Request", "Service Request", "Question", "Blocker / Risk"].includes(type) ? (p.waitingOn ? "Waiting on others" : "Open") : "Inbox",
+    waitingOn: p.waitingOn,
+    stage: p.stage,
+    reference: p.reference,
+    amount: p.amount,
     title: p.title,
     body: p.body,
     type,
@@ -120,4 +126,36 @@ export async function appendNote(id: string, text: string) {
 export async function archiveEntry(id: string) {
   await getRepo().archiveEntry(id);
   invalidate();
+}
+
+/** Record a chase: bump the count, stamp today, mark it waiting and leave a note on the page. */
+export async function chase(id: string, note?: string) {
+  const { entry } = await getRepo().getEntry(id);
+  const today = todayIn(process.env.JOURNAL_TIMEZONE || "UTC");
+  await getRepo().updateEntry(id, {
+    chaseCount: (entry.chaseCount || 0) + 1,
+    lastChased: today,
+    status: entry.status === "Done" || entry.status === "Dropped" ? entry.status : "Waiting on others",
+  });
+  await getRepo().appendNote(id, `Chased on ${today}${note ? `: ${note}` : ""}`);
+  invalidate();
+}
+
+export async function updateProject(id: string, input: ProjectInput) {
+  await getRepo().updateProject(id, input);
+  invalidate();
+}
+
+export async function createProject(input: ProjectInput) {
+  const p = await getRepo().createProject(input);
+  invalidate();
+  return p;
+}
+
+/** Build this week's brief and save it (a Notion page of to-dos in Notion mode). */
+export async function publishWeeklyBrief(today = todayIn(process.env.JOURNAL_TIMEZONE || "UTC")) {
+  const { entries, people, projects } = await loadAll();
+  const brief = weeklyBrief(entries, projects, people, today);
+  const url = await getRepo().createBriefPage(brief.title, brief.sections);
+  return { ...brief, url };
 }

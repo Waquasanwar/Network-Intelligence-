@@ -6,7 +6,7 @@
 // Explicit markers always win over inferred values. Inferred values are reported separately so
 // the UI can show them as suggestions the user can override.
 
-import type { Category, EntryType, Priority, Sentiment, Source, Direction } from "./schema";
+import { STAGES, WAITING_ON, type Category, type EntryType, type Priority, type Sentiment, type Source, type Direction, type Stage, type WaitingOn } from "./schema";
 
 export interface Parsed {
   title: string;
@@ -22,14 +22,20 @@ export interface Parsed {
   sentiment?: Sentiment;
   category?: Category;
   source?: Source;
+  waitingOn?: WaitingOn;
+  stage?: Stage;
+  reference?: string;
+  amount?: number;
   /** Which fields were inferred from wording rather than typed explicitly. */
-  inferred: Array<"type" | "category" | "source" | "sentiment" | "tags" | "direction">;
+  inferred: Array<"type" | "category" | "source" | "sentiment" | "tags" | "direction" | "waitingOn">;
 }
 
 const TYPE_PREFIXES: Record<string, EntryType> = {
   n: "Note", note: "Note",
   d: "Decision", dec: "Decision", decision: "Decision", decided: "Decision",
   r: "Request", req: "Request", request: "Request", ask: "Request",
+  pr: "Purchase Request", purchase: "Purchase Request", buy: "Purchase Request", po: "Purchase Request",
+  sr: "Service Request", service: "Service Request", ticket: "Service Request",
   c: "Comment / Feedback", fb: "Comment / Feedback", comment: "Comment / Feedback", feedback: "Comment / Feedback",
   i: "Idea", idea: "Idea",
   m: "Meeting", mtg: "Meeting", meeting: "Meeting",
@@ -82,6 +88,8 @@ export function resolveDate(word: string, today: string): string | undefined {
 // --- Rule-based enrichment ------------------------------------------------------------------
 
 const TYPE_RULES: Array<[RegExp, EntryType]> = [
+  [/\b(purchase request|purchase order|raise (a )?po|need to (buy|order|purchase)|quote for|licen[cs]es?|subscription renewal)\b/i, "Purchase Request"],
+  [/\b(service request|service desk|helpdesk|it ticket|access request|raised a ticket|new starter accounts?)\b/i, "Service Request"],
   [/^(we )?(decided|agreed|going with|go with|chose|approved|signed off)\b|\bdecision\b/i, "Decision"],
   [/^(can you|could you|please|pls)\b|^(i |we )?(asked|chased)\b|\b(asked (me|us|for|if|to)|requested|wants? (me|us) to|needs? (me|us) to|chase|asked to)\b/i, "Request"],
   [/\b(blocked|blocker|risk|at risk|stuck|waiting on|dependency|delayed|slipping)\b/i, "Blocker / Risk"],
@@ -137,6 +145,15 @@ export function enrich(text: string): Pick<Parsed, "type" | "category" | "source
   return { type, category, source, sentiment, tags };
 }
 
+const WAITING_RULES: Array<[RegExp, WaitingOn]> = [
+  [/\b(procurement|purchasing|buyer|purchase order|\bpo\b)\b/i, "Procurement"],
+  [/\b(finance|accounts payable|budget holder)\b/i, "Finance"],
+  [/\b(legal|contract review|counsel)\b/i, "Legal"],
+  [/\b(it team|service desk|helpdesk)\b/i, "IT"],
+  [/\b(my (manager|boss|director|line manager)|leadership|exec(utive)?s?|director|cfo|ceo|coo|vp)\b/i, "Management"],
+  [/\b(vendor|supplier)\b/i, "Vendor"],
+];
+
 // --- Parser ---------------------------------------------------------------------------------
 
 function nameFrom(raw: string): string {
@@ -182,11 +199,36 @@ export function parseCapture(input: string, today: string): Parsed {
     return sp;
   });
 
-  // Direction: << incoming (to me), >> outgoing (from me)
-  text = text.replace(/(^|\s)(<<|>>)(?=\s|$)/g, (_m, sp, arrow) => {
-    out.direction = arrow === "<<" ? "Incoming (to me)" : "Outgoing (from me)";
+  // Direction: << incoming (to me), >> outgoing (from me), ^^ upward (to management)
+  text = text.replace(/(^|\s)(<<|>>|\^\^)(?=\s|$)/g, (_m, sp, arrow) => {
+    out.direction = arrow === "<<" ? "Incoming (to me)" : arrow === ">>" ? "Outgoing (from me)" : "Upward (to management)";
+    if (arrow === "^^") out.waitingOn = "Management";
     return sp;
   });
+
+  // wait:procurement, stage:approved
+  text = text.replace(/(^|\s)(wait|waiting|stage):([\w-]+)/gi, (m, sp, key, val) => {
+    const v = val.toLowerCase().replace(/-/g, " ");
+    if (/^wait/i.test(key)) {
+      const hit = WAITING_ON.find((w) => w.toLowerCase().startsWith(v)) ?? (v === "mgmt" ? "Management" : undefined);
+      if (!hit) return m;
+      out.waitingOn = hit;
+    } else {
+      const hit = STAGES.find((st) => st.toLowerCase().startsWith(v));
+      if (!hit) return m;
+      out.stage = hit;
+    }
+    return sp;
+  });
+
+  // Amounts (£14,400 / $3.2k / €900) and references (PR-1234, PO 5678, SR-99, REQ123) stay in the title.
+  const money = text.match(/[£$€]\s?(\d[\d,]*(?:\.\d+)?)\s?(k|m)?\b/i);
+  if (money) {
+    const n = parseFloat(money[1].replace(/,/g, "")) * (money[2]?.toLowerCase() === "k" ? 1e3 : money[2]?.toLowerCase() === "m" ? 1e6 : 1);
+    if (!Number.isNaN(n)) out.amount = n;
+  }
+  const ref = text.match(/\b(PR|PO|SR|REQ|RITM|INC|TKT)[-\s#]?(\d{3,})\b/i);
+  if (ref) out.reference = `${ref[1].toUpperCase()}-${ref[2]}`;
 
   // Tags are removed from the title.
   text = text.replace(/(^|\s)#([\p{L}\p{N}_-]+)/gu, (_m, sp, tag) => {
@@ -241,6 +283,18 @@ export function parseCapture(input: string, today: string): Parsed {
   if (extraTags.length) {
     out.tags.push(...extraTags);
     out.inferred.push("tags");
+  }
+  if (!out.waitingOn) {
+    const w = WAITING_RULES.find(([re]) => re.test(out.title))?.[1] ?? (out.type === "Purchase Request" ? "Procurement" : out.type === "Service Request" ? "IT" : undefined);
+    if (w) {
+      out.waitingOn = w;
+      out.inferred.push("waitingOn");
+    }
+  }
+  if ((out.type === "Purchase Request" || out.type === "Service Request") && !out.stage) out.stage = "Submitted";
+  if (out.type === "Request" && !out.direction && out.waitingOn === "Management" && /^(i |we )?(asked|escalated|requested|raised)\b/i.test(out.title)) {
+    out.direction = "Upward (to management)";
+    out.inferred.push("direction");
   }
   if (out.type === "Request" && !out.direction) {
     out.direction = /^(i |we )?(asked|chased|requested|sent)\b/i.test(out.title) ? "Outgoing (from me)" : "Incoming (to me)";

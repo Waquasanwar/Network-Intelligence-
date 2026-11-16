@@ -20,7 +20,7 @@
    Everything else derives from these.
 --------------------------------------------------------------------------------------------- */
 :root {
-  --brand: #0a84ff;
+  --brand: #8b95a7;
   --brand-ink: #ffffff;
   --tint: 0%;
   --radius: 0.625rem;
@@ -50,10 +50,10 @@
 
 /* Dark: jet black with graphite panels and snow-grey text */
 :root[data-mode="dark"] {
-  --n-bg: #0a0a0b;
-  --n-surface: #141518;
-  --n-surface-2: #1c1e22;
-  --n-line: #26292f;
+  --n-bg: #0b0c0e;
+  --n-surface: #15171b;
+  --n-surface-2: #1e2126;
+  --n-line: #2a2e35;
   --ink: #f2f4f7;
   --ink-2: #a8aeb9;
   --ink-3: #6e7482;
@@ -68,10 +68,10 @@
 }
 @media (prefers-color-scheme: dark) {
   :root[data-mode="system"] {
-    --n-bg: #0a0a0b;
-    --n-surface: #141518;
-    --n-surface-2: #1c1e22;
-    --n-line: #26292f;
+    --n-bg: #0b0c0e;
+    --n-surface: #15171b;
+    --n-surface-2: #1e2126;
+    --n-line: #2a2e35;
     --ink: #f2f4f7;
     --ink-2: #a8aeb9;
     --ink-3: #6e7482;
@@ -185,6 +185,11 @@
     font-family: var(--font-heading);
     font-weight: 600;
     letter-spacing: -0.025em;
+  }
+
+  /* Let grid columns shrink below their content so long titles truncate instead of overflowing. */
+  .grid > * {
+    min-width: 0;
   }
 
   ::selection {

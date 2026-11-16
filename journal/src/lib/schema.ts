@@ -5,6 +5,8 @@ export const ENTRY_TYPES = [
   "Note",
   "Decision",
   "Request",
+  "Purchase Request",
+  "Service Request",
   "Comment / Feedback",
   "Idea",
   "Meeting",
@@ -35,8 +37,23 @@ export type Category = (typeof CATEGORIES)[number];
 export const SOURCES = ["Own thought", "Meeting", "Email", "Chat (Slack/Teams)", "Call", "In person", "Document"] as const;
 export type Source = (typeof SOURCES)[number];
 
-export const DIRECTIONS = ["Incoming (to me)", "Outgoing (from me)", "Internal"] as const;
+export const DIRECTIONS = ["Incoming (to me)", "Outgoing (from me)", "Upward (to management)", "Internal"] as const;
 export type Direction = (typeof DIRECTIONS)[number];
+
+export const WAITING_ON = ["Procurement", "Finance", "Management", "Legal", "IT", "Vendor", "Client", "Team", "Other"] as const;
+export type WaitingOn = (typeof WAITING_ON)[number];
+
+/** Purchase and service request pipeline, in order. */
+export const STAGES = ["Draft", "Submitted", "Awaiting approval", "Approved", "PO raised", "Ordered", "Received", "Closed", "Rejected"] as const;
+export type Stage = (typeof STAGES)[number];
+export const OPEN_STAGES: Stage[] = ["Draft", "Submitted", "Awaiting approval", "Approved", "PO raised", "Ordered"];
+
+/** Types that are "asks" and need to be followed through until closed. */
+export const TRACKED_TYPES = ["Request", "Purchase Request", "Service Request", "Question", "Blocker / Risk"] as const;
+export const PROCUREMENT_TYPES = ["Purchase Request", "Service Request"] as const;
+
+export const HEALTH = ["On track", "At risk", "Off track", "Not set"] as const;
+export type Health = (typeof HEALTH)[number];
 
 export const PRIORITIES = ["P1 Urgent", "P2 High", "P3 Normal", "P4 Low"] as const;
 export type Priority = (typeof PRIORITIES)[number];
@@ -74,6 +91,12 @@ export interface Entry {
   outcome?: string;
   link?: string;
   backdate?: string;
+  waitingOn?: WaitingOn;
+  stage?: Stage;
+  reference?: string;
+  amount?: number;
+  chaseCount: number;
+  lastChased?: string;
   reviewed: boolean;
   captured: string; // ISO datetime
   lastEdited: string; // ISO datetime
@@ -95,6 +118,26 @@ export function isOverdue(e: Pick<Entry, "due" | "status">, today: string): bool
 export interface Ref {
   id: string;
   name: string;
+}
+
+export interface Project extends Ref {
+  url: string;
+  kind?: string;
+  state?: string;
+  health?: Health;
+  priority?: Priority;
+  targetDate?: string;
+  nextMilestone?: string;
+  budget?: number;
+  notes?: string;
+}
+
+export function isTracked(e: Pick<Entry, "type">): boolean {
+  return !!e.type && (TRACKED_TYPES as readonly string[]).includes(e.type);
+}
+
+export function isProcurement(e: Pick<Entry, "type">): boolean {
+  return !!e.type && (PROCUREMENT_TYPES as readonly string[]).includes(e.type);
 }
 
 /** Fields a capture or an edit may set. Relations are given by name and resolved server-side. */
@@ -122,13 +165,33 @@ export interface EntryInput {
   outcome?: string;
   link?: string | null;
   backdate?: string | null;
+  waitingOn?: WaitingOn | null;
+  stage?: Stage | null;
+  reference?: string;
+  amount?: number | null;
+  chaseCount?: number;
+  lastChased?: string | null;
   reviewed?: boolean;
+}
+
+export interface ProjectInput {
+  name?: string;
+  kind?: string | null;
+  state?: string | null;
+  health?: Health | null;
+  priority?: Priority | null;
+  targetDate?: string | null;
+  nextMilestone?: string;
+  budget?: number | null;
+  notes?: string;
 }
 
 export const TYPE_STYLE: Record<EntryType, { color: string; emoji: string }> = {
   Note: { color: "slate", emoji: "📝" },
   Decision: { color: "violet", emoji: "⚖️" },
   Request: { color: "orange", emoji: "🙋" },
+  "Purchase Request": { color: "amber", emoji: "🧾" },
+  "Service Request": { color: "sky", emoji: "🛠️" },
   "Comment / Feedback": { color: "sky", emoji: "💬" },
   Idea: { color: "amber", emoji: "💡" },
   Meeting: { color: "stone", emoji: "👥" },

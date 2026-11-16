@@ -16,19 +16,19 @@ export interface Theme {
   headings: Headings;
 }
 
-// Jet black, graphite and snow grey neutrals with one clear accent. Azure is the default.
+// Jet black, graphite and snow grey neutrals with one accent. Graphite is the default; Azure is one tap away.
 export const PRESETS: Array<{ name: string; hex: string }> = [
+  { name: "Graphite", hex: "#8b95a7" },
   { name: "Azure", hex: "#0a84ff" },
   { name: "Cobalt", hex: "#3d5afe" },
   { name: "Cyan", hex: "#06b6d4" },
-  { name: "Graphite", hex: "#6b7280" },
   { name: "Emerald", hex: "#10b981" },
   { name: "Violet", hex: "#7c5cff" },
   { name: "Amber", hex: "#f59e0b" },
   { name: "Crimson", hex: "#e11d48" },
 ];
 
-export const DEFAULT_THEME: Theme = { mode: "dark", accent: "#0a84ff", tint: "off", corners: "soft", font: "sans", headings: "sans" };
+export const DEFAULT_THEME: Theme = { mode: "dark", accent: "#8b95a7", tint: "off", corners: "soft", font: "sans", headings: "sans" };
 
 export const THEME_COOKIE = "journal_theme";
 

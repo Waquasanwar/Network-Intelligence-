@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { isClosed, isOverdue, loggedAt, type Entry, type Ref } from "@/lib/schema";
+import { isClosed, isOverdue, loggedAt, type Entry, type Project, type Ref } from "@/lib/schema";
+import { chaseStats } from "@/lib/planning";
+import { PriorityList } from "./PlanView";
+import { Section } from "./work";
 import { localDate } from "@/lib/insights";
 import { todayLocal } from "@/lib/format";
 import { useMounted } from "@/lib/use-mounted";
@@ -14,7 +17,7 @@ function greeting() {
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-export function TodayView({ entries, people, projects, tags }: { entries: Entry[]; people: Ref[]; projects: Ref[]; tags: string[] }) {
+export function TodayView({ entries, people, projects, tags }: { entries: Entry[]; people: Ref[]; projects: Project[]; tags: string[] }) {
   const mounted = useMounted();
   const today = todayLocal();
 
@@ -29,7 +32,8 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
         .sort((a, b) => (a.due ?? a.followUp ?? "").localeCompare(b.due ?? b.followUp ?? ""))
     : [];
   const overdue = mounted ? entries.filter((e) => isOverdue(e, today)).length : 0;
-  const openReq = entries.filter((e) => e.type === "Request" && !isClosed(e)).length;
+  const chaseCount = mounted ? chaseStats(entries, today).dueNow.length : 0;
+  const isMonday = mounted && new Date().getDay() === 1;
 
   return (
     <div className="space-y-6">
@@ -53,9 +57,20 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <Link href="/review"><Stat label="To review" value={inbox.length} tone={inbox.length ? "accent" : undefined} /></Link>
         <Stat label="Captured today" value={todays.length} />
-        <Link href="/requests"><Stat label="Open requests" value={openReq} /></Link>
+        <Link href="/plan?view=day"><Stat label="To chase" value={chaseCount} tone={chaseCount ? "accent" : undefined} /></Link>
         <Link href="/timeline?filter=overdue"><Stat label="Overdue" value={overdue} tone={overdue ? "danger" : undefined} /></Link>
       </div>
+
+      {mounted && (
+        <Section
+          title={isMonday ? "Your Monday brief" : "This week's focus"}
+          sub={isMonday ? "The week's priorities, ranked. Also saved to Notion at 9am." : "Top priorities this week, ranked by urgency, chasing, impact and project risk"}
+          action={<Link href="/plan?view=week" className="text-xs text-accent-fg hover:underline">Full week →</Link>}
+          className={isMonday ? "glow-focus" : ""}
+        >
+          <PriorityList entries={entries} projects={projects} people={people} today={today} limit={5} />
+        </Section>
+      )}
 
       {attention.length > 0 && (
         <section>

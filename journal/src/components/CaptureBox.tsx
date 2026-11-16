@@ -8,7 +8,8 @@ import { ENTRY_TYPES, type EntryType, type Ref } from "@/lib/schema";
 import { shortDate, todayLocal } from "@/lib/format";
 import { Chip, TypeDot } from "./ui";
 
-const QUICK_TYPES: EntryType[] = ["Note", "Decision", "Request", "Comment / Feedback", "Idea", "Blocker / Risk", "Win", "Question"];
+const QUICK_TYPES: EntryType[] = ["Note", "Decision", "Request", "Purchase Request", "Service Request", "Question", "Blocker / Risk", "Win"];
+const SHORT: Partial<Record<EntryType, string>> = { "Purchase Request": "Purchase", "Service Request": "Service", "Blocker / Risk": "Blocker" };
 
 interface Props {
   people: Ref[];
@@ -17,6 +18,8 @@ interface Props {
   autoFocus?: boolean;
   onSaved?: () => void;
   compact?: boolean;
+  /** Text to start with, e.g. "+Project_Name " on a project page. */
+  initial?: string;
 }
 
 /** The token being typed at the caret, if it is a @person, +project or #tag. */
@@ -27,10 +30,10 @@ function activeToken(text: string, caret: number) {
   return { sigil: m[2] as "@" | "+" | "#", query: m[3].replace(/^"/, ""), start: caret - m[2].length - m[3].length };
 }
 
-export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact }: Props) {
+export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact, initial = "" }: Props) {
   const router = useRouter();
   const ref = useRef<HTMLTextAreaElement>(null);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initial);
   const [typeOverride, setTypeOverride] = useState<EntryType | null>(null);
   const [caret, setCaret] = useState(0);
   const [pick, setPick] = useState(0);
@@ -82,14 +85,18 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
         priority: p.priority,
         due: p.due,
         followUp: p.followUp,
-        direction: type === "Request" ? p.direction : undefined,
         sentiment: p.sentiment,
         category: p.category,
         source: p.source,
-        status: type === "Request" || type === "Question" || type === "Blocker / Risk" ? "Open" : "Inbox",
+        waitingOn: p.waitingOn,
+        stage: type === "Purchase Request" || type === "Service Request" ? (p.stage ?? "Submitted") : p.stage,
+        reference: p.reference,
+        amount: p.amount,
+        direction: p.direction,
+        status: ["Request", "Purchase Request", "Service Request", "Question", "Blocker / Risk"].includes(type) ? (p.waitingOn ? "Waiting on others" : "Open") : "Inbox",
       });
       if (res.ok) {
-        setText("");
+        setText(initial);
         setTypeOverride(null);
         setFlash({ tone: "ok", msg: `Saved as ${type}` });
         router.refresh();
@@ -182,7 +189,7 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
             }`}
             title={t === type && !typeOverride && inferred("type") ? "Guessed from your wording" : undefined}
           >
-            <span className="inline-flex items-center gap-1.5"><TypeDot type={t} />{t.split(" ")[0]}</span>
+            <span className="inline-flex items-center gap-1.5"><TypeDot type={t} />{SHORT[t] ?? t.split(" ")[0]}</span>
             {t === type && !typeOverride && inferred("type") && <span aria-hidden> ✨</span>}
           </button>
         ))}
@@ -209,7 +216,7 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
         </div>
       </div>
 
-      {text.trim() && (
+      {text.trim() && text !== initial && (
         <div className="mt-2 flex flex-wrap items-center gap-1 text-xs" aria-label="What will be saved">
           {parsed.projects.map((p) => (
             <Chip key={p} tone="accent">
@@ -230,15 +237,19 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
             </Chip>
           )}
           {parsed.priority && <Chip tone="warn">{parsed.priority}</Chip>}
+          {parsed.amount !== undefined && <Chip tone="accent">£{parsed.amount.toLocaleString("en-GB")}</Chip>}
+          {parsed.reference && <Chip>{parsed.reference}</Chip>}
+          {(parsed.stage || type === "Purchase Request" || type === "Service Request") && <Chip>stage: {parsed.stage ?? "Submitted"}</Chip>}
+          {parsed.waitingOn && <Chip tone="warn" title={parsed.inferred.includes("waitingOn") ? "Guessed from your wording" : undefined}>{parsed.inferred.includes("waitingOn") ? "✨ " : ""}waiting on {parsed.waitingOn}</Chip>}
           {parsed.due && <Chip tone="warn">due {shortDate(parsed.due, todayLocal())}</Chip>}
           {parsed.followUp && <Chip>follow up {shortDate(parsed.followUp, todayLocal())}</Chip>}
-          {type === "Request" && parsed.direction && <Chip>{parsed.direction}</Chip>}
+          {parsed.direction && <Chip>{parsed.direction}</Chip>}
           {parsed.body && <Chip>+ {parsed.body.split("\n").length} line note</Chip>}
         </div>
       )}
       {!compact && !text && (
         <p className="mt-2 text-xs text-ink-3">
-          <code>d:</code> decision · <code>r:</code> request · <code>i:</code> idea · <code>b:</code> blocker · <code>w:</code> win ·{" "}
+          <code>d:</code> decision · <code>r:</code> request · <code>pr:</code> purchase · <code>sr:</code> service · <code>q:</code> question · <code>^^</code> to management · <code>wait:procurement</code> ·{" "}
           <code>@person</code> · <code>+project</code> · <code>#tag</code> · <code>!1</code>–<code>!4</code> · <code>due:fri</code> ·{" "}
           <code>fu:3d</code> · Shift+Enter for notes
         </p>

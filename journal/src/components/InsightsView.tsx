@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import type { Entry, Ref } from "@/lib/schema";
 import { computeInsights, filterPeriod } from "@/lib/insights";
 import { useMounted } from "@/lib/use-mounted";
-import { PageHeader, Stat } from "./ui";
+import { Stat } from "./ui";
 
 const PERIODS = [
   { label: "30 days", days: 30 },
@@ -70,16 +70,15 @@ function Ranked({ rows, href }: { rows: Array<{ name: string; count: number }>; 
 
 const order = (series: string[], keys: string[]) => keys.filter((k) => series.includes(k));
 
-export function InsightsView({ entries, people, projects }: { entries: Entry[]; people: Ref[]; projects: Ref[] }) {
+export function PatternsView({ entries, people, projects }: { entries: Entry[]; people: Ref[]; projects: Ref[] }) {
   const mounted = useMounted();
   const [days, setDays] = useState<number | null>(90);
   const ins = useMemo(() => (mounted ? computeInsights(filterPeriod(entries, days), people, projects) : null), [mounted, entries, days, people, projects]);
 
   const header = (
-    <PageHeader
-      title="Insights"
-      subtitle="Patterns in what you capture: when, what, with whom, and how it feels."
-      actions={
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <p className="text-sm text-ink-3">When you capture, what, with whom, and how it feels.</p>
+      {
         <div role="group" aria-label="Period" className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-xs">
           {PERIODS.map((p) => (
             <button key={p.label} aria-pressed={days === p.days} onClick={() => setDays(p.days)} className={`rounded-md px-2.5 py-1 ${days === p.days ? "bg-accent text-accent-ink" : "text-ink-2"}`}>
@@ -88,7 +87,7 @@ export function InsightsView({ entries, people, projects }: { entries: Entry[]; 
           ))}
         </div>
       }
-    />
+    </div>
   );
 
   if (!ins) return header;
@@ -136,7 +135,7 @@ export function InsightsView({ entries, people, projects }: { entries: Entry[]; 
         </Panel>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel title="Entries per week" sub="How much you capture over time">
           <div className="h-52">
             <ResponsiveContainer>
@@ -200,7 +199,7 @@ export function InsightsView({ entries, people, projects }: { entries: Entry[]; 
         </Panel>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Panel title="What you log">
           <Ranked rows={ins.typeMix.sort((a, b) => b.count - a.count)} />
         </Panel>

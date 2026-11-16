@@ -78,4 +78,26 @@ describe("parseCapture", () => {
     const p = parseCapture("Note to self: ship it! now", TODAY);
     expect(p.title).toBe("Note to self: ship it! now");
   });
+
+  it("understands purchase and service requests, amounts, references and who it waits on", () => {
+    const pr = parseCapture("pr: 12 laptops for new analysts £14,400 PR-20431 +Team_Hiring", TODAY);
+    expect(pr.type).toBe("Purchase Request");
+    expect(pr.amount).toBe(14400);
+    expect(pr.reference).toBe("PR-20431");
+    expect(pr.waitingOn).toBe("Procurement");
+    expect(pr.stage).toBe("Submitted");
+    const sr = parseCapture("sr: data warehouse access stage:approved", TODAY);
+    expect(sr.type).toBe("Service Request");
+    expect(sr.stage).toBe("Approved");
+    expect(parseCapture("Need to buy 3 licences $3.2k", TODAY).amount).toBe(3200);
+  });
+
+  it("marks requests to management as upward", () => {
+    const up = parseCapture("^^ asked my director to approve the contractor budget", TODAY);
+    expect(up.direction).toBe("Upward (to management)");
+    expect(up.waitingOn).toBe("Management");
+    const inferred = parseCapture("Escalated the rates question to leadership", TODAY);
+    expect(inferred.waitingOn).toBe("Management");
+    expect(parseCapture("r: chase invoice wait:finance", TODAY).waitingOn).toBe("Finance");
+  });
 });

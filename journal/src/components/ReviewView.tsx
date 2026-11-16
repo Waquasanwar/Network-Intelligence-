@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { archiveAction, updateAction } from "@/app/actions";
 import {
-  CATEGORIES, ENERGIES, ENTRY_TYPES, LEVELS, SENTIMENTS, SOURCES, STATUSES, PRIORITIES, DIRECTIONS,
+  CATEGORIES, ENERGIES, ENTRY_TYPES, LEVELS, SENTIMENTS, SOURCES, STATUSES, PRIORITIES, DIRECTIONS, WAITING_ON, STAGES,
   type Entry, type EntryInput, type Ref,
 } from "@/lib/schema";
 import { enrich } from "@/lib/parse";
@@ -27,7 +27,7 @@ function EnrichCard({ entry, people, projects, tags }: { entry: Entry; people: R
   const [f, setF] = useState<EntryInput & { tagText: string; peopleText: string; projectText: string }>({
     title: entry.title,
     type: entry.type ?? guess.type ?? "Note",
-    status: entry.status === "Inbox" ? (entry.type === "Request" || entry.type === "Question" || entry.type === "Blocker / Risk" ? "Open" : "Done") : entry.status,
+    status: entry.status === "Inbox" ? (["Request", "Purchase Request", "Service Request", "Question", "Blocker / Risk"].includes(entry.type ?? "") ? (entry.waitingOn ? "Waiting on others" : "Open") : "Done") : entry.status,
     category: entry.category ?? guess.category ?? null,
     source: entry.source ?? guess.source ?? null,
     sentiment: entry.sentiment ?? guess.sentiment ?? null,
@@ -36,6 +36,8 @@ function EnrichCard({ entry, people, projects, tags }: { entry: Entry; people: R
     priority: entry.priority ?? null,
     direction: entry.direction ?? null,
     due: entry.due ?? null,
+    waitingOn: entry.waitingOn ?? null,
+    stage: entry.stage ?? null,
     rationale: entry.rationale ?? "",
     alternatives: entry.alternatives ?? "",
     tagText: [...new Set([...entry.tags, ...guess.tags])].join(", "),
@@ -52,7 +54,7 @@ function EnrichCard({ entry, people, projects, tags }: { entry: Entry; people: R
         ...rest,
         rationale: f.type === "Decision" ? f.rationale : undefined,
         alternatives: f.type === "Decision" ? f.alternatives : undefined,
-        direction: f.type === "Request" ? f.direction : undefined,
+        direction: f.direction,
         tags: splitNames(tagText).map((t) => t.toLowerCase()),
         people: splitNames(peopleText),
         projects: splitNames(projectText),
@@ -112,7 +114,9 @@ function EnrichCard({ entry, people, projects, tags }: { entry: Entry; people: R
           <Field label="Due">
             <input type="date" className="field" value={f.due ?? ""} onChange={(e) => set("due", e.target.value || null)} />
           </Field>
-          {f.type === "Request" && <SelectField label="Direction" options={DIRECTIONS} value={f.direction} onChange={(v) => set("direction", v)} />}
+          <SelectField label="Direction" options={DIRECTIONS} value={f.direction} onChange={(v) => set("direction", v)} />
+          <SelectField label="Waiting on" options={WAITING_ON} value={f.waitingOn} onChange={(v) => set("waitingOn", v)} />
+          {(f.type === "Purchase Request" || f.type === "Service Request") && <SelectField label="Stage" options={STAGES} value={f.stage} onChange={(v) => set("stage", v)} />}
         </div>
       </details>
 

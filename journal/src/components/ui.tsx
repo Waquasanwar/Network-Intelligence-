@@ -6,6 +6,8 @@ export const TYPE_HEX: Record<EntryType, string> = {
   Note: "#8b93a1",
   Decision: "#8b7bff",
   Request: "#ff9f0a",
+  "Purchase Request": "#e5b54a",
+  "Service Request": "#5e9eff",
   "Comment / Feedback": "#0a84ff",
   Idea: "#ffd60a",
   Meeting: "#a2845e",

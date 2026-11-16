@@ -1,6 +1,6 @@
 import "server-only";
 import { Client, isFullPage } from "@notionhq/client";
-import type { Entry, EntryInput, Ref } from "./schema";
+import type { Entry, EntryInput, Project, ProjectInput, Ref } from "./schema";
 import type { Repo } from "./repo";
 
 // Property names in the Notion "Journal Entries" database.
@@ -27,6 +27,25 @@ const P = {
   backdate: "Backdate",
   reviewed: "Reviewed",
   id: "ID",
+  waitingOn: "Waiting on",
+  stage: "Stage",
+  reference: "Reference",
+  amount: "Amount",
+  chaseCount: "Chase count",
+  lastChased: "Last chased",
+} as const;
+
+// Property names in the "Projects & Areas" database.
+const PP = {
+  name: "Name",
+  kind: "Kind",
+  state: "State",
+  health: "Health",
+  priority: "Priority",
+  targetDate: "Target date",
+  nextMilestone: "Next milestone",
+  budget: "Budget",
+  notes: "Notes",
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,6 +65,7 @@ function read(props: Props) {
     checkbox: (name: string) => !!props[name]?.checkbox,
     url: (name: string) => (props[name]?.url as string | undefined) ?? undefined,
     number: (name: string) => (props[name]?.unique_id?.number as number | undefined) ?? undefined,
+    num: (name: string) => (typeof props[name]?.number === "number" ? (props[name].number as number) : undefined),
   };
 }
 
@@ -95,6 +115,12 @@ function toEntry(page: { id: string; url: string; created_time: string; last_edi
     outcome: r.text(P.outcome),
     link: r.url(P.link),
     backdate: r.date(P.backdate),
+    waitingOn: r.select(P.waitingOn),
+    stage: r.select(P.stage),
+    reference: r.text(P.reference),
+    amount: r.num(P.amount),
+    chaseCount: r.num(P.chaseCount) ?? 0,
+    lastChased: r.date(P.lastChased),
     reviewed: r.checkbox(P.reviewed),
     captured: page.created_time,
     lastEdited: page.last_edited_time,
@@ -102,6 +128,23 @@ function toEntry(page: { id: string; url: string; created_time: string; last_edi
 }
 
 const sel = (v: string | null | undefined) => ({ select: v ? { name: v } : null });
+
+function toProject(page: { id: string; url: string; properties: Props }): Project {
+  const r = read(page.properties);
+  return {
+    id: page.id,
+    url: page.url,
+    name: r.title(PP.name) || "Untitled",
+    kind: r.select(PP.kind),
+    state: r.select(PP.state),
+    health: r.select(PP.health),
+    priority: r.select(PP.priority),
+    targetDate: r.date(PP.targetDate),
+    nextMilestone: r.text(PP.nextMilestone),
+    budget: r.num(PP.budget),
+    notes: r.text(PP.notes),
+  };
+}
 const date = (v: string | null | undefined) => ({ date: v ? { start: v } : null });
 
 export class NotionRepo implements Repo {
@@ -110,7 +153,7 @@ export class NotionRepo implements Repo {
 
   constructor(
     token: string,
-    private ds: { entries: string; projects: string; people: string },
+    private ds: { entries: string; projects: string; people: string; briefParent: string },
   ) {
     this.client = new Client({ auth: token });
   }
@@ -161,8 +204,51 @@ export class NotionRepo implements Repo {
   listPeople() {
     return this.listRefs(this.ds.people);
   }
-  listProjects() {
-    return this.listRefs(this.ds.projects);
+  async listProjects(): Promise<Project[]> {
+    return (await this.queryAll(this.ds.projects)).map(toProject);
+  }
+
+  async updateProject(id: string, input: ProjectInput): Promise<void> {
+    const props: Props = {};
+    if (input.name !== undefined) props[PP.name] = { title: richText(input.name || "Untitled") };
+    if (input.kind !== undefined) props[PP.kind] = sel(input.kind);
+    if (input.state !== undefined) props[PP.state] = sel(input.state);
+    if (input.health !== undefined) props[PP.health] = sel(input.health);
+    if (input.priority !== undefined) props[PP.priority] = sel(input.priority);
+    if (input.targetDate !== undefined) props[PP.targetDate] = date(input.targetDate);
+    if (input.nextMilestone !== undefined) props[PP.nextMilestone] = { rich_text: richText(input.nextMilestone) };
+    if (input.budget !== undefined) props[PP.budget] = { number: input.budget };
+    if (input.notes !== undefined) props[PP.notes] = { rich_text: richText(input.notes) };
+    if (Object.keys(props).length) await this.client.pages.update({ page_id: id, properties: props });
+  }
+
+  async createProject(input: ProjectInput): Promise<Project> {
+    const page = await this.client.pages.create({
+      parent: { type: "data_source_id", data_source_id: this.ds.projects },
+      properties: { [PP.name]: { title: richText(input.name || "Untitled project") }, [PP.kind]: sel(input.kind ?? "Project"), [PP.state]: sel(input.state ?? "Active") },
+    });
+    await this.updateProject(page.id, { ...input, name: undefined, kind: undefined, state: undefined });
+    const full = await this.client.pages.retrieve({ page_id: page.id });
+    return toProject(full as never);
+  }
+
+  /** Writes the weekly brief as a page of to-dos under the Work Journal page. */
+  async createBriefPage(title: string, sections: Array<{ heading: string; items: string[] }>): Promise<string> {
+    const children = sections.flatMap((sec) => [
+      { object: "block" as const, type: "heading_2" as const, heading_2: { rich_text: richText(sec.heading) } },
+      ...(sec.items.length ? sec.items : ["Nothing here"]).slice(0, 40).map((t) => ({
+        object: "block" as const,
+        type: "to_do" as const,
+        to_do: { rich_text: richText(t), checked: false },
+      })),
+    ]);
+    const page = await this.client.pages.create({
+      parent: { type: "page_id", page_id: this.ds.briefParent },
+      icon: { type: "emoji", emoji: "🗓️" },
+      properties: { title: { title: richText(title) } },
+      children: children.slice(0, 100),
+    });
+    return (page as { url?: string }).url ?? "";
   }
 
   async createRef(kind: "people" | "projects", name: string): Promise<Ref> {
@@ -196,6 +282,12 @@ export class NotionRepo implements Repo {
     if (input.outcome !== undefined) props[P.outcome] = { rich_text: richText(input.outcome) };
     if (input.link !== undefined) props[P.link] = { url: input.link || null };
     if (input.reviewed !== undefined) props[P.reviewed] = { checkbox: input.reviewed };
+    if (input.waitingOn !== undefined) props[P.waitingOn] = sel(input.waitingOn);
+    if (input.stage !== undefined) props[P.stage] = sel(input.stage);
+    if (input.reference !== undefined) props[P.reference] = { rich_text: richText(input.reference) };
+    if (input.amount !== undefined) props[P.amount] = { number: input.amount };
+    if (input.chaseCount !== undefined) props[P.chaseCount] = { number: input.chaseCount };
+    if (input.lastChased !== undefined) props[P.lastChased] = date(input.lastChased);
     return props;
   }
 

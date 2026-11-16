@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { appendNoteAction, archiveAction, updateAction } from "@/app/actions";
 import {
-  CATEGORIES, DIRECTIONS, ENERGIES, ENTRY_TYPES, LEVELS, PRIORITIES, SENTIMENTS, SOURCES, STATUSES,
+  CATEGORIES, DIRECTIONS, ENERGIES, ENTRY_TYPES, LEVELS, PRIORITIES, SENTIMENTS, SOURCES, STAGES, STATUSES, WAITING_ON,
   loggedAt, type Entry, type EntryInput, type Ref,
 } from "@/lib/schema";
 import { time } from "@/lib/format";
 import { useMounted } from "@/lib/use-mounted";
 import { Field, NamesField, Segmented, SelectField, splitNames } from "./fields";
 import { TypeBadge } from "./ui";
+import { ChaseButton } from "./work";
 
 const names = (ids: string[], refs: Ref[]) => ids.map((id) => refs.find((r) => r.id === id)?.name).filter(Boolean).join(", ");
 
@@ -40,6 +41,10 @@ export function EntryEditor({ entry, body, people, projects, tags, mode }: { ent
     outcome: entry.outcome ?? "",
     link: entry.link ?? "",
     reviewed: entry.reviewed,
+    waitingOn: entry.waitingOn ?? null,
+    stage: entry.stage ?? null,
+    reference: entry.reference ?? "",
+    amount: entry.amount ?? null,
     tagText: entry.tags.join(", "),
     peopleText: names(entry.peopleIds, people),
     projectText: names(entry.projectIds, projects),
@@ -67,6 +72,10 @@ export function EntryEditor({ entry, body, people, projects, tags, mode }: { ent
       outcome: f.outcome,
       link: f.link || null,
       reviewed: f.reviewed,
+      waitingOn: f.waitingOn,
+      stage: f.stage,
+      reference: f.reference,
+      amount: f.amount,
       tags: splitNames(f.tagText).map((t) => t.toLowerCase()),
       people: splitNames(f.peopleText),
       projects: splitNames(f.projectText),
@@ -109,6 +118,12 @@ export function EntryEditor({ entry, body, people, projects, tags, mode }: { ent
         <span suppressHydrationWarning>
           {mounted ? `${new Date(/^\d{4}-\d{2}-\d{2}$/.test(when) ? `${when}T12:00:00` : when).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" })} ${time(when)}` : ""}
         </span>
+        {(entry.chaseCount > 0 || entry.waitingOn) && (
+          <span className="flex items-center gap-2">
+            <span className="num">chased {entry.chaseCount}×{entry.lastChased ? `, last ${entry.lastChased}` : ""}</span>
+            <ChaseButton entry={entry} compact />
+          </span>
+        )}
         {mode === "notion" && (
           <a href={entry.url} target="_blank" rel="noreferrer" className="ml-auto hover:text-accent-fg">
             Open in Notion ↗
@@ -129,6 +144,14 @@ export function EntryEditor({ entry, body, people, projects, tags, mode }: { ent
           <SelectField label="Source" options={SOURCES} value={f.source} onChange={(v) => set("source", v)} />
           <SelectField label="Priority" options={PRIORITIES} value={f.priority} onChange={(v) => set("priority", v)} />
           <SelectField label="Direction" options={DIRECTIONS} value={f.direction} onChange={(v) => set("direction", v)} />
+          <SelectField label="Waiting on" options={WAITING_ON} value={f.waitingOn} onChange={(v) => set("waitingOn", v)} />
+          <SelectField label="Stage (PR / SR)" options={STAGES} value={f.stage} onChange={(v) => set("stage", v)} />
+          <Field label="Reference">
+            <input className="field" placeholder="PR-1234 / PO-5678" value={f.reference} onChange={(e) => set("reference", e.target.value)} />
+          </Field>
+          <Field label="Amount (£)">
+            <input type="number" min={0} className="field" value={f.amount ?? ""} onChange={(e) => set("amount", e.target.value === "" ? null : Number(e.target.value))} />
+          </Field>
           <Field label="Due">
             <input type="date" className="field" value={f.due} onChange={(e) => set("due", e.target.value)} />
           </Field>

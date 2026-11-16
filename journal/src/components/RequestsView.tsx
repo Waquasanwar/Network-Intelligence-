@@ -8,6 +8,7 @@ import { STATUSES, isOverdue, loggedAt, type Entry, type Ref, type Status } from
 import { daysBetween, shortDate, todayLocal } from "@/lib/format";
 import { useMounted } from "@/lib/use-mounted";
 import { Chip, PageHeader } from "./ui";
+import { ChaseButton } from "./work";
 
 const COLUMNS: Status[] = ["Open", "In progress", "Waiting on others", "Done"];
 
@@ -34,7 +35,9 @@ function RequestCard({ entry, people }: { entry: Entry; people: Ref[] }) {
         {entry.title}
       </Link>
       <div className="mt-2 flex flex-wrap gap-1">
-        {entry.direction && <Chip tone={entry.direction.startsWith("Incoming") ? "accent" : "plain"}>{entry.direction.startsWith("Incoming") ? "← to me" : "→ from me"}</Chip>}
+        {entry.direction && <Chip tone={entry.direction.startsWith("Incoming") ? "accent" : "plain"}>{entry.direction.startsWith("Incoming") ? "← to me" : entry.direction.startsWith("Upward") ? "↑ management" : entry.direction.startsWith("Outgoing") ? "→ from me" : "internal"}</Chip>}
+        {entry.waitingOn && <Chip tone="warn">⏳ {entry.waitingOn}</Chip>}
+        {entry.chaseCount > 0 && <Chip>chased {entry.chaseCount}×</Chip>}
         {ppl.map((p) => (
           <Chip key={p}>@{p}</Chip>
         ))}
@@ -45,24 +48,27 @@ function RequestCard({ entry, people }: { entry: Entry; people: Ref[] }) {
         <span className="text-[0.7rem] text-ink-3" suppressHydrationWarning>
           {mounted && status !== "Done" && status !== "Dropped" ? `${daysBetween(loggedAt(entry))}d open` : ""}
         </span>
+        <span className="flex items-center gap-1.5">
+        {status !== "Done" && status !== "Dropped" && <ChaseButton entry={entry} compact />}
         <select aria-label="Status" className="rounded-md bg-surface-2 px-1.5 py-1 text-xs text-ink-2" value={status} onChange={(e) => move(e.target.value as Status)}>
           {STATUSES.filter((s) => s !== "Inbox").map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
+        </span>
       </div>
     </div>
   );
 }
 
 export function RequestsView({ entries, people }: { entries: Entry[]; people: Ref[] }) {
-  const [dir, setDir] = useState<"all" | "in" | "out">("all");
+  const [dir, setDir] = useState<"all" | "in" | "out" | "up">("all");
   const [who, setWho] = useState("");
   const requests = useMemo(
     () =>
       entries
         .filter((e) => e.type === "Request" && e.status !== "Dropped")
-        .filter((e) => dir === "all" || (dir === "in" ? e.direction?.startsWith("Incoming") : e.direction?.startsWith("Outgoing")))
+        .filter((e) => dir === "all" || (dir === "in" ? e.direction?.startsWith("Incoming") : dir === "up" ? e.direction?.startsWith("Upward") || e.waitingOn === "Management" : e.direction?.startsWith("Outgoing")))
         .filter((e) => !who || e.peopleIds.includes(who))
         .sort((a, b) => (a.due ?? "9999").localeCompare(b.due ?? "9999")),
     [entries, dir, who],
@@ -81,6 +87,7 @@ export function RequestsView({ entries, people }: { entries: Entry[]; people: Re
               <option value="all">Both directions</option>
               <option value="in">Asked of me</option>
               <option value="out">I asked</option>
+              <option value="up">To management</option>
             </select>
             <select className="field w-auto" value={who} onChange={(e) => setWho(e.target.value)} aria-label="Person">
               <option value="">Anyone</option>

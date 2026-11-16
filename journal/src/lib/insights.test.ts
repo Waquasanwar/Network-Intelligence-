@@ -10,6 +10,7 @@ const base = (over: Partial<Entry>): Entry => ({
   projectIds: [],
   peopleIds: [],
   reviewed: false,
+  chaseCount: 0,
   captured: "2026-11-16T10:00:00",
   lastEdited: "2026-11-16T10:00:00",
   ...over,

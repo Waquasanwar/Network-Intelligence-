@@ -13,8 +13,11 @@ Everything is stored in the **Work Journal** page in your Notion workspace (Jour
 | **Timeline** | Everything in date order, grouped by day. Search, filter by type, category, tag, project, person, open or overdue. Export the filtered view to CSV. |
 | **Requests** | Board of requests by status, with direction (asked of you / you asked), due dates, overdue flags and days open. |
 | **Decisions** | Decision log with rationale, alternatives and outcome. Flags decisions over a month old with no outcome. |
-| **Insights** | Entries per week, by weekday, time of day vs energy, sentiment by category, top tags, people and projects, who asks you for things, request turnaround, capture streak, and plain-language observations. |
+| **Insights** | **Bottlenecks**: who is holding things up (by waiting time, oldest item, chases and value), what is stuck, what to chase now, the procurement pipeline, asks waiting on management and how much chasing it takes. **Patterns**: entries per week, by weekday, time of day vs energy, sentiment by category, top tags, people and projects, who asks you for things, request turnaround, capture streak, and plain-language observations. |
 
+| **Plan** | Day (do, chase, follow up, coming up), Week (ranked priorities with reasons, Mon–Sun strip, brief) and Month (calendar with dues and activity). |
+| **Projects** | Every project with health (yours, or a suggested one from overdue, stuck and risk items), open/overdue/stuck/waiting counts, spend pending against budget, target date and next milestone. Each project has its own page with open work, procurement, decisions, risks and recent activity. |
+| **Procurement** | Purchase and service requests on a board by stage (Draft → Submitted → Awaiting approval → Approved → PO raised → Ordered → Received), with value, age, quiet days and chases. |
 | **Appearance** | Accent colour (Azure, Cobalt, Cyan, Graphite, Emerald, Violet, Amber, Crimson, or any colour), Light / Dark / System, background tint, corner style, sans or serif headings, and body font. Changes apply instantly and are remembered per device. Quick swatches also sit at the bottom of the sidebar. |
 
 Press **C** (or **⌘K**) anywhere to capture. On a phone, add it to the home screen; it runs like an app.
@@ -32,7 +35,11 @@ Type naturally. Anything you don't mark is guessed from the wording (shown with 
 | `!1` … `!4` or `!urgent` `!high` `!low` | Priority |
 | `due:fri` `due:tomorrow` `due:3d` `due:2w` `due:25/11` `due:2026-12-01` | Due date |
 | `fu:mon` `follow:3d` | Follow-up date |
-| `<<` / `>>` | Request asked of you / asked by you |
+| `<<` / `>>` / `^^` | Request asked of you / asked by you / sent up to management |
+| `pr:` `sr:` | Purchase request, service request (stage starts at Submitted) |
+| `wait:procurement` `wait:finance` `wait:mgmt` … | Who it is waiting on (also guessed from wording) |
+| `stage:approved` | Procurement stage |
+| `£14,400` `$3.2k` `PR-20431` `PO-5678` `SR-88102` | Amount and reference, picked up automatically |
 | Shift+Enter | New line; extra lines become the entry's notes in Notion |
 
 Examples:
@@ -72,6 +79,20 @@ Without `NOTION_TOKEN` the app runs in **demo mode** with sample data held in me
 
 The app refuses to serve a Notion-connected journal in production until `APP_PASSCODE` is set.
 
+## Chasing, bottlenecks and the Monday brief
+
+- Press **Chased** on any open ask whenever you nudge someone. It counts the chase, stamps the date, sets the status to *Waiting on others* and adds "Chased on …" to the Notion page.
+- An ask is **due a chase** after 3 quiet working days (or when its follow-up date arrives) and **stuck** after 7.
+- **Priorities** are ranked from priority, overdue days, due dates this week, chases due, stuck time, impact, management asks, procurement value and project risk. Each one shows why it is on the list.
+- **Monday 9am brief**: Vercel Cron calls `/api/cron/weekly-brief` (see `vercel.json`) and a page of to-dos is created under Work Journal in Notion: top priorities, chase list, due this week, waiting on management, procurement to push and projects needing attention. Set `CRON_SECRET` and `JOURNAL_TIMEZONE`. Two UTC times are scheduled so it lands at 9am local in both winter and summer time. It also shows on Today every Monday, and **Plan → Week → Save brief to Notion** creates it on demand.
+
+## Tests
+
+```bash
+npm test          # unit tests: parser, insights, planning
+npm run build && npm run e2e   # Playwright end-to-end, desktop and phone, in demo mode
+```
+
 ## Capture from anywhere (API)
 
 Set `CAPTURE_TOKEN` to enable two endpoints. Both take `Authorization: Bearer <CAPTURE_TOKEN>`.
@@ -82,6 +103,9 @@ curl -X POST https://your-app.vercel.app/api/capture \
   -H "Authorization: Bearer $CAPTURE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"text": "r: send board pack to @Sarah due:fri"}'
+
+# This week's priorities as Markdown (or ?format=json)
+curl "https://your-app.vercel.app/api/brief" -H "Authorization: Bearer $CAPTURE_TOKEN"
 
 # Pull your data (JSON), optionally filtered
 curl "https://your-app.vercel.app/api/entries?since=2026-10-01&type=Decision" \

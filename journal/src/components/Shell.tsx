@@ -11,10 +11,13 @@ import { Icon, type IconName } from "./Icon";
 
 const NAV: Array<{ href: string; label: string; icon: IconName }> = [
   { href: "/", label: "Today", icon: "today" },
+  { href: "/plan", label: "Plan", icon: "plan" },
+  { href: "/projects", label: "Projects", icon: "projects" },
   { href: "/review", label: "Review", icon: "review" },
-  { href: "/timeline", label: "Timeline", icon: "timeline" },
   { href: "/requests", label: "Requests", icon: "requests" },
+  { href: "/procurement", label: "Procurement", icon: "procurement" },
   { href: "/decisions", label: "Decisions", icon: "decisions" },
+  { href: "/timeline", label: "Timeline", icon: "timeline" },
   { href: "/insights", label: "Insights", icon: "insights" },
   { href: "/settings", label: "Appearance", icon: "settings" },
 ];
@@ -115,7 +118,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
 
       {/* Mobile: bottom tabs and a capture button */}
       <nav aria-label="Main" className="glass fixed inset-x-0 bottom-0 z-30 flex border-t border-line pb-[env(safe-area-inset-bottom)] md:hidden">
-        {NAV.filter((n) => n.href !== "/decisions" && n.href !== "/settings").map((n) => (
+        {NAV.filter((n) => ["/", "/plan", "/projects", "/requests", "/insights"].includes(n.href)).map((n) => (
           <Link
             key={n.href}
             href={n.href}

@@ -80,7 +80,7 @@ export function AppearanceSettings() {
     <div>
       <PageHeader title="Appearance" subtitle="Pick a colour and style. Changes apply instantly and are remembered on this device." actions={<button className="btn" onClick={reset}>Reset</button>} />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_20rem]">
         <div className="card space-y-7 p-5">
           <div>
             <h3 className="mb-3 text-sm font-semibold">Accent colour</h3>
