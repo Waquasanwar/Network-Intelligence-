@@ -2,7 +2,9 @@ import Link from "next/link";
 import { AreaChart } from "@/components/area-chart";
 import { notFound } from "next/navigation";
 import { archive } from "@/app/actions";
+import { Diverging } from "@/components/mini-charts";
 import { MetricsForm, RatingPanel, StatusPanel } from "@/components/post-panels";
+import { vsTypical } from "@/lib/coach";
 import { fmt, fmtDate, Kpi, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
 import { getPost, listPosts, listSnapshots } from "@/lib/notion";
@@ -18,6 +20,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const total = all.filter((p) => p.rank != null).length;
   const m = post.metrics;
   const archiveThis = archive.bind(null, post.id);
+  const vs = vsTypical(post, all);
+  const best = [...vs].sort((a, b) => b.pct - a.pct)[0];
+  const worst = [...vs].sort((a, b) => a.pct - b.pct)[0];
 
   return (
     <>
@@ -61,6 +66,21 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               </p>
             )}
           </div>
+          {vs.length ? (
+            <div className="panel">
+              <div className="coach-head">
+                <div>
+                  <h2>Versus your typical post</h2>
+                  <p>Compared with the median of your other posts. Hover a bar for the raw numbers.</p>
+                </div>
+              </div>
+              <Diverging rows={vs} />
+              <div className="takeaway">
+                {best && best.pct > 0 ? <><b>Strongest: {best.label.toLowerCase()}</b> ({best.pct > 0 ? "+" : ""}{best.pct}%). </> : null}
+                {worst && worst.pct < 0 ? <><b>Weakest: {worst.label.toLowerCase()}</b> ({worst.pct}%). Fix that first next time.</> : null}
+              </div>
+            </div>
+          ) : null}
           <div className="panel">
             <h2>Breakdown</h2>
             <div className="grid g4">

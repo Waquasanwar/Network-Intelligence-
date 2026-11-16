@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { AreaChart } from "@/components/area-chart";
+import { Legend, Scatter, TrendColumns } from "@/components/coach-charts";
+import { scoreTrend, splitWinners, trendDelta, winnersVsRest } from "@/lib/coach";
 import { Icon } from "@/components/icons";
 import { LivePill, Ticker, TimeAgo } from "@/components/live";
 import { PulseLine } from "@/components/pulse-line";
 import { postingPulse, recentActivity } from "@/lib/activity";
-import { ScoreRing, Sparkline } from "@/components/mini-charts";
+import { Dumbbell, ScoreRing, Sparkline } from "@/components/mini-charts";
 import { Bars, Empty, fmt, fmtDate, SetupNeeded, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
 import { nextMoves, type Move } from "@/lib/insights";
@@ -89,18 +91,6 @@ function Weekdays({ posts }: { posts: Post[] }) {
   );
 }
 
-function Gauge({ label, r, n }: { label: string; r: number | null; n: number }) {
-  return (
-    <div className="gauge-row">
-      <span>{label}</span>
-      <div className="gauge" data-tip={r == null ? `Needs 5+ posts (${n} so far)` : `r = ${r} across ${n} posts`}>
-        {r != null ? <i style={{ left: `${((r + 1) / 2) * 100}%` }} /> : null}
-      </div>
-      <b className="tabular" style={{ textAlign: "right" }}>{r ?? "–"}</b>
-    </div>
-  );
-}
-
 export default async function Dashboard() {
   if (!notionReady()) return <SetupNeeded />;
   const [posts, daily] = await Promise.all([listPosts(), listDaily(daysAgo(90))]);
@@ -127,6 +117,38 @@ export default async function Dashboard() {
   const counts = stages.map((s) => live.filter((p) => p.status === s).length);
   const maxStage = Math.max(1, ...counts);
   const pulse = postingPulse(posts);
+  const trend = scoreTrend(posts);
+  const delta = trendDelta(trend);
+  const compare = winnersVsRest(posts);
+  const split = splitWinners(posts);
+  const winnerIds = new Set(split?.winners.map((p) => p.id) ?? []);
+  const topGap = [...compare].filter((r) => r.ratio != null && r.key !== "length").sort((a, b) => b.ratio! - a.ratio!)[0];
+  const reach = ranked
+    .filter((p) => p.metrics.impressions && p.engagementRate != null)
+    .map((p) => ({
+      id: p.id,
+      x: p.metrics.impressions!,
+      y: p.engagementRate!,
+      label: p.title,
+      detail: `${p.metrics.impressions!.toLocaleString("en-GB")} impressions · ${p.engagementRate}% engagement · score ${p.performanceScore}`,
+      href: `/posts/${p.id}`,
+      highlight: winnerIds.has(p.id),
+    }));
+  const gutPts = ranked
+    .filter((p) => p.ratings.gut != null)
+    .map((p) => ({
+      id: p.id,
+      x: p.ratings.gut!,
+      y: p.performanceScore!,
+      label: p.title,
+      detail: `You guessed ${p.ratings.gut}/10 · actual score ${p.performanceScore}`,
+      href: `/posts/${p.id}`,
+      highlight: winnerIds.has(p.id),
+    }));
+  const coachLegend = [
+    { label: "Your top 25%", color: "var(--coral-mark)" },
+    { label: "Other posts", color: "var(--series)" },
+  ];
   const activity = recentActivity(posts);
   const updatedAt = posts.map((p) => p.lastSynced).filter((v): v is string => !!v).sort().pop() ?? null;
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
@@ -263,6 +285,86 @@ export default async function Dashboard() {
         </div>
       </div>
 
+      <div className="row between" style={{ margin: "28px 0 14px" }}>
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Get better</div>
+          <h2 style={{ fontSize: 20, margin: 0 }}>Where to improve</h2>
+        </div>
+        <span className="small faint">Coral is your top 25% of posts, blue the rest. Click any mark to open the post.</span>
+      </div>
+      <div className="grid g2" style={{ marginBottom: 16 }}>
+        <div className="panel lift">
+          <div className="coach-head">
+            <div>
+              <h2>Are you getting better?</h2>
+              <p>Every post&rsquo;s score in the order you published, with a 3-post average.</p>
+            </div>
+            {delta != null ? <span className={`verdict ${delta > 2 ? "up" : delta < -2 ? "down" : ""}`}>{delta > 2 ? "▲" : delta < -2 ? "▼" : "•"} {delta > 0 ? "+" : ""}{delta} pts</span> : null}
+          </div>
+          <Legend items={[...coachLegend.map((l) => ({ ...l, kind: "bar" as const })), { label: "3-post average", color: "var(--ink)", kind: "line" }]} />
+          <TrendColumns bars={trend} />
+          <div className="takeaway">
+            {delta == null ? (
+              <>Score a few more posts to see your trend.</>
+            ) : delta > 2 ? (
+              <><b>You&rsquo;re improving.</b> Your latest posts score {delta} points higher than your first ones. Keep doing what changed.</>
+            ) : delta < -2 ? (
+              <><b>You&rsquo;ve slipped {Math.abs(delta)} points.</b> Reread your top posts below and compare them with your last three.</>
+            ) : (
+              <><b>Holding steady.</b> To move up, copy one thing your top posts do (see &ldquo;What your best posts do differently&rdquo;).</>
+            )}
+          </div>
+        </div>
+        <div className="panel lift">
+          <div className="coach-head">
+            <div>
+              <h2>Reach vs engagement</h2>
+              <p>Each dot is a post. Lines are your medians.</p>
+            </div>
+          </div>
+          <Legend items={coachLegend} />
+          <Scatter points={reach} xLabel="Impressions" yLabel="Engagement rate" yFmt="pct" quadrants={["Loved, small reach", "Hits", "Missed", "Seen, not felt"]} />
+          <div className="takeaway">
+            <b>Top left</b> posts resonated but weren&rsquo;t seen: repost the idea with a sharper first line. <b>Bottom right</b> got seen but not felt: end with a real question or a stronger opinion.
+          </div>
+        </div>
+        <div className="panel lift">
+          <div className="coach-head">
+            <div>
+              <h2>What your best posts do differently</h2>
+              <p>Average for your top 25% against the rest. Hover a row for what to try.</p>
+            </div>
+          </div>
+          <Legend items={coachLegend} />
+          {compare.length ? <Dumbbell rows={compare} /> : <p className="small faint">Needs 4+ posts with numbers.</p>}
+          {topGap ? (
+            <div className="takeaway">
+              <b>Biggest gap: {topGap.label.toLowerCase()}</b> ({topGap.ratio!.toFixed(1)}× higher on your top posts). {topGap.hint}
+            </div>
+          ) : null}
+        </div>
+        <div className="panel lift">
+          <div className="coach-head">
+            <div>
+              <h2>Does your gut know a winner?</h2>
+              <p>Your 1–10 guess before posting against the real score.</p>
+            </div>
+            {cal.gut != null ? <span className={`verdict ${cal.gut >= 0.5 ? "up" : cal.gut < 0.2 ? "down" : ""}`}>r = {cal.gut}</span> : null}
+          </div>
+          <Legend items={[...coachLegend, { label: "Trend", color: "var(--ink)", kind: "line" }]} />
+          <Scatter points={gutPts} xLabel="Your gut score" yLabel="Actual score" xFmt="int" yMax={100} fitLine />
+          <div className="takeaway">
+            {cal.gut == null ? (
+              <>Rate your gut score on {Math.max(0, 5 - cal.gutN)} more published posts to see this.</>
+            ) : cal.gut >= 0.5 ? (
+              <><b>Your instinct is reliable.</b> If a draft feels like a 5, rework it before posting.</>
+            ) : (
+              <><b>Your instinct is off.</b> Use the AI score and these charts, not your feeling, to pick what to post.</>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="split" style={{ marginBottom: 28 }}>
         <div className="panel flush">
           <div className="panel-head" style={{ padding: "18px 20px 0" }}>
@@ -306,14 +408,6 @@ export default async function Dashboard() {
                 </Link>
               ))}
             </div>
-          </div>
-          <div className="panel lift">
-            <div className="panel-head">
-              <h2>How good are your predictions?</h2>
-            </div>
-            <p className="small muted" style={{ marginTop: -6 }}>Correlation between your score before posting and the real result. Right is better.</p>
-            <Gauge label="Your gut score" r={cal.gut} n={cal.gutN} />
-            <Gauge label="AI score" r={cal.ai} n={cal.aiN} />
           </div>
           <div className="panel lift">
             <div className="panel-head">

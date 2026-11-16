@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Legend, Scatter } from "@/components/coach-charts";
 import { Empty, fmt, fmtDate, SetupNeeded, StatusBadge, TierBadge } from "@/components/ui";
+import { splitWinners } from "@/lib/coach";
 import { notionReady } from "@/lib/env";
 import { listPosts } from "@/lib/notion";
 import { STATUSES, type Post } from "@/lib/types";
@@ -26,6 +28,16 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
     posts = posts.filter((p) => `${p.title} ${p.text} ${p.tags.join(" ")} ${p.pillar ?? ""}`.toLowerCase().includes(needle));
   }
   posts = [...posts].sort((SORTS[sort] ?? SORTS.recent)[1]);
+  const winnerIds = new Set(splitWinners(all)?.winners.map((p) => p.id) ?? []);
+  const maxImp = Math.max(1, ...all.map((p) => p.metrics.impressions ?? 0));
+  const timeline = all
+    .filter((p) => p.status === "Published" && p.publishedAt && p.performanceScore != null)
+    .map((p) => {
+      const t = new Date(p.publishedAt!).getTime();
+      return { id: p.id, t, y: p.performanceScore!, label: p.title, detail: `${fmtDate(p.publishedAt)} · score ${p.performanceScore} · ${fmt(p.metrics.impressions)} impressions`, href: `/posts/${p.id}`, highlight: winnerIds.has(p.id) };
+    });
+  const t0 = Math.min(...timeline.map((p) => p.t));
+  const dayPts = timeline.map(({ t, ...rest }) => ({ ...rest, x: Math.round((t - t0) / 864e5) + 1 }));
   const link = (o: Record<string, string>) => `/posts?${new URLSearchParams({ status, sort, ...(q ? { q } : {}), ...o })}`;
 
   return (
@@ -37,6 +49,18 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
         </div>
         <Link className="btn primary" href="/write">New post</Link>
       </div>
+      {dayPts.length >= 2 ? (
+        <div className="panel" style={{ marginBottom: 16 }}>
+          <div className="coach-head">
+            <div>
+              <h2>Every published post</h2>
+              <p>Score over time. Click a dot to open the post.</p>
+            </div>
+          </div>
+          <Legend items={[{ label: "Your top 25%", color: "var(--coral-mark)" }, { label: "Other posts", color: "var(--series)" }]} />
+          <Scatter points={dayPts} xLabel={`Days since ${fmtDate(new Date(t0).toISOString())}`} yLabel="Score" yMax={100} height={240} width={1120} xFmt="int" />
+        </div>
+      ) : null}
       <div className="tabs">
         {["all", ...STATUSES].map((s) => (
           <Link key={s} href={link({ status: s })} className={status === s ? "active" : ""}>
@@ -81,8 +105,16 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
                     </td>
                     <td><StatusBadge status={p.status} /></td>
                     <td className="num">{p.rank ?? "–"}</td>
-                    <td className="num">{p.performanceScore ?? "–"}</td>
-                    <td className="num">{fmt(p.metrics.impressions, { notation: "compact" })}</td>
+                    <td className="num">
+                      {p.performanceScore != null ? (
+                        <span className="cell-bar"><i><span className={winnerIds.has(p.id) ? "win" : ""} style={{ width: `${p.performanceScore}%` }} /></i>{p.performanceScore}</span>
+                      ) : "–"}
+                    </td>
+                    <td className="num">
+                      {p.metrics.impressions != null ? (
+                        <span className="cell-bar"><i><span style={{ width: `${(p.metrics.impressions / maxImp) * 100}%` }} /></i>{fmt(p.metrics.impressions, { notation: "compact" })}</span>
+                      ) : "–"}
+                    </td>
                     <td className="num">{p.engagementRate != null ? `${p.engagementRate}%` : "–"}</td>
                     <td className="num">{p.ratings.gut ?? "–"}</td>
                     <td className="num">{p.aiScore ?? "–"}</td>
