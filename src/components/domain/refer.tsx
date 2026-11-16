@@ -51,7 +51,7 @@ export function ReferDrawer({ personId, personName, targets, suggestion, variant
         <Field label="What they read on the card" hint="No names, no employers — this is the line the client or agency sees.">
           <Textarea name="clientNote" defaultValue={suggestion ?? ""} placeholder="Why this person, in a sentence they can read." maxLength={300} />
         </Field>
-        <div className="text-[11px] uppercase tracking-[0.08em] text-ink-faint pt-1">Fee</div>
+        <div className="label-caps tracking-[0.08em] text-ink-faint pt-1">Fee</div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Fee model"><Select name="model" defaultValue=""><option value="">— keep the requirement&rsquo;s terms —</option>{Object.entries(FEE_MODEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
           <Field label="Our %"><Input name="pct" type="number" step="0.5" min={0} placeholder="from the rate card" /></Field>

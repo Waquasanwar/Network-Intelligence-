@@ -153,7 +153,7 @@ export default async function OverviewPage() {
         {[
           { title: "Add a person", text: "Paste a LinkedIn link or a few lines and let the assistant draft the profile.", href: "/network/intake", icon: UserPlus },
           { title: "Post a requirement", text: "Describe what a client needs; get a shortlist from people you know.", href: "/requirements", icon: ClipboardList },
-          { title: "Invite someone", text: "Send your link. They register, do the screening, and you review.", href: "/settings/invite", icon: Send },
+          { title: "Invite someone", text: "Send your link. They register, do the screening, and you review.", href: "/invite", icon: Send },
           { title: "Open the network map", text: "See your circles of trust and who introduced whom.", href: "/network/map", icon: Share2 },
         ].map((q) => (
           <Link key={q.title} href={q.href} className="group flex items-start gap-3 rounded-[8px] border border-line bg-surface p-4 transition-colors duration-200 hover:border-ink">
@@ -268,7 +268,7 @@ export default async function OverviewPage() {
                   <li key={o.id} className="py-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <Link href={`/opportunities/${o.id}`} className="text-[13px] font-medium text-ink hover:underline underline-offset-4 truncate block">{o.title}</Link>
-                      <div className="text-[11px] text-ink-faint">{o.clientName ?? "—"} · {ROUTE_LABELS[o.engagementRoute]} · {o.matches.length} suggestions, {o.matches.filter((m) => m.humanDecision === "RECOMMEND").length} recommended</div>
+                      <div className="text-[12px] text-ink-faint">{o.clientName ?? "—"} · {ROUTE_LABELS[o.engagementRoute]} · {o.matches.length} suggestions, {o.matches.filter((m) => m.humanDecision === "RECOMMEND").length} recommended</div>
                     </div>
                     <StageBadge status={o.status} />
                   </li>
@@ -286,9 +286,9 @@ export default async function OverviewPage() {
             <CardHeader title="Amana Expert Network" description="Bench and live demand" action={<Link href="/amana" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">Open</Link>} />
             <CardBody>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.amanaBench).length}</div><div className="text-[10px] text-ink-faint uppercase">bench</div></div>
-                <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.usedByAmana).length}</div><div className="text-[10px] text-ink-faint uppercase">used before</div></div>
-                <div><div className="text-lg font-semibold tabular">{amanaDemand}</div><div className="text-[10px] text-ink-faint uppercase">open</div></div>
+                <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.amanaBench).length}</div><div className="text-[12px] text-ink-faint uppercase">bench</div></div>
+                <div><div className="text-lg font-semibold tabular">{people.filter((p) => p.usedByAmana).length}</div><div className="text-[12px] text-ink-faint uppercase">used before</div></div>
+                <div><div className="text-lg font-semibold tabular">{amanaDemand}</div><div className="text-[12px] text-ink-faint uppercase">open</div></div>
               </div>
             </CardBody>
           </Card>
@@ -317,7 +317,7 @@ export default async function OverviewPage() {
                   {partnerReqs.map((r) => (
                     <li key={r.id} className="py-2.5">
                       <div className="text-[13px] text-ink">{r.title}</div>
-                      <div className="text-[11px] text-ink-faint">{r.partner.name} · {r.status.replace(/_/g, " ").toLowerCase()}</div>
+                      <div className="text-[12px] text-ink-faint">{r.partner.name} · {r.status.replace(/_/g, " ").toLowerCase()}</div>
                     </li>
                   ))}
                 </ul>
@@ -331,7 +331,7 @@ export default async function OverviewPage() {
                 <ul className="divide-y divide-line">
                   {liveIntros.slice(0, 5).map((i) => (
                     <li key={i.id} className="py-2.5 flex items-center justify-between gap-2">
-                      <div className="min-w-0"><div className="text-[13px] text-ink truncate">{fullName(i.person)}</div><div className="text-[11px] text-ink-faint truncate">{i.opportunity.title}</div></div>
+                      <div className="min-w-0"><div className="text-[13px] text-ink truncate">{fullName(i.person)}</div><div className="text-[12px] text-ink-faint truncate">{i.opportunity.title}</div></div>
                       <IntroBadge status={i.status} />
                     </li>
                   ))}

@@ -47,7 +47,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
               <li key={p.id}>
                 <Link href={`/partners?partner=${p.id}`} className={`block px-3 py-2.5 hover:bg-surface-muted ${selected?.id === p.id ? "bg-navy-100" : ""}`}>
                   <div className="flex items-center justify-between gap-2"><span className="text-[13px] font-medium">{p.name}</span><Badge tone={p.subscriptionStatus === "ACTIVE" ? "teal" : p.subscriptionStatus === "TRIAL" ? "navy" : "amber"}>{p.subscriptionStatus.toLowerCase()}</Badge></div>
-                  <div className="text-[11px] text-ink-faint">{p.requirements.length} requirements · {p.introductions.length} introductions</div>
+                  <div className="text-[12px] text-ink-faint">{p.requirements.length} requirements · {p.introductions.length} introductions</div>
                 </Link>
               </li>
             ))}
@@ -72,7 +72,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                     </div>
                     <Checkbox name="licensedForPermanent" label="Licensed for permanent placements" defaultChecked={selected.licensedForPermanent} disabled={!canEdit} />
                     <Field label="Notes"><Textarea name="notes" defaultValue={selected.notes ?? ""} disabled={!canEdit} /></Field>
-                    {canEdit ? <div className="flex justify-end"><SubmitButton>Save terms</SubmitButton></div> : <div className="text-[11px] text-ink-faint">Only owners and admins can change commercial terms.</div>}
+                    {canEdit ? <div className="flex justify-end"><SubmitButton>Save terms</SubmitButton></div> : <div className="text-[12px] text-ink-faint">Only owners and admins can change commercial terms.</div>}
                   </form>
                 </CardBody>
               </Card>
@@ -104,7 +104,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                     <tbody>
                       {selected.requirements.map((r) => (
                         <tr key={r.id}>
-                          <td className="pl-4"><div className="font-medium">{r.title}</div><div className="text-[11px] text-ink-faint">{r.location ?? "—"} · {r.seniority ? SENIORITY_LABELS[r.seniority] : "—"} · <DateText date={r.createdAt} relative /></div></td>
+                          <td className="pl-4"><div className="font-medium">{r.title}</div><div className="text-[12px] text-ink-faint">{r.location ?? "—"} · {r.seniority ? SENIORITY_LABELS[r.seniority] : "—"} · <DateText date={r.createdAt} relative /></div></td>
                           <td><RouteBadge route={r.engagementRoute} /></td>
                           <td><div className="flex flex-wrap gap-1 max-w-[220px]">{r.requiredCapabilities.map((c) => <Chip key={c}>{c}</Chip>)}</div></td>
                           <td className="text-xs">{r.budget ?? "—"}</td>
@@ -112,8 +112,8 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                           <td>
                             <form action={setRequirementStatus} className="flex items-center gap-1.5">
                               <input type="hidden" name="requirementId" value={r.id} />
-                              <Select name="linkedOpportunityId" defaultValue={r.linkedOpportunityId ?? ""} className="h-7 text-[11px] w-[200px]"><option value="">— not linked —</option>{opportunities.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}</Select>
-                              <Select name="status" defaultValue={r.status} className="h-7 text-[11px] w-[150px]">{Object.entries(REQUIREMENT_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
+                              <Select name="linkedOpportunityId" defaultValue={r.linkedOpportunityId ?? ""} className="h-7 text-[12px] w-[200px]"><option value="">— not linked —</option>{opportunities.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}</Select>
+                              <Select name="status" defaultValue={r.status} className="h-7 text-[12px] w-[150px]">{Object.entries(REQUIREMENT_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
                               <SubmitButton size="sm" variant="secondary" pendingText="…">Save</SubmitButton>
                             </form>
                           </td>
@@ -132,8 +132,8 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                   {previews.length === 0 ? <div className="text-xs text-ink-faint">Link a requirement to an opportunity with recommended or possible matches.</div> : previews.map(({ requirement, results }) => (
                     <div key={requirement.id} className="mb-3">
                       <div className="text-xs font-medium mb-1">{requirement.title}</div>
-                      {results.length === 0 ? <div className="text-[11px] text-ink-faint">No shareable results yet (only Recommend / Possible decisions are shared).</div> : (
-                        <ul className="space-y-1.5">{results.map((r) => <li key={r.ref} className="rounded-md border border-line px-2.5 py-2 text-xs"><div className="flex items-center justify-between"><span className="font-mono text-[11px] text-navy">{r.ref}</span><Badge tone={r.availabilityBand === "near-term" ? "teal" : "neutral"}>{r.availabilityBand}</Badge></div><div className="text-ink-muted mt-0.5">{r.headlineSummary} · {r.region ?? "region undisclosed"}</div><div className="text-ink-faint">{r.evidenceSummary}</div></li>)}</ul>
+                      {results.length === 0 ? <div className="text-[12px] text-ink-faint">No shareable results yet (only Recommend / Possible decisions are shared).</div> : (
+                        <ul className="space-y-1.5">{results.map((r) => <li key={r.ref} className="rounded-md border border-line px-2.5 py-2 text-xs"><div className="flex items-center justify-between"><span className="font-mono text-[12px] text-navy">{r.ref}</span><Badge tone={r.availabilityBand === "near-term" ? "teal" : "neutral"}>{r.availabilityBand}</Badge></div><div className="text-ink-muted mt-0.5">{r.headlineSummary} · {r.region ?? "region undisclosed"}</div><div className="text-ink-faint">{r.evidenceSummary}</div></li>)}</ul>
                       )}
                     </div>
                   ))}
@@ -152,7 +152,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
             <Card>
               <CardHeader title="Partner audit activity" />
               <CardBody>
-                {audit.length === 0 ? <div className="text-xs text-ink-faint">No activity.</div> : <ul className="text-xs space-y-1">{audit.map((a) => <li key={a.id} className="flex justify-between gap-2"><span>{a.actor?.name ?? "system"} · <span className="font-mono text-[11px]">{a.action}</span></span><DateText date={a.createdAt} relative className="text-ink-faint" /></li>)}</ul>}
+                {audit.length === 0 ? <div className="text-xs text-ink-faint">No activity.</div> : <ul className="text-xs space-y-1">{audit.map((a) => <li key={a.id} className="flex justify-between gap-2"><span>{a.actor?.name ?? "system"} · <span className="font-mono text-[12px]">{a.action}</span></span><DateText date={a.createdAt} relative className="text-ink-faint" /></li>)}</ul>}
               </CardBody>
             </Card>
           </div>

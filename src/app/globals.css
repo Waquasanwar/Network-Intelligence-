@@ -253,3 +253,9 @@ kbd {
 @media (prefers-reduced-motion: reduce) { .rise-in { animation: none; } .shimmer-text { color: var(--color-ink); background: none; } }
 /* The composer's own input: the bar shows focus, not the field inside it. */
 .agent-input, .agent-input:focus, .agent-input:focus-visible { outline: none !important; box-shadow: none !important; border: 0 !important; background: transparent !important; }
+
+/* Inside a "More" menu every action is a plain full-width row, whatever button it was built as. */
+.more-menu > *, .more-menu > form, .more-menu > span { display: block; width: 100%; }
+.more-menu button { display: flex; width: 100%; justify-content: flex-start; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--color-ink); font-size: 13px; font-weight: 500; box-shadow: none; }
+.more-menu button:hover { background: var(--color-surface-muted); }
+.more-menu button svg { color: var(--color-ink-muted); width: 16px; height: 16px; }

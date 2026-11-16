@@ -65,7 +65,7 @@ export function KpiCard({
         {delta ? (
           <span
             className={cn(
-              "inline-flex flex-none items-center gap-0.5 text-[11px] font-semibold rounded-full px-2 py-[3px] tabular",
+              "inline-flex flex-none items-center gap-0.5 text-[12px] font-semibold rounded-full px-2 py-[3px] tabular",
               glass ? "bg-accent-ink/10 text-accent-ink" : dir === "up" ? "bg-teal-100 text-teal" : dir === "down" ? "bg-amber-100 text-amber" : "bg-surface-muted text-ink-muted",
             )}
           >

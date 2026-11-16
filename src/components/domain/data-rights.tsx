@@ -50,7 +50,7 @@ export function DataRights({ privacy, firstName, asPersonId }: { privacy: Privac
         <Button type="button" variant="secondary" size="sm" onClick={download} disabled={exporting}>
           <Download className="h-3.5 w-3.5" /> {exporting ? "Preparing…" : "Download my data"}
         </Button>
-        <p className="text-[11.5px] text-ink-faint leading-[1.5]">A machine-readable copy of everything we hold about you — your profile, screening, vouches and where you&apos;ve been proposed.</p>
+        <p className="text-[12px] text-ink-faint leading-[1.5]">A machine-readable copy of everything we hold about you — your profile, screening, vouches and where you&apos;ve been proposed.</p>
       </div>
 
       <div className="border-t border-line pt-3.5">
@@ -63,7 +63,7 @@ export function DataRights({ privacy, firstName, asPersonId }: { privacy: Privac
             {asPersonId ? <input type="hidden" name="asPersonId" value={asPersonId} /> : null}
             <div className="text-[12.5px] text-ink leading-[1.5]">{firstName}, this removes you from the network. You stop being shown immediately; your profile and screening are deleted within 30 days. This can&apos;t be undone once it&apos;s carried out.</div>
             <input type="text" name="reason" placeholder="Reason (optional)" className="w-full h-9 rounded-[6px] border border-line bg-surface px-3 text-[12.5px] outline-none focus:border-navy-400" />
-            <label className="block text-[11.5px] text-ink-muted">Type <b className="text-risk">DELETE</b> to confirm</label>
+            <label className="block text-[12px] text-ink-muted">Type <b className="text-risk">DELETE</b> to confirm</label>
             <input type="text" name="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full h-9 rounded-[6px] border border-line bg-surface px-3 text-[12.5px] font-mono outline-none focus:border-risk" autoComplete="off" />
             <div className="flex items-center gap-2">
               <SubmitButton size="sm" variant="danger" disabled={confirm !== "DELETE"} pendingText="…">Request deletion</SubmitButton>
@@ -84,11 +84,11 @@ export function ConsentToggles({ privacy, update, asPersonId }: { privacy: Priva
       {CONSENTS.filter((c) => !c.required).map((c) => (
         <label key={c.key} className="flex items-start gap-2.5 px-3 py-2 rounded-[11px] border border-line hover:border-line-strong cursor-pointer">
           <input type="checkbox" name={c.key} defaultChecked={privacy.consents[c.key]} className="mt-0.5 h-3.5 w-3.5 rounded border-line-strong accent-navy flex-none" />
-          <span className="min-w-0"><span className="block text-[12.5px] text-ink font-medium">{c.label}</span><span className="block text-[11px] text-ink-faint leading-[1.45]">{c.detail}</span></span>
+          <span className="min-w-0"><span className="block text-[12.5px] text-ink font-medium">{c.label}</span><span className="block text-[12px] text-ink-faint leading-[1.45]">{c.detail}</span></span>
         </label>
       ))}
       <div className="flex items-center justify-between gap-2 pt-1.5">
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-faint"><ShieldCheck className="h-3.5 w-3.5 text-teal" /> Effective immediately</span>
+        <span className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint"><ShieldCheck className="h-3.5 w-3.5 text-teal" /> Effective immediately</span>
         <SubmitButton size="sm" variant="secondary" pendingText="…">Save permissions</SubmitButton>
       </div>
     </form>

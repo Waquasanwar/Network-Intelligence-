@@ -29,7 +29,7 @@ export function Field({ label, hint, children, required, className }: { label: s
         {required ? <span className="text-amber ml-0.5">*</span> : null}
       </span>
       {children}
-      {hint ? <span className="block text-[11px] text-ink-faint mt-1 leading-4">{hint}</span> : null}
+      {hint ? <span className="block text-[12px] text-ink-faint mt-1 leading-4">{hint}</span> : null}
     </label>
   );
 }

@@ -70,12 +70,12 @@ export default async function AmanaPage() {
                   {open.map((o) => (
                     <li key={o.id} className="py-3">
                       <div className="flex items-center justify-between gap-2">
-                        <div><Link href={`/opportunities/${o.id}`} className="text-[13px] font-medium hover:underline underline-offset-4">{o.title}</Link><div className="text-[11px] text-ink-faint">{o.clientName} · {o.matches.length} suggestions · {o.matches.filter((m) => m.humanDecision === "RECOMMEND").length} recommended</div></div>
+                        <div><Link href={`/opportunities/${o.id}`} className="text-[13px] font-medium hover:underline underline-offset-4">{o.title}</Link><div className="text-[12px] text-ink-faint">{o.clientName} · {o.matches.length} suggestions · {o.matches.filter((m) => m.humanDecision === "RECOMMEND").length} recommended</div></div>
                         <div className="flex items-center gap-1.5"><RouteBadge route={o.engagementRoute} /><StageBadge status={o.status} /></div>
                       </div>
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {o.teamShortlist.map((t) => <span key={t.id} className="inline-flex items-center gap-1 rounded-md border border-teal/30 bg-teal-100 px-2 py-0.5 text-[11px] text-teal"><Link href={`/network/${t.person.id}`} className="font-medium hover:underline">{fullName(t.person)}</Link><span className="text-teal/70">· {t.roleOnTeam}</span></span>)}
-                        {!o.teamShortlist.length ? <span className="text-[11px] text-ink-faint">No team members yet — <Link href={`/opportunities/${o.id}`} className="text-navy hover:underline">build the team</Link></span> : null}
+                        {o.teamShortlist.map((t) => <span key={t.id} className="inline-flex items-center gap-1 rounded-md border border-teal/30 bg-teal-100 px-2 py-0.5 text-[12px] text-teal"><Link href={`/network/${t.person.id}`} className="font-medium hover:underline">{fullName(t.person)}</Link><span className="text-teal/70">· {t.roleOnTeam}</span></span>)}
+                        {!o.teamShortlist.length ? <span className="text-[12px] text-ink-faint">No team members yet — <Link href={`/opportunities/${o.id}`} className="text-navy hover:underline">build the team</Link></span> : null}
                       </div>
                     </li>
                   ))}

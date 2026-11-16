@@ -53,7 +53,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
               <tbody>
                 {upcoming.map((u) => (
                   <tr key={u.id}>
-                    <td><div className="font-medium"><DateText date={u.startAt} relative /></div><div className="text-[11px] text-ink-faint">{u.startAt.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div></td>
+                    <td><div className="font-medium"><DateText date={u.startAt} relative /></div><div className="text-[12px] text-ink-faint">{u.startAt.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div></td>
                     <td><PersonLink person={u.person} /></td>
                     <td className="text-xs">{u.meetingType.replace(/_/g, " ").toLowerCase()}</td>
                     <td className="text-xs">{u.provider === "MANUAL" ? "Manual" : u.provider === "CALENDLY" ? "Calendly" : "Outlook / Teams"}{u.eventUrl ? <> · <a className="text-navy hover:underline" href={u.eventUrl} target="_blank" rel="noreferrer noopener">join</a></> : null}</td>
@@ -90,7 +90,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
                   <li key={c.id}>
                     <Link href={`/conversations?tab=review&open=${c.id}`} className={`block px-3 py-2.5 hover:bg-surface-muted ${opened?.id === c.id ? "bg-navy-100" : ""}`}>
                       <div className="text-[13px] font-medium">{fullName(c.person)}</div>
-                      <div className="text-[11px] text-ink-faint flex items-center gap-1.5"><DateText date={c.date} /> · {c.conductedBy.name.split(" ")[0]} <Badge tone={c.approvalStatus === "DRAFT" ? "neutral" : "amber"}>{c.approvalStatus === "DRAFT" ? "draft" : "AI draft"}</Badge></div>
+                      <div className="text-[12px] text-ink-faint flex items-center gap-1.5"><DateText date={c.date} /> · {c.conductedBy.name.split(" ")[0]} <Badge tone={c.approvalStatus === "DRAFT" ? "neutral" : "amber"}>{c.approvalStatus === "DRAFT" ? "draft" : "AI draft"}</Badge></div>
                     </Link>
                   </li>
                 ))}
@@ -102,7 +102,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
                 <CardBody>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     <div>
-                      <div className="text-[11px] uppercase text-ink-faint mb-1">Source material</div>
+                      <div className="label-caps text-ink-faint mb-1">Source material</div>
                       <div className="rounded-md border border-line bg-surface-muted p-3 text-xs whitespace-pre-wrap max-h-[420px] overflow-y-auto">{opened.rawNotes || "(no notes)"}{opened.transcript ? `\n\n--- transcript ---\n${opened.transcript}` : ""}</div>
                       {!draft ? (
                         <form action={regenerateSummary} className="mt-3"><input type="hidden" name="conversationId" value={opened.id} /><SubmitButton variant="secondary" pendingText="Structuring…">Structure with AI</SubmitButton></form>
@@ -155,7 +155,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
         completed.length === 0 ? <EmptyState title="No approved conversations yet" /> : (
           <div className="rounded-[8px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
             <table className="data"><thead><tr><th>Date</th><th>Person</th><th>Type</th><th>Summary</th><th>By</th><th>Follow-up</th></tr></thead>
-              <tbody>{completed.map((c) => { const s = c.approvedSummary as ExtractedSummary | null; return <tr key={c.id}><td><DateText date={c.date} /></td><td><PersonLink person={c.person} sub={null} /></td><td className="text-xs">{c.type.replace(/_/g, " ").toLowerCase()}</td><td className="text-xs text-ink-muted max-w-[380px]">{s?.summary ?? "—"}</td><td className="text-xs">{c.conductedBy.name.split(" ")[0]}{c.approvedBy ? <div className="text-[11px] text-ink-faint">approved by {c.approvedBy.name.split(" ")[0]}</div> : null}</td><td><DateText date={c.followUpDate} relative /></td></tr>; })}</tbody>
+              <tbody>{completed.map((c) => { const s = c.approvedSummary as ExtractedSummary | null; return <tr key={c.id}><td><DateText date={c.date} /></td><td><PersonLink person={c.person} sub={null} /></td><td className="text-xs">{c.type.replace(/_/g, " ").toLowerCase()}</td><td className="text-xs text-ink-muted max-w-[380px]">{s?.summary ?? "—"}</td><td className="text-xs">{c.conductedBy.name.split(" ")[0]}{c.approvedBy ? <div className="text-[12px] text-ink-faint">approved by {c.approvedBy.name.split(" ")[0]}</div> : null}</td><td><DateText date={c.followUpDate} relative /></td></tr>; })}</tbody>
             </table>
           </div>
         )

@@ -25,7 +25,7 @@ export function OutreachButton({ opportunityId, personId }: { opportunityId: str
     return (
       <span className="inline-flex items-center gap-2">
         <Button size="sm" variant="ghost" type="button" onClick={gen} disabled={pending}><Sparkles className="h-3.5 w-3.5" /> {pending ? "Drafting…" : "Draft outreach"}</Button>
-        {err ? <span className="text-[11px] text-risk">{err}</span> : null}
+        {err ? <span className="text-[12px] text-risk">{err}</span> : null}
       </span>
     );
   }
@@ -33,8 +33,8 @@ export function OutreachButton({ opportunityId, personId }: { opportunityId: str
   return (
     <div className="mt-3 rounded-[6px] border border-line bg-surface-muted/50 p-3 w-full">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-medium text-ink inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-navy" /> Draft message — yours to edit before sending. The client is never named.</span>
-        <button type="button" onClick={() => { navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {}); }} className="text-[11.5px] text-navy inline-flex items-center gap-1 hover:underline">
+        <span className="text-[12px] font-medium text-ink inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-navy" /> Draft message — yours to edit before sending. The client is never named.</span>
+        <button type="button" onClick={() => { navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {}); }} className="text-[12px] text-navy inline-flex items-center gap-1 hover:underline">
           {copied ? <Check className="h-3.5 w-3.5 text-teal" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copied" : "Copy"}
         </button>
       </div>

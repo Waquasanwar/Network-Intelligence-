@@ -38,7 +38,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
                 <tr key={o.id}>
                   <td><Link href={`/opportunities/${o.id}`} className="font-medium text-ink hover:underline underline-offset-4">{o.title}</Link>{o.isAmana ? <Badge tone="teal" filled className="ml-2">Amana</Badge> : null}</td>
                   <td><RouteBadge route={o.engagementRoute} /></td>
-                  <td className="text-xs">{o.sourceType.replace(/_/g, " ").toLowerCase()}{o.partner ? <div className="text-[11px] text-ink-faint">{o.partner.name}</div> : null}</td>
+                  <td className="text-xs">{o.sourceType.replace(/_/g, " ").toLowerCase()}{o.partner ? <div className="text-[12px] text-ink-faint">{o.partner.name}</div> : null}</td>
                   <td className="text-xs text-ink-muted">{o.clientName ?? "—"}</td>
                   <td className="text-xs tabular">{o.budget ? `${formatMoney(Number(o.budget), o.currency ?? "GBP")}${o.engagementRoute === "PERMANENT" ? "" : "/day"}` : "—"}</td>
                   <td className="text-xs text-ink-muted">{o.location ?? "—"}</td>
@@ -56,13 +56,13 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             const cards = opps.filter((o) => o.status === stage);
             return (
               <div key={stage} className="rounded-[8px] bg-surface-muted/70 border border-line p-2.5">
-                <div className="flex items-center justify-between px-1 mb-2"><span className="text-[11px] font-medium uppercase tracking-wide text-ink-muted">{OPPORTUNITY_STATUS_LABELS[stage]}</span><span className="text-[11px] text-ink-faint tabular">{cards.length}</span></div>
+                <div className="flex items-center justify-between px-1 mb-2"><span className="text-[12px] font-medium uppercase tracking-wide text-ink-muted">{OPPORTUNITY_STATUS_LABELS[stage]}</span><span className="text-[12px] text-ink-faint tabular">{cards.length}</span></div>
                 <div className="space-y-2">
                   {cards.map((o) => (
                     <Link key={o.id} href={`/opportunities/${o.id}`} className="block rounded-[6px] border border-line bg-surface p-3 lift shadow-[var(--shadow-card)]">
                       <div className="text-[13px] font-medium leading-4 text-ink">{o.title}</div>
-                      <div className="text-[11px] text-ink-faint mt-1 truncate">{o.clientName ?? "—"}</div>
-                      <div className="flex items-center justify-between gap-2 mt-2.5 whitespace-nowrap"><RouteBadge route={o.engagementRoute} /><span className="text-[11px] text-ink-faint tabular flex-none">{o.matches.length} matches</span></div>
+                      <div className="text-[12px] text-ink-faint mt-1 truncate">{o.clientName ?? "—"}</div>
+                      <div className="flex items-center justify-between gap-2 mt-2.5 whitespace-nowrap"><RouteBadge route={o.engagementRoute} /><span className="text-[12px] text-ink-faint tabular flex-none">{o.matches.length} matches</span></div>
                     </Link>
                   ))}
                 </div>

@@ -20,7 +20,7 @@ export function Ring({ score, label, size = 64 }: { score: number; label?: strin
 }
 
 export function TrustMini({ t }: { t: TrustScore }) {
-  return <span className="inline-flex items-center gap-1.5" title={`${TRUST_BAND_LABEL[t.band]} · vouched by ${t.vouchedBy}`}><Ring score={t.score} size={26} /><b className="text-[13px] tabular">{t.score}</b><small className="text-[11px] text-ink-faint whitespace-nowrap">{t.vouchedBy} vouch{t.vouchedBy === 1 ? "" : "es"}</small></span>;
+  return <span className="inline-flex items-center gap-1.5" title={`${TRUST_BAND_LABEL[t.band]} · vouched by ${t.vouchedBy}`}><Ring score={t.score} size={26} /><b className="text-[13px] tabular">{t.score}</b><small className="text-[12px] text-ink-faint whitespace-nowrap">{t.vouchedBy} vouch{t.vouchedBy === 1 ? "" : "es"}</small></span>;
 }
 
 export function TrustCard({ t, firstName, self, screened, workedWith, action }: { t: TrustScore; firstName: string; self?: boolean; screened: boolean; workedWith: boolean; action?: React.ReactNode }) {
@@ -42,7 +42,7 @@ export function TrustCard({ t, firstName, self, screened, workedWith, action }: 
               <span className="text-ink-muted">{b.label}</span>
               <div className="h-1.5 rounded-full bg-surface-muted border border-line overflow-hidden"><div className={cn("h-full rounded-full", b.points < 0 ? "bg-amber" : "bg-navy")} style={{ width: `${b.max ? Math.min(100, Math.max(0, (b.points / b.max) * 100)) : 100}%` }} /></div>
               <b className={cn("text-right tabular", b.points < 0 && "text-amber")}>{b.points > 0 ? "+" : ""}{b.points}</b>
-              <small className="col-span-3 text-[11px] text-ink-faint -mt-1">{b.note}</small>
+              <small className="col-span-3 text-[12px] text-ink-faint -mt-1">{b.note}</small>
             </li>
           ))}
         </ul>
@@ -63,12 +63,12 @@ export function FitCard({ rows, self, traits = [] }: { rows: FitProfileRow[]; se
               {rows.map((r) => (
                 <li key={r.key} className={cn("grid grid-cols-1 md:grid-cols-[170px_1fr_74px] gap-x-3 gap-y-1 items-center text-[12.5px]", traits.includes(r.key) && "bg-navy-100/60 rounded-[6px] px-2 py-1.5 -mx-2")}>
                   <span className="flex flex-col items-start gap-0.5"><b className="font-medium">{r.label}</b>{traits.includes(r.key) ? <Badge tone="navy" filled>asked for</Badge> : null}</span>
-                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center"><small className="text-[10.5px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.low}</small><div className="relative h-2 rounded-full border border-line bg-navy">{r.self !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-navy-400 shadow" style={{ left: `${((r.self - 1) / 4) * 100}%` }} title={`Self-assessed ${r.self}/5`} /> : null}{r.peers !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-teal shadow" style={{ left: `${((r.peers - 1) / 4) * 100}%` }} title={`Observed by ${r.peerCount}: ${r.peers}/5`} /> : null}</div><small className="text-[10.5px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.high}</small></div>
-                  <em className="not-italic font-semibold text-right tabular">{r.combined !== null ? `${r.combined}/5` : "—"}<small className="block text-[10.5px] text-ink-faint font-normal">{r.peerCount ? `${r.peerCount} observed` : r.self !== null ? "self" : ""}</small></em>
+                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center"><small className="text-[12px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.low}</small><div className="relative h-2 rounded-full border border-line bg-navy">{r.self !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-navy-400 shadow" style={{ left: `${((r.self - 1) / 4) * 100}%` }} title={`Self-assessed ${r.self}/5`} /> : null}{r.peers !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-teal shadow" style={{ left: `${((r.peers - 1) / 4) * 100}%` }} title={`Observed by ${r.peerCount}: ${r.peers}/5`} /> : null}</div><small className="text-[12px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.high}</small></div>
+                  <em className="not-italic font-semibold text-right tabular">{r.combined !== null ? `${r.combined}/5` : "—"}<small className="block text-[12px] text-ink-faint font-normal">{r.peerCount ? `${r.peerCount} observed` : r.self !== null ? "self" : ""}</small></em>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-[11.5px] text-ink-faint flex items-center gap-1.5 flex-wrap"><i className="inline-block h-2.5 w-2.5 rounded-full bg-navy-400" /> self-assessed in screening <i className="inline-block h-2.5 w-2.5 rounded-full bg-teal ml-2" /> observed by people who vouched</p>
+            <p className="mt-3 text-[12px] text-ink-faint flex items-center gap-1.5 flex-wrap"><i className="inline-block h-2.5 w-2.5 rounded-full bg-navy-400" /> self-assessed in screening <i className="inline-block h-2.5 w-2.5 rounded-full bg-teal ml-2" /> observed by people who vouched</p>
           </>
         )}
       </CardBody>
@@ -89,7 +89,7 @@ export function VouchList({ vouches }: { vouches: (Vouch & { voucherUser?: { nam
                 <div className="text-ink-muted">{v.context}</div>
                 {v.statement ? <p className="italic mt-1">“{v.statement}”</p> : null}
                 {attrs ? <div className="flex flex-wrap gap-1 mt-1">{Object.entries(attrs).filter(([, n]) => n >= 4).map(([k]) => <Chip key={k}>{ATTRIBUTES.find((a) => a.key === k)?.label.toLowerCase() ?? k}</Chip>)}</div> : null}
-                <div className="text-[11px] text-ink-faint mt-1"><DateText date={v.createdAt} relative /></div>
+                <div className="text-[12px] text-ink-faint mt-1"><DateText date={v.createdAt} relative /></div>
               </li>
             ); })}
           </ul>

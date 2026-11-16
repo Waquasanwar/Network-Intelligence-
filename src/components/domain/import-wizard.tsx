@@ -57,9 +57,9 @@ export function ImportWizard() {
                 <input ref={fileRef} type="file" name="file" accept=".csv,.tsv,text/csv,text/plain" className="sr-only" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} />
                 <FileUp className="h-5 w-5 text-ink-faint mx-auto" />
                 <div className="text-[13px] font-medium mt-2">{fileName ?? "Choose a CSV file"}</div>
-                <div className="text-[11.5px] text-ink-faint mt-0.5">.csv, up to 2,000 rows per import</div>
+                <div className="text-[12px] text-ink-faint mt-0.5">.csv, up to 2,000 rows per import</div>
               </label>
-              <div className="text-center text-[11px] text-ink-faint">or</div>
+              <div className="text-center text-[12px] text-ink-faint">or</div>
               <Field label="Paste rows" hint="Include the header row. Copying cells from Excel works as is."><Textarea name="text" className="min-h-[110px] mono" placeholder={"first_name,last_name,email,company,capabilities\nSarah,Okonkwo,sarah@example.com,Independent,Programme director; Turnaround"} /></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Default source" hint="Used when a row has no source"><Select name="defaultSource" defaultValue="PERSONAL_NETWORK">{Object.entries(SOURCE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
@@ -103,15 +103,15 @@ export function ImportWizard() {
                       return (
                         <tr key={r.line} className={state === "blocked" ? "bg-amber-50/40" : state === "duplicate" ? "opacity-60" : ""}>
                           <td className="pl-4 text-ink-faint tabular text-[12px]">{r.line}</td>
-                          <td><div className="font-medium">{r.firstName} {r.lastName}</div><div className="text-[11.5px] text-ink-faint mono">{r.email ?? ""}</div></td>
+                          <td><div className="font-medium">{r.firstName} {r.lastName}</div><div className="text-[12px] text-ink-faint mono">{r.email ?? ""}</div></td>
                           <td className="text-[12.5px] text-ink-muted">{[r.role, r.company].filter(Boolean).join(" · ") || "—"}</td>
                           <td className="text-[12.5px] text-ink-muted">{[r.city, r.country].filter(Boolean).join(", ") || "—"}</td>
-                          <td><div className="flex flex-wrap gap-1 max-w-[220px]">{r.capabilities.slice(0, 3).map((c) => <Chip key={c}>{c}</Chip>)}{r.capabilities.length > 3 ? <span className="text-[11px] text-ink-faint">+{r.capabilities.length - 3}</span> : null}</div></td>
-                          <td className="text-[12px] text-ink-muted">{SOURCE_LABELS[r.source]} · {RELATIONSHIP_LABELS[r.relationship]}{r.introducedBy ? <div className="text-[11.5px] text-ink-faint">via {r.introducedBy}</div> : null}{r.workedTogether ? <div className="text-[11.5px] text-teal">worked together</div> : null}</td>
+                          <td><div className="flex flex-wrap gap-1 max-w-[220px]">{r.capabilities.slice(0, 3).map((c) => <Chip key={c}>{c}</Chip>)}{r.capabilities.length > 3 ? <span className="text-[12px] text-ink-faint">+{r.capabilities.length - 3}</span> : null}</div></td>
+                          <td className="text-[12px] text-ink-muted">{SOURCE_LABELS[r.source]} · {RELATIONSHIP_LABELS[r.relationship]}{r.introducedBy ? <div className="text-[12px] text-ink-faint">via {r.introducedBy}</div> : null}{r.workedTogether ? <div className="text-[12px] text-teal">worked together</div> : null}</td>
                           <td>
                             {state === "ready" ? <Badge tone="teal">Ready</Badge> : state === "duplicate" ? <Badge tone="neutral">Already added</Badge> : <Badge tone="amber">Needs a fix</Badge>}
-                            {r.issues.map((i) => <div key={i} className="text-[11.5px] text-amber mt-0.5">{i}</div>)}
-                            {r.warnings.map((w) => <div key={w} className="text-[11.5px] text-ink-faint mt-0.5">{w}</div>)}
+                            {r.issues.map((i) => <div key={i} className="text-[12px] text-amber mt-0.5">{i}</div>)}
+                            {r.warnings.map((w) => <div key={w} className="text-[12px] text-ink-faint mt-0.5">{w}</div>)}
                           </td>
                         </tr>
                       );

@@ -16,7 +16,7 @@ function hue(p: { firstName: string; lastName: string }) {
 }
 
 export function Avatar({ person, size = "md", className, ring = false }: { person: { firstName: string; lastName: string }; size?: "sm" | "md" | "lg" | "xl"; className?: string; ring?: boolean }) {
-  const s = size === "sm" ? "h-6 w-6 text-[10px]" : size === "lg" ? "h-12 w-12 text-[15px]" : size === "xl" ? "h-16 w-16 text-[20px]" : "h-8 w-8 text-xs";
+  const s = size === "sm" ? "h-6 w-6 text-[12px]" : size === "lg" ? "h-12 w-12 text-[15px]" : size === "xl" ? "h-16 w-16 text-[20px]" : "h-8 w-8 text-xs";
   const core = (
     <span className={cn("inline-flex items-center justify-center rounded-full font-semibold shrink-0", hue(person), s, className)}>
       {initials(person)}

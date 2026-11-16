@@ -9,8 +9,8 @@ export function AvailabilityBadge({ status, confirmedAt, nextCheckDate }: { stat
   return (
     <span className="inline-flex items-center gap-1.5">
       <Badge tone={tone}>{AVAILABILITY_LABELS[status]}</Badge>
-      {freshness === "stale" && status !== "NEEDS_REFRESH" ? <span className="text-[10px] text-amber">stale</span> : null}
-      {freshness === "aging" ? <span className="text-[10px] text-ink-faint">aging</span> : null}
+      {freshness === "stale" && status !== "NEEDS_REFRESH" ? <span className="text-[12px] text-amber">stale</span> : null}
+      {freshness === "aging" ? <span className="text-[12px] text-ink-faint">aging</span> : null}
     </span>
   );
 }

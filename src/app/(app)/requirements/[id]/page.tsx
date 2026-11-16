@@ -64,14 +64,14 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-4">
                 <div><div className="text-ink-faint">Roles</div><div>{b.roles.join(", ") || "to confirm"}</div></div>
                 <div><div className="text-ink-faint">Headcount</div><div>{b.headcount}</div></div>
-                <div><div className="text-ink-faint">Where</div><div>{b.locations.join(" / ") || "—"}{b.mustBeLocal ? <div className="text-[11px] text-ink-faint">must already be there</div> : null}</div></div>
+                <div><div className="text-ink-faint">Where</div><div>{b.locations.join(" / ") || "—"}{b.mustBeLocal ? <div className="text-[12px] text-ink-faint">must already be there</div> : null}</div></div>
                 <div><div className="text-ink-faint">Work rights</div><div>{b.workRights ?? "not required"}</div></div>
                 <div><div className="text-ink-faint">Seniority</div><div>{b.seniority ? SENIORITY_LABELS[b.seniority] : "—"}</div></div>
                 <div><div className="text-ink-faint">Sectors</div><div>{b.sectors.join(", ") || "—"}</div></div>
                 <div><div className="text-ink-faint">Budget</div><div className="tabular">{budgetLabel(d.budget) ?? "—"}</div></div>
                 <div><div className="text-ink-faint">Start · duration</div><div>{b.startBy ?? "—"}{b.durationMonths ? ` · ${b.durationMonths} months` : ""}</div></div>
               </div>
-              {b.questions.length ? <div className="mt-3 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-1">Still to confirm with {b.account.name}</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
+              {b.questions.length ? <div className="mt-3 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="label-caps tracking-wide font-medium text-amber mb-1">Still to confirm with {b.account.name}</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
             </CardBody>
           </Card>
 
@@ -84,9 +84,9 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
                       <div className="flex items-start justify-between gap-3"><PersonLink person={s.person} sub={s.person.headline} /><div className="flex flex-wrap items-center gap-2 justify-end shrink-0"><TierBadge tier={s.tier} /><Badge tone={s.person.vouches.filter((v) => v.wouldRecommend).length ? "teal" : "neutral"} filled>vouched by {s.person.vouches.filter((v) => v.wouldRecommend).length}</Badge><AvailabilityBadge status={s.person.availabilityStatus} confirmedAt={s.person.availabilityConfirmedAt} nextCheckDate={s.person.nextCheckDate} /><ShortlistBadge decision={s.decision} /></div></div>
                       <CheckList checks={checks} />
                       <FitChecks checks={fitChecks(traits, fitProfile((s.person.attributes as FitScores | null) ?? null, s.person.vouches.map((v) => v.attributes as FitScores | null).filter((a): a is FitScores => !!a)))} />
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name}><div className="text-[10px] uppercase text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name}><div className="label-caps text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>
                       <p className="text-[13px] mt-3 leading-5">{s.fitExplanation}</p>
-                      {s.uncertainty.length ? <div className="mt-2 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2 text-[12px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-0.5">Uncertainty</div><ul className="pl-4 list-disc space-y-0.5">{s.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul></div> : null}
+                      {s.uncertainty.length ? <div className="mt-2 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2 text-[12px]"><div className="label-caps tracking-wide font-medium text-amber mb-0.5">Uncertainty</div><ul className="pl-4 list-disc space-y-0.5">{s.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul></div> : null}
                       <form action={decideShortlist} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-2.5 items-end mt-3 pt-3 border-t border-line">
                         <input type="hidden" name="itemId" value={s.id} />
                         <Field label="Decision"><Select name="decision" defaultValue={s.decision}>{Object.entries(SHORTLIST_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
@@ -114,7 +114,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
             <CardBody>
               <form action={saveBriefTerms} className="space-y-3">
                 <input type="hidden" name="briefId" value={b.id} />
-                <FeeBox est={est} extra={est.confident && b.headcount > 1 ? <div className="text-[11.5px] text-ink-faint">{fmt(est.perHead, est.currency)} per placement</div> : null} />
+                <FeeBox est={est} extra={est.confident && b.headcount > 1 ? <div className="text-[12px] text-ink-faint">{fmt(est.perHead, est.currency)} per placement</div> : null} />
                 <Field label="Fee model" hint={`${KIND_LABEL[b.account.kind]} · defaults come from the rate card in Settings`}><Select name="model" defaultValue={d.terms.model}>{Object.entries(FEE_MODEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
                 <div className="grid grid-cols-2 gap-3">
                   {d.terms.model === "INTRODUCTION_FEE" ? <Field label="Flat fee"><Input name="flat" type="number" step="0.5" min={0} defaultValue={d.terms.flat ?? ""} /></Field> : <Field label="Our %"><Input name="pct" type="number" step="0.5" min={0} defaultValue={d.terms.pct ?? ""} /></Field>}
@@ -129,7 +129,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader title="Fees on this requirement" action={<AddFeeDrawer briefId={b.id} people={items.map((s) => ({ id: s.personId, name: fullName(s.person) }))} defaults={{ gross: est.gross, ourTake: est.perHead, currency: est.currency, basis: est.basis }} />} />
-            <CardBody>{b.feeLines.length === 0 ? <div className="text-xs text-ink-muted">A fee line is created when someone is placed, or add one now.</div> : <ul className="divide-y divide-line">{b.feeLines.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[11.5px] text-ink-faint">{f.person ? `${fullName(f.person)} · ` : ""}{f.basis}</div><form action={setFeeStatus} className="flex items-center gap-2 mt-1.5"><input type="hidden" name="feeId" value={f.id} /><Select name="status" defaultValue={f.status} className="h-7 text-xs w-[130px]">{Object.entries(FEE_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton></form></li>)}</ul>}</CardBody>
+            <CardBody>{b.feeLines.length === 0 ? <div className="text-xs text-ink-muted">A fee line is created when someone is placed, or add one now.</div> : <ul className="divide-y divide-line">{b.feeLines.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.person ? `${fullName(f.person)} · ` : ""}{f.basis}</div><form action={setFeeStatus} className="flex items-center gap-2 mt-1.5"><input type="hidden" name="feeId" value={f.id} /><Select name="status" defaultValue={f.status} className="h-7 text-xs w-[130px]">{Object.entries(FEE_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton></form></li>)}</ul>}</CardBody>
           </Card>
 
           <Card>
@@ -146,7 +146,7 @@ export default async function RequirementPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader title="Activity" />
-            <CardBody>{audit.length === 0 ? <div className="text-xs text-ink-muted">No activity yet.</div> : <ul className="space-y-1.5 text-[12px]">{audit.map((a) => <li key={a.id}><span className="text-ink-faint"><DateText date={a.createdAt} relative /> · {a.actor?.name ?? "Portal user"}</span> <code className="text-[11px] bg-surface-muted rounded px-1">{a.action}</code></li>)}</ul>}</CardBody>
+            <CardBody>{audit.length === 0 ? <div className="text-xs text-ink-muted">No activity yet.</div> : <ul className="space-y-1.5 text-[12px]">{audit.map((a) => <li key={a.id}><span className="text-ink-faint"><DateText date={a.createdAt} relative /> · {a.actor?.name ?? "Portal user"}</span> <code className="text-[12px] bg-surface-muted rounded px-1">{a.action}</code></li>)}</ul>}</CardBody>
           </Card>
         </div>
       </div>

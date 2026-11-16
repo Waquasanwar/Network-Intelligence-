@@ -56,12 +56,12 @@ export function AiIntakeChat() {
 
   if (summary) {
     const Section = ({ title, items }: { title: string; items: string[] }) => items.length ? (
-      <div><div className="text-[11px] uppercase tracking-[0.05em] text-ink-faint mb-1.5">{title}</div><div className="flex flex-wrap gap-1.5">{items.map((x, i) => <Chip key={i}>{x}</Chip>)}</div></div>
+      <div><div className="label-caps tracking-[0.05em] text-ink-faint mb-1.5">{title}</div><div className="flex flex-wrap gap-1.5">{items.map((x, i) => <Chip key={i}>{x}</Chip>)}</div></div>
     ) : null;
     return (
       <div className="space-y-5">
         <div className="inline-flex items-center gap-2 rounded-full bg-teal/10 text-teal text-[12.5px] font-medium px-3 py-1"><CheckCircle2 className="h-4 w-4" /> Structured from your conversation — a human reviews before anything goes live.</div>
-        {summary.headline ? <div><div className="text-[11px] uppercase tracking-[0.05em] text-ink-faint mb-1">Headline</div><p className="text-[14px] text-ink">{summary.headline}</p></div> : null}
+        {summary.headline ? <div><div className="label-caps tracking-[0.05em] text-ink-faint mb-1">Headline</div><p className="text-[14px] text-ink">{summary.headline}</p></div> : null}
         {summary.summary ? <p className="text-[13px] text-ink-muted leading-6">{summary.summary}</p> : null}
         <div className="grid sm:grid-cols-2 gap-5">
           <Section title="Capabilities" items={summary.capabilities} />
@@ -71,10 +71,10 @@ export function AiIntakeChat() {
           <Section title="Strengths" items={summary.strengths} />
           <Section title="Constraints" items={summary.constraints} />
         </div>
-        {summary.suggestedAvailabilityStatus ? <div><div className="text-[11px] uppercase tracking-[0.05em] text-ink-faint mb-1">Availability</div><Chip>{AVAILABILITY_LABELS[summary.suggestedAvailabilityStatus as AvailabilityStatus] ?? summary.suggestedAvailabilityStatus}</Chip></div> : null}
+        {summary.suggestedAvailabilityStatus ? <div><div className="label-caps tracking-[0.05em] text-ink-faint mb-1">Availability</div><Chip>{AVAILABILITY_LABELS[summary.suggestedAvailabilityStatus as AvailabilityStatus] ?? summary.suggestedAvailabilityStatus}</Chip></div> : null}
         {summary.unresolvedQuestions.length ? (
           <div className="rounded-[6px] border border-amber/25 bg-amber-50 px-3.5 py-3">
-            <div className="text-[11px] uppercase tracking-[0.05em] text-amber mb-1">Still to confirm</div>
+            <div className="label-caps tracking-[0.05em] text-amber mb-1">Still to confirm</div>
             <ul className="text-[12.5px] text-ink space-y-0.5 list-disc pl-4">{summary.unresolvedQuestions.map((q, i) => <li key={i}>{q}</li>)}</ul>
           </div>
         ) : null}
@@ -100,7 +100,7 @@ export function AiIntakeChat() {
           <Button type="button" onClick={send} disabled={!input.trim()} className="flex-none"><Send className="h-3.5 w-3.5" /></Button>
         </div>
         <div className="flex items-center justify-between mt-2 px-1">
-          <span className="text-[11px] text-ink-faint">{answers} answer{answers === 1 ? "" : "s"} so far</span>
+          <span className="text-[12px] text-ink-faint">{answers} answer{answers === 1 ? "" : "s"} so far</span>
           <Button variant="secondary" size="sm" type="button" onClick={finish} disabled={pending || answers < 2}><Sparkles className="h-3.5 w-3.5" /> {pending ? "Summarising…" : "Summarise"}</Button>
         </div>
       </div>

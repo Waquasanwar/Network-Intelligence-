@@ -6,7 +6,8 @@ import { canViewRelationshipNotes } from "@/lib/authz";
 import { assessFreshness } from "@/lib/availability";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
-import { Tabs, EmptyState, Section } from "@/components/ui/page";
+import { Tabs, EmptyState, Section, Facts } from "@/components/ui/page";
+import { MoreMenu } from "@/components/ui/more-menu";
 import { Badge, Chip } from "@/components/ui/badge";
 import { AvailabilityBadge, DecisionBadge, RouteBadge, StageBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
@@ -22,7 +23,7 @@ import { loadRateCard } from "@/server/queries";
 import { estimateFee, PORTAL_VISIBLE, FEE_STATUS_LABELS, type AccountKind, type ShortlistDecision } from "@/lib/demand";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, MessagesSquare } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
@@ -104,32 +105,43 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
   return (
     <>
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div className="flex items-start gap-4">
-          <Avatar person={person} size="xl" ring />
-          <div>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] leading-8">{fullName(person)}</h1>
-            <div className="text-[14px] text-ink-muted mt-0.5">{person.headline ?? "—"}</div>
-            <div className="text-xs text-ink-faint mt-0.5">{[person.currentRole, person.currentCompany].filter(Boolean).join(" · ")}{person.primaryCity ? ` · ${[person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")}` : ""}</div>
-            {person.relationships[0] ? <div className="mt-2"><ProvenanceThread owner={person.relationships[0].networkOwner} introducer={person.relationships[0].introducedBy} person={person} workedTogether={person.relationships[0].workedTogether} /></div> : null}
-            <div className="flex flex-wrap items-center gap-2.5 mt-2">
-              <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
-              {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
-              {person.amanaBench ? <Badge tone="teal" filled>Amana bench</Badge> : null}
-              {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
-              {person.memberSince ? <Badge tone="teal" filled>network member</Badge> : null}
-              <ScreeningBadge status={person.screeningStatus} />
+      <div className="rounded-[8px] border border-line bg-surface p-5 sm:p-6 mb-5">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-start gap-4 min-w-0">
+            <Avatar person={person} size="xl" />
+            <div className="min-w-0">
+              <h1 className="font-display text-[24px] sm:text-[28px] leading-[1.15]">{fullName(person)}</h1>
+              <div className="text-[14.5px] text-ink-muted mt-1">{person.headline ?? "No headline yet"}</div>
+              {[person.currentRole, person.currentCompany, [person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")].filter(Boolean).length ? (
+                <div className="text-[13px] text-ink-faint mt-1">{[[person.currentRole, person.currentCompany].filter(Boolean).join(" at "), [person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</div>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
+                {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
+                {person.amanaBench ? <Badge tone="teal" filled>Amana bench</Badge> : null}
+                {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
+                {person.memberSince ? <Badge tone="teal" filled>network member</Badge> : null}
+                <ScreeningBadge status={person.screeningStatus} />
+              </div>
             </div>
           </div>
+          <div className="flex flex-none flex-wrap items-center gap-2">
+            <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} />
+            <ScheduleDrawer personId={person.id} connections={connections.map((c) => c.provider)} />
+            <MoreMenu>
+              <form action={startScreening}><input type="hidden" name="personId" value={person.id} /><SubmitButton size="sm" variant="secondary" pendingText="Starting…"><ClipboardList className="h-3.5 w-3.5" /> Start screening call</SubmitButton></form>
+              <CaptureConversationDrawer personId={person.id} />
+              <AvailabilityDrawer person={person} />
+              <EditProfileDrawer person={person} />
+            </MoreMenu>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2 justify-end">
-          <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} size="sm" />
-          <form action={startScreening}><input type="hidden" name="personId" value={person.id} /><SubmitButton size="sm" variant="secondary" pendingText="…"><ClipboardList className="h-3.5 w-3.5" /> Screening call</SubmitButton></form>
-          <ScheduleDrawer personId={person.id} connections={connections.map((c) => c.provider)} />
-          <CaptureConversationDrawer personId={person.id} />
-          <AvailabilityDrawer person={person} />
-          <EditProfileDrawer person={person} />
-        </div>
+        {person.relationships[0] ? (
+          <div className="mt-5 pt-4 border-t border-line flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <span className="label-caps text-ink-faint">How you know them</span>
+            <ProvenanceThread owner={person.relationships[0].networkOwner} introducer={person.relationships[0].introducedBy} person={person} workedTogether={person.relationships[0].workedTogether} />
+          </div>
+        ) : null}
       </div>
 
       <Tabs items={tabs} current={tab} base={`/network/${person.id}`} />
@@ -142,90 +154,88 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               <CardBody>
                 {latestSummary ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[13px]">
-                    <div><div className="text-[11px] uppercase text-ink-faint mb-1">Summary</div><p className="text-ink">{latestSummary.summary}</p></div>
-                    <div><div className="text-[11px] uppercase text-ink-faint mb-1">Current status</div><p>{latestSummary.currentStatus || "—"}</p><div className="text-[11px] uppercase text-ink-faint mb-1 mt-3">Rates / salary</div><p>{latestSummary.ratesOrSalary || "—"}</p></div>
-                    <div><div className="text-[11px] uppercase text-ink-faint mb-1">Strengths</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.strengths.map((s) => <li key={s}>{s}</li>)}{!latestSummary.strengths.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
-                    <div><div className="text-[11px] uppercase text-ink-faint mb-1">Does not want</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.avoid.map((s) => <li key={s}>{s}</li>)}{!latestSummary.avoid.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
-                    <div><div className="text-[11px] uppercase text-ink-faint mb-1">Working characteristics</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.workingCharacteristics.map((s) => <li key={s}>{s}</li>)}{!latestSummary.workingCharacteristics.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
-                    <div><div className="text-[11px] uppercase text-ink-faint mb-1">Constraints</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.constraints.map((s) => <li key={s}>{s}</li>)}{!latestSummary.constraints.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
-                    {latestSummary.unresolvedQuestions.length ? <div className="md:col-span-2 rounded-md bg-amber-100/60 border border-amber/20 p-3"><div className="text-[11px] uppercase text-amber mb-1">Still to find out</div><ul className="list-disc pl-4 space-y-0.5 text-ink">{latestSummary.unresolvedQuestions.map((s) => <li key={s}>{s}</li>)}</ul></div> : null}
+                    <div><div className="label-caps text-ink-faint mb-1">Summary</div><p className="text-ink">{latestSummary.summary}</p></div>
+                    <div><div className="label-caps text-ink-faint mb-1">Current status</div><p>{latestSummary.currentStatus || "—"}</p><div className="label-caps text-ink-faint mb-1 mt-3">Rates / salary</div><p>{latestSummary.ratesOrSalary || "—"}</p></div>
+                    <div><div className="label-caps text-ink-faint mb-1">Strengths</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.strengths.map((s) => <li key={s}>{s}</li>)}{!latestSummary.strengths.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
+                    <div><div className="label-caps text-ink-faint mb-1">Does not want</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.avoid.map((s) => <li key={s}>{s}</li>)}{!latestSummary.avoid.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
+                    <div><div className="label-caps text-ink-faint mb-1">Working characteristics</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.workingCharacteristics.map((s) => <li key={s}>{s}</li>)}{!latestSummary.workingCharacteristics.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
+                    <div><div className="label-caps text-ink-faint mb-1">Constraints</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.constraints.map((s) => <li key={s}>{s}</li>)}{!latestSummary.constraints.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
+                    {latestSummary.unresolvedQuestions.length ? <div className="md:col-span-2 rounded-md bg-amber-100/60 border border-amber/20 p-3"><div className="label-caps text-amber mb-1">Still to find out</div><ul className="list-disc pl-4 space-y-0.5 text-ink">{latestSummary.unresolvedQuestions.map((s) => <li key={s}>{s}</li>)}</ul></div> : null}
                   </div>
-                ) : <EmptyState title="Not yet in conversation" description="Book a conversation, capture notes, and approve the structured summary." />}
+                ) : <EmptyState icon={MessagesSquare} title="No conversation on record yet" description="Book a conversation, capture the notes, and approve the summary. It then appears here." />}
               </CardBody>
             </Card>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader title="Expertise" />
-                <CardBody>
-                  <div className="flex flex-wrap gap-1 mb-3">{person.capabilities.map((c) => <Chip key={c}>{c}</Chip>)}{!person.capabilities.length && <span className="text-xs text-ink-faint">None recorded</span>}</div>
-                  <div className="text-[11px] uppercase text-ink-faint mb-1">Sectors</div>
-                  <div className="flex flex-wrap gap-1">{person.sectors.map((c) => <Chip key={c}>{c}</Chip>)}{!person.sectors.length && <span className="text-xs text-ink-faint">—</span>}</div>
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs mt-3">
-                    <dt className="text-ink-faint">Seniority</dt><dd>{person.seniority ? SENIORITY_LABELS[person.seniority] : "—"}</dd>
-                    <dt className="text-ink-faint">Rate</dt><dd>{person.rateExpectation ?? "—"}</dd>
-                    <dt className="text-ink-faint">Salary</dt><dd>{person.salaryExpectation ?? "—"}</dd>
-                    <dt className="text-ink-faint">Notice</dt><dd>{person.noticePeriod ?? "—"}</dd>
-                    <dt className="text-ink-faint">Target locations</dt><dd>{person.targetLocations.join(", ") || "—"}</dd>
-                  </dl>
-                </CardBody>
-              </Card>
-              <Card>
-                <CardHeader title="Availability" />
-                <CardBody>
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                    <dt className="text-ink-faint">Status</dt><dd><AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} /></dd>
-                    <dt className="text-ink-faint">Last confirmed</dt><dd><DateText date={person.availabilityConfirmedAt} relative /></dd>
-                    <dt className="text-ink-faint">Source</dt><dd>{person.availabilitySource ?? "—"}</dd>
-                    <dt className="text-ink-faint">Confidence</dt><dd className="tabular">{person.availabilityConfidence}%</dd>
-                    <dt className="text-ink-faint">Next check</dt><dd><DateText date={person.nextCheckDate} relative /></dd>
-                    <dt className="text-ink-faint">Freshness</dt><dd>{freshness === "fresh" ? <span className="text-teal">fresh</span> : freshness === "aging" ? <span>aging</span> : <span className="text-amber">{freshness}</span>}</dd>
-                  </dl>
-                  {person.nextAction ? <div className="mt-3 rounded-md border border-line bg-surface-muted px-3 py-2 text-xs"><span className="text-ink-faint">Next action: </span>{person.nextAction} <DateText date={person.nextActionDate} relative className="text-ink-faint" /></div> : null}
-                </CardBody>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader title="Profile" description="What they do, and when they are free" />
+              <CardBody>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                  <div>
+                    <div className="label-caps text-ink-faint mb-2">Expertise</div>
+                    {person.capabilities.length ? <div className="flex flex-wrap gap-1.5">{person.capabilities.map((c) => <Chip key={c}>{c}</Chip>)}</div> : <p className="text-[13px] text-ink-faint">None recorded yet. The screening captures it.</p>}
+                    {person.sectors.length ? <><div className="label-caps text-ink-faint mt-4 mb-2">Sectors</div><div className="flex flex-wrap gap-1.5">{person.sectors.map((c) => <Chip key={c}>{c}</Chip>)}</div></> : null}
+                    <Facts className="mt-5" rows={[
+                      { label: "Seniority", value: person.seniority ? SENIORITY_LABELS[person.seniority] : null },
+                      { label: "Rate", value: person.rateExpectation },
+                      { label: "Salary", value: person.salaryExpectation },
+                      { label: "Notice", value: person.noticePeriod },
+                      { label: "Target locations", value: person.targetLocations.join(", ") },
+                    ]} />
+                  </div>
+                  <div>
+                    <div className="label-caps text-ink-faint mb-2">Availability</div>
+                    <Facts rows={[
+                      { label: "Status", value: <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} /> },
+                      { label: "Last confirmed", value: person.availabilityConfirmedAt ? <DateText date={person.availabilityConfirmedAt} relative /> : null },
+                      { label: "Told us by", value: person.availabilitySource },
+                      { label: "Next check", value: person.nextCheckDate ? <DateText date={person.nextCheckDate} relative /> : null },
+                      { label: "How current", value: freshness === "fresh" ? <span className="text-teal">Fresh</span> : freshness === "aging" ? "Ageing" : <span className="text-amber capitalize">{freshness}</span> },
+                    ]} />
+                    {person.nextAction ? <div className="mt-4 rounded-[6px] bg-surface-muted px-3 py-2.5 text-[13px]"><span className="text-ink-muted">Next action: </span><span className="font-medium">{person.nextAction}</span> <DateText date={person.nextActionDate} relative className="text-ink-faint" /></div> : null}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
             <FitCard rows={fit} />
           </div>
           <div className="space-y-4">
             <TrustCard t={trust} firstName={person.firstName} screened={person.screeningStatus === "APPROVED" || !!person.screenedAt} workedWith={person.relationships.some((r) => r.workedTogether)} action={<VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} />} />
             <ReferredCard rows={referredRows} action={<ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} variant="secondary" size="sm" label="Refer" />} />
-            <VouchList vouches={person.vouches} />
+            {person.vouches.length ? <VouchList vouches={person.vouches} /> : null}
             <Card>
-              <CardHeader title="Provenance" description="Who knows them and how" />
-              <CardBody>
-                <ul className="space-y-2">
-                  {person.relationships.map((r) => (
-                    <li key={r.id} className="text-xs">
-                      <div className="font-medium text-ink">{r.networkOwner.name} · {RELATIONSHIP_LABELS[r.relationshipType]}</div>
-                      <div className="text-ink-muted">{SOURCE_LABELS[r.sourceType]}{r.introducedBy ? <> · via <Link href={`/network/${r.introducedBy.id}`} className="text-navy hover:underline">{r.introducedBy.firstName} {r.introducedBy.lastName}</Link></> : null}{r.yearsKnown ? ` · ${r.yearsKnown}y` : ""}</div>
-                      {r.wouldWorkTogetherAgain === true ? <div className="text-teal">Would work together again</div> : r.wouldWorkTogetherAgain === false ? <div className="text-risk">Would not work together again</div> : null}
-                    </li>
-                  ))}
-                </ul>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardHeader title="Upcoming" />
-              <CardBody>
-                {person.scheduledMeetings.length === 0 ? <div className="text-xs text-ink-faint">Nothing booked.</div> : (
-                  <ul className="space-y-1 text-xs">{person.scheduledMeetings.map((m) => <li key={m.id} className="flex justify-between"><span>{m.meetingType.replace(/_/g, " ").toLowerCase()} · {m.provider === "MANUAL" ? "manual" : m.provider === "CALENDLY" ? "Calendly" : "Outlook"}</span><DateText date={m.startAt} relative className="text-ink-faint" /></li>)}</ul>
-                )}
-              </CardBody>
-            </Card>
-            {person.introducedPeople.length ? (
-              <Card>
-                <CardHeader title="Has introduced" />
-                <CardBody><ul className="space-y-1 text-xs">{person.introducedPeople.map((r) => <li key={r.id}><Link href={`/network/${r.person.id}`} className="text-navy hover:underline">{r.person.firstName} {r.person.lastName}</Link> <span className="text-ink-faint">— {r.person.headline}</span></li>)}</ul></CardBody>
-              </Card>
-            ) : null}
-            <Card>
-              <CardHeader title="Contact" />
-              <CardBody>
-                <dl className="text-xs space-y-1">
-                  <div className="flex justify-between gap-2"><dt className="text-ink-faint">Email</dt><dd className="truncate">{person.email ?? "—"}</dd></div>
-                  <div className="flex justify-between gap-2"><dt className="text-ink-faint">Phone</dt><dd>{person.phone ?? "—"}</dd></div>
-                  <div className="flex justify-between gap-2"><dt className="text-ink-faint">LinkedIn</dt><dd className="truncate">{person.linkedinUrl ? <a href={person.linkedinUrl} className="text-navy hover:underline" rel="noreferrer noopener" target="_blank">profile</a> : "—"}</dd></div>
-                </dl>
+              <CardHeader title="Details" />
+              <CardBody className="space-y-5">
+                <div>
+                  <div className="label-caps text-ink-faint mb-2">Who knows them</div>
+                  <ul className="space-y-2.5">
+                    {person.relationships.map((r) => (
+                      <li key={r.id} className="text-[13px]">
+                        <div className="font-medium text-ink">{r.networkOwner.name} · {RELATIONSHIP_LABELS[r.relationshipType]}</div>
+                        <div className="text-ink-muted">{SOURCE_LABELS[r.sourceType]}{r.introducedBy ? <> · via <Link href={`/network/${r.introducedBy.id}`} className="text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">{r.introducedBy.firstName} {r.introducedBy.lastName}</Link></> : null}{r.yearsKnown ? ` · ${r.yearsKnown}y` : ""}</div>
+                        {r.wouldWorkTogetherAgain === true ? <div className="text-teal">Would work together again</div> : r.wouldWorkTogetherAgain === false ? <div className="text-risk">Would not work together again</div> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {person.scheduledMeetings.length ? (
+                  <div className="pt-5 border-t border-line">
+                    <div className="label-caps text-ink-faint mb-2">Coming up</div>
+                    <ul className="space-y-1.5 text-[13px]">{person.scheduledMeetings.map((m) => <li key={m.id} className="flex justify-between gap-3"><span className="capitalize">{m.meetingType.replace(/_/g, " ").toLowerCase()} · {m.provider === "MANUAL" ? "manual" : m.provider === "CALENDLY" ? "Calendly" : "Outlook"}</span><DateText date={m.startAt} relative className="text-ink-faint" /></li>)}</ul>
+                  </div>
+                ) : null}
+                {person.introducedPeople.length ? (
+                  <div className="pt-5 border-t border-line">
+                    <div className="label-caps text-ink-faint mb-2">Has introduced</div>
+                    <ul className="space-y-1.5 text-[13px]">{person.introducedPeople.map((r) => <li key={r.id}><Link href={`/network/${r.person.id}`} className="font-medium text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">{r.person.firstName} {r.person.lastName}</Link>{r.person.headline ? <span className="text-ink-faint"> · {r.person.headline}</span> : null}</li>)}</ul>
+                  </div>
+                ) : null}
+                <div className="pt-5 border-t border-line">
+                  <div className="label-caps text-ink-faint mb-2">Contact</div>
+                  <Facts rows={[
+                    { label: "Email", value: person.email ? <span className="break-all">{person.email}</span> : null },
+                    { label: "Phone", value: person.phone },
+                    { label: "LinkedIn", value: person.linkedinUrl ? <a href={person.linkedinUrl} className="underline decoration-line-strong underline-offset-4 hover:decoration-ink" rel="noreferrer noopener" target="_blank">Open profile</a> : null },
+                  ]} />
+                </div>
               </CardBody>
             </Card>
           </div>
@@ -242,8 +252,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                   <tr key={r.id}>
                     <td className="font-medium">{r.networkOwner.name}</td>
                     <td>{RELATIONSHIP_LABELS[r.relationshipType]}</td>
-                    <td>{SOURCE_LABELS[r.sourceType]}{r.introducedBy ? <div className="text-[11px] text-ink-faint">via {r.introducedBy.firstName} {r.introducedBy.lastName}</div> : null}</td>
-                    <td>{r.workedTogether ? <><Badge tone="teal">yes</Badge>{r.workedTogetherContext ? <div className="text-[11px] text-ink-muted mt-1 max-w-[260px]">{r.workedTogetherContext}</div> : null}</> : <span className="text-ink-faint">no</span>}</td>
+                    <td>{SOURCE_LABELS[r.sourceType]}{r.introducedBy ? <div className="text-[12px] text-ink-faint">via {r.introducedBy.firstName} {r.introducedBy.lastName}</div> : null}</td>
+                    <td>{r.workedTogether ? <><Badge tone="teal">yes</Badge>{r.workedTogetherContext ? <div className="text-[12px] text-ink-muted mt-1 max-w-[260px]">{r.workedTogetherContext}</div> : null}</> : <span className="text-ink-faint">no</span>}</td>
                     <td className="tabular">{r.yearsKnown ?? "—"}</td>
                     <td>{r.wouldWorkTogetherAgain === true ? <span className="text-teal">Yes</span> : r.wouldWorkTogetherAgain === false ? <span className="text-risk">No</span> : "—"}</td>
                     <td><DateText date={r.lastContactDate} relative /></td>
@@ -265,7 +275,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                   <CardBody className="pt-3">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <div className="flex items-center gap-2"><Badge tone={e.evidenceType === "CAUTION" ? "amber" : "teal"}>{EVIDENCE_LABELS[e.evidenceType]}</Badge><span className="text-xs text-ink-muted">{e.context}</span></div>
-                      <div className="text-[11px] text-ink-faint">{e.observer.name} · <DateText date={e.dateObserved} /> · confidence {e.confidence}% · {e.visibility.toLowerCase().replace("_", " ")}</div>
+                      <div className="text-[12px] text-ink-faint">{e.observer.name} · <DateText date={e.dateObserved} /> · confidence {e.confidence}% · {e.visibility.toLowerCase().replace("_", " ")}</div>
                     </div>
                     <p className="text-[13px]">{e.description}</p>
                   </CardBody>
@@ -294,7 +304,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                       </div>
                       {s?.summary ? <p className="text-[13px] mt-2">{s.summary}</p> : null}
                       {c.rawNotes ? <details className="mt-2"><summary className="text-xs text-ink-faint cursor-pointer">Raw notes</summary><p className="text-xs text-ink-muted whitespace-pre-wrap mt-1">{c.rawNotes}</p></details> : null}
-                      {c.followUpDate ? <div className="text-[11px] text-ink-faint mt-2">Follow up <DateText date={c.followUpDate} relative /></div> : null}
+                      {c.followUpDate ? <div className="text-[12px] text-ink-faint mt-2">Follow up <DateText date={c.followUpDate} relative /></div> : null}
                     </CardBody>
                   </Card>
                 );
@@ -313,7 +323,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                 <tbody>
                   {person.matches.map((m) => (
                     <tr key={m.id}>
-                      <td><Link href={`/opportunities/${m.opportunity.id}`} className="font-medium text-ink hover:underline underline-offset-4">{m.opportunity.title}</Link><div className="text-[11px] text-ink-faint">{m.opportunity.clientName}</div></td>
+                      <td><Link href={`/opportunities/${m.opportunity.id}`} className="font-medium text-ink hover:underline underline-offset-4">{m.opportunity.title}</Link><div className="text-[12px] text-ink-faint">{m.opportunity.clientName}</div></td>
                       <td><RouteBadge route={m.opportunity.engagementRoute} /></td>
                       <td><StageBadge status={m.opportunity.status} /></td>
                       <td className="tabular">{m.fitScore}</td>
@@ -322,7 +332,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                     </tr>
                   ))}
                   {person.teamMemberships.map((t) => (
-                    <tr key={t.id}><td><Link href={`/opportunities/${t.opportunity.id}`} className="font-medium text-ink hover:underline">{t.opportunity.title}</Link><div className="text-[11px] text-ink-faint">Amana team shortlist</div></td><td colSpan={4}><Badge tone="teal">{t.roleOnTeam}</Badge></td><td className="text-xs text-ink-muted">{t.notes ?? "—"}</td></tr>
+                    <tr key={t.id}><td><Link href={`/opportunities/${t.opportunity.id}`} className="font-medium text-ink hover:underline">{t.opportunity.title}</Link><div className="text-[12px] text-ink-faint">Amana team shortlist</div></td><td colSpan={4}><Badge tone="teal">{t.roleOnTeam}</Badge></td><td className="text-xs text-ink-muted">{t.notes ?? "—"}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -361,7 +371,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           {audit.length === 0 ? <EmptyState title="No activity recorded" /> : (
             <div className="rounded-[8px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
               <table className="data"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
-                <tbody>{audit.map((a) => <tr key={a.id}><td><DateText date={a.createdAt} relative /></td><td>{a.actor?.name ?? "system"}</td><td className="font-mono text-[11px]">{a.action}</td><td>{a.entityType}</td><td className="text-xs text-ink-muted font-mono">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody>
+                <tbody>{audit.map((a) => <tr key={a.id}><td><DateText date={a.createdAt} relative /></td><td>{a.actor?.name ?? "system"}</td><td className="font-mono text-[12px]">{a.action}</td><td>{a.entityType}</td><td className="text-xs text-ink-muted font-mono">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody>
               </table>
             </div>
           )}

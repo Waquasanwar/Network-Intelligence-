@@ -37,17 +37,17 @@ export function BriefChips({ b, className }: { b: Brief; className?: string }) {
     ...(b.durationMonths ? [`${b.durationMonths} months`] : []),
     ...(b.startBy ? [`start ${b.startBy}`] : []),
   ];
-  return <div className={cn("flex flex-wrap gap-1", className)}>{chips.map((c, i) => <span key={i} className="inline-flex items-center rounded-full bg-navy-100 text-navy px-2.5 py-0.5 text-[11.5px] font-medium">{c}</span>)}</div>;
+  return <div className={cn("flex flex-wrap gap-1", className)}>{chips.map((c, i) => <span key={i} className="inline-flex items-center rounded-full bg-navy-100 text-navy px-2.5 py-0.5 text-[12px] font-medium">{c}</span>)}</div>;
 }
 
 /** "How the co-pilot read it": chips, assumptions, and what it could not infer. */
 export function ReadCard({ b, title = "How the co-pilot read it" }: { b: Brief; title?: string }) {
   return (
     <div className="rounded-[8px] border border-line bg-surface p-4">
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-2">{title}</div>
+      <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-2">{title}</div>
       <BriefChips b={b} />
       {b.assumptions.length ? <ul className="mt-3 pl-4 list-disc text-[12.5px] text-ink-muted space-y-0.5">{b.assumptions.map((a) => <li key={a}>{a}</li>)}</ul> : null}
-      {b.questions.length ? <div className="mt-3 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-1">Still to confirm</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
+      {b.questions.length ? <div className="mt-3 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="label-caps tracking-wide font-medium text-amber mb-1">Still to confirm</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
     </div>
   );
 }
@@ -73,10 +73,10 @@ export function FitChecks({ checks }: { checks: { key: string; label: string; st
   if (!checks.length) return null;
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1.5 mt-1.5">
-      <li className="text-[10.5px] uppercase tracking-[0.08em] text-ink-faint self-center">Fit</li>
+      <li className="label-caps tracking-[0.08em] text-ink-faint self-center">Fit</li>
       {checks.map((c) => (
         <li key={c.key} title={c.note} className={cn("inline-flex items-center gap-1.5 text-[12.5px] font-medium cursor-help", c.state === "strong" ? "text-teal" : c.state === "gap" ? "text-risk" : c.state === "moderate" ? "text-navy" : "text-amber")}>
-          <span className={cn("inline-grid place-items-center h-4 w-4 rounded-full text-[10px]", c.state === "strong" ? "bg-teal-100" : c.state === "gap" ? "bg-risk-100" : c.state === "moderate" ? "bg-navy-100" : "bg-amber-100")}>{c.state === "strong" ? <Check className="h-2.5 w-2.5" /> : c.state === "gap" ? <X className="h-2.5 w-2.5" /> : c.state === "moderate" ? "~" : <HelpCircle className="h-2.5 w-2.5" />}</span>
+          <span className={cn("inline-grid place-items-center h-4 w-4 rounded-full text-[12px]", c.state === "strong" ? "bg-teal-100" : c.state === "gap" ? "bg-risk-100" : c.state === "moderate" ? "bg-navy-100" : "bg-amber-100")}>{c.state === "strong" ? <Check className="h-2.5 w-2.5" /> : c.state === "gap" ? <X className="h-2.5 w-2.5" /> : c.state === "moderate" ? "~" : <HelpCircle className="h-2.5 w-2.5" />}</span>
           {c.label}
         </li>
       ))}
@@ -87,11 +87,11 @@ export function FitChecks({ checks }: { checks: { key: string; label: string; st
 export function FeeBox({ est, model, pct, label = "Estimated fee to us", extra }: { est: FeeEstimate; model?: FeeModel; pct?: number | null; label?: string; extra?: React.ReactNode }) {
   return (
     <div className={cn("rounded-[8px] border px-4 py-3.5", est.confident ? "border-teal/30 bg-teal-50" : "border-line bg-surface-muted")}>
-      <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-muted">{label}</div>
+      <div className="text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-muted">{label}</div>
       <div className={cn("text-[28px] font-semibold tabular tracking-[-0.03em] leading-9 mt-0.5", est.confident ? "text-teal" : "text-ink-faint")}>{est.confident ? fmt(est.ourTake, est.currency) : "—"}</div>
       {model ? <div className="text-[12px] text-ink-muted">{FEE_MODEL_LABELS[model]}{pct ? ` · ${pct}%` : ""}</div> : null}
       <div className="text-[12px] text-ink-muted">{est.basis}</div>
-      {est.confident ? <div className="text-[11.5px] text-ink-faint">Paying party spends {fmt(est.gross, est.currency)}</div> : null}
+      {est.confident ? <div className="text-[12px] text-ink-faint">Paying party spends {fmt(est.gross, est.currency)}</div> : null}
       {extra}
     </div>
   );
@@ -103,7 +103,7 @@ export function AnonCard({ refCode, headline, region, availabilityBand, evidence
   return (
     <li className="py-3 border-b border-line last:border-b-0">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0"><code className="text-[11px] bg-surface-muted rounded px-1.5 py-0.5">{refCode}</code><span className="text-[13px] font-medium text-ink truncate">{revealedName ?? headline}</span></div>
+        <div className="flex items-center gap-2 min-w-0"><code className="text-[12px] bg-surface-muted rounded px-1.5 py-0.5">{refCode}</code><span className="text-[13px] font-medium text-ink truncate">{revealedName ?? headline}</span></div>
         <div className="flex items-center gap-1.5 flex-none">{referred ? <Badge tone="teal" filled>referred by hand</Badge> : null}<ShortlistBadge decision={decision} kind={kind} /></div>
       </div>
       <div className="flex flex-wrap gap-1 mt-1.5">

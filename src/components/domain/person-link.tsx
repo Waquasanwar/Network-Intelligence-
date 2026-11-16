@@ -8,7 +8,7 @@ export function PersonLink({ person, sub }: { person: { id: string; firstName: s
       <Avatar person={person} size="sm" />
       <span className="min-w-0">
         <span className="block text-[13px] font-medium text-ink group-hover:underline underline-offset-4 truncate">{fullName(person)}</span>
-        {sub !== null ? <span className="block text-[11px] text-ink-faint truncate mt-px">{sub ?? person.headline ?? ""}</span> : null}
+        {sub !== null ? <span className="block text-[12px] text-ink-faint truncate mt-px">{sub ?? person.headline ?? ""}</span> : null}
       </span>
     </Link>
   );

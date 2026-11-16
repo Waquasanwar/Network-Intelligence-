@@ -72,7 +72,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
               <div className="relative flex-1"><Sparkles className="absolute left-3.5 top-3 h-4 w-4 text-navy-400 pointer-events-none" /><Textarea name="q" defaultValue={q} rows={2} className="pl-10 text-[14px] min-h-[64px]" placeholder="Describe the need in plain words, e.g. “2 BAs already in Dubai with a visa, perm, retail banking, AED 360k”" aria-label="Describe the requirement" /></div>
               <SubmitButton pendingText="Reading…">Ask the co-pilot</SubmitButton>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5"><span className="text-[11.5px] text-ink-faint mr-1">Try</span>{EXAMPLES.map((e) => <Link key={e} href={`/requirements?q=${encodeURIComponent(e)}`} className="px-2.5 h-6.5 inline-flex items-center rounded-full border border-line bg-surface text-[11.5px] text-ink-muted hover:border-line-strong hover:text-ink">{e.length > 46 ? e.slice(0, 44) + "…" : e}</Link>)}</div>
+            <div className="flex flex-wrap items-center gap-1.5"><span className="text-[12px] text-ink-faint mr-1">Try</span>{EXAMPLES.map((e) => <Link key={e} href={`/requirements?q=${encodeURIComponent(e)}`} className="px-2.5 h-6.5 inline-flex items-center rounded-full border border-line bg-surface text-[12px] text-ink-muted hover:border-line-strong hover:text-ink">{e.length > 46 ? e.slice(0, 44) + "…" : e}</Link>)}</div>
           </form>
 
           {copilot ? (
@@ -82,7 +82,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
                 <Section title={copilot.groups.length ? `${copilot.groups.reduce((a, g) => a + g.rows.length, 0)} people worth looking at` : "No one obvious yet"} description="Retrieved for this brief only. Hard requirements are checked and labelled, never used to hide anyone. You decide who to propose.">
                   {copilot.groups.length === 0 ? <EmptyState title="Nothing retrieved" description="Add capabilities or a location to the brief, or import more of your network." /> : copilot.groups.map((g) => (
                     <div key={g.tier} className="mb-3">
-                      <div className="flex items-center gap-2 mb-2 ml-1"><TierBadge tier={g.tier} /><span className="text-[11.5px] text-ink-faint">{g.rows.length}</span></div>
+                      <div className="flex items-center gap-2 mb-2 ml-1"><TierBadge tier={g.tier} /><span className="text-[12px] text-ink-faint">{g.rows.length}</span></div>
                       <div className="space-y-2">
                         {g.rows.map((r) => { const p = copilot!.people.get(r.match.personId)!; return (
                           <Card key={p.id}><CardBody className="pt-3 pb-3.5">
@@ -135,10 +135,10 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
                 <tbody>
                   {await Promise.all(briefs.map(async (b) => { const d = await toDomain(b); const est = estimateFee(d, d.terms, card, d.expertHours); const meets = b.shortlist.filter((s) => s.tier === "meets").length; const prop = b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision)).length; return (
                     <tr key={b.id}>
-                      <td className="align-top"><Link href={`/requirements/${b.id}`} className="font-medium text-ink hover:underline underline-offset-4">{b.title}</Link><div className="text-[11px] text-ink-faint mt-0.5 flex flex-wrap items-center gap-1.5"><KindBadge kind={b.account.kind} />{b.account.name}{b.submittedVia === "PORTAL" ? " · via portal" : ""} · <DateText date={b.updatedAt} relative /></div></td>
-                      <td className="align-top text-xs">{routeLabel(b.engagementRoute)}{b.headcount > 1 ? ` × ${b.headcount}` : ""}<div className="text-[11px] text-ink-faint">{b.locations[0] ?? "location to confirm"}{b.mustBeLocal ? " · already there" : ""}{b.workRights ? " · visa" : ""}</div></td>
-                      <td className="align-top"><BriefStatusBadge status={b.status} /><div className="text-[11px] text-ink-faint">{b.shortlist.length ? `${meets} meet the brief · ${prop} proposed` : "not searched yet"}</div></td>
-                      <td className="align-top text-right">{est.confident ? <><div className="font-semibold tabular">{fmt(est.ourTake, est.currency)}</div><div className="text-[11px] text-ink-faint">{FEE_MODEL_LABELS[d.terms.model].split(" (")[0]}</div></> : <span className="text-xs text-ink-faint">needs a budget</span>}</td>
+                      <td className="align-top"><Link href={`/requirements/${b.id}`} className="font-medium text-ink hover:underline underline-offset-4">{b.title}</Link><div className="text-[12px] text-ink-faint mt-0.5 flex flex-wrap items-center gap-1.5"><KindBadge kind={b.account.kind} />{b.account.name}{b.submittedVia === "PORTAL" ? " · via portal" : ""} · <DateText date={b.updatedAt} relative /></div></td>
+                      <td className="align-top text-xs">{routeLabel(b.engagementRoute)}{b.headcount > 1 ? ` × ${b.headcount}` : ""}<div className="text-[12px] text-ink-faint">{b.locations[0] ?? "location to confirm"}{b.mustBeLocal ? " · already there" : ""}{b.workRights ? " · visa" : ""}</div></td>
+                      <td className="align-top"><BriefStatusBadge status={b.status} /><div className="text-[12px] text-ink-faint">{b.shortlist.length ? `${meets} meet the brief · ${prop} proposed` : "not searched yet"}</div></td>
+                      <td className="align-top text-right">{est.confident ? <><div className="font-semibold tabular">{fmt(est.ourTake, est.currency)}</div><div className="text-[12px] text-ink-faint">{FEE_MODEL_LABELS[d.terms.model].split(" (")[0]}</div></> : <span className="text-xs text-ink-faint">needs a budget</span>}</td>
                     </tr>
                   ); }))}
                 </tbody>
@@ -149,11 +149,11 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
         <div className="space-y-4">
           <Card>
             <CardHeader title="Fee pipeline" description="Our revenue: forecast, agreed, invoiced, paid." />
-            <CardBody>{fees.length === 0 ? <div className="text-xs text-ink-muted">Fees appear as briefs are saved and people are placed.</div> : <ul className="divide-y divide-line">{fees.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[11.5px] text-ink-faint">{f.account.name} · <Link href={`/requirements/${f.briefId}`} className="hover:underline">{f.brief.title}</Link>{f.person ? ` · ${fullName(f.person)}` : ""}</div><div className="text-[11.5px] text-ink-faint">{f.basis}</div></li>)}</ul>}</CardBody>
+            <CardBody>{fees.length === 0 ? <div className="text-xs text-ink-muted">Fees appear as briefs are saved and people are placed.</div> : <ul className="divide-y divide-line">{fees.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.account.name} · <Link href={`/requirements/${f.briefId}`} className="hover:underline">{f.brief.title}</Link>{f.person ? ` · ${fullName(f.person)}` : ""}</div><div className="text-[12px] text-ink-faint">{f.basis}</div></li>)}</ul>}</CardBody>
           </Card>
           <Card>
             <CardHeader title="Accounts" description="Who pays, and on what terms." action={<Link href="/settings/commercials" className="text-[12px] text-ink-muted hover:text-ink">Rate card →</Link>} />
-            <CardBody><ul className="divide-y divide-line">{accounts.map((a) => <li key={a.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"><div><div className="text-[13px] font-medium">{a.name}</div><div className="text-[11.5px] text-ink-faint">{KIND_LABEL[a.kind]} · {a._count.briefs} requirements{a.monthlyFee ? ` · ${fmt(Number(a.monthlyFee), a.currency)}/mo access` : ""}{a.portalTenantId ? " · portal login" : ""}</div></div><Badge tone={a.status === "ACTIVE" ? "teal" : "amber"}>{a.status.toLowerCase()}</Badge></li>)}</ul></CardBody>
+            <CardBody><ul className="divide-y divide-line">{accounts.map((a) => <li key={a.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"><div><div className="text-[13px] font-medium">{a.name}</div><div className="text-[12px] text-ink-faint">{KIND_LABEL[a.kind]} · {a._count.briefs} requirements{a.monthlyFee ? ` · ${fmt(Number(a.monthlyFee), a.currency)}/mo access` : ""}{a.portalTenantId ? " · portal login" : ""}</div></div><Badge tone={a.status === "ACTIVE" ? "teal" : "amber"}>{a.status.toLowerCase()}</Badge></li>)}</ul></CardBody>
           </Card>
         </div>
       </div>

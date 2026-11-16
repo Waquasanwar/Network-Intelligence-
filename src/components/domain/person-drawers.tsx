@@ -122,7 +122,7 @@ export function ScheduleDrawer({ personId, connections }: { personId: string; co
   const defaultStart = new Date(Date.now() + 2 * 86_400_000);
   defaultStart.setHours(10, 0, 0, 0);
   return (
-    <Drawer trigger={<Button size="sm"><CalendarPlus className="h-3.5 w-3.5" /> Book conversation</Button>} title="Book a conversation" description="Outlook, Calendly or a manual slot.">
+    <Drawer trigger={<Button variant="secondary"><CalendarPlus className="h-3.5 w-3.5" /> Book conversation</Button>} title="Book a conversation" description="Outlook, Calendly or a manual slot.">
       <form action={scheduleConversation} className="space-y-4">
         <input type="hidden" name="personId" value={personId} />
         <Field label="Provider"><Select name="provider" defaultValue={connections.includes("MICROSOFT_GRAPH") ? "MICROSOFT_GRAPH" : "MANUAL"}>{providers.map((p) => <option key={p.value} value={p.value} disabled={p.value !== "MANUAL" && !connections.includes(p.value)}>{p.label}</option>)}</Select></Field>

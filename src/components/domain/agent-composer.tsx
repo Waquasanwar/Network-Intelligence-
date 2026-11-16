@@ -111,7 +111,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
             </ol>
           ) : result?.ok ? (
             <>
-              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[11.5px] text-ink-faint">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12px] text-ink-faint">
                 <span className="eyebrow text-ink">Network agent</span>
                 <span>Searched {result.searched} people · ranked by trust</span>
                 {result.understood.length ? <span className="inline-flex flex-wrap items-center gap-1.5">Understood{result.understood.slice(0, 4).map((u) => <span key={u} className="rounded-full bg-surface-muted px-2 py-0.5 font-medium text-ink-muted">{u}</span>)}</span> : null}
@@ -134,7 +134,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
                         </span>
                         <span className="flex-none text-right">
                           <span className="block font-display text-[22px] leading-[1] text-ink tabular">{Math.round(p.trust)}</span>
-                          <span className="block text-[10.5px] text-ink-faint">{p.band.toLowerCase()}</span>
+                          <span className="block text-[12px] text-ink-faint">{p.band.toLowerCase()}</span>
                         </span>
                       </div>
                     </Link>

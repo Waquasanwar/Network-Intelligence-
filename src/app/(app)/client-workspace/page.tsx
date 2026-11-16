@@ -25,7 +25,7 @@ export default async function ClientWorkspace() {
               <CardHeader title={o.title} action={<div className="flex gap-1.5"><RouteBadge route={o.engagementRoute} /><StageBadge status={o.status} /></div>} description={`${ROUTE_LABELS[o.engagementRoute]}${o.location ? ` · ${o.location}` : ""}`} />
               <CardBody>
                 <p className="text-[13px] mb-3">{o.problemStatement}</p>
-                <div className="text-[11px] uppercase text-ink-faint mb-1">Introduced</div>
+                <div className="label-caps text-ink-faint mb-1">Introduced</div>
                 {o.introductions.length === 0 ? <div className="text-xs text-ink-faint">No introductions yet.</div> : <ul className="text-xs space-y-1">{o.introductions.map((i) => <li key={i.id}><span className="font-medium">{i.person.firstName} {i.person.lastName}</span> <span className="text-ink-faint">— {i.person.headline}</span> <Badge tone="teal">{i.status.toLowerCase().replace(/_/g, " ")}</Badge></li>)}</ul>}
               </CardBody>
             </Card>

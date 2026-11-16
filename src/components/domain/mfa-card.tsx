@@ -35,7 +35,7 @@ export function MfaCard({ enabled: initial }: { enabled: boolean }) {
       <div className="space-y-3">
         <div className="text-[12px] text-ink-muted">Scan this with an authenticator app (Google Authenticator, 1Password, Authy), then enter the 6-digit code it shows.</div>
         <Image src={setup.qr} alt="MFA setup QR code" width={160} height={160} unoptimized className="rounded-lg border border-line" />
-        <div className="text-[11px] text-ink-faint">Or enter this key by hand: <span className="font-mono text-ink break-all">{setup.secret}</span></div>
+        <div className="text-[12px] text-ink-faint">Or enter this key by hand: <span className="font-mono text-ink break-all">{setup.secret}</span></div>
         <Field label="6-digit code"><Input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" placeholder="123 456" className="h-9" /></Field>
         {err ? <div className="text-[12px] text-risk">{err}</div> : null}
         <div className="flex gap-2">

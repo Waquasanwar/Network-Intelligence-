@@ -72,7 +72,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
             <p className="text-[14.5px] text-ink-muted mt-2.5">Step 1 of 3 · about two minutes</p>
           </div>
           <JoinForm members={members} referrer={referrer} tenantInvite={tenantInvite} inviteToken={inviteToken} error={error} />
-          <div className="text-[11.5px] text-ink-faint mt-5 text-center">Already a member? <a href="/login" className="text-ink-muted hover:text-ink underline underline-offset-2">Sign in</a></div>
+          <div className="text-[12px] text-ink-faint mt-5 text-center">Already a member? <a href="/login" className="text-ink-muted hover:text-ink underline underline-offset-2">Sign in</a></div>
         </div>
       </main>
     </div>

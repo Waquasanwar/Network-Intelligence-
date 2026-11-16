@@ -58,7 +58,7 @@ export default async function PartnerPortal() {
                     <tbody>
                       {rows.map((p) => (
                         <tr key={p.ref}>
-                          <td className="font-mono text-[11px] text-navy">{p.ref}</td>
+                          <td className="font-mono text-[12px] text-navy">{p.ref}</td>
                           <td className="text-xs">{p.headlineSummary}</td>
                           <td><div className="flex flex-wrap gap-1 max-w-[240px]">{p.capabilities.slice(0, 4).map((c) => <Chip key={c}>{c}</Chip>)}</div></td>
                           <td className="text-xs">{p.region ?? "undisclosed"}</td>
@@ -103,7 +103,7 @@ export default async function PartnerPortal() {
           </Card>
           <Card>
             <CardHeader title="Your activity" />
-            <CardBody><ul className="text-xs space-y-1">{audit.map((a) => <li key={a.id} className="flex justify-between gap-2"><span className="font-mono text-[11px]">{a.action}</span><DateText date={a.createdAt} relative className="text-ink-faint" /></li>)}</ul></CardBody>
+            <CardBody><ul className="text-xs space-y-1">{audit.map((a) => <li key={a.id} className="flex justify-between gap-2"><span className="font-mono text-[12px]">{a.action}</span><DateText date={a.createdAt} relative className="text-ink-faint" /></li>)}</ul></CardBody>
           </Card>
         </div>
       </div>

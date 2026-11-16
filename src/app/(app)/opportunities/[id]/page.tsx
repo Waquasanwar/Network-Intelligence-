@@ -2,11 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
-import { PageHeader, EmptyState, Score, Section } from "@/components/ui/page";
+import { PageHeader, EmptyState, Score, Section, Facts } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, Textarea, Field } from "@/components/ui/form";
+import { Input, Select, Field } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge, DecisionBadge, IntroBadge, RouteBadge, StageBadge } from "@/components/domain/badges";
@@ -16,7 +16,7 @@ import { generateMatches, decideMatch, setOpportunityStatus, updateIntroductionS
 import { OutreachButton } from "@/components/domain/outreach-button";
 import { DECISION_LABELS, OPPORTUNITY_STATUS_LABELS, ROUTE_LABELS, SENIORITY_LABELS, INTRO_STATUS_LABELS } from "@/lib/labels";
 import { formatMoney, fullName } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -65,77 +65,82 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
           <Card>
             <CardHeader title="The problem" />
             <CardBody>
-              <p className="text-[13px] leading-6">{opp.problemStatement}</p>
-              {opp.desiredOutcomes ? <><div className="text-[11px] uppercase text-ink-faint mt-3 mb-1">Desired outcomes</div><p className="text-[13px] leading-6">{opp.desiredOutcomes}</p></> : null}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-4">
-                <div><div className="text-ink-faint">Route</div><div>{ROUTE_LABELS[opp.engagementRoute]}</div></div>
-                <div><div className="text-ink-faint">Location</div><div>{opp.location ?? "—"}</div></div>
-                <div><div className="text-ink-faint">Start / duration</div><div><DateText date={opp.startDate} />{opp.duration ? ` · ${opp.duration}` : ""}</div></div>
-                <div><div className="text-ink-faint">Budget</div><div className="tabular">{opp.budget ? `${formatMoney(Number(opp.budget), opp.currency ?? "GBP")}${opp.engagementRoute === "PERMANENT" ? "" : "/day"}` : "—"}</div></div>
-                <div className="col-span-2"><div className="text-ink-faint">Required</div><div className="flex flex-wrap gap-1 mt-0.5">{opp.requiredCapabilities.map((c) => <Chip key={c}>{c}</Chip>)}</div></div>
-                <div><div className="text-ink-faint">Preferred</div><div className="flex flex-wrap gap-1 mt-0.5">{opp.preferredCapabilities.map((c) => <Chip key={c}>{c}</Chip>)}{!opp.preferredCapabilities.length && "—"}</div></div>
-                <div><div className="text-ink-faint">Seniority / sectors</div><div>{opp.seniority ? SENIORITY_LABELS[opp.seniority] : "—"}{opp.sectors.length ? ` · ${opp.sectors.join(", ")}` : ""}</div></div>
-              </div>
+              <p className="text-[14.5px] leading-[1.6] text-ink">{opp.problemStatement}</p>
+              {opp.desiredOutcomes ? <><div className="label-caps text-ink-faint mt-3 mb-1">Desired outcomes</div><p className="text-[13px] leading-6">{opp.desiredOutcomes}</p></> : null}
+              {opp.requiredCapabilities.length ? <><div className="label-caps text-ink-faint mt-5 mb-2">Must have</div><div className="flex flex-wrap gap-1.5">{opp.requiredCapabilities.map((c) => <Chip key={c}>{c}</Chip>)}</div></> : null}
+              {opp.preferredCapabilities.length ? <><div className="label-caps text-ink-faint mt-4 mb-2">Nice to have</div><div className="flex flex-wrap gap-1.5">{opp.preferredCapabilities.map((c) => <Chip key={c}>{c}</Chip>)}</div></> : null}
+              <Facts className="mt-5 max-w-[460px]" rows={[
+                { label: "Route", value: ROUTE_LABELS[opp.engagementRoute] },
+                { label: "Location", value: opp.location },
+                { label: "Start", value: opp.startDate ? <DateText date={opp.startDate} /> : null },
+                { label: "Duration", value: opp.duration },
+                { label: "Budget", value: opp.budget ? `${formatMoney(Number(opp.budget), opp.currency ?? "GBP")}${opp.engagementRoute === "PERMANENT" ? "" : "/day"}` : null },
+                { label: "Seniority", value: opp.seniority ? SENIORITY_LABELS[opp.seniority] : null },
+                { label: "Sectors", value: opp.sectors.join(", ") },
+              ]} />
             </CardBody>
           </Card>
 
           <Section
-            title="Matching panel"
-            description="AI retrieves and explains possible fits for this requirement only. It does not rank people globally or reject anyone. You decide."
+            title="People who might fit"
+            description="Suggested from your network for this requirement only. Open a row for the reasoning, then record your decision."
             action={<form action={generateMatches}><input type="hidden" name="opportunityId" value={opp.id} /><SubmitButton variant="secondary" pendingText="Finding…"><Sparkles className="h-3.5 w-3.5" /> {opp.matches.length ? "Refresh suggestions" : "Find possible matches"}</SubmitButton></form>}
           >
-            {opp.matches.length === 0 ? <EmptyState title="No suggestions yet" description="Generate suggestions from the network. Each comes with evidence, provenance and what is still uncertain." /> : (
-              <div className="space-y-3">
+            {opp.matches.length === 0 ? <EmptyState icon={Sparkles} title="No suggestions yet" description="Find possible matches from your network. Each comes with the evidence behind it and what is still uncertain." /> : (
+              <div className="rounded-[8px] border border-line bg-surface divide-y divide-line overflow-hidden">
                 {opp.matches.map((m) => {
                   const intro = opp.introductions.find((i) => i.personId === m.personId);
                   const cautions = m.person.evidence.filter((e) => e.evidenceType === "CAUTION").length;
+                  const worked = m.person.relationships.some((r) => r.workedTogether);
                   return (
-                    <Card key={m.id} className={m.humanDecision === "RECOMMEND" ? "border-teal/40" : m.humanDecision === "NOT_FOR_THIS_REQUIREMENT" ? "opacity-60" : ""}>
-                      <CardBody className="pt-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3 min-w-0">
-                            <PersonLink person={m.person} sub={m.person.headline} />
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <AvailabilityBadge status={m.person.availabilityStatus} confirmedAt={m.person.availabilityConfirmedAt} nextCheckDate={m.person.nextCheckDate} />
-                            <DecisionBadge decision={m.humanDecision} />
-                          </div>
+                    <details key={m.id} className={`group ${m.humanDecision === "NOT_FOR_THIS_REQUIREMENT" ? "opacity-60" : ""}`}>
+                      {/* One line per person: who, how good a fit, are they free, what you decided. Open it for the reasoning. */}
+                      <summary className="grid grid-cols-[minmax(0,1fr)_auto_16px] md:grid-cols-[minmax(0,1fr)_140px_190px_150px_16px] items-center gap-x-5 gap-y-2 px-4 py-3.5 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-surface-hover transition-colors duration-200">
+                        <div className="min-w-0"><PersonLink person={m.person} sub={m.person.headline} /></div>
+                        <div className="flex items-center gap-2.5" title={`Fit for this requirement: ${Math.round(m.fitScore)} of 100`}>
+                          <span className="font-display text-[20px] leading-none w-8 text-right">{Math.round(m.fitScore)}</span>
+                          <span className="flex-1"><span className="block text-[12px] text-ink-faint leading-none mb-1.5">fit</span><span className="block h-1.5 rounded-full bg-series-track overflow-hidden"><span className="block h-full rounded-full bg-series-1" style={{ width: `${Math.max(2, Math.min(100, m.fitScore))}%` }} /></span></span>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">
-                          <div><div className="text-[10px] uppercase text-ink-faint">Fit for this</div><Score value={m.fitScore} /></div>
-                          <div><div className="text-[10px] uppercase text-ink-faint">Evidence</div><Score value={m.evidenceStrength} /></div>
-                          <div><div className="text-[10px] uppercase text-ink-faint">Relationship</div><Score value={m.relationshipStrength} /></div>
-                          <div><div className="text-[10px] uppercase text-ink-faint">Availability</div><Score value={m.availabilityFit} /></div>
-                          <div><div className="text-[10px] uppercase text-ink-faint">Commercial</div><Score value={m.commercialFit} /></div>
+                        <div className="hidden md:block min-w-0"><AvailabilityBadge status={m.person.availabilityStatus} confirmedAt={m.person.availabilityConfirmedAt} nextCheckDate={m.person.nextCheckDate} /></div>
+                        <div className="hidden md:block min-w-0"><DecisionBadge decision={m.humanDecision} /></div>
+                        <ChevronDown className="h-4 w-4 flex-none text-ink-faint transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
+                      </summary>
+                      <div className="px-4 pb-5 pt-1 bg-surface-hover/60">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 pt-3">
+                          <div><div className="label-caps text-ink-faint mb-1.5">Evidence</div><Score value={m.evidenceStrength} /></div>
+                          <div><div className="label-caps text-ink-faint mb-1.5">Relationship</div><Score value={m.relationshipStrength} /></div>
+                          <div><div className="label-caps text-ink-faint mb-1.5">Availability</div><Score value={m.availabilityFit} /></div>
+                          <div><div className="label-caps text-ink-faint mb-1.5">Commercial</div><Score value={m.commercialFit} /></div>
                         </div>
-                        <p className="text-[13px] mt-3 leading-5">{m.fitExplanation}</p>
-                        <div className="flex flex-wrap gap-1.5 mt-2 text-[11px]">
-                          {m.person.relationships.some((r) => r.workedTogether) ? <Badge tone="teal" filled>worked with</Badge> : <Badge filled>not worked with directly</Badge>}
-                          <Badge tone={m.person.evidence.length ? "teal" : "amber"} filled>{m.person.evidence.length} evidence</Badge>
-                          {cautions ? <Badge tone="amber" filled>{cautions} caution</Badge> : null}
-                        </div>
-                        {m.uncertainty.length ? (
-                          <div className="mt-2 rounded-md bg-amber-100/60 border border-amber/20 px-3 py-2">
-                            <div className="text-[10px] uppercase text-amber mb-0.5">Uncertainty</div>
-                            <ul className="list-disc pl-4 text-xs text-ink space-y-0.5">{m.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul>
+                        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-x-8 gap-y-4 mt-5">
+                          <div>
+                            <div className="label-caps text-ink-faint mb-1.5">Why they might fit</div>
+                            <p className="text-[13.5px] leading-[1.6] text-ink">{m.fitExplanation}</p>
+                            <p className="text-[12.5px] text-ink-faint mt-2">{cautions ? `${cautions} caution${cautions === 1 ? "" : "s"} on file · ` : ""}{m.person.evidence.length} piece{m.person.evidence.length === 1 ? "" : "s"} of evidence on file{worked ? " · you have worked together" : " · not worked with directly"}</p>
                           </div>
-                        ) : null}
-                        <div className="mt-3 border-t border-line pt-3 flex flex-wrap items-end justify-between gap-3">
-                          <form action={decideMatch} className="flex items-end gap-2 flex-1 min-w-[320px]">
+                          {m.uncertainty.length ? (
+                            <div>
+                              <div className="label-caps text-amber mb-1.5">Still uncertain</div>
+                              <ul className="space-y-1.5 text-[13px] text-ink">{m.uncertainty.map((u) => <li key={u} className="flex gap-2"><span className="mt-[7px] h-1.5 w-1.5 flex-none rounded-full bg-amber" aria-hidden="true" />{u}</li>)}</ul>
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="mt-5 pt-4 border-t border-line flex flex-wrap items-end justify-between gap-3">
+                          <form action={decideMatch} className="flex flex-wrap items-end gap-2 flex-1 min-w-[280px]">
                             <input type="hidden" name="matchId" value={m.id} />
-                            <Field label="Human decision" className="w-[200px]"><Select name="decision" defaultValue={m.humanDecision}>{Object.entries(DECISION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
-                            <Field label="Why" className="flex-1"><Textarea name="humanNotes" defaultValue={m.humanNotes ?? ""} className="min-h-[32px] h-8 py-1.5" placeholder="Your judgement, in a sentence." /></Field>
-                            <SubmitButton variant="secondary" pendingText="…">Save</SubmitButton>
+                            <Field label="Your decision" className="w-[210px]"><Select name="decision" defaultValue={m.humanDecision}>{Object.entries(DECISION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
+                            <Field label="Why" className="flex-1 min-w-[200px]"><Input name="humanNotes" defaultValue={m.humanNotes ?? ""} placeholder="Your judgement, in a sentence." /></Field>
+                            <SubmitButton variant="secondary" pendingText="Saving…" className="h-10">Save decision</SubmitButton>
                           </form>
                           <div className="flex items-center gap-2">
-                            {intro ? <div className="text-xs flex items-center gap-1.5"><IntroBadge status={intro.status} /><span className="text-ink-faint">{intro.consentStatus.toLowerCase()} consent</span></div> : m.humanDecision === "RECOMMEND" ? <ApproveIntroductionDrawer opportunityId={opp.id} personId={m.personId} personName={fullName(m.person)} route={opp.engagementRoute} partners={partnerOpts} /> : null}
+                            {intro ? <div className="text-[12.5px] flex items-center gap-1.5"><IntroBadge status={intro.status} /><span className="text-ink-faint">{intro.consentStatus.toLowerCase()} consent</span></div> : m.humanDecision === "RECOMMEND" ? <ApproveIntroductionDrawer opportunityId={opp.id} personId={m.personId} personName={fullName(m.person)} route={opp.engagementRoute} partners={partnerOpts} /> : null}
                             {opp.isAmana && !opp.teamShortlist.some((t) => t.personId === m.personId) ? <form action={addToTeam}><input type="hidden" name="opportunityId" value={opp.id} /><input type="hidden" name="personId" value={m.personId} /><input type="hidden" name="roleOnTeam" value="Team member" /><Button size="sm" variant="ghost" type="submit">Add to team</Button></form> : null}
                           </div>
                         </div>
                         <OutreachButton opportunityId={opp.id} personId={m.personId} />
-                        {m.approvedBy ? <div className="text-[11px] text-ink-faint mt-2">Decision by {m.approvedBy.name} · <DateText date={m.updatedAt} relative /></div> : null}
-                      </CardBody>
-                    </Card>
+                        {m.approvedBy ? <div className="text-[12px] text-ink-faint mt-2">Decision by {m.approvedBy.name} · <DateText date={m.updatedAt} relative /></div> : null}
+                      </div>
+                    </details>
                   );
                 })}
               </div>
@@ -169,8 +174,8 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                       {i.notes ? <div className="mt-1 text-ink-muted">{i.notes}</div> : null}
                       <form action={updateIntroductionStatus} className="flex items-center gap-1.5 mt-2">
                         <input type="hidden" name="introductionId" value={i.id} />
-                        <Select name="consentStatus" defaultValue={i.consentStatus} className="h-7 text-[11px]"><option value="NOT_REQUESTED">Consent not requested</option><option value="REQUESTED">Consent requested</option><option value="GRANTED">Consent granted</option><option value="DECLINED">Consent declined</option></Select>
-                        <Select name="status" defaultValue={i.status} className="h-7 text-[11px]">{Object.entries(INTRO_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
+                        <Select name="consentStatus" defaultValue={i.consentStatus} className="h-7 text-[12px]"><option value="NOT_REQUESTED">Consent not requested</option><option value="REQUESTED">Consent requested</option><option value="GRANTED">Consent granted</option><option value="DECLINED">Consent declined</option></Select>
+                        <Select name="status" defaultValue={i.status} className="h-7 text-[12px]">{Object.entries(INTRO_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
                         <SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton>
                       </form>
                     </li>

@@ -54,7 +54,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
     <>
       <div className="relative rounded-[10px] px-5 py-6 sm:px-9 sm:py-8 mb-5 bg-surface border border-line shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
         <div>
-          <div className="text-[11px] font-medium uppercase tracking-[0.1em] text-ink-muted">Client & agency portal{internal ? " · viewing as" : ""}</div>
+          <div className="text-[12px] font-medium uppercase tracking-[0.1em] text-ink-muted">Client & agency portal{internal ? " · viewing as" : ""}</div>
           {internal ? <form method="get" action="/portal" className="flex items-center gap-2 mt-2"><Select name="account" defaultValue={account.id} className="h-9 rounded-full bg-surface text-ink border-line-strong max-w-[340px]">{accounts.map((a) => <option key={a.id} value={a.id} className="text-ink">{a.name} · {KIND_LABEL[a.kind]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Switch</SubmitButton></form> : null}
           <h1 className="font-display text-[26px] sm:text-[32px] leading-[1.1] mt-2.5">{account.name}</h1>
           <p className="text-ink-muted max-w-[60ch] mt-2 text-[13.5px] leading-5">What {account.kind === "AGENCY" ? "an agency" : account.kind === "CLIENT" ? "a client" : "Amana"} sees. Names are hidden until an introduction is requested and the person consents. Relationship notes never leave the network.</p>
@@ -92,9 +92,9 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
                 <CardHeader title={b.title} description={<>{BRIEF_STATUS_LABELS[b.status]} · sent <DateText date={b.createdAt} relative /></>} />
                 <CardBody>
                   <BriefChips b={d} />
-                  {b.questions.length && b.status !== "FILLED" ? <div className="mt-3 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="text-[10.5px] uppercase tracking-wide font-medium text-amber mb-1">We will confirm with you</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
+                  {b.questions.length && b.status !== "FILLED" ? <div className="mt-3 rounded-[6px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="label-caps tracking-wide font-medium text-amber mb-1">We will confirm with you</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
                   <div className="mt-3 rounded-[6px] bg-surface-muted px-3 py-2.5 text-[12.5px] flex flex-wrap items-center gap-2"><b>Terms</b> {termsText(d.terms, card)} {b.termsAccepted ? <Badge tone="teal" filled>accepted</Badge> : <form action={portalAcceptTerms}><input type="hidden" name="briefId" value={b.id} /><SubmitButton size="sm" pendingText="…">Accept terms</SubmitButton></form>}</div>
-                  <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-ink-faint mt-4 mb-1">People we propose</div>
+                  <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mt-4 mb-1">People we propose</div>
                   {items.length === 0 ? <div className="text-xs text-ink-muted">{b.status === "NEW" ? "Received. We are reading it now." : "Searching the network. You will see anonymised cards here first."}</div> : (
                     <ul>{items.map((s) => {
                       const safe = redactForPartner({ ...s.person, tenantId: b.tenantId, evidence: s.person.evidence, relationships: s.person.relationships });

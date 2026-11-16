@@ -87,7 +87,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
               >
                 {r.id === "__ask" ? <Sparkles className="h-4 w-4 text-navy flex-none" /> : null}
                 <span className={`text-[13px] min-w-0 flex-1 truncate ${r.id === "__ask" ? "text-ink font-medium" : "text-ink"}`}>{r.id === "__ask" ? <><span className="text-ink-muted font-normal">Ask the network: </span>“{r.label}”</> : r.label}</span>
-                {r.id === "__ask" && i === idx ? <CornerDownLeft className="h-3.5 w-3.5 text-ink-faint flex-none" /> : <span className="text-[11px] text-ink-faint truncate flex-none">{r.hint ?? r.group}</span>}
+                {r.id === "__ask" && i === idx ? <CornerDownLeft className="h-3.5 w-3.5 text-ink-faint flex-none" /> : <span className="text-[12px] text-ink-faint truncate flex-none">{r.hint ?? r.group}</span>}
               </button>
             </li>
           ))}

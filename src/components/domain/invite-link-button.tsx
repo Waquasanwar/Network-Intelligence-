@@ -31,10 +31,10 @@ export function InviteLinkButton({ asPersonId }: { asPersonId?: string }) {
       <Button type="button" variant="secondary" size="sm" onClick={make} disabled={pending}>
         <Link2 className="h-3.5 w-3.5" /> {pending ? "…" : "Invite link"}
       </Button>
-      {err ? <div className="text-[11.5px] text-risk mt-1">{err}</div> : null}
+      {err ? <div className="text-[12px] text-risk mt-1">{err}</div> : null}
       {url ? (
         <div className="mt-2 flex items-center gap-1.5 rounded-[6px] border border-line bg-surface-muted/60 px-2 py-1.5 max-w-[320px]">
-          <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} className="flex-1 bg-transparent text-[11.5px] text-ink-muted outline-none truncate" />
+          <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} className="flex-1 bg-transparent text-[12px] text-ink-muted outline-none truncate" />
           <button type="button" onClick={() => copy(url)} className="flex-none text-navy hover:text-navy-600" aria-label="Copy link">
             {copied ? <Check className="h-3.5 w-3.5 text-teal" /> : <Copy className="h-3.5 w-3.5" />}
           </button>

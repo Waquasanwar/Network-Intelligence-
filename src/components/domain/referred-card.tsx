@@ -32,7 +32,7 @@ export function ReferredCard({ rows, action }: { rows: ReferredRow[]; action?: R
                   </span>
                   <Badge tone={r.decision === "PLACED" || r.decision === "INTRODUCED" ? "teal" : r.decision === "CLIENT_PASSED" ? "neutral" : "amber"} filled>{shortlistLabel(r.decision, r.kind)}</Badge>
                 </div>
-                <div className="text-[11.5px] text-ink-faint">
+                <div className="text-[12px] text-ink-faint">
                   <Link href={`/requirements/${r.briefId}`} className="text-navy hover:underline">{r.briefTitle}</Link> · {r.routeLabel} · <DateText date={r.updatedAt} relative />
                   {r.referred ? <> · <span className="text-teal">referred by hand</span></> : null}
                 </div>
@@ -41,7 +41,7 @@ export function ReferredCard({ rows, action }: { rows: ReferredRow[]; action?: R
                     <Coins className={`h-3.5 w-3.5 ${r.fee ? "text-teal" : "text-ink-faint"}`} />
                     <b className="text-[13px] tabular">{r.fee ? fmt(r.fee.ourTake, r.fee.currency) : r.estimate.confident ? fmt(r.estimate.ourTake, r.estimate.currency) : "fee to agree"}</b>
                   </span>
-                  <small className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">{r.fee ? r.fee.statusLabel : r.estimate.confident ? "estimated, no line yet" : r.estimate.basis}</small>
+                  <small className="label-caps tracking-[0.06em] text-ink-faint">{r.fee ? r.fee.statusLabel : r.estimate.confident ? "estimated, no line yet" : r.estimate.basis}</small>
                 </div>
                 {r.clientNote ? <p className="text-[12px] text-ink-muted italic">“{r.clientNote}”</p> : null}
               </li>

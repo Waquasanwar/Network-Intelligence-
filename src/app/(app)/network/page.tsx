@@ -98,7 +98,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         {pill("Amana bench", "amanaBench", "1")}
         {pill("Introduced", "source", "INTRODUCTION")}
         <span className="mx-1 text-ink-faint">·</span>
-        <span className="text-[11px] text-ink-faint">Saved views:</span>
+        <span className="text-[12px] text-ink-faint">Saved views:</span>
         {savedViews.map((v) => (
           <Pill key={v.id} href={`/network?view=${v.id}`} active={filters.view === v.id}>{v.name}</Pill>
         ))}
@@ -106,7 +106,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
       </div>
 
       {intent && (intent.capabilities.length || intent.locations.length || intent.routes.length || intent.availableSoon || intent.workedWithOnly) ? (
-        <div className="mb-3 text-[11px] text-ink-muted flex flex-wrap items-center gap-1.5">
+        <div className="mb-3 text-[12px] text-ink-muted flex flex-wrap items-center gap-1.5">
           <span>Understood as:</span>
           {intent.capabilities.map((c) => <Chip key={c}>{c}</Chip>)}
           {intent.sectors.map((c) => <Chip key={c}>{c}</Chip>)}
@@ -153,16 +153,16 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
                       {primary ? (
                         <>
                           <ProvenanceThread owner={primary.networkOwner} introducer={primary.introducedBy} person={p} workedTogether={primary.workedTogether} compact />
-                          <div className="text-[11px] text-ink-faint mt-1">{SOURCE_LABELS[primary.sourceType]}</div>
+                          <div className="text-[12px] text-ink-faint mt-1">{SOURCE_LABELS[primary.sourceType]}</div>
                         </>
                       ) : <Badge tone="amber">missing</Badge>}
                     </td>
-                    <td><div className="flex items-center gap-1 overflow-hidden w-[200px]">{p.capabilities.slice(0, 2).map((c) => <Chip key={c} className="max-w-[120px] overflow-hidden text-ellipsis block">{c}</Chip>)}{p.capabilities.length > 2 ? <span className="text-[11px] text-ink-faint flex-none">+{p.capabilities.length - 2}</span> : null}</div></td>
-                    <td className="text-xs text-ink-muted whitespace-nowrap">{[p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—"}{p.targetLocations.length ? <div className="text-[11px] text-ink-faint">→ {p.targetLocations.join(", ")}</div> : null}</td>
-                    <td className="whitespace-nowrap"><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} /><div className="text-[11px] text-ink-faint mt-0.5">{p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : ROUTE_LABELS[r])).join(", ") || "Routes not confirmed"}</div></td>
+                    <td><div className="flex items-center gap-1 overflow-hidden w-[200px]">{p.capabilities.slice(0, 2).map((c) => <Chip key={c} className="max-w-[120px] overflow-hidden text-ellipsis block">{c}</Chip>)}{p.capabilities.length > 2 ? <span className="text-[12px] text-ink-faint flex-none">+{p.capabilities.length - 2}</span> : null}</div></td>
+                    <td className="text-xs text-ink-muted whitespace-nowrap">{[p.primaryCity, p.primaryCountry].filter(Boolean).join(", ") || "—"}{p.targetLocations.length ? <div className="text-[12px] text-ink-faint">→ {p.targetLocations.join(", ")}</div> : null}</td>
+                    <td className="whitespace-nowrap"><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} /><div className="text-[12px] text-ink-faint mt-0.5">{p.engagementPreferences.map((r) => (r === "SOW" ? "SOW" : ROUTE_LABELS[r])).join(", ") || "Routes not confirmed"}</div></td>
                     <td><TrustMini t={trust} /></td>
                     <td className="num text-xs text-ink-muted">{p.evidence.length} <span className="text-ink-faint">· {p.conversations.filter((c) => c.approvalStatus === "APPROVED").length} conv</span></td>
-                    <td className="text-xs text-ink-muted min-w-[130px] max-w-[170px]">{p.nextAction ?? "—"}{p.nextActionDate ? <div className="text-[11px] text-ink-faint"><DateText date={p.nextActionDate} relative /></div> : null}</td>
+                    <td className="text-xs text-ink-muted min-w-[130px] max-w-[170px]">{p.nextAction ?? "—"}{p.nextActionDate ? <div className="text-[12px] text-ink-faint"><DateText date={p.nextActionDate} relative /></div> : null}</td>
                   </tr>
                 );
               })}
@@ -171,7 +171,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         )}
         <TableSort />
       </div>
-      <div className="text-[11px] text-ink-faint mt-2 tabular">{people.length} people · click any column to sort</div>
+      <div className="text-[12px] text-ink-faint mt-2 tabular">{people.length} people · click any column to sort</div>
     </>
   );
 }

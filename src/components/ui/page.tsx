@@ -1,6 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Inbox } from "lucide-react";
 
 export function PageHeader({ title, description, actions, eyebrow }: { title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode; eyebrow?: React.ReactNode }) {
   return (
@@ -15,12 +16,37 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
   );
 }
 
-export function EmptyState({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
+export function EmptyState({ title, description, action, icon: Icon = Inbox }: { title: string; description?: string; action?: React.ReactNode; icon?: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="rounded-[6px] border border-dashed border-line-strong px-6 py-10 text-center bg-surface-muted/60">
-      <div className="text-[14px] font-semibold text-ink">{title}</div>
-      {description ? <div className="text-[12.5px] text-ink-muted mt-1 max-w-sm mx-auto leading-5">{description}</div> : null}
-      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    <div className="rounded-[8px] bg-surface-muted px-6 py-9 text-center">
+      <span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-surface text-ink-muted ring-1 ring-line"><Icon className="h-[18px] w-[18px]" /></span>
+      <div className="text-[14px] font-semibold text-ink mt-3">{title}</div>
+      {description ? <div className="text-[13px] text-ink-muted mt-1 max-w-sm mx-auto leading-[1.5]">{description}</div> : null}
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </div>
+  );
+}
+
+/**
+ * A short list of facts about a record. Rows with nothing recorded are left out and counted in one
+ * quiet line, so a thin record reads as a short record instead of a column of dashes.
+ */
+export function Facts({ rows, className }: { rows: { label: string; value: React.ReactNode | null | undefined | false | "" }[]; className?: string }) {
+  const filled = rows.filter((r) => r.value !== null && r.value !== undefined && r.value !== false && r.value !== "");
+  const missing = rows.filter((r) => !filled.includes(r));
+  return (
+    <div className={className}>
+      {filled.length ? (
+        <dl className="divide-y divide-line">
+          {filled.map((r) => (
+            <div key={r.label} className="flex items-baseline justify-between gap-4 py-2 first:pt-0 last:pb-0">
+              <dt className="flex-none text-[13px] text-ink-muted">{r.label}</dt>
+              <dd className="min-w-0 text-right text-[13px] font-medium text-ink">{r.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {missing.length ? <p className={cn("text-[12.5px] text-ink-faint leading-[1.5]", filled.length && "mt-3")}>Not recorded yet: {missing.map((m) => m.label.toLowerCase()).join(", ")}.</p> : null}
     </div>
   );
 }
@@ -38,7 +64,7 @@ export function Tabs({ items, current, base }: { items: { key: string; label: st
           )}
         >
           {t.label}
-          {typeof t.count === "number" ? <span className={cn("ml-1.5 text-[11px] tabular rounded-full px-1.5 py-px font-semibold", current === t.key ? "bg-navy text-white dark:text-canvas" : "bg-surface-muted text-ink-faint")}>{t.count}</span> : null}
+          {typeof t.count === "number" ? <span className={cn("ml-1.5 text-[12px] tabular rounded-full px-1.5 py-px font-semibold", current === t.key ? "bg-navy text-white dark:text-canvas" : "bg-surface-muted text-ink-faint")}>{t.count}</span> : null}
         </Link>
       ))}
     </div></div>
@@ -68,14 +94,14 @@ export function Score({ value, label }: { value: number; label?: string }) {
         <div className={cn("h-full rounded-full", tone)} style={{ width: `${Math.max(2, Math.min(100, value))}%` }} />
       </div>
       <span className="text-[12px] tabular text-ink-muted w-6 text-right">{value}</span>
-      {label ? <span className="text-[11px] text-ink-faint">{label}</span> : null}
+      {label ? <span className="text-[12px] text-ink-faint">{label}</span> : null}
     </div>
   );
 }
 
 /** Uppercase micro-label for field groups and dl headings. */
 export function Label({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("text-[10.5px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-1", className)}>{children}</div>;
+  return <div className={cn("text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-1", className)}>{children}</div>;
 }
 
 /** Apple-style segmented control. Links, so it works without JS. */

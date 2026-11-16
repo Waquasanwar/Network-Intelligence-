@@ -72,13 +72,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </form>
           {hasEntra ? (
             <>
-              <div className="flex items-center gap-3 my-4"><span className="h-px flex-1 bg-line" /><span className="text-[11px] text-ink-faint">or</span><span className="h-px flex-1 bg-line" /></div>
+              <div className="flex items-center gap-3 my-4"><span className="h-px flex-1 bg-line" /><span className="text-[12px] text-ink-faint">or</span><span className="h-px flex-1 bg-line" /></div>
               <form action={loginEntra}><Button type="submit" variant="secondary" size="lg" className="w-full">Continue with Microsoft</Button></form>
             </>
           ) : null}
 
           {showDemo ? (
-            <div className="mt-6 rounded-[6px] border border-line bg-surface/60 p-3.5 text-[11.5px] text-ink-muted leading-5">
+            <div className="mt-6 rounded-[6px] border border-line bg-surface/60 p-3.5 text-[12px] text-ink-muted leading-5">
               <div className="font-medium text-ink mb-1.5">Demo accounts · password <span className="mono">Password123!</span></div>
               <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                 <span className="mono">waqas@networkintelligence.local</span><span>Owner</span>
@@ -88,7 +88,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
           ) : null}
 
-          <div className="text-[11.5px] text-ink-faint mt-6">Invitation only · <a href="/join" className="text-ink-muted hover:text-ink">Have an invite? Join the network</a></div>
+          <div className="text-[12px] text-ink-faint mt-6">Invitation only · <a href="/join" className="text-ink-muted hover:text-ink">Have an invite? Join the network</a></div>
         </div>
       </main>
     </div>
