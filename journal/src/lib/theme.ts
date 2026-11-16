@@ -16,30 +16,29 @@ export interface Theme {
   headings: Headings;
 }
 
-// Neutral, professional tones: deep and muted rather than bright, so it reads like a
-// serious work tool. Navy is the default.
+// Jet black, graphite and snow grey neutrals with one clear accent. Azure is the default.
 export const PRESETS: Array<{ name: string; hex: string }> = [
-  { name: "Navy", hex: "#1f3a68" },
-  { name: "Slate", hex: "#475569" },
-  { name: "Steel", hex: "#2f6690" },
-  { name: "Teal", hex: "#1d6b70" },
-  { name: "Forest", hex: "#2e5e45" },
-  { name: "Olive", hex: "#5f6b2e" },
-  { name: "Copper", hex: "#a0522d" },
-  { name: "Graphite", hex: "#2b2f36" },
+  { name: "Azure", hex: "#0a84ff" },
+  { name: "Cobalt", hex: "#3d5afe" },
+  { name: "Cyan", hex: "#06b6d4" },
+  { name: "Graphite", hex: "#6b7280" },
+  { name: "Emerald", hex: "#10b981" },
+  { name: "Violet", hex: "#7c5cff" },
+  { name: "Amber", hex: "#f59e0b" },
+  { name: "Crimson", hex: "#e11d48" },
 ];
 
-export const DEFAULT_THEME: Theme = { mode: "system", accent: "#1f3a68", tint: "subtle", corners: "soft", font: "sans", headings: "sans" };
+export const DEFAULT_THEME: Theme = { mode: "dark", accent: "#0a84ff", tint: "off", corners: "soft", font: "sans", headings: "sans" };
 
 export const THEME_COOKIE = "journal_theme";
 
-const TINT: Record<Tint, string> = { off: "0%", subtle: "4%", vivid: "9%" };
+const TINT: Record<Tint, string> = { off: "0%", subtle: "3%", vivid: "7%" };
 const RADIUS: Record<Corners, string> = { sharp: "0.25rem", soft: "0.625rem", round: "1rem" };
 export const FONTS: Record<Font, { label: string; stack: string }> = {
-  sans: { label: "Modern", stack: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif' },
+  sans: { label: "Modern", stack: 'var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
   rounded: { label: "Rounded", stack: 'ui-rounded, "SF Pro Rounded", "Nunito", "Quicksand", "Varela Round", system-ui, sans-serif' },
   serif: { label: "Editorial", stack: '"Iowan Old Style", "Charter", "Source Serif Pro", ui-serif, Georgia, serif' },
-  mono: { label: "Mono", stack: 'ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace' },
+  mono: { label: "Mono", stack: 'var(--font-mono-face), ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace' },
 };
 
 export const DISPLAY_FONTS: Record<Headings, { label: string; stack: string }> = {
@@ -65,7 +64,7 @@ export function parseTheme(raw: string | undefined | null): Theme {
   try {
     const t = JSON.parse(decodeURIComponent(raw)) as Partial<Theme>;
     return {
-      mode: t.mode === "light" || t.mode === "dark" ? t.mode : "system",
+      mode: t.mode === "light" || t.mode === "dark" || t.mode === "system" ? t.mode : DEFAULT_THEME.mode,
       accent: t.accent && HEX.test(t.accent) ? t.accent.toLowerCase() : DEFAULT_THEME.accent,
       tint: t.tint && t.tint in TINT ? t.tint : DEFAULT_THEME.tint,
       corners: t.corners && t.corners in RADIUS ? t.corners : DEFAULT_THEME.corners,

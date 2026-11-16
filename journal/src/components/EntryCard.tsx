@@ -18,7 +18,7 @@ export function EntryCard({ entry, people, projects, showDate }: { entry: Entry;
       href={`/entry/${entry.id}`}
       className="group flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-surface-2 focus-visible:bg-surface-2"
     >
-      <div className="w-16 shrink-0 pt-0.5 text-right text-xs whitespace-nowrap tabular-nums text-ink-3" suppressHydrationWarning>
+      <div className="num w-16 shrink-0 pt-0.5 text-right text-[0.72rem] whitespace-nowrap text-ink-3" suppressHydrationWarning>
         {showDate ? shortDate(when.slice(0, 10)) : time(when)}
       </div>
       <div className="min-w-0 flex-1">

@@ -15,7 +15,7 @@ Everything is stored in the **Work Journal** page in your Notion workspace (Jour
 | **Decisions** | Decision log with rationale, alternatives and outcome. Flags decisions over a month old with no outcome. |
 | **Insights** | Entries per week, by weekday, time of day vs energy, sentiment by category, top tags, people and projects, who asks you for things, request turnaround, capture streak, and plain-language observations. |
 
-| **Appearance** | Accent colour (Navy, Slate, Steel, Teal, Forest, Olive, Copper, Graphite, or any colour), Light / Dark / System, background tint, corner style, sans or serif headings, and body font. Changes apply instantly and are remembered per device. Quick swatches also sit at the bottom of the sidebar. |
+| **Appearance** | Accent colour (Azure, Cobalt, Cyan, Graphite, Emerald, Violet, Amber, Crimson, or any colour), Light / Dark / System, background tint, corner style, sans or serif headings, and body font. Changes apply instantly and are remembered per device. Quick swatches also sit at the bottom of the sidebar. |
 
 Press **C** (or **⌘K**) anywhere to capture. On a phone, add it to the home screen; it runs like an app.
 

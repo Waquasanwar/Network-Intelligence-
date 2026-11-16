@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CATEGORIES, ENTRY_TYPES, TYPE_STYLE, isClosed, isOverdue, loggedAt, type Entry, type EntryType, type Ref } from "@/lib/schema";
+import { CATEGORIES, ENTRY_TYPES, isClosed, isOverdue, loggedAt, type Entry, type EntryType, type Ref } from "@/lib/schema";
 import { localDate } from "@/lib/insights";
 import { dayLabel, todayLocal } from "@/lib/format";
 import { useMounted } from "@/lib/use-mounted";
 import { EntryCard } from "./EntryCard";
-import { Empty, PageHeader } from "./ui";
+import { Empty, PageHeader, TypeDot } from "./ui";
+import { Icon } from "./Icon";
 
 type Special = "" | "open" | "overdue" | "unreviewed";
 
@@ -106,7 +107,7 @@ export function TimelineView({ entries, people, projects }: { entries: Entry[]; 
         subtitle={`${filtered.length} of ${entries.length} entries, newest first`}
         actions={
           <button className="btn" onClick={exportCsv}>
-            ⬇ Export CSV
+            <Icon name="download" /> Export CSV
           </button>
         }
       />
@@ -123,7 +124,7 @@ export function TimelineView({ entries, people, projects }: { entries: Entry[]; 
                 onClick={() => setTypes(on ? types.filter((x) => x !== t) : [...types, t])}
                 className={`rounded-md px-2 py-1 text-xs ${on ? "bg-accent text-accent-ink" : "bg-surface-2 text-ink-2 hover:text-ink"}`}
               >
-                {TYPE_STYLE[t].emoji} {t}
+                <span className="inline-flex items-center gap-1.5"><TypeDot type={t} />{t}</span>
               </button>
             );
           })}

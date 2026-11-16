@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { FONTS, PRESETS, type Corners, type Font, type Headings, type Mode, type Tint } from "@/lib/theme";
 import { useTheme } from "./ThemeProvider";
+import { Icon, type IconName } from "./Icon";
 import { Chip, PageHeader, TypeBadge } from "./ui";
 
 function Swatch({ hex, name, active, onClick, size = "lg" }: { hex: string; name: string; active: boolean; onClick: () => void; size?: "sm" | "lg" }) {
@@ -51,7 +51,7 @@ function Options<T extends string>({ label, value, options, onChange }: { label:
 export function QuickTheme() {
   const { theme, setTheme } = useTheme();
   const nextMode: Record<Mode, Mode> = { system: "light", light: "dark", dark: "system" };
-  const icon: Record<Mode, string> = { system: "🌓", light: "☀️", dark: "🌙" };
+  const icon: Record<Mode, IconName> = { system: "system", light: "sun", dark: "moon" };
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
@@ -65,12 +65,9 @@ export function QuickTheme() {
           title={`Theme: ${theme.mode}. Click to switch.`}
           aria-label={`Colour mode: ${theme.mode}. Switch to ${nextMode[theme.mode]}`}
         >
-          {icon[theme.mode]}
+          <Icon name={icon[theme.mode]} />
         </button>
       </div>
-      <Link href="/settings" className="block text-xs text-ink-3 hover:text-accent-fg">
-        Customise appearance →
-      </Link>
     </div>
   );
 }
@@ -105,7 +102,7 @@ export function AppearanceSettings() {
             {custom && <p className="mt-3 font-mono text-xs text-ink-3">{theme.accent}</p>}
           </div>
 
-          <Options<Mode> label="Mode" value={theme.mode} onChange={(mode) => setTheme({ mode })} options={[["system", "🌓 System"], ["light", "☀️ Light"], ["dark", "🌙 Dark"]]} />
+          <Options<Mode> label="Mode" value={theme.mode} onChange={(mode) => setTheme({ mode })} options={[["dark", "Dark"], ["light", "Light"], ["system", "System"]]} />
           <Options<Tint> label="Background tint" value={theme.tint} onChange={(tint) => setTheme({ tint })} options={[["off", "Off"], ["subtle", "Subtle"], ["vivid", "Vivid"]]} />
           <Options<Corners> label="Corners" value={theme.corners} onChange={(corners) => setTheme({ corners })} options={[["sharp", "Sharp"], ["soft", "Soft"], ["round", "Round"]]} />
           <Options<Headings> label="Headings" value={theme.headings} onChange={(headings) => setTheme({ headings })} options={[["sans", "Clean sans"], ["serif", "Serif"]]} />
@@ -117,9 +114,9 @@ export function AppearanceSettings() {
           <p className="text-xs font-medium tracking-wide text-ink-3 uppercase">Preview</p>
           <div className="card glow-focus space-y-3 p-4" tabIndex={-1}>
             <div className="flex items-center gap-2">
-              <span className="brand-mark grid size-8 place-items-center rounded-[calc(var(--radius)*0.6)]">✎</span>
+              <span className="brand-mark grid size-8 place-items-center rounded-[calc(var(--radius)*0.6)]"><Icon name="logo" /></span>
               <span className="font-display text-xl">
-                Good <span className="text-gradient">morning</span>
+                <span className="text-metal">Good morning</span>
               </span>
             </div>
             <p className="text-sm text-ink-2">Went with vendor B for the migration, cheaper and SOC2 ready.</p>

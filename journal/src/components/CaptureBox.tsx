@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { captureAction } from "@/app/actions";
 import { parseCapture } from "@/lib/parse";
-import { ENTRY_TYPES, TYPE_STYLE, type EntryType, type Ref } from "@/lib/schema";
+import { ENTRY_TYPES, type EntryType, type Ref } from "@/lib/schema";
 import { shortDate, todayLocal } from "@/lib/format";
-import { Chip } from "./ui";
+import { Chip, TypeDot } from "./ui";
 
 const QUICK_TYPES: EntryType[] = ["Note", "Decision", "Request", "Comment / Feedback", "Idea", "Blocker / Risk", "Win", "Question"];
 
@@ -178,11 +178,11 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
             onClick={() => setTypeOverride(t === type && typeOverride ? null : t)}
             aria-pressed={t === type}
             className={`rounded-md px-2 py-1 text-xs transition ${
-              t === type ? "bg-accent text-accent-ink" : "bg-surface-2 text-ink-2 hover:text-ink"
+              t === type ? "bg-accent-soft text-accent-fg ring-1 ring-accent/50" : "bg-surface-2/80 text-ink-2 hover:text-ink"
             }`}
             title={t === type && !typeOverride && inferred("type") ? "Guessed from your wording" : undefined}
           >
-            <span aria-hidden>{TYPE_STYLE[t].emoji}</span> {t.split(" ")[0]}
+            <span className="inline-flex items-center gap-1.5"><TypeDot type={t} />{t.split(" ")[0]}</span>
             {t === type && !typeOverride && inferred("type") && <span aria-hidden> ✨</span>}
           </button>
         ))}
@@ -204,7 +204,7 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
             </span>
           )}
           <button type="button" onClick={save} disabled={!parsed.title.trim() || pending} className="btn btn-primary py-1.5">
-            {pending ? "Saving…" : "Save"} <kbd className="hidden text-[0.7rem] opacity-70 sm:inline">↵</kbd>
+            {pending ? "Saving…" : "Save"} <kbd className="hidden opacity-80 sm:inline">↵</kbd>
           </button>
         </div>
       </div>

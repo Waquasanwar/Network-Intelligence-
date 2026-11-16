@@ -3,6 +3,7 @@
 import { Suspense, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { loginAction } from "../actions";
+import { Icon } from "@/components/Icon";
 
 function LoginForm() {
   const params = useSearchParams();
@@ -10,7 +11,7 @@ function LoginForm() {
   return (
     <form action={action} className="card w-full max-w-sm space-y-4 p-6">
       <div className="flex items-center gap-2">
-        <span aria-hidden className="brand-mark grid size-8 place-items-center rounded-[calc(var(--radius)*0.6)]">✎</span>
+        <span aria-hidden className="brand-mark grid size-8 place-items-center rounded-[calc(var(--radius)*0.6)]"><Icon name="logo" /></span>
         <h1 className="text-lg font-semibold">Work Journal</h1>
       </div>
       <input type="hidden" name="next" value={params.get("next") ?? "/"} />
