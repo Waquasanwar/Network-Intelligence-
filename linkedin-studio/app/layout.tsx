@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Mona_Sans } from "next/font/google";
+import { Ambient } from "@/components/ambient";
 import { Nav } from "@/components/nav";
 import "./globals.css";
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body>
+        <Ambient />
         <div className="shell">
           <Nav />
           <main>{children}</main>
