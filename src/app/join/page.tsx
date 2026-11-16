@@ -75,7 +75,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
           </ol>
         </div>
 
-        <div className="relative text-[12.5px] text-stage-muted">Anonymous to clients until you say yes · See, export or delete your data any time</div>
+        <div className="relative max-w-[38ch] text-[12.5px] leading-[1.5] text-stage-muted">Anonymous to clients until you say yes. See, export or delete your data any time.</div>
       </aside>
 
       <main className="relative flex items-center justify-center px-5 py-10 sm:px-10 bg-canvas text-ink">
