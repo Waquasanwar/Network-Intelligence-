@@ -735,19 +735,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--coral); box-shad
 @media (prefers-color-scheme: dark) {
   :root { --powder: #a9c8e8; --powder-soft: rgba(169, 200, 232, 0.14); --powder-tint: rgba(169, 200, 232, 0.12); --powder-ink: #cfe2f6; }
 }
+/* Powder blue stays small: selected chips, avatars, "who" hints and audience tags.
+   The glass and aurora look stays exactly as it was. */
 .chip.powder, .badge.powder { background: var(--powder-soft); color: var(--powder-ink); }
-.aurora .b2 { background: radial-gradient(circle, rgba(169, 200, 232, 0.55), transparent 65%); }
-.nav a.active svg { color: var(--powder); }
-.nav-section { color: var(--powder); opacity: 0.8; }
-.segmented a.on { box-shadow: 0 1px 2px rgba(14, 26, 51, 0.08), 0 0 0 1px var(--powder); }
-.card.powder { background: linear-gradient(180deg, var(--powder-tint), transparent 70%), var(--glass); }
-.hero-stat:nth-child(2) { border-color: rgba(169, 200, 232, 0.35); }
-.move.info .icon, .move:not(.good):not(.warn) .icon { background: var(--powder-soft); color: var(--powder-ink); }
-.feed li.metrics > i { border-color: var(--powder); }
-.delta-pill.good, .chip.up { background: var(--powder-soft); color: var(--powder-ink); }
-.badge.Solid { background: var(--powder-soft); color: var(--powder-ink); }
-.excerpt { border-left-color: var(--powder); }
-.legend i.powder { background: var(--powder); }
+.card.powder { /* same glass as every other card */ }
 
 /* network page */
 .people { display: flex; flex-direction: column; }

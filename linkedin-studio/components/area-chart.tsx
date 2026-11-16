@@ -18,7 +18,8 @@ function niceScale(v: number) {
   }
   return { max: v, step: v };
 }
-const dayLabel = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const dayLabel = (iso: string, long = false) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", long ? { month: "short", year: "numeric", timeZone: "UTC" } : { day: "numeric", month: "short", timeZone: "UTC" });
 
 /**
  * One series over time. Hover (or touch) shows a crosshair and the exact value.
@@ -62,6 +63,8 @@ export function AreaChart({
   const surface = tone === "stage" ? "var(--stage)" : "var(--panel)";
   const ticks = Array.from({ length: Math.round(max / step) + 1 }, (_, i) => i * step);
   const xTicks = [0, Math.round((pts.length - 1) / 2), pts.length - 1];
+  // Over ~4 months, day labels repeat ("1 Dec", "1 Dec"); show month and year instead.
+  const long = new Date(pts[pts.length - 1].x).getTime() - new Date(pts[0].x).getTime() > 120 * 864e5;
 
   function onMove(clientX: number) {
     const el = ref.current;
@@ -102,7 +105,7 @@ export function AreaChart({
         ))}
         {xTicks.map((i) => (
           <text key={i} x={sx(i)} y={height - 6} textAnchor={i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"}>
-            {dayLabel(pts[i].x)}
+            {dayLabel(pts[i].x, long)}
           </text>
         ))}
         <path d={area} fill={`url(#g${gid})`} />
@@ -121,7 +124,7 @@ export function AreaChart({
       </svg>
       {h && hover != null ? (
         <div className="chart-tip" style={{ left: `${(sx(hover) / W) * 100}%`, top: -6 }}>
-          <span className="faint">{dayLabel(h.x)}</span>
+          <span className="faint">{dayLabel(h.x, long)}</span>
           <strong>
             {h.y.toLocaleString("en-GB")} {unit}
           </strong>
