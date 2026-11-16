@@ -10,7 +10,7 @@ function LoginForm() {
   return (
     <form action={action} className="card w-full max-w-sm space-y-4 p-6">
       <div className="flex items-center gap-2">
-        <span aria-hidden className="grid size-8 place-items-center rounded-lg bg-accent text-accent-ink">✎</span>
+        <span aria-hidden className="brand-mark grid size-8 place-items-center rounded-[calc(var(--radius)*0.6)]">✎</span>
         <h1 className="text-lg font-semibold">Work Journal</h1>
       </div>
       <input type="hidden" name="next" value={params.get("next") ?? "/"} />

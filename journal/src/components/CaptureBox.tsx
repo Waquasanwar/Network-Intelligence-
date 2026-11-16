@@ -128,7 +128,7 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
   const inferred = (f: string) => parsed.inferred.includes(f as never);
 
   return (
-    <div className="card relative p-3 shadow-sm">
+    <div className="card glow-focus relative p-3">
       <label htmlFor="capture" className="sr-only">
         Capture a thought
       </label>
@@ -160,7 +160,7 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
                   e.preventDefault();
                   insert(s);
                 }}
-                className={`block w-full px-3 py-1.5 text-left text-sm ${i === pick ? "bg-accent-soft text-accent" : "text-ink"}`}
+                className={`block w-full px-3 py-1.5 text-left text-sm ${i === pick ? "bg-accent-soft text-accent-fg" : "text-ink"}`}
               >
                 {token?.sigil}
                 {s}

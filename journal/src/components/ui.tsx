@@ -41,7 +41,7 @@ export function TypeBadge({ type, short }: { type?: EntryType; short?: boolean }
 export function Chip({ children, tone = "plain", title }: { children: ReactNode; tone?: "plain" | "accent" | "danger" | "ok" | "warn"; title?: string }) {
   const tones = {
     plain: "bg-surface-2 text-ink-2",
-    accent: "bg-accent-soft text-accent",
+    accent: "bg-accent-soft text-accent-fg",
     danger: "bg-danger/12 text-danger",
     ok: "bg-ok/12 text-ok",
     warn: "bg-warn/12 text-warn",
@@ -72,7 +72,7 @@ export function Empty({ children }: { children: ReactNode }) {
 export function Stat({ label, value, tone }: { label: string; value: ReactNode; tone?: "danger" | "accent" }) {
   return (
     <div className="card px-3.5 py-3">
-      <div className={`text-2xl font-semibold tabular-nums ${tone === "danger" ? "text-danger" : tone === "accent" ? "text-accent" : ""}`}>{value}</div>
+      <div className={`text-2xl font-semibold tabular-nums ${tone === "danger" ? "text-danger" : tone === "accent" ? "text-accent-fg" : ""}`}>{value}</div>
       <div className="mt-0.5 text-xs text-ink-3">{label}</div>
     </div>
   );

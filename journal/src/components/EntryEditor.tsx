@@ -110,7 +110,7 @@ export function EntryEditor({ entry, body, people, projects, tags, mode }: { ent
           {mounted ? `${new Date(/^\d{4}-\d{2}-\d{2}$/.test(when) ? `${when}T12:00:00` : when).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" })} ${time(when)}` : ""}
         </span>
         {mode === "notion" && (
-          <a href={entry.url} target="_blank" rel="noreferrer" className="ml-auto hover:text-accent">
+          <a href={entry.url} target="_blank" rel="noreferrer" className="ml-auto hover:text-accent-fg">
             Open in Notion ↗
           </a>
         )}

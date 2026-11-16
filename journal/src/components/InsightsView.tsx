@@ -34,7 +34,7 @@ const legendProps = {
 
 // Energy is ordinal (one hue, strong to light); sentiment is diverging (two hues, grey midpoint).
 const ENERGY_COLOR: Record<string, string> = { High: "var(--seq-strong)", OK: "var(--seq-mid)", Low: "var(--seq-light)", "Not set": "var(--line)" };
-const SENTIMENT_COLOR: Record<string, string> = { Positive: "var(--series-1)", Neutral: "var(--series-mid)", Negative: "var(--series-neg)", "Not set": "var(--line)" };
+const SENTIMENT_COLOR: Record<string, string> = { Positive: "var(--pos)", Neutral: "var(--mid)", Negative: "var(--neg)", "Not set": "var(--line)" };
 
 function Panel({ title, sub, children, className = "" }: { title: string; sub?: string; children: ReactNode; className?: string }) {
   return (
@@ -56,7 +56,7 @@ function Ranked({ rows, href }: { rows: Array<{ name: string; count: number }>; 
         const label = <span className="truncate text-ink">{r.name}</span>;
         return (
           <li key={r.name} className="grid grid-cols-[minmax(0,8rem)_1fr_2rem] items-center gap-2 text-sm">
-            {link ? <Link href={link} className="truncate hover:text-accent">{label}</Link> : label}
+            {link ? <Link href={link} className="truncate hover:text-accent-fg">{label}</Link> : label}
             <span className="h-2 rounded-full bg-surface-2">
               <span className="block h-2 rounded-full" style={{ width: `${(r.count / max) * 100}%`, background: "var(--series-1)" }} />
             </span>
@@ -128,7 +128,7 @@ export function InsightsView({ entries, people, projects }: { entries: Entry[]; 
           <ul className="space-y-1.5 text-sm text-ink-2">
             {ins.observations.map((o) => (
               <li key={o} className="flex gap-2">
-                <span aria-hidden className="text-accent">→</span>
+                <span aria-hidden className="text-accent-fg">→</span>
                 {o}
               </li>
             ))}
@@ -221,7 +221,7 @@ export function InsightsView({ entries, people, projects }: { entries: Entry[]; 
             <ul className="space-y-1.5 text-sm">
               {ins.toRevisit.slice(0, 6).map((e) => (
                 <li key={e.id}>
-                  <Link href={`/entry/${e.id}`} className="hover:text-accent">
+                  <Link href={`/entry/${e.id}`} className="hover:text-accent-fg">
                     {e.title}
                   </Link>
                 </li>

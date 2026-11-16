@@ -15,6 +15,8 @@ Everything is stored in the **Work Journal** page in your Notion workspace (Jour
 | **Decisions** | Decision log with rationale, alternatives and outcome. Flags decisions over a month old with no outcome. |
 | **Insights** | Entries per week, by weekday, time of day vs energy, sentiment by category, top tags, people and projects, who asks you for things, request turnaround, capture streak, and plain-language observations. |
 
+| **Appearance** | Accent colour (8 presets or any colour), Light / Dark / System, background tint, corner style and font. Changes apply instantly and are remembered per device. Quick swatches also sit at the bottom of the sidebar. |
+
 Press **C** (or **⌘K**) anywhere to capture. On a phone, add it to the home screen; it runs like an app.
 
 ## Capture shorthand
@@ -87,6 +89,12 @@ curl "https://your-app.vercel.app/api/entries?since=2026-10-01&type=Decision" \
 ```
 
 **iPhone Shortcut:** New Shortcut → *Ask for Input* (Text) → *Get Contents of URL*: URL `https://your-app.vercel.app/api/capture`, Method POST, Header `Authorization: Bearer <token>`, Request Body JSON with key `text` = Provided Input. Add it to the Home Screen or the Action Button, or say "Hey Siri, journal". The same request works from Raycast, Alfred, Zapier or Make.
+
+## Customising colours
+
+Everything is derived from one accent colour, so picking a swatch (or any colour with **Custom**) re-colours backgrounds, buttons, chips, focus glows and charts together. Accent text is automatically darkened in light mode and lightened in dark mode so it stays readable, even for yellow.
+
+To change the presets or defaults, edit `src/lib/theme.ts` (`PRESETS`, `DEFAULT_THEME`). To adjust the neutrals or how strongly the accent tints surfaces, edit the top of `src/app/globals.css`. Sentiment colours in charts stay a fixed colour-blind-safe blue/orange pair so their meaning never changes with the theme.
 
 ## How it's built
 

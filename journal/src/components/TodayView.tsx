@@ -34,8 +34,14 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight" suppressHydrationWarning>
-          {mounted ? greeting() : "Hello"}
+        <h1 className="text-2xl font-semibold tracking-tight" suppressHydrationWarning>
+          {mounted ? (
+            <>
+              {greeting().split(" ")[0]} <span className="text-gradient">{greeting().split(" ")[1]}</span>
+            </>
+          ) : (
+            "Hello"
+          )}
         </h1>
         <p className="mt-0.5 text-sm text-ink-3" suppressHydrationWarning>
           {mounted ? new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) : " "}

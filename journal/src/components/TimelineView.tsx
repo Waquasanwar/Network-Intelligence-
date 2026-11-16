@@ -168,7 +168,7 @@ export function TimelineView({ entries, people, projects }: { entries: Entry[]; 
         </div>
         {active ? (
           <button
-            className="text-xs text-accent hover:underline"
+            className="text-xs text-accent-fg hover:underline"
             onClick={() => {
               setQ("");
               setTypes([]);

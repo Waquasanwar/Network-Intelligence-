@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Ref } from "@/lib/schema";
 import { CaptureBox } from "./CaptureBox";
 import { logoutAction } from "@/app/actions";
+import { QuickTheme } from "./Appearance";
 
 const NAV = [
   { href: "/", label: "Today", icon: "☀️" },
@@ -54,7 +55,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
     <div className="min-h-dvh md:flex">
       <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-line px-3 py-5 md:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 px-2 text-[0.95rem] font-semibold tracking-tight">
-          <span aria-hidden className="grid size-7 place-items-center rounded-lg bg-accent text-accent-ink">✎</span>
+          <span aria-hidden className="brand-mark grid size-7 place-items-center rounded-[calc(var(--radius)*0.55)]">✎</span>
           Work Journal
         </Link>
         <button type="button" onClick={() => setOpen(true)} className="btn btn-primary mb-4 justify-between">
@@ -67,8 +68,8 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
               key={n.href}
               href={n.href}
               aria-current={active(n.href) ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm ${
-                active(n.href) ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink"
+              className={`flex items-center gap-2.5 rounded-[calc(var(--radius)*0.6)] px-2.5 py-2 text-sm transition ${
+                active(n.href) ? "bg-accent-soft font-medium text-accent-fg" : "text-ink-2 hover:bg-surface-2 hover:text-ink"
               }`}
             >
               <span aria-hidden>{n.icon}</span>
@@ -79,7 +80,8 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
             </Link>
           ))}
         </nav>
-        <div className="mt-auto space-y-2 px-2 text-xs text-ink-3">
+        <div className="mt-auto space-y-3 px-2 text-xs text-ink-3">
+          <QuickTheme />
           {mode === "demo" ? (
             <p className="rounded-lg bg-warn/12 p-2 text-warn">Demo mode: sample data, not saved. Add NOTION_TOKEN to connect.</p>
           ) : (
@@ -96,6 +98,13 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
       </aside>
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-5 pb-28 md:px-8 md:pt-8 md:pb-12">
+        <div className="mb-4 flex items-center justify-between md:hidden">
+          <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
+            <span aria-hidden className="brand-mark grid size-7 place-items-center rounded-[calc(var(--radius)*0.55)]">✎</span>
+            Work Journal
+          </Link>
+          <Link href="/settings" aria-label="Appearance" className="grid size-9 place-items-center rounded-full text-lg hover:bg-surface-2">🎨</Link>
+        </div>
         {mode === "demo" && (
           <p className="mb-4 rounded-lg bg-warn/12 px-3 py-2 text-xs text-warn md:hidden">Demo mode: sample data, not saved to Notion.</p>
         )}
@@ -109,7 +118,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
             key={n.href}
             href={n.href}
             aria-current={active(n.href) ? "page" : undefined}
-            className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.68rem] ${active(n.href) ? "text-accent" : "text-ink-3"}`}
+            className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.68rem] ${active(n.href) ? "text-accent-fg" : "text-ink-3"}`}
           >
             <span aria-hidden className="text-base">{n.icon}</span>
             {n.label}
@@ -123,7 +132,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Capture"
-        className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 grid size-14 place-items-center rounded-full bg-accent text-2xl text-accent-ink shadow-lg md:hidden"
+        className="brand-mark fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 grid size-14 place-items-center rounded-full text-2xl shadow-lg md:hidden"
       >
         +
       </button>

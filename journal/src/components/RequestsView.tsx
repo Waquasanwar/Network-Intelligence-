@@ -30,7 +30,7 @@ function RequestCard({ entry, people }: { entry: Entry; people: Ref[] }) {
 
   return (
     <div className={`card p-3 ${pending ? "opacity-60" : ""}`}>
-      <Link href={`/entry/${entry.id}`} className="block text-sm leading-snug hover:text-accent">
+      <Link href={`/entry/${entry.id}`} className="block text-sm leading-snug hover:text-accent-fg">
         {entry.title}
       </Link>
       <div className="mt-2 flex flex-wrap gap-1">

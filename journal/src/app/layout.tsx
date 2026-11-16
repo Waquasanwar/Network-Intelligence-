@@ -4,6 +4,8 @@ import "./globals.css";
 import { Shell } from "@/components/Shell";
 import { loadAll } from "@/lib/journal";
 import { SESSION_COOKIE, authEnabled, safeEqual, sessionToken } from "@/lib/auth";
+import { THEME_COOKIE, parseTheme, themeVars } from "@/lib/theme";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Work Journal",
@@ -15,15 +17,17 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f5f2" },
-    { media: "(prefers-color-scheme: dark)", color: "#141413" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f6f8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e0e12" },
   ],
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookie = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
+  const jar = await cookies();
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
+  const cookie = jar.get(SESSION_COOKIE)?.value ?? "";
   const authed = authEnabled() && !!cookie && safeEqual(cookie, await sessionToken());
   const signedOut = authEnabled() && !authed;
 
@@ -35,8 +39,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const tags = data ? [...new Set(data.entries.flatMap((e) => e.tags))].sort() : [];
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning data-mode={theme.mode} style={themeVars(theme) as React.CSSProperties}>
       <body>
+        <ThemeProvider initial={theme}>
         <Shell
           people={data?.people ?? []}
           projects={data?.projects ?? []}
@@ -47,6 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           {children}
         </Shell>
+        </ThemeProvider>
       </body>
     </html>
   );

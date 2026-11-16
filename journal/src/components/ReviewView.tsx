@@ -82,7 +82,7 @@ function EnrichCard({ entry, people, projects, tags }: { entry: Entry; people: R
       <div className="mb-3 flex items-center gap-2 text-xs text-ink-3">
         <TypeBadge type={entry.type} />
         <span suppressHydrationWarning>{mounted ? `${shortDate(entry.captured.slice(0, 10))} · ${time(entry.captured)}` : ""}</span>
-        <Link href={`/entry/${entry.id}`} className="ml-auto hover:text-accent">
+        <Link href={`/entry/${entry.id}`} className="ml-auto hover:text-accent-fg">
           Open full entry →
         </Link>
       </div>
