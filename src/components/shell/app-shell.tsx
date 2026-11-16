@@ -37,12 +37,12 @@ export async function AppShell({ user, children }: { user: SessionUser; children
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <TopBar alerts={alerts} user={{ name: user.name, role: user.role, tenantName: user.tenantName }} home={user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : user.role === "CLIENT" ? "/client-workspace" : "/overview"} />
-      <div className="flex flex-1 min-w-0">
-        <Sidebar user={user} />
+    <div className="flex min-h-screen">
+      <Sidebar user={user} />
+      <div className="flex-1 min-w-0 flex flex-col">
+        <TopBar alerts={alerts} user={{ name: user.name, role: user.role, tenantName: user.tenantName }} home={user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : user.role === "CLIENT" ? "/client-workspace" : "/overview"} />
         <main className="flex-1 min-w-0">
-          <div className="max-w-[1280px] mx-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <div className="max-w-[1280px] mx-auto px-4 pb-10 pt-1 sm:px-6 lg:px-8">
             <Crumbs />
             <div className="reveal">{children}</div>
           </div>

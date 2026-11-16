@@ -105,7 +105,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
   return (
     <>
-      <div className="rounded-[8px] border border-line bg-surface p-5 sm:p-6 mb-5">
+      <div className="rounded-[22px] border border-line bg-surface p-5 sm:p-6 mb-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4 min-w-0">
             <Avatar person={person} size="xl" />
@@ -190,7 +190,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                       { label: "Next check", value: person.nextCheckDate ? <DateText date={person.nextCheckDate} relative /> : null },
                       { label: "How current", value: freshness === "fresh" ? <span className="text-teal">Fresh</span> : freshness === "aging" ? "Ageing" : <span className="text-amber capitalize">{freshness}</span> },
                     ]} />
-                    {person.nextAction ? <div className="mt-4 rounded-[6px] bg-surface-muted px-3 py-2.5 text-[13px]"><span className="text-ink-muted">Next action: </span><span className="font-medium">{person.nextAction}</span> <DateText date={person.nextActionDate} relative className="text-ink-faint" /></div> : null}
+                    {person.nextAction ? <div className="mt-4 rounded-[12px] bg-surface-muted px-3 py-2.5 text-[13px]"><span className="text-ink-muted">Next action: </span><span className="font-medium">{person.nextAction}</span> <DateText date={person.nextActionDate} relative className="text-ink-faint" /></div> : null}
                   </div>
                 </div>
               </CardBody>
@@ -244,7 +244,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
 
       {tab === "relationships" ? (
         <Section title="Relationships" description="Relationship provenance and private notes. Notes never leave this tenant." action={<AddRelationshipDrawer personId={person.id} people={allPeople} />}>
-          <div className="rounded-[8px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+          <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
             <table className="data">
               <thead><tr><th>Known by</th><th>Type</th><th>Source</th><th>Worked together</th><th>Years</th><th>Again?</th><th>Last contact</th>{showNotes ? <th>Private notes</th> : null}</tr></thead>
               <tbody>
@@ -317,7 +317,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "opportunities" ? (
         <Section title="Opportunities" description="Where this person has been considered. Scores are per-opportunity, never a global rank.">
           {person.matches.length === 0 && person.teamMemberships.length === 0 ? <EmptyState title="Not yet considered for an opportunity" /> : (
-            <div className="rounded-[8px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+            <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
               <table className="data">
                 <thead><tr><th>Opportunity</th><th>Route</th><th>Stage</th><th>Fit</th><th>Human decision</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -369,7 +369,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "activity" ? (
         <Section title="Activity" description="Audit trail of sensitive actions on this record.">
           {audit.length === 0 ? <EmptyState title="No activity recorded" /> : (
-            <div className="rounded-[8px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
+            <div className="rounded-[22px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-hidden">
               <table className="data"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
                 <tbody>{audit.map((a) => <tr key={a.id}><td><DateText date={a.createdAt} relative /></td><td>{a.actor?.name ?? "system"}</td><td className="font-mono text-[12px]">{a.action}</td><td>{a.entityType}</td><td className="text-xs text-ink-muted font-mono">{a.metadata ? JSON.stringify(a.metadata) : ""}</td></tr>)}</tbody>
               </table>

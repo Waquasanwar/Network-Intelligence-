@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal, Lock } from "lucide-react";
+import { Search, LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "@/components/ui/brand-mark";
 import type { Role } from "@prisma/client";
 
 // The full platform — network, opportunities, placement, portals, commercials — is shown by
@@ -58,24 +59,43 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
     return (
       <Link
         href={href}
+        aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-3 rounded-[6px] px-3 py-[11px] lg:py-[8px] text-[14px] lg:text-[13.5px] transition-[background-color,color] duration-200",
-          active ? "bg-rail-active text-rail-ink-strong font-semibold" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
+          "group flex items-center gap-3 rounded-full px-4 h-11 lg:h-9 text-[14px] lg:text-[13.5px] transition-[background-color,color] duration-200",
+          active ? "bg-navy text-white font-semibold dark:text-canvas" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
         )}
       >
-        <Icon className={cn("h-4 w-4 flex-none transition-colors", active ? "text-rail-ink-strong" : "text-rail-ink group-hover:text-rail-ink-strong")} />
+        <Icon className="h-[17px] w-[17px] flex-none" />
         <span className="flex-1 truncate">{label}</span>
-        {active ? <span aria-hidden="true" className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-[2px] bg-teal-400" /> : null}
       </Link>
     );
   };
-  const Group = ({ label }: { label: string }) => <div className="label-caps px-3 pt-5 pb-2 text-ink-faint">{label}</div>;
+  const Group = ({ label }: { label: string }) => <div className="px-4 pt-5 pb-1.5 text-[12px] text-ink-faint">{label}</div>;
+  const home = restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview";
+  const openSearch = () => { setOpen(false); window.dispatchEvent(new CustomEvent("ni:open-palette")); };
 
   return (
     <>
-    {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-x-0 bottom-0 top-14 z-20 bg-ink/35 lg:hidden cursor-default" /> : null}
-    <aside id="app-nav" className={cn("rail-surface flex flex-col text-rail-ink border-r border-rail-line flex-none fixed top-14 bottom-0 left-0 z-30 w-[272px] max-w-[86vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-14 lg:bottom-auto lg:h-[calc(100dvh-56px)] lg:z-auto lg:w-[248px] lg:translate-x-0 lg:visible", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)] lg:shadow-none" : "-translate-x-full invisible")}>
-      <nav className="px-3 flex-1 space-y-0.5 overflow-y-auto pt-4 pb-6">
+    {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-ink/35 lg:hidden cursor-default" /> : null}
+    {/* A floating white panel: brand, search, the menu, and one prompt to use the agent. */}
+    <aside id="app-nav" className={cn("flex flex-col flex-none bg-surface text-rail-ink fixed inset-y-0 left-0 z-40 w-[284px] max-w-[88vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-3 lg:z-auto lg:m-3 lg:mr-0 lg:h-[calc(100dvh-24px)] lg:w-[264px] lg:translate-x-0 lg:visible lg:rounded-[28px] lg:border lg:border-line lg:shadow-[var(--shadow-card)]", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)]" : "-translate-x-full invisible")}>
+      <div className="px-5 pt-6 pb-4">
+        <Link href={home} className="flex items-center gap-3">
+          <BrandMark className="h-[22px] w-auto flex-none text-rail-ink-strong" />
+          <span className="leading-[1.15] min-w-0">
+            <span className="block font-display is-small text-[15px] text-rail-ink-strong truncate">Network Intelligence</span>
+            <span className="block text-[12px] text-ink-faint truncate">{user.tenantName}</span>
+          </span>
+        </Link>
+      </div>
+      <div className="px-3 pb-2">
+        <button type="button" onClick={openSearch} className="flex h-10 w-full items-center gap-2.5 rounded-full bg-surface-muted pl-4 pr-1.5 text-[13.5px] text-ink-faint transition-colors duration-200 hover:bg-navy-50 cursor-pointer">
+          <Search className="h-4 w-4 flex-none" />
+          <span className="flex-1 text-left">Search for…</span>
+          <span className="rounded-full bg-navy px-2.5 py-1 text-[11px] font-semibold text-white dark:text-canvas">⌘K</span>
+        </button>
+      </div>
+      <nav className="px-3 flex-1 space-y-0.5 overflow-y-auto pt-2 pb-4">
         {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {INTERNAL_NAV.map((i) => <Item key={i.href} {...i} />)}
@@ -85,6 +105,13 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
           </>
         )}
       </nav>
+      {!restricted ? (
+        <div className="brand-panel m-3 mt-0 rounded-[22px] p-4">
+          <div className="font-display is-small text-[14.5px] leading-[1.3]">Ask your network anything</div>
+          <p className="text-[12.5px] text-stage-muted leading-[1.45] mt-1">One question, answered from people you know, ranked by trust.</p>
+          <button type="button" onClick={openSearch} className="mt-3 inline-flex h-8 items-center rounded-full bg-white px-3.5 text-[12.5px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-95 cursor-pointer">Ask now</button>
+        </div>
+      ) : null}
     </aside>
     </>
   );

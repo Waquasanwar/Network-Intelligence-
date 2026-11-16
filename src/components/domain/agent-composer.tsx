@@ -69,14 +69,14 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
 
   return (
     <div className="relative mt-5">
-      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="flex items-center gap-2.5 rounded-[6px] bg-white p-1.5 pl-4 text-[#0c1b33] transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_var(--color-accent)]">
+      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="flex items-center gap-2.5 rounded-[12px] bg-white p-1.5 pl-4 text-[#0c1b33] transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_var(--color-accent)]">
         <Sparkles className="h-[18px] w-[18px] flex-none text-[#0c1b33]" aria-hidden="true" />
         <input
           ref={inputRef} id="agent-ask" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Ask your network"
           placeholder={suggestions.length ? `Ask your network — “${suggestions[hint % suggestions.length]}”` : "Ask your network a question"}
           className="agent-input h-11 min-w-0 flex-1 text-[15.5px] text-[#0c1b33] placeholder:text-[#5b6576]" autoComplete="off"
         />
-        <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="group inline-flex h-11 flex-none items-center gap-1.5 rounded-[6px] bg-accent px-4 text-[14px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-95 cursor-pointer disabled:cursor-default">
+        <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="group inline-flex h-11 flex-none items-center gap-1.5 rounded-[12px] bg-accent px-4 text-[14px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-95 cursor-pointer disabled:cursor-default">
           Ask
           <span aria-hidden="true" className="arrow-badge inline-flex"><ArrowRight className="h-4 w-4" strokeWidth={2} /></span>
         </button>
@@ -92,7 +92,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
       ) : null}
 
       {phase !== "idle" ? (
-        <div className="rise-in mt-3 rounded-[8px] bg-surface p-5 sm:p-6 text-ink" aria-live="polite">
+        <div className="rise-in mt-3 rounded-[22px] bg-surface p-5 sm:p-6 text-ink" aria-live="polite">
           {/* The plan: what the agent is doing, as it does it. Collapses to a single trace line once answered. */}
           {phase === "thinking" ? (
             <ol className="space-y-2">
@@ -122,7 +122,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
                 <div className="mt-3.5 grid grid-cols-1 gap-2 md:grid-cols-2">
                   {result.people.map((p, i) => (
                     <Link key={p.id} href={`/network/${p.id}`} className="rise-in group block" style={{ animationDelay: `${i * 50}ms` }}>
-                      <div className="flex h-full items-start gap-3 rounded-[6px] border border-line bg-surface p-3.5 transition-colors duration-200 group-hover:border-ink">
+                      <div className="flex h-full items-start gap-3 rounded-[12px] border border-line bg-surface p-3.5 transition-colors duration-200 group-hover:border-ink">
                         <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-surface-muted ring-1 ring-line text-[12px] font-semibold text-ink">{initials(p.name)}</span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-1.5">
@@ -144,15 +144,15 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
 
               {done ? (
                 <div className="rise-in mt-3.5 flex flex-wrap items-center gap-2">
-                  {result.total ? <Link href={result.href} className="inline-flex h-9 items-center gap-1.5 rounded-[6px] bg-navy px-3.5 text-[13px] font-semibold text-white transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">{result.total > result.people.length ? `See all ${result.total} in Network` : "Open in Network"} <ArrowRight className="h-3.5 w-3.5" /></Link> : <Link href="/network/intake" className="inline-flex h-9 items-center gap-1.5 rounded-[6px] bg-navy px-3.5 text-[13px] font-semibold text-white transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">Add someone <ArrowRight className="h-3.5 w-3.5" /></Link>}
-                  <button type="button" onClick={reset} className="inline-flex h-9 items-center rounded-[6px] border border-line bg-surface px-3.5 text-[13px] font-semibold text-ink transition-colors duration-200 hover:border-ink cursor-pointer">Ask something else</button>
+                  {result.total ? <Link href={result.href} className="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-navy px-3.5 text-[13px] font-semibold text-white transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">{result.total > result.people.length ? `See all ${result.total} in Network` : "Open in Network"} <ArrowRight className="h-3.5 w-3.5" /></Link> : <Link href="/network/intake" className="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-navy px-3.5 text-[13px] font-semibold text-white transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">Add someone <ArrowRight className="h-3.5 w-3.5" /></Link>}
+                  <button type="button" onClick={reset} className="inline-flex h-9 items-center rounded-[12px] border border-line bg-surface px-3.5 text-[13px] font-semibold text-ink transition-colors duration-200 hover:border-ink cursor-pointer">Ask something else</button>
                 </div>
               ) : null}
             </>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-ink">
               <span>{result && !result.ok ? result.error : "Something went wrong."}</span>
-              <button type="button" onClick={reset} className="rounded-[6px] border border-line px-3.5 py-1.5 text-[13px] font-semibold text-ink hover:border-ink cursor-pointer">Try again</button>
+              <button type="button" onClick={reset} className="rounded-[12px] border border-line px-3.5 py-1.5 text-[13px] font-semibold text-ink hover:border-ink cursor-pointer">Try again</button>
             </div>
           )}
         </div>

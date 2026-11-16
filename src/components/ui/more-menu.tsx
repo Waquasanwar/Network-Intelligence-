@@ -20,10 +20,10 @@ export function MoreMenu({ children, label = "More", align = "right" }: { childr
   }, [open]);
   return (
     <div ref={ref} className="relative">
-      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="inline-flex h-9 items-center gap-1.5 rounded-[6px] border border-line-strong bg-surface px-3 text-[13px] font-semibold text-ink transition-colors duration-200 hover:border-ink cursor-pointer">
+      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-line-strong bg-surface px-3 text-[13px] font-semibold text-ink transition-colors duration-200 hover:border-ink cursor-pointer">
         <MoreHorizontal className="h-4 w-4" /> {label}
       </button>
-      <div role="menu" hidden={!open} onClick={() => setOpen(false)} className={cn("more-menu absolute top-11 z-30 min-w-[220px] rounded-[8px] border border-line bg-surface p-1.5 shadow-[var(--shadow-pop)]", align === "right" ? "right-0" : "left-0")}>
+      <div role="menu" hidden={!open} onClick={() => setOpen(false)} className={cn("more-menu absolute top-11 z-30 min-w-[220px] rounded-[22px] border border-line bg-surface p-1.5 shadow-[var(--shadow-pop)]", align === "right" ? "right-0" : "left-0")}>
         {children}
       </div>
     </div>

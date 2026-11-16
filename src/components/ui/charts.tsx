@@ -13,10 +13,10 @@ export function SegmentedBar({ parts, unit = "people" }: { parts: { label: strin
   const shown = parts.map((p, i) => ({ ...p, color: SERIES[i % SERIES.length], share: total ? Math.round((p.value / total) * 100) : 0 }));
   return (
     <div>
-      <div className="flex h-7 w-full gap-[2px]" role="img" aria-label={shown.map((p) => `${p.label}: ${p.value} ${unit}, ${p.share}%`).join("; ")}>
-        {total === 0 ? <div className="h-full w-full rounded-[4px] bg-series-track" /> : shown.filter((p) => p.value > 0).map((p) => (
-          <div key={p.label} title={`${p.label}: ${p.value} ${unit} (${p.share}%)`} className="h-full min-w-[6px] rounded-[4px] flex items-center overflow-hidden" style={{ width: `${(p.value / total) * 100}%`, background: p.color }}>
-            {p.share >= 12 ? <span className="pl-2 text-[11.5px] font-semibold text-white">{p.share}%</span> : null}
+      <div className="flex h-9 w-full gap-[3px]" role="img" aria-label={shown.map((p) => `${p.label}: ${p.value} ${unit}, ${p.share}%`).join("; ")}>
+        {total === 0 ? <div className="h-full w-full rounded-[10px] bg-series-track" /> : shown.filter((p) => p.value > 0).map((p) => (
+          <div key={p.label} title={`${p.label}: ${p.value} ${unit} (${p.share}%)`} className="h-full min-w-[8px] rounded-[10px] flex items-center overflow-hidden" style={{ width: `${(p.value / total) * 100}%`, background: p.color }}>
+            {p.share >= 12 ? <span className="pl-3 text-[12px] font-semibold text-white">{p.share}%</span> : null}
           </div>
         ))}
       </div>
@@ -49,8 +49,8 @@ export function BarList({ rows, empty = "Nothing to show yet.", className }: { r
               <span className="truncate text-[13px] text-ink group-hover:underline decoration-line-strong underline-offset-4">{r.label}</span>
               <span className="flex-none text-[13px] font-semibold text-ink">{r.value}</span>
             </span>
-            <span className="mt-1.5 block h-2 w-full rounded-r-[4px] bg-series-track" aria-hidden="true">
-              <span className="block h-full rounded-r-[4px] bg-series-1" style={{ width: `${Math.max(2, (r.value / max) * 100)}%` }} />
+            <span className="mt-2 block h-2.5 w-full rounded-full bg-series-track" aria-hidden="true">
+              <span className="block h-full rounded-full" style={{ width: `${Math.max(4, (r.value / max) * 100)}%`, background: "linear-gradient(90deg, var(--color-series-1), var(--color-accent))" }} />
             </span>
           </>
         );

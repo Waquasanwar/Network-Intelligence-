@@ -87,7 +87,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
             action={<form action={generateMatches}><input type="hidden" name="opportunityId" value={opp.id} /><SubmitButton variant="secondary" pendingText="Finding…"><Sparkles className="h-3.5 w-3.5" /> {opp.matches.length ? "Refresh suggestions" : "Find possible matches"}</SubmitButton></form>}
           >
             {opp.matches.length === 0 ? <EmptyState icon={Sparkles} title="No suggestions yet" description="Find possible matches from your network. Each comes with the evidence behind it and what is still uncertain." /> : (
-              <div className="rounded-[8px] border border-line bg-surface divide-y divide-line overflow-hidden">
+              <div className="rounded-[22px] border border-line bg-surface divide-y divide-line overflow-hidden">
                 {opp.matches.map((m) => {
                   const intro = opp.introductions.find((i) => i.personId === m.personId);
                   const cautions = m.person.evidence.filter((e) => e.evidenceType === "CAUTION").length;

@@ -18,7 +18,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
 
 export function EmptyState({ title, description, action, icon: Icon = Inbox }: { title: string; description?: string; action?: React.ReactNode; icon?: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="rounded-[8px] bg-surface-muted px-6 py-9 text-center">
+    <div className="rounded-[22px] bg-surface-muted px-6 py-9 text-center">
       <span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-surface text-ink-muted ring-1 ring-line"><Icon className="h-[18px] w-[18px]" /></span>
       <div className="text-[14px] font-semibold text-ink mt-3">{title}</div>
       {description ? <div className="text-[13px] text-ink-muted mt-1 max-w-sm mx-auto leading-[1.5]">{description}</div> : null}
@@ -53,18 +53,18 @@ export function Facts({ rows, className }: { rows: { label: string; value: React
 
 export function Tabs({ items, current, base }: { items: { key: string; label: string; count?: number }[]; current: string; base: string }) {
   return (
-    <div className="mb-5 max-w-full overflow-x-auto border-b border-line"><div className="flex items-center gap-5">
+    <div className="mb-5 max-w-full overflow-x-auto"><div className="inline-flex items-center gap-1 rounded-full bg-surface p-1 shadow-[var(--shadow-card)] border border-line">
       {items.map((t) => (
         <Link
           key={t.key}
           href={t.key === items[0].key ? base : `${base}?tab=${t.key}`}
           className={cn(
-            "h-10 inline-flex items-center text-[13.5px] whitespace-nowrap transition-colors duration-200 border-b-2 -mb-px",
-            current === t.key ? "border-ink text-ink font-semibold" : "border-transparent text-ink-muted font-medium hover:text-ink",
+            "h-9 px-4 inline-flex items-center text-[13.5px] whitespace-nowrap transition-colors duration-200 rounded-full",
+            current === t.key ? "bg-navy text-white font-semibold dark:text-canvas" : "text-ink-muted font-medium hover:text-ink hover:bg-surface-muted",
           )}
         >
           {t.label}
-          {typeof t.count === "number" ? <span className={cn("ml-1.5 text-[12px] tabular rounded-full px-1.5 py-px font-semibold", current === t.key ? "bg-navy text-white dark:text-canvas" : "bg-surface-muted text-ink-faint")}>{t.count}</span> : null}
+          {typeof t.count === "number" ? <span className={cn("ml-1.5 text-[12px] tabular rounded-full px-1.5 py-px font-semibold", current === t.key ? "bg-accent text-accent-ink" : "bg-surface-muted text-ink-faint")}>{t.count}</span> : null}
         </Link>
       ))}
     </div></div>

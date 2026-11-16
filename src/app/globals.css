@@ -7,12 +7,12 @@
   a hairline and a soft lift on hover; colour is used sparingly so it means something.
 */
 @theme {
-  --color-canvas: #f3f5f8;
+  --color-canvas: #eef0f5;
   --color-surface: #ffffff;
-  --color-surface-muted: #eef1f5;
+  --color-surface-muted: #f3f4f8;
   --color-surface-hover: #f8fafc;
-  --color-line: #d9dfe7;
-  --color-line-strong: #b9c3d0;
+  --color-line: #e6e9ef;
+  --color-line-strong: #cdd3dd;
   --color-ink: #0c1b33;
   --color-ink-muted: #3b475b;
   --color-ink-faint: #5b6576;
@@ -42,25 +42,28 @@
   --color-rail: #ffffff;
   --color-rail-ink: #3b475b;
   --color-rail-ink-strong: #0c1b33;
-  --color-rail-line: #d9dfe7;
-  --color-rail-active: #eef2f7;
+  --color-rail-line: #e6e9ef;
+  --color-rail-active: #f3f4f8;
   --color-chart-a: #0c1b33;
   --color-chart-b: #2fb389;
   /* chart series: checked for colour-blind separation and contrast in both modes (dataviz validator) */
-  --color-series-1: #2868b4;
-  --color-series-2: #17a077;
-  --color-series-3: #eb6834;
-  --color-series-track: #e3e8ef;
+  --color-series-1: #17a077;
+  --color-series-2: #2868b4;
+  --color-series-3: #e8598b;
+  --color-series-track: #eceef3;
+  --color-pink: #e8598b;
+  --color-pink-100: #fde3ec;
   --font-display: var(--font-sans-mona), "Helvetica Neue", Arial, sans-serif;
   --font-sans: var(--font-sans-mona), "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-mono-fallback), ui-monospace, SFMono-Regular, Menlo, monospace;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
   /* flat: cards are a hairline on a grey ground; only things that float cast a shadow */
-  --shadow-card: 0 0 #0000;
-  --shadow-card-hover: 0 0 0 1px var(--color-line-strong);
+  /* soft: cards float a little above a pale ground */
+  --shadow-card: 0 1px 2px rgba(12, 27, 51, 0.03), 0 14px 34px -18px rgba(12, 27, 51, 0.14);
+  --shadow-card-hover: 0 2px 4px rgba(12, 27, 51, 0.04), 0 22px 44px -18px rgba(12, 27, 51, 0.2);
   --shadow-drawer: 0 32px 80px -16px rgba(12, 27, 51, 0.3), 0 0 0 1px rgba(12, 27, 51, 0.05);
   --shadow-pop: 0 14px 40px rgba(12, 27, 51, 0.14), 0 0 0 1px rgba(12, 27, 51, 0.04);
   --shadow-button: 0 1px 2px rgba(12, 27, 51, 0.12);
@@ -99,12 +102,12 @@
     --color-rail-active: #12264a;
     --color-chart-a: #f7f9fc;
     --color-chart-b: #7ee3bc;
-    --color-series-1: #3987e5;
-    --color-series-2: #199e70;
-    --color-series-3: #d95926;
+    --color-series-1: #199e70;
+    --color-series-2: #3987e5;
+    --color-series-3: #d55181;
     --color-series-track: #1a2c4d;
-    --shadow-card: 0 0 #0000;
-    --shadow-card-hover: 0 0 0 1px var(--color-line-strong);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -18px rgba(0, 0, 0, 0.6);
+    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 22px 44px -18px rgba(0, 0, 0, 0.7);
     --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 }
@@ -133,7 +136,8 @@ html, body {
 .ambient { display: none; }
 
 /* The navy surface. */
-.brand-panel { color: var(--color-stage-ink); background: var(--color-stage); }
+/* The dark surface: navy with a soft teal light from one corner. */
+.brand-panel { color: var(--color-stage-ink); background: radial-gradient(85% 130% at 100% 0%, #15616b 0%, rgba(21, 97, 107, 0) 62%), var(--color-stage); }
 .brand-panel.is-edge { border: 0; }
 
 .glass-tile { position: relative; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-ink); transition: border-color 160ms ease, box-shadow 160ms ease; }
@@ -153,7 +157,7 @@ a > .glass-tile:hover { box-shadow: var(--shadow-card-hover); }
 @media (prefers-reduced-motion: reduce) { .arrow-badge { transition: none; } .group:hover > .arrow-badge { transform: none; } .node-in { animation: none; } }
 
 ::selection { background: var(--color-accent); color: var(--color-accent-ink); }
-:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 12px; }
 
 /* Mona Sans draws its tabular figures with a slashed zero, which reads as code. Keep the ordinary figures. */
 .tabular { font-variant-numeric: lining-nums; font-feature-settings: "zero" 0, "tnum" 0; }
@@ -210,7 +214,7 @@ kbd {
 .reveal > *:nth-child(5) { animation-delay: 160ms; }
 .reveal > *:nth-child(n+6) { animation-delay: 200ms; }
 .lift { transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease, border-color 160ms ease; }
-.lift:hover { border-color: var(--color-line-strong); }
+.lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
 @media (prefers-reduced-motion: reduce) {
   .anim-drawer, .anim-fade, .anim-pop, .reveal > *, .ambient::before, .ambient::after, .ai-surface::before { animation: none; }
   .lift, table.data tbody tr { transition: none; }
@@ -259,3 +263,16 @@ kbd {
 .more-menu button { display: flex; width: 100%; justify-content: flex-start; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--color-ink); font-size: 13px; font-weight: 500; box-shadow: none; }
 .more-menu button:hover { background: var(--color-surface-muted); }
 .more-menu button svg { color: var(--color-ink-muted); width: 16px; height: 16px; }
+
+/* ---------- Network map: the orbit stage ---------- */
+@keyframes orbit-pulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.6); opacity: 0; } }
+.orbit-pulse { animation: orbit-pulse 3.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+@keyframes orbit-flow { to { stroke-dashoffset: -22; } }
+.orbit-flow { stroke-dasharray: 5 6; animation: orbit-flow 0.9s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .orbit-pulse { animation: none; opacity: 0; } .orbit-flow { animation: none; stroke-dasharray: none; } }
+
+/* The map's stage: deep navy, lit teal from the centre, with a slow radar sweep. */
+.orbit-stage { background: radial-gradient(58% 64% at 50% 50%, #145864 0%, rgba(20, 88, 100, 0) 72%), #091730; }
+@keyframes orbit-sweep { to { transform: rotate(360deg); } }
+.orbit-sweep { position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 0deg, rgba(126, 227, 188, 0) 0deg, rgba(126, 227, 188, 0) 292deg, rgba(126, 227, 188, 0.22) 357deg, rgba(126, 227, 188, 0) 360deg); animation: orbit-sweep 9s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .orbit-sweep { animation: none; display: none; } }

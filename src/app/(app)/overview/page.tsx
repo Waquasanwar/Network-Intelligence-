@@ -112,7 +112,7 @@ export default async function OverviewPage() {
       </div>
 
       {/* The search banner: one question box, in plain words. */}
-      <section className="brand-panel rounded-[10px] px-5 py-6 sm:px-8 sm:py-7 mb-4">
+      <section className="brand-panel rounded-[28px] px-5 py-6 sm:px-8 sm:py-7 mb-4">
         <h2 className="font-display is-small text-[19px] sm:text-[21px] leading-[1.25]">Who are you looking for?</h2>
         <p className="text-stage-muted text-[14px] mt-1 max-w-[70ch]">Ask in plain words. The agent searches everyone in your network and ranks them by how well you know and trust them.</p>
         <AgentComposer suggestions={askSuggestions} />
@@ -134,14 +134,14 @@ export default async function OverviewPage() {
               { label: "Worked with", value: workedWith, hint: "people you've delivered with", href: "/network?workedWith=1", delta: 0, icon: Handshake },
             ]
         ).map((k) => (
-          <Link key={k.label} href={k.href} className="group block rounded-[8px] border border-line bg-surface p-4 sm:p-5 transition-colors duration-200 hover:border-line-strong">
+          <Link key={k.label} href={k.href} className="lift group block rounded-[22px] border border-line bg-surface p-5 sm:p-6 shadow-[var(--shadow-card)]">
             <div className="flex items-start justify-between gap-2">
               <div className="text-[12.5px] font-medium text-ink-muted leading-tight">{k.label}</div>
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-[6px] bg-navy-50 text-ink"><k.icon className="h-4 w-4" /></span>
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-surface-muted text-ink"><k.icon className="h-4 w-4" /></span>
             </div>
-            <div className="font-display text-[30px] sm:text-[34px] leading-none mt-3 text-ink">{k.value}</div>
+            <div className="font-display text-[34px] sm:text-[40px] leading-none mt-4 text-ink">{k.value}</div>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-faint">
-              {k.delta ? <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-1.5 py-0.5 font-semibold text-teal">+{k.delta} this week</span> : null}
+              {k.delta ? <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 font-semibold text-teal">↗ +{k.delta} this week</span> : null}
               <span>{k.hint}</span>
             </div>
           </Link>
@@ -156,8 +156,8 @@ export default async function OverviewPage() {
           { title: "Invite someone", text: "Send your link. They register, do the screening, and you review.", href: "/invite", icon: Send },
           { title: "Open the network map", text: "See your circles of trust and who introduced whom.", href: "/network/map", icon: Share2 },
         ].map((q) => (
-          <Link key={q.title} href={q.href} className="group flex items-start gap-3 rounded-[8px] border border-line bg-surface p-4 transition-colors duration-200 hover:border-ink">
-            <span className="grid h-9 w-9 flex-none place-items-center rounded-[6px] bg-stage text-accent"><q.icon className="h-[18px] w-[18px]" /></span>
+          <Link key={q.title} href={q.href} className="lift group flex items-start gap-3 rounded-[22px] border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-navy text-accent"><q.icon className="h-[18px] w-[18px]" /></span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center justify-between gap-2 text-[13.5px] font-semibold text-ink">{q.title} <ArrowRight className="arrow-badge h-3.5 w-3.5 flex-none text-ink-faint group-hover:text-ink" /></span>
               <span className="block text-[12.5px] text-ink-muted leading-[1.45] mt-0.5">{q.text}</span>
@@ -202,13 +202,13 @@ export default async function OverviewPage() {
                     const k = QUEUE[s.kind]; const Icon = k.icon;
                     return (
                       <li key={i}>
-                        <Link href={s.href} className="group flex items-center gap-3 rounded-[6px] border border-line bg-surface px-3 py-2.5 transition-colors duration-200 hover:border-ink">
-                          <span className="grid h-8 w-8 flex-none place-items-center rounded-[6px] bg-surface-muted text-ink"><Icon className="h-4 w-4" /></span>
+                        <Link href={s.href} className="group flex items-center gap-3 rounded-[12px] border border-line bg-surface px-3 py-2.5 transition-colors duration-200 hover:border-ink">
+                          <span className="grid h-8 w-8 flex-none place-items-center rounded-[12px] bg-surface-muted text-ink"><Icon className="h-4 w-4" /></span>
                           <span className="min-w-0 flex-1">
                             <span className="label-caps block text-ink-faint">{k.tag}</span>
                             <span className="block truncate text-[13px] text-ink">{s.text}</span>
                           </span>
-                          <span className="inline-flex flex-none items-center gap-1 rounded-[6px] border border-line px-2.5 py-1.5 text-[12px] font-semibold text-ink transition-colors duration-200 group-hover:border-navy group-hover:bg-navy group-hover:text-white dark:group-hover:text-canvas">{k.verb} <ArrowRight className="h-3 w-3" /></span>
+                          <span className="inline-flex flex-none items-center gap-1 rounded-[12px] border border-line px-2.5 py-1.5 text-[12px] font-semibold text-ink transition-colors duration-200 group-hover:border-navy group-hover:bg-navy group-hover:text-white dark:group-hover:text-canvas">{k.verb} <ArrowRight className="h-3 w-3" /></span>
                         </Link>
                       </li>
                     );
@@ -257,7 +257,7 @@ export default async function OverviewPage() {
             <CardBody>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
                 {stageCounts.map((s) => (
-                  <div key={s.stage} className="rounded-[6px] bg-surface-muted px-2 py-2.5 text-center">
+                  <div key={s.stage} className="rounded-[12px] bg-surface-muted px-2 py-2.5 text-center">
                     <div className="text-[16px] font-semibold tabular text-ink leading-none">{s.count}</div>
                     <div className="text-[9.5px] uppercase tracking-[0.06em] text-ink-faint mt-1 truncate">{s.stage.toLowerCase()}</div>
                   </div>
