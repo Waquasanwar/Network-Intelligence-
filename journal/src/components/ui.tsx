@@ -11,7 +11,7 @@ const TYPE_CLASS: Record<EntryType, string> = {
   Meeting: "bg-[#7d6a5c]/12 text-[#7d6a5c] dark:bg-[#cdb9aa]/14 dark:text-[#cdb9aa]",
   "Blocker / Risk": "bg-[#b4233c]/12 text-[#b4233c] dark:bg-[#ff8a9b]/14 dark:text-[#ff8a9b]",
   Win: "bg-[#3f7d5c]/12 text-[#3f7d5c] dark:bg-[#8fd1ac]/14 dark:text-[#8fd1ac]",
-  Question: "bg-[#ad4677]/12 text-[#ad4677] dark:bg-[#f0a2c4]/14 dark:text-[#f0a2c4]",
+  Question: "bg-[#4f55a5]/12 text-[#4f55a5] dark:bg-[#aab0f0]/14 dark:text-[#aab0f0]",
   Learning: "bg-[#3f7676]/12 text-[#3f7676] dark:bg-[#93cfcf]/14 dark:text-[#93cfcf]",
 };
 
@@ -24,7 +24,7 @@ export const TYPE_HEX: Record<EntryType, string> = {
   Meeting: "#7d6a5c",
   "Blocker / Risk": "#b4233c",
   Win: "#3f7d5c",
-  Question: "#ad4677",
+  Question: "#4f55a5",
   Learning: "#3f7676",
 };
 
@@ -57,7 +57,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-[1.75rem] leading-tight font-semibold">{title}</h1>
+        <h1 className="text-2xl leading-tight font-semibold">{title}</h1>
         {subtitle && <p className="mt-0.5 text-sm text-ink-3">{subtitle}</p>}
       </div>
       {actions}

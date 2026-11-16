@@ -20,7 +20,7 @@
    Everything below is derived from them, so changing the accent re-colours the whole app.
 --------------------------------------------------------------------------------------------- */
 :root {
-  --brand: #b4537a;
+  --brand: #1f3a68;
   --brand-ink: #ffffff;
   --tint: 4%;
   --radius: 0.875rem;
@@ -28,17 +28,17 @@
 
   --font-heading: Georgia, ui-serif, serif;
 
-  /* Light neutrals: warm blush-cream with plum-tinted ink */
-  --n-bg: #fbf7f6;
-  --n-surface: #fffdfc;
-  --n-surface-2: #f6eeec;
-  --n-line: #ecdfdc;
-  --ink: #2b1f26;
-  --ink-2: #5f4c56;
-  --ink-3: #96838c;
-  --danger: #b4233c;
-  --ok: #2f7d5b;
-  --warn: #a8611a;
+  /* Light neutrals: cool slate greys with near-black ink */
+  --n-bg: #f3f4f6;
+  --n-surface: #ffffff;
+  --n-surface-2: #eceef2;
+  --n-line: #dde1e7;
+  --ink: #111827;
+  --ink-2: #475467;
+  --ink-3: #8691a3;
+  --danger: #c0392b;
+  --ok: #217a4b;
+  --warn: #a35a00;
 
   --accent: var(--brand);
   --accent-ink: var(--brand-ink);
@@ -48,14 +48,14 @@
 }
 
 :root[data-mode="dark"] {
-  --n-bg: #151013;
-  --n-surface: #1e171b;
-  --n-surface-2: #292026;
-  --n-line: #3a2d34;
-  --ink: #f8eff3;
-  --ink-2: #cdbcc5;
-  --ink-3: #9a8791;
-  --danger: #ff8a9b;
+  --n-bg: #0d1117;
+  --n-surface: #151b23;
+  --n-surface-2: #1e2631;
+  --n-line: #2b3441;
+  --ink: #e8edf3;
+  --ink-2: #a9b4c2;
+  --ink-3: #7c8797;
+  --danger: #ff7b6e;
   --ok: #4fd69c;
   --warn: #ffb35c;
   --accent: color-mix(in oklch, var(--brand) 74%, white);
@@ -65,14 +65,14 @@
 }
 @media (prefers-color-scheme: dark) {
   :root[data-mode="system"] {
-    --n-bg: #151013;
-    --n-surface: #1e171b;
-    --n-surface-2: #292026;
-    --n-line: #3a2d34;
-    --ink: #f8eff3;
-    --ink-2: #cdbcc5;
-    --ink-3: #9a8791;
-    --danger: #ff8a9b;
+    --n-bg: #0d1117;
+    --n-surface: #151b23;
+    --n-surface-2: #1e2631;
+    --n-line: #2b3441;
+    --ink: #e8edf3;
+    --ink-2: #a9b4c2;
+    --ink-3: #7c8797;
+    --danger: #ff7b6e;
     --ok: #4fd69c;
     --warn: #ffb35c;
     --accent: color-mix(in oklch, var(--brand) 74%, white);
@@ -120,7 +120,7 @@
 /* A second, hue-shifted accent for gradients, where the browser supports relative colours. */
 @supports (color: oklch(from red l c h)) {
   :root {
-    --accent-2: oklch(from var(--accent) calc(l + 0.05) calc(c * 0.9) calc(h - 38));
+    --accent-2: oklch(from var(--accent) calc(l + 0.08) c calc(h - 12));
     --accent-text: oklch(from var(--accent) min(l, 0.52) c h);
   }
   :root[data-mode="dark"] {
@@ -175,8 +175,8 @@ body {
 h1,
   .font-display {
     font-family: var(--font-heading);
-    font-weight: 600;
-    letter-spacing: -0.005em;
+    font-weight: 650;
+    letter-spacing: -0.02em;
   }
 
   ::selection {

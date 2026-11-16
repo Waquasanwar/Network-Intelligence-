@@ -54,7 +54,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
   return (
     <div className="min-h-dvh md:flex">
       <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-line px-3 py-5 md:flex">
-        <Link href="/" className="font-display mb-6 flex items-center gap-2 px-2 text-xl">
+        <Link href="/" className="font-display mb-6 flex items-center gap-2 px-2 text-base">
           <span aria-hidden className="brand-mark grid size-7 place-items-center rounded-[calc(var(--radius)*0.55)]">✎</span>
           Work Journal
         </Link>
@@ -99,7 +99,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-5 pb-28 md:px-8 md:pt-8 md:pb-12">
         <div className="mb-4 flex items-center justify-between md:hidden">
-          <Link href="/" className="font-display flex items-center gap-2 text-lg">
+          <Link href="/" className="font-display flex items-center gap-2 text-base">
             <span aria-hidden className="brand-mark grid size-7 place-items-center rounded-[calc(var(--radius)*0.55)]">✎</span>
             Work Journal
           </Link>

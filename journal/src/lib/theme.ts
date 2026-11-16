@@ -16,25 +16,25 @@ export interface Theme {
   headings: Headings;
 }
 
-// Feminine but polished: muted, dusty tones rather than candy brights, so it reads as
-// considered and professional. Rosewood is the default.
+// Neutral, professional tones: deep and muted rather than bright, so it reads like a
+// serious work tool. Navy is the default.
 export const PRESETS: Array<{ name: string; hex: string }> = [
-  { name: "Rosewood", hex: "#b4537a" },
-  { name: "Blush", hex: "#d98ba0" },
-  { name: "Peony", hex: "#d6467e" },
-  { name: "Mauve", hex: "#9a6a94" },
-  { name: "Plum", hex: "#73406e" },
-  { name: "Lilac", hex: "#9b82d6" },
-  { name: "Rose gold", hex: "#bf8064" },
-  { name: "Sage", hex: "#7b9a80" },
+  { name: "Navy", hex: "#1f3a68" },
+  { name: "Slate", hex: "#475569" },
+  { name: "Steel", hex: "#2f6690" },
+  { name: "Teal", hex: "#1d6b70" },
+  { name: "Forest", hex: "#2e5e45" },
+  { name: "Olive", hex: "#5f6b2e" },
+  { name: "Copper", hex: "#a0522d" },
+  { name: "Graphite", hex: "#2b2f36" },
 ];
 
-export const DEFAULT_THEME: Theme = { mode: "system", accent: "#b4537a", tint: "subtle", corners: "soft", font: "sans", headings: "serif" };
+export const DEFAULT_THEME: Theme = { mode: "system", accent: "#1f3a68", tint: "subtle", corners: "soft", font: "sans", headings: "sans" };
 
 export const THEME_COOKIE = "journal_theme";
 
 const TINT: Record<Tint, string> = { off: "0%", subtle: "4%", vivid: "9%" };
-const RADIUS: Record<Corners, string> = { sharp: "0.375rem", soft: "0.875rem", round: "1.25rem" };
+const RADIUS: Record<Corners, string> = { sharp: "0.25rem", soft: "0.625rem", round: "1rem" };
 export const FONTS: Record<Font, { label: string; stack: string }> = {
   sans: { label: "Modern", stack: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif' },
   rounded: { label: "Rounded", stack: 'ui-rounded, "SF Pro Rounded", "Nunito", "Quicksand", "Varela Round", system-ui, sans-serif' },
@@ -43,7 +43,7 @@ export const FONTS: Record<Font, { label: string; stack: string }> = {
 };
 
 export const DISPLAY_FONTS: Record<Headings, { label: string; stack: string }> = {
-  serif: { label: "Elegant serif", stack: 'var(--font-cormorant), "Cormorant Garamond", "Playfair Display", "Iowan Old Style", "Didot", "Bodoni 72", "Charter", Georgia, ui-serif, serif' },
+  serif: { label: "Serif", stack: 'var(--font-cormorant), "Cormorant Garamond", "Playfair Display", "Iowan Old Style", "Didot", "Bodoni 72", "Charter", Georgia, ui-serif, serif' },
   sans: { label: "Same as text", stack: "var(--font)" },
 };
 
@@ -70,7 +70,7 @@ export function parseTheme(raw: string | undefined | null): Theme {
       tint: t.tint && t.tint in TINT ? t.tint : DEFAULT_THEME.tint,
       corners: t.corners && t.corners in RADIUS ? t.corners : DEFAULT_THEME.corners,
       font: t.font && t.font in FONTS ? t.font : DEFAULT_THEME.font,
-      headings: t.headings === "sans" ? "sans" : "serif",
+      headings: t.headings === "serif" ? "serif" : "sans",
     };
   } catch {
     return DEFAULT_THEME;

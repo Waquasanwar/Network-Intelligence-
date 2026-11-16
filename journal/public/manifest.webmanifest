@@ -4,8 +4,8 @@
   "description": "Capture thoughts, decisions and requests through the day.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fbf7f6",
-  "theme_color": "#b4537a",
+  "background_color": "#f3f4f6",
+  "theme_color": "#1f3a68",
   "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }],
   "shortcuts": [{ "name": "Review inbox", "url": "/review" }, { "name": "Insights", "url": "/insights" }]
 }

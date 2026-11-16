@@ -34,10 +34,10 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[2rem] leading-tight font-semibold" suppressHydrationWarning>
+        <h1 className="text-[1.75rem] leading-tight font-semibold" suppressHydrationWarning>
           {mounted ? (
             <>
-              {greeting().split(" ")[0]} <span className="text-gradient italic">{greeting().split(" ")[1]}</span>
+              {greeting().split(" ")[0]} <span className="text-gradient">{greeting().split(" ")[1]}</span>
             </>
           ) : (
             "Hello"
