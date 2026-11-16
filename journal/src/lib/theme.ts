@@ -16,24 +16,24 @@ export interface Theme {
   headings: Headings;
 }
 
-// Jet black, graphite and snow grey neutrals with one accent. Graphite is the default; Azure is one tap away.
+// Fresh and light by default: snow white, frosted glass, graphite text and an azure accent.
 export const PRESETS: Array<{ name: string; hex: string }> = [
-  { name: "Graphite", hex: "#8b95a7" },
   { name: "Azure", hex: "#0a84ff" },
+  { name: "Graphite", hex: "#5b6576" },
+  { name: "Mint", hex: "#10b39a" },
   { name: "Cobalt", hex: "#3d5afe" },
   { name: "Cyan", hex: "#06b6d4" },
-  { name: "Emerald", hex: "#10b981" },
   { name: "Violet", hex: "#7c5cff" },
+  { name: "Coral", hex: "#ff6b57" },
   { name: "Amber", hex: "#f59e0b" },
-  { name: "Crimson", hex: "#e11d48" },
 ];
 
-export const DEFAULT_THEME: Theme = { mode: "dark", accent: "#8b95a7", tint: "off", corners: "soft", font: "sans", headings: "sans" };
+export const DEFAULT_THEME: Theme = { mode: "light", accent: "#0a84ff", tint: "subtle", corners: "round", font: "sans", headings: "sans" };
 
 export const THEME_COOKIE = "journal_theme";
 
 const TINT: Record<Tint, string> = { off: "0%", subtle: "3%", vivid: "7%" };
-const RADIUS: Record<Corners, string> = { sharp: "0.25rem", soft: "0.625rem", round: "1rem" };
+const RADIUS: Record<Corners, string> = { sharp: "0.375rem", soft: "0.75rem", round: "1.125rem" };
 export const FONTS: Record<Font, { label: string; stack: string }> = {
   sans: { label: "Modern", stack: 'var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
   rounded: { label: "Rounded", stack: 'ui-rounded, "SF Pro Rounded", "Nunito", "Quicksand", "Varela Round", system-ui, sans-serif' },

@@ -20,7 +20,7 @@
    Everything else derives from these.
 --------------------------------------------------------------------------------------------- */
 :root {
-  --brand: #8b95a7;
+  --brand: #0a84ff;
   --brand-ink: #ffffff;
   --tint: 0%;
   --radius: 0.625rem;
@@ -28,20 +28,22 @@
   --font-heading: var(--font);
   --mono: var(--font-mono-face), ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* Light: snow grey and white with jet-black ink */
-  --n-bg: #f4f5f7;
+  /* Light (default): airy snow white, frosted glass and graphite ink */
+  --n-bg: #f6f8fb;
   --n-surface: #ffffff;
-  --n-surface-2: #eef0f3;
-  --n-line: #e1e4e9;
-  --ink: #0a0a0b;
-  --ink-2: #4b5160;
-  --ink-3: #868c99;
-  --danger: #d92d3a;
-  --ok: #12925e;
-  --warn: #b26300;
-  --glass: 78%;
-  --dot: color-mix(in oklch, var(--ink) 9%, transparent);
-  --highlight: transparent;
+  --n-surface-2: #f1f4f8;
+  --n-line: #e3e8ef;
+  --ink: #111827;
+  --ink-2: #4b5565;
+  --ink-3: #8b95a5;
+  --danger: #e0364a;
+  --ok: #0f9d6b;
+  --warn: #c26a00;
+  --glass: 62%;
+  --dot: color-mix(in oklch, var(--ink) 6%, transparent);
+  --highlight: color-mix(in oklch, white 80%, transparent);
+  --shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 14px 34px -18px rgb(16 24 40 / 18%);
+  --aurora: 42%;
 
   --accent: var(--brand);
   --accent-ink: var(--brand-ink);
@@ -50,37 +52,41 @@
 
 /* Dark: jet black with graphite panels and snow-grey text */
 :root[data-mode="dark"] {
-  --n-bg: #0b0c0e;
-  --n-surface: #15171b;
-  --n-surface-2: #1e2126;
-  --n-line: #2a2e35;
-  --ink: #f2f4f7;
-  --ink-2: #a8aeb9;
-  --ink-3: #6e7482;
+  --n-bg: #13151b;
+  --n-surface: #1c1f27;
+  --n-surface-2: #252a34;
+  --n-line: #313744;
+  --ink: #eef1f6;
+  --ink-2: #b4bbc8;
+  --ink-3: #7f8898;
   --danger: #ff6b6b;
   --ok: #3ddc97;
   --warn: #ffb547;
-  --glass: 72%;
-  --dot: color-mix(in oklch, var(--ink) 7%, transparent);
-  --highlight: color-mix(in oklch, white 5%, transparent);
+  --glass: 66%;
+  --dot: color-mix(in oklch, var(--ink) 6%, transparent);
+  --highlight: color-mix(in oklch, white 7%, transparent);
+  --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 18px 40px -20px rgb(0 0 0 / 55%);
+  --aurora: 24%;
   --accent: color-mix(in oklch, var(--brand) 88%, white);
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-mode="system"] {
-    --n-bg: #0b0c0e;
-    --n-surface: #15171b;
-    --n-surface-2: #1e2126;
-    --n-line: #2a2e35;
-    --ink: #f2f4f7;
-    --ink-2: #a8aeb9;
-    --ink-3: #6e7482;
+    --n-bg: #13151b;
+    --n-surface: #1c1f27;
+    --n-surface-2: #252a34;
+    --n-line: #313744;
+    --ink: #eef1f6;
+    --ink-2: #b4bbc8;
+    --ink-3: #7f8898;
     --danger: #ff6b6b;
     --ok: #3ddc97;
     --warn: #ffb547;
-    --glass: 72%;
-    --dot: color-mix(in oklch, var(--ink) 7%, transparent);
-    --highlight: color-mix(in oklch, white 5%, transparent);
+    --glass: 66%;
+    --dot: color-mix(in oklch, var(--ink) 6%, transparent);
+    --highlight: color-mix(in oklch, white 7%, transparent);
+    --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 18px 40px -20px rgb(0 0 0 / 55%);
+    --aurora: 24%;
     --accent: color-mix(in oklch, var(--brand) 88%, white);
     color-scheme: dark;
   }
@@ -107,6 +113,10 @@
   --neg: #eb6834;
   --mid: #a3a29c;
   --grid: color-mix(in oklch, var(--line) 70%, transparent);
+  /* Aurora wash behind the glass: azure, mint and lilac by default. */
+  --aurora-a: #6fb6ff;
+  --aurora-b: #6ee7c8;
+  --aurora-c: #c4b2ff;
 }
 :root[data-mode="dark"] {
   --pos: #3987e5;
@@ -125,6 +135,9 @@
    clamped for contrast (darker on light backgrounds, lighter on dark). */
 @supports (color: oklch(from red l c h)) {
   :root {
+    --aurora-a: oklch(from var(--accent) 0.8 max(c, 0.12) h);
+    --aurora-b: oklch(from var(--accent) 0.86 max(c, 0.11) calc(h - 72));
+    --aurora-c: oklch(from var(--accent) 0.82 max(c, 0.1) calc(h + 52));
     --accent-2: oklch(from var(--accent) calc(l + 0.06) c calc(h + 18));
     --accent-text: oklch(from var(--accent) min(l, 0.5) c h);
   }
@@ -172,11 +185,13 @@
     font-family: var(--font);
     font-feature-settings: "cv11", "ss01", "ss03";
     -webkit-font-smoothing: antialiased;
-    /* Azure glow at the top over a fine dot grid that fades out down the page. */
+    /* Soft aurora of three colour washes over a very fine dot grid. */
     background-image:
-      radial-gradient(1100px 460px at 50% -160px, color-mix(in oklch, var(--accent) 16%, transparent), transparent 70%),
+      radial-gradient(60vw 55vh at 8% -5%, color-mix(in oklch, var(--aurora-a) var(--aurora), transparent), transparent 70%),
+      radial-gradient(55vw 50vh at 100% 8%, color-mix(in oklch, var(--aurora-b) var(--aurora), transparent), transparent 70%),
+      radial-gradient(65vw 60vh at 65% 110%, color-mix(in oklch, var(--aurora-c) var(--aurora), transparent), transparent 70%),
       radial-gradient(var(--dot) 1px, transparent 1px);
-    background-size: 100% 100%, 22px 22px;
+    background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px;
     background-attachment: fixed;
   }
 
@@ -218,15 +233,15 @@
     background: color-mix(in oklch, var(--surface) var(--glass), transparent);
     -webkit-backdrop-filter: blur(16px) saturate(1.2);
     backdrop-filter: blur(16px) saturate(1.2);
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in oklch, var(--line) 80%, transparent);
     border-radius: var(--radius);
     box-shadow:
       inset 0 1px 0 var(--highlight),
-      0 1px 2px color-mix(in oklch, black 6%, transparent);
+      var(--shadow);
   }
 
   .glass {
-    background: color-mix(in oklch, var(--surface) 60%, transparent);
+    background: color-mix(in oklch, var(--surface) 55%, transparent);
     -webkit-backdrop-filter: blur(18px) saturate(1.3);
     backdrop-filter: blur(18px) saturate(1.3);
   }

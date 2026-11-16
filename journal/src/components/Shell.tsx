@@ -117,7 +117,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
       </main>
 
       {/* Mobile: bottom tabs and a capture button */}
-      <nav aria-label="Main" className="glass fixed inset-x-0 bottom-0 z-30 flex border-t border-line pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav aria-label="Main" className="glass fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-[color-mix(in_oklch,var(--surface)_90%,transparent)] pb-[env(safe-area-inset-bottom)] md:hidden">
         {NAV.filter((n) => ["/", "/plan", "/projects", "/requests", "/insights"].includes(n.href)).map((n) => (
           <Link
             key={n.href}
