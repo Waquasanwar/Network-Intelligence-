@@ -5,11 +5,32 @@ import { usePathname } from "next/navigation";
 import { Search, Bell, Menu, ChevronRight, ChevronDown, LogOut } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import * as React from "react";
+import type { Role } from "@prisma/client";
+import { sectionsFor, locate } from "./nav";
 
 const NAMES: Record<string, string> = {
   overview: "Overview", network: "Network", import: "Import contacts", conversations: "Conversations", opportunities: "Opportunities", amana: "Amana Expert Network",
   partners: "Partners", relocation: "Relocation", settings: "Settings", integrations: "Integrations", security: "Security", "partner-portal": "Partner portal", "client-workspace": "Client workspace", requirements: "Requirements", portal: "Client & agency portal", commercials: "Commercials", referrals: "Referrals & pitches", member: "My network profile", screening: "Screening", join: "Join the network",
 };
+
+/**
+ * The pages inside the current section, as tabs. The side menu says where you are; these say what
+ * else is here. Sections with a single page show nothing.
+ */
+export function SectionTabs({ role, className = "" }: { role: string; className?: string }) {
+  const pathname = usePathname();
+  const here = locate(pathname, sectionsFor(role as Role));
+  if (!here || here.section.pages.length < 2) return null;
+  return (
+    <nav aria-label={here.section.label} className={`max-w-full overflow-x-auto ${className}`}>
+      <ul className="inline-flex items-center gap-1 rounded-full border border-line bg-surface/80 p-1 shadow-[var(--shadow-card)] backdrop-blur">
+        {here.section.pages.map((pg) => { const active = pg.href === here.page.href; return (
+          <li key={pg.href}><Link href={pg.href} aria-current={active ? "page" : undefined} className={`inline-flex h-8 items-center whitespace-nowrap rounded-full px-3.5 text-[13px] transition-colors duration-200 ${active ? "bg-navy font-semibold text-white dark:text-canvas" : "font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"}`}>{pg.label}</Link></li>
+        ); })}
+      </ul>
+    </nav>
+  );
+}
 
 export type Alert = { kind: string; text: string; href: string; when: string; tone: "teal" | "amber" | "navy" };
 
@@ -63,7 +84,8 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
         <Menu className="h-5 w-5" />
       </button>
       <Link href={home} className="lg:hidden flex flex-none items-center" aria-label="Home"><BrandMark className="h-[20px] w-auto text-ink" /></Link>
-      <div className="flex-1" />
+      <div className="hidden lg:block min-w-0 flex-1"><SectionTabs role={user.role} /></div>
+      <div className="flex-1 lg:hidden" />
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette"))} aria-label="Search people and opportunities" className="lg:hidden h-10 w-10 flex-none grid place-items-center rounded-full border border-line bg-surface text-ink shadow-[var(--shadow-card)] cursor-pointer">
         <Search className="h-[18px] w-[18px]" />
       </button>

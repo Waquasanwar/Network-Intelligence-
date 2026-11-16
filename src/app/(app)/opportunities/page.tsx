@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { requireInternal } from "@/server/session";
+import { NextStep } from "@/components/ui/next-step";
+import { opportunitiesStep } from "@/server/next-step";
 import { prisma } from "@/lib/db";
 import { PageHeader, EmptyState, Segmented, Pill } from "@/components/ui/page";
+import { Stat, StatStrip } from "@/components/ui/stat";
 import { StageBadge, RouteBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { KANBAN_STAGES, OPPORTUNITY_STATUS_LABELS, ROUTE_LABELS } from "@/lib/labels";
 import { formatMoney } from "@/lib/utils";
 import { NewOpportunityDrawer } from "@/components/domain/opportunity-drawers";
 import { Badge } from "@/components/ui/badge";
+import { Briefcase, Handshake, ListChecks, Trophy } from "lucide-react";
 
 export const metadata = { title: "Opportunities" };
 
@@ -24,6 +28,13 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   return (
     <>
       <PageHeader title="Opportunities" description="Start from the client's problem, not a vacancy. The route is decided after we know who we have." actions={<><Segmented current={view} items={[{ key: "list", label: "List", href: `/opportunities?view=list${sp.route ? `&route=${sp.route}` : ""}` }, { key: "board", label: "Board", href: `/opportunities?view=board${sp.route ? `&route=${sp.route}` : ""}` }]} /><NewOpportunityDrawer partners={partners} /></>} />
+      <NextStep step={await opportunitiesStep(user.tenantId)} />
+      <StatStrip>
+        <Stat icon={Briefcase} label="Live" value={opps.filter((o) => !["CLOSED_WON", "CLOSED_LOST", "ON_HOLD"].includes(o.status)).length} hint="open problems to solve" />
+        <Stat icon={ListChecks} label="Shortlisting" value={opps.filter((o) => ["MATCHING", "SHORTLIST"].includes(o.status)).length} hint="people being weighed up" />
+        <Stat icon={Handshake} label="Introducing" value={opps.filter((o) => ["INTRODUCING", "ENGAGED"].includes(o.status)).length} hint="conversations under way" />
+        <Stat icon={Trophy} label="Won" value={opps.filter((o) => o.status === "CLOSED_WON").length} hint="closed with a placement" tone="teal" />
+      </StatStrip>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {Object.entries(ROUTE_LABELS).map(([k, v]) => <Pill key={k} href={`/opportunities?view=${view}${sp.route === k ? "" : `&route=${k}`}`} active={sp.route === k}>{v}</Pill>)}

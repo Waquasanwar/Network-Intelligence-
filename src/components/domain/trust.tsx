@@ -5,6 +5,7 @@ import { TRUST_BAND_LABEL, type TrustScore } from "@/lib/trust";
 import { ATTRIBUTES, type FitProfileRow } from "@/lib/fit";
 import type { ScreeningStatus, Vouch } from "@prisma/client";
 import { DateText } from "./date";
+import { StyleRadar } from "@/components/domain/person-visuals";
 
 const SCREEN: Record<ScreeningStatus, [string, "neutral" | "amber" | "navy" | "teal"]> = { NONE: ["Not screened", "neutral"], REGISTERED: ["Registered · needs screening", "amber"], INVITED: ["Invited to screening", "amber"], BOOKED: ["Screening call booked", "navy"], SUBMITTED: ["Screening submitted · review", "amber"], APPROVED: ["Screened", "teal"] };
 export function ScreeningBadge({ status }: { status: ScreeningStatus }) { const [l, t] = SCREEN[status]; return <Badge tone={t} filled>{l}</Badge>; }
@@ -59,11 +60,12 @@ export function FitCard({ rows, self, traits = [] }: { rows: FitProfileRow[]; se
       <CardBody>
         {!any ? <div className="text-xs text-ink-muted">{self ? "Complete the screening to build your working-style profile." : "Not assessed yet. The screening call captures this, and each vouch adds what people have seen."}</div> : (
           <>
+            <div className="flex justify-center mb-4"><StyleRadar rows={rows} /></div>
             <ul className="space-y-2.5">
               {rows.map((r) => (
                 <li key={r.key} className={cn("grid grid-cols-1 md:grid-cols-[170px_1fr_74px] gap-x-3 gap-y-1 items-center text-[12.5px]", traits.includes(r.key) && "bg-navy-100/60 rounded-[12px] px-2 py-1.5 -mx-2")}>
                   <span className="flex flex-col items-start gap-0.5"><b className="font-medium">{r.label}</b>{traits.includes(r.key) ? <Badge tone="navy" filled>asked for</Badge> : null}</span>
-                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center"><small className="text-[12px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.low}</small><div className="relative h-2 rounded-full border border-line bg-navy">{r.self !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-navy-400 shadow" style={{ left: `${((r.self - 1) / 4) * 100}%` }} title={`Self-assessed ${r.self}/5`} /> : null}{r.peers !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-teal shadow" style={{ left: `${((r.peers - 1) / 4) * 100}%` }} title={`Observed by ${r.peerCount}: ${r.peers}/5`} /> : null}</div><small className="text-[12px] text-ink-faint whitespace-nowrap max-w-[92px] truncate">{r.high}</small></div>
+                  <div className="grid grid-cols-[minmax(0,116px)_1fr_minmax(0,116px)] gap-2.5 items-center"><small className="text-[12px] text-ink-faint text-right leading-tight">{r.low}</small><div className="relative h-1.5 rounded-full bg-[var(--color-series-track)]">{r.self !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-navy-400 shadow" style={{ left: `${((r.self - 1) / 4) * 100}%` }} title={`Self-assessed ${r.self}/5`} /> : null}{r.peers !== null ? <i className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-teal shadow" style={{ left: `${((r.peers - 1) / 4) * 100}%` }} title={`Observed by ${r.peerCount}: ${r.peers}/5`} /> : null}</div><small className="text-[12px] text-ink-faint leading-tight">{r.high}</small></div>
                   <em className="not-italic font-semibold text-right tabular">{r.combined !== null ? `${r.combined}/5` : "—"}<small className="block text-[12px] text-ink-faint font-normal">{r.peerCount ? `${r.peerCount} observed` : r.self !== null ? "self" : ""}</small></em>
                 </li>
               ))}

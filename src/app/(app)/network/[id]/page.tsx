@@ -16,6 +16,9 @@ import { AvailabilityDrawer, EditProfileDrawer, AddRelationshipDrawer, AddEviden
 import { fullName } from "@/lib/utils";
 import { TrustCard, FitCard, VouchList, ScreeningBadge } from "@/components/domain/trust";
 import { VouchDrawer } from "@/components/domain/member-drawers";
+import { TrustHalo, CircleGlyph, Dial, Vital, Stack, ActivityStrip } from "@/components/domain/person-visuals";
+import { CIRCLES, circleOf } from "@/lib/circles";
+import { TRUST_BAND_LABEL } from "@/lib/trust";
 import { InviteContactDrawer } from "@/components/domain/invite-drawers";
 import { mergeRegistration } from "@/server/actions/invites";
 import { startScreening } from "@/server/actions/members";
@@ -71,6 +74,12 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const canMerge = user.role === "OWNER" || user.role === "ADMIN";
 
   const [trust, fit, users] = await Promise.all([trustFor(person), fitFor(person), prisma.user.findMany({ where: { tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true, name: true } })]);
+  // What the profile's drawings show.
+  const ring = circleOf({ worked: person.relationships.some((r) => r.workedTogether), screened: person.screeningStatus === "APPROVED" || !!person.screenedAt, trust: trust.score });
+  const contactDates = [...person.conversations.map((c) => c.date), ...person.vouches.map((v) => v.createdAt), ...person.evidence.map((e) => e.dateObserved ?? e.createdAt), ...person.relationships.map((r) => r.lastContactDate).filter((d): d is Date => !!d)];
+  const lastContact = contactDates.length ? new Date(Math.max(...contactDates.map((d) => d.getTime()))) : null;
+  const daysQuiet = lastContact ? (Date.now() - lastContact.getTime()) / 86_400_000 : 999;
+  const freshnessPct = Math.round(Math.max(0, Math.min(100, 100 - (daysQuiet / 180) * 100)));
   const [audit, allPeople, connections] = await Promise.all([
     prisma.auditLog.findMany({ where: { tenantId: user.tenantId, OR: [{ entityId: id }, { metadata: { path: ["personId"], equals: id } }] }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 40 }),
     prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }),
@@ -124,27 +133,23 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           {canMerge ? <form action={mergeRegistration} className="flex-none"><input type="hidden" name="newPersonId" value={person.id} /><input type="hidden" name="existingPersonId" value={twin.id} /><SubmitButton size="sm" pendingText="Joining up…">Same person: join them up</SubmitButton></form> : <span className="text-[12.5px] text-ink-muted flex-none">An owner or admin can join them up.</span>}
         </div>
       ) : null}
-      <div className="widget p-5 sm:p-6 mb-5">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-4 min-w-0">
-            <Avatar person={person} size="xl" />
-            <div className="min-w-0">
-              <h1 className="font-display text-[24px] sm:text-[28px] leading-[1.15]">{fullName(person)}</h1>
-              <div className="text-[14.5px] text-ink-muted mt-1">{person.headline ?? "No headline yet"}</div>
-              {[person.currentRole, person.currentCompany, [person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")].filter(Boolean).length ? (
-                <div className="text-[13px] text-ink-faint mt-1">{[[person.currentRole, person.currentCompany].filter(Boolean).join(" at "), [person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</div>
-              ) : null}
-              <div className="flex flex-wrap items-center gap-2 mt-3">
-                <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
-                {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
-                {person.amanaBench ? <Badge tone="teal" filled>Amana core circle</Badge> : null}
-                {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
-                {person.memberSince ? <Badge tone="teal" filled>network member</Badge> : null}
-                <ScreeningBadge status={person.screeningStatus} />
-              </div>
+      <div className="widget overflow-hidden mb-5">
+        {/* A band of the brand's dark surface behind the name: the profile opens like a cover. */}
+        <div className="brand-panel !shadow-none flex min-h-[132px] items-end pl-[136px] pr-5 pb-4 sm:pl-[154px] sm:pr-6">
+          <div className="min-w-0">
+            <h1 className="font-display text-[24px] sm:text-[32px] leading-[1.08] text-white">{fullName(person)}</h1>
+            <div className="mt-1 text-[14px] text-white/75 line-clamp-2">{person.headline ?? "No headline yet"}</div>
+          </div>
+        </div>
+        <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="-mt-[58px] flex-none rounded-full bg-surface p-1 shadow-[var(--shadow-card)]"><TrustHalo score={trust.score}><Avatar person={person} size="xl" /></TrustHalo></div>
+            <div className="min-w-0 pt-3 text-[13.5px] text-ink-muted">
+              {[[person.currentRole, person.currentCompany].filter(Boolean).join(" at "), [person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")].filter(Boolean).join(" · ") || "Role and location not recorded yet"}
             </div>
           </div>
-          <div className="flex flex-none flex-wrap items-center gap-2">
+          <div className="flex flex-none flex-wrap items-center gap-2 lg:pt-3">
             <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} showFees={money} />
             <ScheduleDrawer personId={person.id} connections={connections.map((c) => c.provider)} />
             <MoreMenu>
@@ -156,12 +161,27 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             </MoreMenu>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
+          {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
+          {person.amanaBench ? <Badge tone="teal" filled>Amana core circle</Badge> : null}
+          {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
+          {person.memberSince ? <Badge tone="teal" filled>network member</Badge> : null}
+          <ScreeningBadge status={person.screeningStatus} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5">
+          <Vital graphic={<Dial value={trust.score} tone={trust.score >= 35 ? "teal" : "amber"} />} label="Trust" value={`${trust.score} of 100`} hint={TRUST_BAND_LABEL[trust.band]} />
+          <Vital graphic={<CircleGlyph ring={ring} />} label="Circle" value={CIRCLES[ring].label} hint={CIRCLES[ring].hint} />
+          <Vital graphic={<Stack count={trust.vouchedBy} />} label="Vouched for by" value={`${trust.vouchedBy} ${trust.vouchedBy === 1 ? "person" : "people"}`} hint={trust.vouchedBy ? "who would recommend them" : "nobody yet"} />
+          <Vital graphic={<Dial value={freshnessPct} tone={freshnessPct >= 60 ? "teal" : freshnessPct >= 30 ? "amber" : "coral"} />} label="Last contact" value={lastContact ? <DateText date={lastContact} relative /> : "Not recorded"} hint={freshnessPct >= 60 ? "kept warm" : freshnessPct >= 30 ? "cooling" : "gone quiet"} />
+        </div>
         {person.relationships[0] ? (
           <div className="mt-5 pt-4 border-t border-line flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span className="label-caps text-ink-faint">How you know them</span>
             <ProvenanceThread owner={person.relationships[0].networkOwner} introducer={person.relationships[0].introducedBy} person={person} workedTogether={person.relationships[0].workedTogether} />
           </div>
         ) : null}
+        </div>
       </div>
 
       <Tabs items={tabs} current={tab} base={`/network/${person.id}`} />
@@ -219,6 +239,10 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
           <div className="space-y-4">
             <TrustCard t={trust} firstName={person.firstName} screened={person.screeningStatus === "APPROVED" || !!person.screenedAt} workedWith={person.relationships.some((r) => r.workedTogether)} action={<VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} />} />
+            <Card>
+              <CardHeader title="Keeping in touch" description="Conversations, vouches and evidence, month by month." />
+              <CardBody><ActivityStrip dates={contactDates} /></CardBody>
+            </Card>
             <ReferredCard rows={referredRows} showFees={money} action={<ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} variant="secondary" size="sm" label="Refer" showFees={money} />} />
             {person.vouches.length ? <VouchList vouches={person.vouches} /> : null}
             <Card>

@@ -1,6 +1,7 @@
 import { Sidebar } from "./sidebar";
 import { CommandPalette } from "./command-palette";
-import { TopBar, Crumbs } from "./topbar";
+import { AskDock } from "./ask-dock";
+import { TopBar, Crumbs, SectionTabs } from "./topbar";
 import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
@@ -9,12 +10,15 @@ import { alertsFor } from "@/server/queries";
 
 export async function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
   const pages = [
-    { id: "p-overview", label: "Overview", href: "/overview", group: "Pages" },
+    { id: "p-overview", label: "Home", href: "/overview", group: "Pages" },
     { id: "p-network", label: "Network", href: "/network", group: "Pages" },
     { id: "p-conversations", label: "Conversations", href: "/conversations", group: "Pages" },
     { id: "p-opportunities", label: "Opportunities", href: "/opportunities", group: "Pages" },
     { id: "p-amana", label: "Amana Expert Network", href: "/amana", group: "Pages" },
-    { id: "p-partners", label: "Partners", href: "/partners", group: "Pages" },
+    { id: "p-requirements", label: "Requirements", href: "/requirements", group: "Pages" },
+    { id: "p-map", label: "Network map", href: "/network/map", group: "Pages" },
+    { id: "p-grow", label: "Grow the network", href: "/invite", group: "Pages" },
+    { id: "p-partners", label: "Agencies", href: "/partners", group: "Pages" },
     { id: "p-relocation", label: "Relocation", href: "/relocation", group: "Pages" },
     { id: "p-integrations", label: "Integrations", href: "/settings/integrations", group: "Pages" },
     { id: "p-security", label: "Security", href: "/settings/security", group: "Pages" },
@@ -42,12 +46,14 @@ export async function AppShell({ user, children }: { user: SessionUser; children
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar alerts={alerts} user={{ name: user.name, role: user.role, tenantName: user.tenantName }} home={user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : user.role === "CLIENT" ? "/client-workspace" : "/overview"} />
         <main className="flex-1 min-w-0">
-          <div className="max-w-[1280px] mx-auto px-4 pb-10 pt-1 sm:px-6 lg:px-8">
+          <div className={`max-w-[1280px] mx-auto px-4 pt-1 sm:px-6 lg:px-8 ${isInternal(user) ? "pb-28" : "pb-10"}`}>
+            {isInternal(user) ? <SectionTabs role={user.role} className="lg:hidden mb-4" /> : null}
             <Crumbs />
             <div className="reveal">{children}</div>
           </div>
         </main>
       </div>
+      {isInternal(user) ? <AskDock /> : null}
       <CommandPalette items={items} />
     </div>
   );

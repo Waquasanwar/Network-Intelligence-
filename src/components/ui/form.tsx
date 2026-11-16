@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const base =
-  "w-full widget px-3 text-[13.5px] text-ink placeholder:text-ink-faint transition-[border-color,box-shadow] duration-150 hover:border-navy-400 focus:outline-none focus:border-ink focus:ring-[3px] focus:ring-accent/60 disabled:opacity-60 disabled:bg-surface-muted";
+  "w-full rounded-[14px] border border-line bg-surface px-3.5 text-[13.5px] text-ink placeholder:text-ink-faint transition-[border-color,box-shadow] duration-150 hover:border-navy-400 focus:outline-none focus:border-ink focus:ring-[3px] focus:ring-accent/60 disabled:opacity-60 disabled:bg-surface-muted";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(({ className, ...props }, ref) => (
   <input ref={ref} className={cn(base, "h-10", className)} {...props} />
@@ -15,7 +15,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
 Textarea.displayName = "Textarea";
 
 export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(({ className, children, ...props }, ref) => (
-  <select ref={ref} className={cn(base, "h-10 pr-8 appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238d93a0%22 stroke-width=%222%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-no-repeat bg-[right_12px_center]", className)} {...props}>
+  <select ref={ref} className={cn(base, "select-chevron h-10 pr-8 appearance-none", className)} {...props}>
     {children}
   </select>
 ));

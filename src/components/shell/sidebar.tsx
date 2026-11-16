@@ -2,38 +2,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, MicVocal, Lock } from "lucide-react";
+import { Search, Briefcase, Handshake, ShieldCheck, ListChecks, UserPlus, BadgeCheck, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { sectionsFor, locate } from "./nav";
 import type { Role } from "@prisma/client";
 
-// The full platform — network, opportunities, placement, portals, commercials — is shown by
-// default. Set NEXT_PUBLIC_FEATURE_PHASE23=false to collapse to the Phase-1 "build the network and
-// get people signed up" view (the Workspaces group and opportunity KPIs hide; the routes still work).
-const SHOW_PHASE23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 !== "false";
-
-const INTERNAL_NAV = [
-  { href: "/overview", label: "Overview", icon: LayoutDashboard },
-  { href: "/network", label: "Network", icon: Users },
-  { href: "/invite", label: "Grow the network", icon: UserPlus },
-  { href: "/conversations", label: "Conversations", icon: MessagesSquare },
-];
-const WORKSPACES = [
-  { href: "/opportunities", label: "Opportunities", icon: Briefcase },
-  { href: "/requirements", label: "Requirements", icon: ListChecks },
-  { href: "/referrals", label: "Referrals & pitches", icon: Handshake },
-  { href: "/amana", label: "Amana Expert Network", icon: BadgeCheck },
-  { href: "/portal", label: "Client & agency portal", icon: MonitorSmartphone },
-  { href: "/partners", label: "Partners", icon: Building2 },
-  { href: "/relocation", label: "Relocation", icon: Plane },
-];
-const SETTINGS_NAV = [
-  { href: "/network/import", label: "Import contacts", icon: Upload },
-  { href: "/settings/screening", label: "Screening", icon: MicVocal },
-  ...(SHOW_PHASE23 ? [{ href: "/settings/commercials", label: "Commercials", icon: Percent }] : []),
-  { href: "/settings/integrations", label: "Integrations", icon: Plug },
-  { href: "/settings/security", label: "Security", icon: ShieldCheck },
-];
 const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Invite and refer", icon: UserPlus }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
@@ -54,23 +28,16 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
   useEffect(() => { setOpen(false); }, [pathname]); // navigating closes it
   useEffect(() => { document.body.style.overflow = open ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [open]);
 
+  const sections = sectionsFor(user.role);
+  const here = locate(pathname, sections);
+  const row = (active: boolean) => cn(
+    "group flex items-center gap-3 rounded-full px-4 h-11 lg:h-10 text-[14px] transition-[background-color,color] duration-200",
+    active ? "btn-navy bg-navy text-white font-semibold dark:text-canvas" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
+  );
   const Item = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
-    const active = href === "/network" ? pathname === "/network" || (pathname.startsWith("/network/") && !pathname.startsWith("/network/import")) : pathname === href || pathname.startsWith(href + "/");
-    return (
-      <Link
-        href={href}
-        aria-current={active ? "page" : undefined}
-        className={cn(
-          "group flex items-center gap-3 rounded-full px-4 h-11 lg:h-9 text-[14px] lg:text-[13.5px] transition-[background-color,color] duration-200",
-          active ? "bg-navy text-white font-semibold dark:text-canvas" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
-        )}
-      >
-        <Icon className="h-[17px] w-[17px] flex-none" />
-        <span className="flex-1 truncate">{label}</span>
-      </Link>
-    );
+    const active = pathname === href.split("?")[0] && (!href.includes("?") || href === "/member");
+    return <Link href={href} aria-current={active ? "page" : undefined} className={row(active)}><Icon className="h-[18px] w-[18px] flex-none" /><span className="flex-1 truncate">{label}</span></Link>;
   };
-  const Group = ({ label }: { label: string }) => <div className="px-4 pt-5 pb-1.5 text-[12px] text-ink-faint">{label}</div>;
   const home = restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview";
   const openSearch = () => { setOpen(false); window.dispatchEvent(new CustomEvent("ni:open-palette")); };
 
@@ -95,23 +62,19 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
           <span className="rounded-full bg-navy px-2.5 py-1 text-[11px] font-semibold text-white dark:text-canvas">⌘K</span>
         </button>
       </div>
-      <nav className="px-3 flex-1 space-y-0.5 overflow-y-auto pt-2 pb-4">
+      <nav aria-label="Main" className="px-3 flex-1 space-y-1 overflow-y-auto pt-3 pb-4">
         {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
-            {INTERNAL_NAV.map((i) => <Item key={i.href} {...i} />)}
-            {SHOW_PHASE23 ? <><Group label="Workspaces" />{WORKSPACES.map((i) => <Item key={i.href} {...i} />)}</> : null}
-            <Group label="Setup" />
-            {SETTINGS_NAV.filter((i) => i.href !== "/settings/commercials" || user.role === "OWNER").map((i) => <Item key={i.href} {...i} />)}
+            {/* Six places. The pages inside each are the tabs across the top of the screen. */}
+            {sections.filter((sec) => sec.key !== "settings").map((sec) => { const active = here?.section.key === sec.key; return (
+              <Link key={sec.key} href={sec.pages[0].href} aria-current={active ? "page" : undefined} className={row(active)}><sec.icon className="h-[18px] w-[18px] flex-none" /><span className="flex-1 truncate">{sec.label}</span></Link>
+            ); })}
+            <div className="!mt-4 border-t border-line pt-4">
+              {sections.filter((sec) => sec.key === "settings").map((sec) => { const active = here?.section.key === sec.key; return <Link key={sec.key} href={sec.pages[0].href} aria-current={active ? "page" : undefined} className={row(active)}><sec.icon className="h-[18px] w-[18px] flex-none" /><span className="flex-1 truncate">{sec.label}</span></Link>; })}
+            </div>
           </>
         )}
       </nav>
-      {!restricted ? (
-        <div className="brand-panel m-3 mt-0 rounded-[22px] p-4">
-          <div className="font-display is-small text-[14.5px] leading-[1.3]">Ask your network anything</div>
-          <p className="text-[12.5px] text-stage-muted leading-[1.45] mt-1">One question, answered from people you know, ranked by trust.</p>
-          <button type="button" onClick={openSearch} className="mt-3 inline-flex h-8 items-center btn-coral rounded-full bg-coral px-3.5 text-[12.5px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-105 cursor-pointer">Ask now</button>
-        </div>
-      ) : null}
     </aside>
     </>
   );

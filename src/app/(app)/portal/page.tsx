@@ -64,7 +64,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
           <p className="text-ink-muted max-w-[60ch] mt-2 text-[13.5px] leading-5">What {account.kind === "AGENCY" ? "an agency" : account.kind === "CLIENT" ? "a client" : "Amana"} sees. Names are hidden until an introduction is requested and the person consents. Relationship notes never leave the network.</p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          {[["Open requirements", briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length], ["People proposed", proposedCount], ["Introductions", introCount]].map(([l, v]) => <div key={String(l)} className="flex-1 min-w-[104px] sm:min-w-[130px] rounded-[22px] bg-surface border border-line shadow-[var(--shadow-card)] px-4 py-3"><div className="text-[12px] text-ink-muted">{l}</div><div className="text-[24px] font-semibold tabular leading-8">{v}</div></div>)}
+          {[["Open requests", briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length], ["People proposed", proposedCount], ["Introductions", introCount]].map(([l, v]) => <div key={String(l)} className="flex-1 min-w-[104px] sm:min-w-[132px] rounded-[22px] bg-surface border border-line shadow-[var(--shadow-card)] px-4 py-3"><div className="text-[12px] text-ink-muted">{l}</div><div className="text-[24px] font-semibold tabular leading-8">{v}</div></div>)}
         </div>
       </div>
 

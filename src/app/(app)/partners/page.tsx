@@ -20,7 +20,7 @@ import { REQUIREMENT_STATUS_LABELS, ROUTE_LABELS, SENIORITY_LABELS } from "@/lib
 import { formatMoney, fullName } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
-export const metadata = { title: "Partners" };
+export const metadata = { title: "Agencies" };
 
 export default async function PartnersPage({ searchParams }: { searchParams: Promise<{ partner?: string }> }) {
   const user = await requireInternal();
@@ -44,7 +44,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader title="Partners" description="Licensed recruitment partners get controlled, anonymised access. They never see the black book. Commercial terms are configured per partner." actions={<NewRequirementDrawer partners={partners.map((p) => ({ id: p.id, name: p.name }))} />} />
+      <PageHeader title="Agencies" description="Recruitment agencies you work with get controlled, anonymised access. They never see your network. Terms are set per agency." actions={<NewRequirementDrawer partners={partners.map((p) => ({ id: p.id, name: p.name }))} />} />
       <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr] gap-4">
         <div className="widget overflow-hidden self-start">
           <ul className="divide-y divide-line">

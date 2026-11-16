@@ -33,28 +33,18 @@ const beatDelay = (scale: number) => (((scale - WAVE.from) / (WAVE.to - WAVE.fro
 const ringOf = circleOf;
 
 type Placed = GNode & { ring: number; angle: number; size: number; a: number; b: number };
-// People are drawn as dots. `base0` is the slot each one occupies (and the area you can click);
-// the dot inside it is sized by trust.
-const base0 = (ring: number, compact: boolean, narrow = false) => (narrow ? [26, 24, 22] : compact ? [30, 28, 24] : [36, 32, 28])[ring];
-const dotOf = (ring: number, trust: number, narrow = false) => Math.round(((narrow ? [11, 8, 6] : [15, 11, 8])[ring] + Math.min(100, trust) * 0.07) * 10) / 10;
+// `base0` is the slot each person occupies (and the area you can click). Inside it, people in the
+// two inner circles are drawn as faces with initials; the outer circle, not yet known, as dots.
+const base0 = (ring: number, compact: boolean, narrow = false) => (narrow ? [30, 26, 22] : compact ? [40, 32, 24] : [46, 36, 26])[ring];
+const dotOf = (ring: number, trust: number, narrow = false) => Math.round((narrow ? [24, 18, 9] : [34, 26, 11])[ring] + Math.min(100, trust) * (ring === 2 ? 0.04 : 0.08));
 
-/** Deterministic pseudo-random numbers, so the dust is identical on the server and in the browser. */
-function seeded(seed: number) { let x = seed; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
-/** Fine dust along each orbit: texture that says "a field of people", drawn once as vectors. */
-const DUST = (() => {
-  const rnd = seeded(20261116);
-  return [0.4, 0.71, 1].map((scale, ring) => Array.from({ length: [46, 84, 130][ring] }, () => {
-    const a = rnd() * Math.PI * 2, d = scale + (rnd() - 0.5) * [0.16, 0.2, 0.22][ring];
-    return { x: Math.cos(a) * d, y: Math.sin(a) * d, r: 0.5 + rnd() * 1.1, o: 0.14 + rnd() * 0.42 };
-  }));
-})();
 
 // Each circle sways gently, in its own time and direction, so the map breathes instead of sitting still.
 const SWAY = [{ amp: 0.085, period: 17 }, { amp: -0.06, period: 23 }, { amp: 0.045, period: 31 }];
 const swayOf = (ring: number, t: number) => SWAY[ring].amp * Math.sin((t / SWAY[ring].period) * Math.PI * 2);
 
 /**
- * The network as orbits of trust on a navy stage — no chart dependency. You are at the centre; the
+ * The network as circles of trust on a light, quiet stage — no chart dependency. You are at the centre; the
  * people you have worked with circle closest, people the network knows in the middle, new
  * introductions on the edge. The orbits are tilted, so people at the front read larger than people
  * at the back, and each circle drifts slowly. A mint arc shows trust; a mint dot means open to work.
@@ -200,39 +190,29 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
   const t0 = clock.current;
 
   return (
-    <div className={cn("relative w-full flex rounded-[22px] overflow-hidden bg-[#060f22] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_24px_50px_-28px_rgba(8,18,38,0.7)]", heightClass)}>
-      <div ref={wrapRef} className="orbit-stage relative flex-1 min-w-0 bg-stage text-stage-ink" onClick={() => setSelected(null)}>
+    <div className={cn("widget relative w-full flex overflow-hidden", heightClass)}>
+      <div ref={wrapRef} className="orbit-stage relative flex-1 min-w-0 text-ink" onClick={() => setSelected(null)}>
         {layout ? (
           <>
-            {/* A slow radar sweep across the orbits. It is squashed to the same tilt as they are. */}
-            <div className="pointer-events-none absolute" aria-hidden="true" style={{ left: layout.cx, top: layout.cy, width: layout.rx * 2, height: layout.rx * 2, transform: `translate(-50%, -50%) scaleY(${(layout.ry / layout.rx).toFixed(4)})` }}><div className="orbit-sweep" /></div>
             {/* The heartbeat: a wave leaves the centre on every beat and crosses the three circles. */}
             <div className="pointer-events-none absolute" aria-hidden="true" style={{ left: layout.cx, top: layout.cy, width: layout.rx * 2, height: layout.rx * 2, transform: `translate(-50%, -50%) scaleY(${(layout.ry / layout.rx).toFixed(4)})` }}>
               {[0, 1, 2].map((k) => <span key={k} className="orbit-ripple" style={{ animationDelay: `${k * BEAT}s` }} />)}
             </div>
             <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
-              {/* Dust on the orbits, turning slowly: each ring at its own pace, in the same tilt as the people. */}
-              <g transform={`translate(${layout.cx} ${layout.cy}) scale(1 ${(layout.ry / layout.rx).toFixed(4)})`}>
-                {DUST.map((dots, ring) => (
-                  <g key={ring} className={`orbit-dust is-${ring}`}>
-                    {dots.map((d, i) => <circle key={i} cx={(d.x * layout.rx).toFixed(1)} cy={(d.y * layout.rx).toFixed(1)} r={d.r} fill={ring === 0 ? "#a9f0d6" : "#ffffff"} opacity={d.o} />)}
-                  </g>
-                ))}
-              </g>
               {/* The orbits, widest first: each a faint plate with a fine edge, so the three bands read as depth. */}
               {[2, 1, 0].map((r) => (
-                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.16)" strokeWidth={1} strokeDasharray={r === 2 ? "1 7" : undefined} strokeLinecap="round" className={r === 2 ? "orbit-drift" : undefined} />
+                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} className={`orbit-band is-${r}`} strokeWidth={1} strokeDasharray={r === 2 ? "2 6" : undefined} strokeLinecap="round" />
               ))}
               {/* Who introduced whom: a faint thread by default, a moving mint line for the person in focus. */}
               {links.map((l, i) => {
                 const fromHub = l.source === hub?.id;
                 const on = !!focus && (l.source === focus || l.target === focus);
-                return <path key={i} id={`${uid}-l${i}`} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "rgba(255,255,255,0.55)"} strokeWidth={on ? 1.6 : 0.8} strokeOpacity={on ? 1 : fromHub ? 0.07 : focus ? 0.06 : 0.26} strokeLinecap="round" />;
+                return <path key={i} id={`${uid}-l${i}`} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "var(--color-ink)"} strokeWidth={on ? 1.6 : 1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.05 : 0.13} strokeLinecap="round" />;
               })}
               {/* Signals running along the threads, from whoever made the introduction to the person. */}
               <g className="orbit-signals" opacity={focus ? 0.12 : 1}>
                 {signals.map((i, k) => { const begin = `${((k * 0.53) % (BEAT * 2)).toFixed(2)}s`; const dur = `${BEAT * 2}s`; return (
-                  <circle key={i} r={2.3} opacity={0} fill={links[i].source === hub?.id ? "var(--color-accent)" : "var(--color-coral)"}>
+                  <circle key={i} r={2} opacity={0} fill={links[i].source === hub?.id ? "var(--color-teal-400)" : "var(--color-coral)"}>
                     <animateMotion dur={dur} begin={begin} repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keyPoints="0;1;1" keySplines="0.4 0 0.2 1;0 0 1 1"><mpath href={`#${uid}-l${i}`} /></animateMotion>
                     <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.42;0.5;1" dur={dur} begin={begin} repeatCount="indefinite" />
                   </circle>
@@ -242,16 +222,16 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
 
             {/* Each orbit carries its name as a tag at the top, in the gap its people leave. */}
             {RINGS.map((r, i) => layout.labelled[i] ? (
-              <div key={r.label} className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-stage-line bg-stage px-2.5 py-[5px]" style={{ left: layout.cx, top: layout.cy - layout.ry * layout.scale[i] }}>
-                <span className="label-caps text-stage-muted">{r.label}</span>
-                <span className="text-[10.5px] font-semibold leading-none text-stage-ink">{layout.counts[i]}</span>
+              <div key={r.label} className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface px-2.5 py-[5px] shadow-[0_1px_2px_rgba(12,27,51,0.06)]" style={{ left: layout.cx, top: layout.cy - layout.ry * layout.scale[i] }}>
+                <span className="label-caps text-ink-muted">{r.label}</span>
+                <span className="text-[10.5px] font-semibold leading-none text-ink">{layout.counts[i]}</span>
               </div>
             ) : null)}
 
             {/* You, at the centre: a soft halo and a two-part beat that sets the rhythm for everything else. */}
             <div className="pointer-events-none absolute z-[6] -translate-x-1/2 -translate-y-1/2" style={{ left: layout.cx, top: layout.cy, width: layout.hub, height: layout.hub }}>
               <span className="orbit-halo absolute -inset-[55%] rounded-full" />
-              <span className="orbit-beat absolute inset-0 grid place-items-center rounded-full text-accent-ink"><span className="label-caps !tracking-[0.1em]" style={layout.hub < 44 ? { fontSize: 8.5 } : undefined}>You</span></span>
+              <span className="orbit-beat absolute inset-0 grid place-items-center rounded-full text-white"><span className="label-caps !tracking-[0.1em]" style={layout.hub < 44 ? { fontSize: 8.5 } : undefined}>You</span></span>
             </div>
 
             {layout.placed.map((p, i) => {
@@ -273,9 +253,9 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
                   <span className="node-in relative block" style={{ width: dot, height: dot, animationDelay: `${Math.min(i * 14, 600)}ms` }}>
                     {/* Lights up as the wave from the centre reaches this person's circle. */}
                     <span className={cn("orbit-glow", p.ring === 0 ? "is-near" : p.ring === 2 ? "is-far" : "")} style={{ animationDelay: `${beatDelay(layout.scale[p.ring]).toFixed(2)}s` }} aria-hidden="true" />
-                    {p.open ? <span className="orbit-ping absolute -inset-[3.5px] rounded-full border border-coral" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
-                    <span className={cn("orbit-dot absolute inset-0 rounded-full transition-transform duration-200 group-hover:scale-[1.7]", trusted || p.ring === 0 ? "is-mint" : p.ring === 1 ? "is-white" : "is-faint", active && "scale-[1.7]", selected === p.id && "ring-2 ring-white ring-offset-[3px] ring-offset-stage")} />
-                    {named ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none tracking-[0.01em] transition-colors duration-200", active ? "text-white font-semibold" : "text-stage-muted")}>{shortName(p.name)}</span> : null}
+                    <span className={cn("orbit-dot absolute inset-0 grid place-items-center rounded-full font-semibold leading-none transition-transform duration-200 group-hover:scale-[1.18]", trusted || p.ring === 0 ? "is-mint" : p.ring === 1 ? "is-white" : "is-faint", active && "scale-[1.18]", selected === p.id && "is-selected")} style={{ fontSize: Math.max(8.5, Math.round(dot * 0.36)) }}>{dot >= 22 ? initials(p.name) : ""}</span>
+                    {p.open ? <span className="orbit-ping absolute -right-[2px] -bottom-[2px] h-[10px] w-[10px] rounded-full bg-coral ring-2 ring-surface" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
+                    {named ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none tracking-[0.01em] transition-colors duration-200", active ? "text-ink font-semibold" : "text-ink-muted")}>{shortName(p.name)}</span> : null}
                   </span>
                 </button>
               );
@@ -295,8 +275,8 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
           <dl className="pointer-events-none absolute left-6 top-5 flex gap-7">
             {[[stats.total, "in the network"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
               <div key={String(l)}>
-                <dd className="font-display text-[26px] leading-none text-stage-ink">{v}</dd>
-                <dt className="text-[11.5px] text-stage-muted mt-1.5">{l}</dt>
+                <dd className="font-display num-grad text-[26px] leading-none">{v}</dd>
+                <dt className="text-[11.5px] text-ink-muted mt-1.5">{l}</dt>
               </div>
             ))}
           </dl>
@@ -309,27 +289,26 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
           <div className="pointer-events-auto flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
             {topCaps.length ? (
               <>
-                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null ? "bg-accent border-accent text-accent-ink font-semibold" : "bg-stage border-stage-line text-stage-ink hover:border-white/60")}>Everyone</button>
+                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>Everyone</button>
                 {topCaps.map((c) => (
-                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === c.key ? "bg-accent border-accent text-accent-ink font-semibold" : "bg-stage border-stage-line text-stage-ink hover:border-white/60")}>{c.label}</button>
+                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === c.key ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>{c.label}</button>
                 ))}
               </>
             ) : null}
           </div>
-          <div className="hidden md:flex flex-none items-center gap-4 text-[11.5px] text-stage-muted">
-            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-mint h-2.5 w-2.5 rounded-full" /> known well</span>
-            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-white h-2 w-2 rounded-full" /> known</span>
-            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-faint h-1.5 w-1.5 rounded-full" /> new</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border border-coral" /> open to work</span>
-            <span>bigger dot, more trust</span>
+          <div className="hidden md:flex flex-none items-center gap-4 text-[11.5px] text-ink-muted">
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-mint h-3 w-3 rounded-full" /> worked together</span>
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-white h-3 w-3 rounded-full" /> known</span>
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-faint h-2 w-2 rounded-full" /> new</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-coral" /> open to work</span>
           </div>
         </div>
       </div>
 
       {!compact ? (
-        <aside className="widget hidden lg:block w-[312px] flex-none m-3 !rounded-[18px] overflow-y-auto text-ink">
+        <aside className="hidden lg:block w-[320px] flex-none border-l border-line bg-surface overflow-y-auto text-ink">
           {card ?? (
-            <div className="h-full flex flex-col justify-center px-7">
+            <div className="flex flex-col px-7 pt-8 pb-7">
               <div className="label-caps text-ink-faint">How to read it</div>
               <ul className="mt-4 space-y-4">
                 {RINGS.map((r, i) => (

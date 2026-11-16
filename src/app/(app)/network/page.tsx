@@ -2,12 +2,15 @@ import Link from "next/link";
 import { TrustMini } from "@/components/domain/trust";
 import { trustScore } from "@/lib/trust";
 import { requireInternal } from "@/server/session";
+import { NextStep } from "@/components/ui/next-step";
+import { networkStep } from "@/server/next-step";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
 import { getAIProvider } from "@/lib/ai";
 import { textSearchClauses } from "@/server/network-search";
 import { assessFreshness } from "@/lib/availability";
 import { PageHeader, EmptyState, Pill } from "@/components/ui/page";
+import { Stat, StatStrip } from "@/components/ui/stat";
 import { Input, Select } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Badge, Chip } from "@/components/ui/badge";
@@ -17,7 +20,7 @@ import { DateText } from "@/components/domain/date";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { AVAILABILITY_LABELS, ROUTE_LABELS, SOURCE_LABELS } from "@/lib/labels";
 import type { AvailabilityStatus, EngagementRoute, Prisma } from "@prisma/client";
-import { Search, Upload, Share2 } from "lucide-react";
+import { Handshake, Search, UserCheck, Users, Zap } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { TableSort } from "@/components/ui/table-sort";
 
@@ -54,6 +57,14 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
   if (filters.source) and.push({ relationships: { some: { sourceType: filters.source as never } } });
   if (and.length) where.AND = and;
 
+  // Headline figures are for the whole network, whatever the filters below are set to.
+  const counts = await Promise.all([
+    prisma.person.count({ where: { tenantId: user.tenantId } }),
+    prisma.person.count({ where: { tenantId: user.tenantId, relationships: { some: { workedTogether: true } } } }),
+    prisma.person.count({ where: { tenantId: user.tenantId, availabilityStatus: { in: ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY"] } } }),
+    prisma.person.count({ where: { tenantId: user.tenantId, memberUser: { isNot: null } } }),
+  ]);
+
   let people = await prisma.person.findMany({
     where,
     include: { relationships: { include: { introducedBy: { select: { id: true, firstName: true, lastName: true } }, networkOwner: { select: { name: true } } } }, evidence: true, conversations: { select: { approvalStatus: true } }, vouches: true, referralsMade: { select: { status: true } } },
@@ -76,7 +87,14 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<><Link href="/network/map"><Button variant="secondary"><Share2 className="h-3.5 w-3.5" /> Map</Button></Link><Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import</Button></Link><AddPersonDrawer people={allPeopleLite} /></>} />
+      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<AddPersonDrawer people={allPeopleLite} />} />
+      <NextStep step={await networkStep(user.tenantId)} />
+      <StatStrip>
+        <Stat icon={Users} label="People" value={counts[0]} hint="everyone you hold a profile for" href="/network" />
+        <Stat icon={Handshake} label="Worked together" value={counts[1]} hint="you have delivered with them" href="/network?workedWith=1" />
+        <Stat icon={Zap} label="Open to work" value={counts[2]} hint="available now or soon" href="/network?status=AVAILABLE_NOW" />
+        <Stat icon={UserCheck} label="Joined" value={counts[3]} hint="have their own login" href="/invite" />
+      </StatStrip>
 
       <form className="flex flex-wrap gap-2 mb-3">
         <div className="relative basis-full lg:basis-0 lg:flex-1">

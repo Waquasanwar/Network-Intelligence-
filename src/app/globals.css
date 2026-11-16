@@ -198,6 +198,28 @@ a > .glass-tile:hover { box-shadow: var(--shadow-card-hover); }
 .node-in { animation: node-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
 @media (prefers-reduced-motion: reduce) { .arrow-badge { transition: none; } .group:hover > .arrow-badge { transform: none; } .node-in { animation: none; } }
 
+/* The agent's presence: a small turning ring of the three brand lights. Used wherever the product
+   is speaking for itself (a suggested next step, the ask bar). */
+.ai-orb { position: relative; flex: none; width: 22px; height: 22px; border-radius: 999px; background: conic-gradient(from 0deg, var(--color-accent), #5aa2f0, var(--color-coral), var(--color-accent)); box-shadow: 0 0 14px -3px rgba(47, 179, 137, 0.7); }
+.ai-orb::after { content: ""; position: absolute; inset: 4px; border-radius: inherit; background: var(--color-surface); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5); }
+@keyframes orb-turn { to { rotate: 360deg; } }
+@media (prefers-reduced-motion: no-preference) { .ai-orb { animation: orb-turn 7s linear infinite; } }
+
+/* One suggested next move, as a single line under the page title. */
+.next-step { position: relative; display: flex; align-items: center; gap: 12px; padding: 9px 10px 9px 14px; border-radius: 999px; background: color-mix(in srgb, var(--color-surface) 82%, transparent); border: 1px solid var(--color-line); box-shadow: var(--shadow-card); backdrop-filter: blur(10px); }
+@media (max-width: 640px) { .next-step { flex-wrap: wrap; border-radius: 22px; padding: 12px 14px; } .next-step > p { flex-basis: calc(100% - 34px); } }
+
+/* Ask from anywhere: a bar floating over the page. */
+.ask-dock { position: fixed; z-index: 30; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; transition: translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease; }
+.ask-dock[data-away] { translate: 0 140%; opacity: 0; }
+.ask-dock-bar { pointer-events: auto; position: relative; display: flex; align-items: center; gap: 12px; width: min(520px, 100%); height: 50px; padding: 0 12px 0 14px; border-radius: 999px; border: 1px solid transparent; background: linear-gradient(color-mix(in srgb, var(--color-surface) 90%, transparent), color-mix(in srgb, var(--color-surface) 90%, transparent)) padding-box, var(--widget-edge) border-box; box-shadow: 0 18px 40px -18px rgba(12, 27, 51, 0.45), 0 2px 6px -2px rgba(12, 27, 51, 0.12); backdrop-filter: blur(16px) saturate(1.3); font-size: 13.5px; cursor: pointer; transition: box-shadow 200ms ease, translate 200ms ease; }
+.ask-dock-bar:hover { translate: 0 -1px; box-shadow: 0 22px 46px -18px rgba(12, 27, 51, 0.55), 0 2px 6px -2px rgba(12, 27, 51, 0.14); }
+@media (min-width: 1024px) { .ask-dock { left: 284px; } }
+@media (prefers-reduced-motion: reduce) { .ask-dock, .ask-dock-bar { transition: none; } }
+@media print { .ask-dock { display: none; } }
+
+/* The chevron on a select. Image only, so the field keeps its own fill. */
+.select-chevron { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238d93a0' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; }
 ::selection { background: var(--color-accent); color: var(--color-accent-ink); }
 :focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 12px; }
 
@@ -306,47 +328,43 @@ kbd {
 .more-menu button:hover { background: var(--color-surface-muted); }
 .more-menu button svg { color: var(--color-ink-muted); width: 16px; height: 16px; }
 
-/* ---------- Network map: the orbit stage ---------- */
-@keyframes orbit-pulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.6); opacity: 0; } }
-.orbit-pulse { animation: orbit-pulse 3.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+/* ---------- Network map ---------- */
+/* A light, quiet stage. Three soft circles, people as faces, and one calm rhythm (2.4s): the centre
+   beats, a faint wave crosses the circles, and each person answers as it reaches them. Colours come
+   from the theme tokens, so the map follows light and dark like everything else. */
+.orbit-stage { background: radial-gradient(60% 70% at 50% 46%, color-mix(in srgb, var(--color-accent) 16%, var(--color-surface)) 0%, var(--color-surface) 72%); }
+.orbit-band { fill: color-mix(in srgb, var(--color-accent) 7%, transparent); stroke: color-mix(in srgb, var(--color-ink) 14%, transparent); }
+.orbit-band.is-2 { fill: transparent; stroke: color-mix(in srgb, var(--color-ink) 20%, transparent); }
+.orbit-band.is-0 { fill: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+
 @keyframes orbit-flow { to { stroke-dashoffset: -22; } }
 .orbit-flow { stroke-dasharray: 5 6; animation: orbit-flow 0.9s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .orbit-pulse { animation: none; opacity: 0; } .orbit-flow { animation: none; stroke-dasharray: none; } }
 
-/* The map's stage: deep navy, lit teal from the centre, with a slow radar sweep. */
-.orbit-stage { background: radial-gradient(52% 58% at 50% 50%, rgba(23, 110, 112, 0.9) 0%, rgba(20, 88, 100, 0) 72%), radial-gradient(40% 46% at 4% 100%, rgba(255, 84, 64, 0.18) 0%, rgba(255, 84, 64, 0) 70%), #060f22; }
-/* People are dots: a lit core with a soft bloom, sharp at any size. */
-.orbit-dot.is-mint { background: radial-gradient(circle at 35% 30%, #eafff6 0%, #7ee3bc 55%, #3fc594 100%); box-shadow: 0 0 0 1px rgba(126, 227, 188, 0.35), 0 0 12px rgba(126, 227, 188, 0.75); }
-.orbit-dot.is-white { background: radial-gradient(circle at 35% 30%, #ffffff 0%, #cfe0ea 100%); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 9px rgba(190, 225, 240, 0.5); }
-.orbit-dot.is-faint { background: #8fa3bf; box-shadow: 0 0 0 1px rgba(143, 163, 191, 0.25); }
-@keyframes orbit-dust { to { transform: rotate(360deg); } }
-.orbit-dust { transform-origin: 0 0; animation: orbit-dust 240s linear infinite; }
-.orbit-dust.is-1 { animation-duration: 340s; animation-direction: reverse; }
-.orbit-dust.is-2 { animation-duration: 460s; }
-@media (prefers-reduced-motion: reduce) { .orbit-dust { animation: none; } }
-@keyframes orbit-sweep { to { transform: rotate(360deg); } }
-.orbit-sweep { position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 0deg, rgba(126, 227, 188, 0) 0deg, rgba(126, 227, 188, 0) 292deg, rgba(126, 227, 188, 0.14) 357deg, rgba(126, 227, 188, 0) 360deg); animation: orbit-sweep 9s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .orbit-sweep { animation: none; display: none; } }
+/* People. Worked together: mint. Known: white. New: a small slate dot. */
+.orbit-dot { box-shadow: 0 0 0 2px var(--color-surface), 0 4px 10px -3px rgba(12, 27, 51, 0.28); color: #0c1b33; }
+.orbit-dot.is-mint { background: linear-gradient(140deg, #dff8ee, #9fe6cb); color: #0b3a2c; }
+.orbit-dot.is-white { background: linear-gradient(140deg, #ffffff, #e8eef6); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ink) 16%, transparent), 0 0 0 3px var(--color-surface), 0 4px 10px -3px rgba(12, 27, 51, 0.22); }
+.orbit-dot.is-faint { background: #a3b1c6; box-shadow: 0 0 0 2px var(--color-surface); }
+.orbit-dot.is-selected { box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-ink), 0 6px 14px -4px rgba(12, 27, 51, 0.35); }
 
-/* The heartbeat. One rhythm (2.4s) drives everything: the centre beats, a wave leaves it and crosses
-   the circles in three beats, and each person glows as the wave reaches them. */
-@keyframes orbit-ripple { 0% { transform: scale(0.04); opacity: 0; } 6% { opacity: 0.6; } 70% { opacity: 0.22; } 100% { transform: scale(1.1); opacity: 0; } }
-.orbit-ripple { position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid rgba(126, 227, 188, 0.95); box-shadow: 0 0 28px rgba(126, 227, 188, 0.28), inset 0 0 36px rgba(126, 227, 188, 0.14); opacity: 0; animation: orbit-ripple 7.2s linear infinite; will-change: transform, opacity; }
-@keyframes orbit-beat { 0%, 34%, 100% { transform: scale(1); } 7% { transform: scale(1.1); } 15% { transform: scale(1); } 23% { transform: scale(1.055); } }
-.orbit-beat { background: radial-gradient(circle at 34% 28%, #d6fbec 0%, #7ee3bc 52%, #49c99a 100%); box-shadow: 0 0 0 5px rgba(126, 227, 188, 0.16), 0 0 34px rgba(126, 227, 188, 0.55); animation: orbit-beat 2.4s ease-in-out infinite; }
-@keyframes orbit-halo { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 10% { opacity: 0.8; transform: scale(1.06); } 40% { opacity: 0.4; transform: scale(1); } }
-.orbit-halo { background: radial-gradient(circle, rgba(126, 227, 188, 0.42) 0%, rgba(126, 227, 188, 0.12) 42%, rgba(126, 227, 188, 0) 70%); animation: orbit-halo 2.4s ease-in-out infinite; }
-@keyframes orbit-glow { 0%, 60%, 100% { opacity: 0; transform: scale(0.86); } 10% { opacity: var(--glow, 0.75); transform: scale(1.12); } 36% { opacity: 0; transform: scale(1.28); } }
-.orbit-glow { position: absolute; inset: -10px; border-radius: 9999px; pointer-events: none; opacity: 0; --glow: 0.7; background: radial-gradient(circle, rgba(126, 227, 188, 0.85) 0%, rgba(126, 227, 188, 0.3) 45%, rgba(126, 227, 188, 0) 72%); animation: orbit-glow 2.4s ease-out infinite; will-change: transform, opacity; }
-.orbit-glow.is-near { --glow: 0.95; }
-.orbit-glow.is-far { --glow: 0.4; }
-@keyframes orbit-ping { 0% { transform: scale(1); opacity: 0.9; } 65%, 100% { transform: scale(3); opacity: 0; } }
+/* You, at the centre. */
+@keyframes orbit-beat { 0%, 34%, 100% { transform: scale(1); } 7% { transform: scale(1.06); } 15% { transform: scale(1); } 23% { transform: scale(1.03); } }
+.orbit-beat { background: linear-gradient(150deg, #1d3156, #0c1b33); box-shadow: 0 0 0 4px var(--color-surface), 0 0 0 5px color-mix(in srgb, var(--color-accent) 80%, transparent), 0 14px 30px -10px rgba(12, 27, 51, 0.5); animation: orbit-beat 2.4s ease-in-out infinite; }
+.orbit-halo { display: none; }
+
+/* The wave, and each person's answer to it. */
+@keyframes orbit-ripple { 0% { transform: scale(0.04); opacity: 0; } 8% { opacity: 0.55; } 70% { opacity: 0.2; } 100% { transform: scale(1.1); opacity: 0; } }
+.orbit-ripple { position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid var(--color-teal-400); opacity: 0; animation: orbit-ripple 7.2s linear infinite; will-change: transform, opacity; }
+@keyframes orbit-glow { 0%, 60%, 100% { opacity: 0; transform: scale(0.9); } 10% { opacity: var(--glow, 0.6); transform: scale(1); } 40% { opacity: 0; transform: scale(1.22); } }
+.orbit-glow { position: absolute; inset: -6px; border-radius: 9999px; pointer-events: none; opacity: 0; --glow: 0.55; border: 2px solid var(--color-teal-400); animation: orbit-glow 2.4s ease-out infinite; will-change: transform, opacity; }
+.orbit-glow.is-near { --glow: 0.8; }
+.orbit-glow.is-far { --glow: 0.3; inset: -4px; border-width: 1.5px; }
+@keyframes orbit-ping { 0% { transform: scale(1); opacity: 0.8; } 65%, 100% { transform: scale(2.6); opacity: 0; } }
 .orbit-ping::after { content: ""; position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid var(--color-coral); animation: orbit-ping 2.4s ease-out infinite; animation-delay: inherit; }
-@keyframes orbit-drift { to { stroke-dashoffset: -160; } }
-.orbit-drift { animation: orbit-drift 36s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .orbit-ripple, .orbit-glow, .orbit-signals { display: none; }
-  .orbit-beat, .orbit-halo, .orbit-drift { animation: none; }
+  .orbit-beat { animation: none; }
+  .orbit-flow { animation: none; stroke-dasharray: none; }
   .orbit-ping::after { display: none; }
 }
 

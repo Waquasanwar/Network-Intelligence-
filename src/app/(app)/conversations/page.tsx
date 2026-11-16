@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireInternal } from "@/server/session";
+import { NextStep } from "@/components/ui/next-step";
+import { conversationsStep } from "@/server/next-step";
 import { prisma } from "@/lib/db";
 import { PageHeader, Tabs, EmptyState } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -43,6 +45,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
   return (
     <>
       <PageHeader title="Conversations" description="Natural conversations, structured by AI, approved by you. Nothing becomes authoritative until reviewed." actions={<QuickCapture people={peopleLite} />} />
+      <NextStep step={await conversationsStep(user.tenantId)} />
       <Tabs items={tabs} current={tab} base="/conversations" />
 
       {tab === "upcoming" ? (

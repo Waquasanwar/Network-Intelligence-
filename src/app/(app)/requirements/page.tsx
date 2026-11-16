@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { requireInternal } from "@/server/session";
+import { NextStep } from "@/components/ui/next-step";
+import { requirementsStep } from "@/server/next-step";
 import { prisma } from "@/lib/db";
 import { canSeeMoney } from "@/lib/authz";
-import { PageHeader, EmptyState, Pill, Section, Score } from "@/components/ui/page";
+import { PageHeader, EmptyState, Pill, Section, Score, Tabs } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input, Select, Textarea, Field } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { Stat } from "@/components/ui/stat";
+import { Stat, StatStrip } from "@/components/ui/stat";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
@@ -18,7 +20,7 @@ import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard, feeSummary } from "@/server/queries";
 import { parseBrief, matchBrief, estimateFee, defaultFeeModel, defaultTerms, fmt, PORTAL_VISIBLE, FEE_MODEL_LABELS, type BriefPerson, type AccountKind } from "@/lib/demand";
 import { fullName } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
+import { Building2, CheckCheck, ListChecks, Send, Sparkles, TrendingUp, Wallet } from "lucide-react";
 
 export const metadata = { title: "Requirements" };
 
@@ -30,12 +32,13 @@ const EXAMPLES = [
   "BA or PM",
 ];
 
-export default async function RequirementsPage({ searchParams }: { searchParams: Promise<{ q?: string; kind?: string }> }) {
+export default async function RequirementsPage({ searchParams }: { searchParams: Promise<{ q?: string; kind?: string; tab?: string }> }) {
   const user = await requireInternal();
   const money = canSeeMoney(user);
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const kind = sp.kind as AccountKind | undefined;
+  const tab = sp.tab === "accounts" ? "accounts" : sp.tab === "fees" && canSeeMoney(user) ? "fees" : "briefs";
   const [accounts, briefs, fees, card, summary] = await Promise.all([
     prisma.commercialAccount.findMany({ where: { tenantId: user.tenantId }, orderBy: { createdAt: "asc" }, include: { _count: { select: { briefs: true } } } }),
     prisma.brief.findMany({ where: { tenantId: user.tenantId, ...(kind ? { account: { kind } } : {}) }, include: { account: true, shortlist: { select: { tier: true, decision: true } } }, orderBy: { updatedAt: "desc" } }),
@@ -66,7 +69,21 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
 
   return (
     <>
-      <PageHeader eyebrow="Demand" title="Requirements" description={money ? "Clients, agencies and Amana tell us what they need. The co-pilot structures it, you decide who to propose, and the fee is worked out as you go." : "Clients, agencies and Amana tell us what they need. The co-pilot structures it and you decide who to propose."} actions={<NewAccountDrawer defaultCurrency={card.currency} />} />
+      <PageHeader title="Requirements" description={money ? "Clients, agencies and Amana tell us what they need. The co-pilot structures it, you decide who to propose, and the fee is worked out as you go." : "Clients, agencies and Amana tell us what they need. The co-pilot structures it and you decide who to propose."} actions={<NewAccountDrawer defaultCurrency={card.currency} />} />
+      <NextStep step={await requirementsStep(user.tenantId)} />
+      <StatStrip>
+        <Stat icon={ListChecks} label="Open requirements" value={open.length} hint={`${briefs.filter((b) => b.submittedVia === "PORTAL").length} came through the portal`} />
+        <Stat icon={Send} label="Proposed to clients" value={proposed} hint="anonymised until introduced" />
+        {money ? <>
+          <Stat icon={TrendingUp} label="Forecast fees" value={summary.forecast} hint="if the open briefs fill · only you see this" />
+          <Stat icon={Wallet} label="Agreed, invoiced and paid" value={[summary.agreed, summary.paid].filter((v) => v !== "—").join(" · ") || "—"} hint="only you see this" />
+        </> : <>
+          <Stat icon={Building2} label="Accounts" value={accounts.length} hint="clients, agencies and Amana" />
+          <Stat icon={CheckCheck} label="Filled" value={briefs.filter((b) => b.status === "FILLED").length} hint="requirements closed with a placement" />
+        </>}
+      </StatStrip>
+      <Tabs items={[{ key: "briefs", label: "Requirements", count: briefs.length }, { key: "accounts", label: "Accounts", count: accounts.length }, ...(money ? [{ key: "fees", label: "Fees", count: fees.length }] : [])]} current={tab} base="/requirements" />
+      {tab === "briefs" ? (<>
 
       <Card className="mb-5 border-navy-400/30 shadow-[var(--shadow-card),0_0_0_4px_rgba(79,111,214,0.06)]">
         <CardBody className="pt-4">
@@ -116,20 +133,10 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
         </CardBody>
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-        <Stat label="Open requirements" value={open.length} hint={`${briefs.filter((b) => b.submittedVia === "PORTAL").length} came through the portal`} />
-        <Stat label="Proposed to clients" value={proposed} hint="anonymised until introduced" />
-        <Stat label="Forecast fees" value={<span className={summary.forecast.length > 12 ? "text-[17px]" : ""}>{summary.forecast}</span>} hint="if the open briefs fill" />
-        <Stat label="Agreed & invoiced" value={<span className={summary.agreed.length > 12 ? "text-[17px]" : ""}>{summary.agreed}</span>} tone="teal" />
-        <Stat label="Paid" value={<span className={summary.paid.length > 12 ? "text-[17px]" : ""}>{summary.paid}</span>} tone="teal" />
-      </div>
-
       <div className="flex flex-wrap gap-1.5 mb-4">
         {[["", "All"], ["CLIENT", "Clients"], ["AGENCY", "Agencies"], ["EXPERT_NETWORK", "Amana"]].map(([k, l]) => <Pill key={k} href={`/requirements${k ? `?kind=${k}` : ""}`} active={(sp.kind ?? "") === k}>{l}</Pill>)}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2">
           <Card className="overflow-hidden">
             <CardHeader title="Requirements" description={money ? "Every brief, who it is from, and what it is worth if it fills." : "Every brief, who it is from, and where it stands."} />
             {briefs.length === 0 ? <CardBody><EmptyState title="No requirements yet" description="Ask the co-pilot above, then save the brief against a client, agency or Amana." /></CardBody> : (
@@ -148,20 +155,19 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
               </table>
             )}
           </Card>
-        </div>
-        <div className="space-y-4">
-          {money ? (
-<Card>
-            <CardHeader title="Fee pipeline" description="Our revenue: forecast, agreed, invoiced, paid." />
-            <CardBody>{fees.length === 0 ? <div className="text-xs text-ink-muted">Fees appear as briefs are saved and people are placed.</div> : <ul className="divide-y divide-line">{fees.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.account.name} · <Link href={`/requirements/${f.briefId}`} className="hover:underline">{f.brief.title}</Link>{f.person ? ` · ${fullName(f.person)}` : ""}</div><div className="text-[12px] text-ink-faint">{f.basis}</div></li>)}</ul>}</CardBody>
-          </Card>
-) : null}
+      </>) : null}
+      {tab === "accounts" ? (
           <Card>
             <CardHeader title="Accounts" description="Who pays, and on what terms." action={money ? <Link href="/settings/commercials" className="text-[12px] text-ink-muted hover:text-ink">Rate card →</Link> : undefined} />
             <CardBody><ul className="divide-y divide-line">{accounts.map((a) => <li key={a.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"><div><div className="text-[13px] font-medium">{a.name}</div><div className="text-[12px] text-ink-faint">{KIND_LABEL[a.kind]} · {a._count.briefs} requirements{money && a.monthlyFee ? ` · ${fmt(Number(a.monthlyFee), a.currency)}/mo access` : ""}{a.portalTenantId ? " · portal login" : ""}</div></div><Badge tone={a.status === "ACTIVE" ? "teal" : "amber"}>{a.status.toLowerCase()}</Badge></li>)}</ul></CardBody>
           </Card>
-        </div>
-      </div>
+      ) : null}
+      {tab === "fees" && money ? (
+<Card>
+            <CardHeader title="Fee pipeline" description="Our revenue: forecast, agreed, invoiced, paid." />
+            <CardBody>{fees.length === 0 ? <div className="text-xs text-ink-muted">Fees appear as briefs are saved and people are placed.</div> : <ul className="divide-y divide-line">{fees.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.account.name} · <Link href={`/requirements/${f.briefId}`} className="hover:underline">{f.brief.title}</Link>{f.person ? ` · ${fullName(f.person)}` : ""}</div><div className="text-[12px] text-ink-faint">{f.basis}</div></li>)}</ul>}</CardBody>
+          </Card>
+      ) : null}
     </>
   );
 }

@@ -12,6 +12,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
   const [idx, setIdx] = React.useState(0);
   const router = useRouter();
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const seed = React.useRef("");
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -21,7 +22,8 @@ export function CommandPalette({ items }: { items: Item[] }) {
       }
       if (e.key === "Escape") setOpen(false);
     };
-    const onOpen = () => setOpen(true);
+    // Opened from the ask bar, the palette arrives with that bar's question already typed.
+    const onOpen = (e: Event) => { seed.current = (e as CustomEvent<{ q?: string }>).detail?.q ?? ""; setOpen(true); };
     window.addEventListener("keydown", onKey);
     window.addEventListener("ni:open-palette", onOpen);
     return () => {
@@ -32,9 +34,10 @@ export function CommandPalette({ items }: { items: Item[] }) {
 
   React.useEffect(() => {
     if (open) {
-      setQ("");
+      setQ(seed.current);
+      seed.current = "";
       setIdx(0);
-      setTimeout(() => inputRef.current?.focus(), 10);
+      setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select(); }, 10);
     }
   }, [open]);
 
