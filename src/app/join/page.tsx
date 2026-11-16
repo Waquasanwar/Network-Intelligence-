@@ -27,7 +27,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1fr_1.05fr]">
-      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[16px]">
+      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[10px]">
         <CirclesMotif className="pointer-events-none absolute right-[-150px] bottom-[-110px] h-[520px] w-[520px] opacity-90" />
         <div className="relative flex items-center gap-2.5">
           <BrandMark className="h-7 w-auto" />

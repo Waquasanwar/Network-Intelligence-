@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BrandMark } from "@/components/ui/brand-mark";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, LogOut, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal, Lock } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Briefcase, Building2, Handshake, Plane, Plug, ShieldCheck, Upload, ListChecks, MonitorSmartphone, Percent, UserPlus, BadgeCheck, Link2, MicVocal, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
@@ -60,32 +59,23 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
       <Link
         href={href}
         className={cn(
-          "group relative flex items-center gap-3 rounded-[8px] px-3 py-[11px] lg:py-[8px] text-[14px] lg:text-[13.5px] transition-[background-color,color] duration-200",
-          active ? "bg-rail-active text-rail-ink-strong font-semibold ring-1 ring-rail-line" : "text-rail-ink font-medium hover:bg-navy-50 hover:text-rail-ink-strong",
+          "group relative flex items-center gap-3 rounded-[6px] px-3 py-[11px] lg:py-[8px] text-[14px] lg:text-[13.5px] transition-[background-color,color] duration-200",
+          active ? "bg-rail-active text-rail-ink-strong font-semibold" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
         )}
       >
         <Icon className={cn("h-4 w-4 flex-none transition-colors", active ? "text-rail-ink-strong" : "text-rail-ink group-hover:text-rail-ink-strong")} />
         <span className="flex-1 truncate">{label}</span>
-        {active ? <span aria-hidden="true" className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-[2px] bg-accent" /> : null}
+        {active ? <span aria-hidden="true" className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-[2px] bg-teal-400" /> : null}
       </Link>
     );
   };
-  const Group = ({ label }: { label: string }) => <div className="label-caps px-3 pt-6 pb-2 text-ink-faint">{label}</div>;
+  const Group = ({ label }: { label: string }) => <div className="label-caps px-3 pt-5 pb-2 text-ink-faint">{label}</div>;
 
   return (
     <>
-    {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-ink/35 lg:hidden cursor-default" /> : null}
-    <aside id="app-nav" className={cn("rail-surface flex flex-col text-rail-ink border-r border-rail-line h-dvh flex-none fixed inset-y-0 left-0 z-40 w-[272px] max-w-[86vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-0 lg:z-auto lg:w-[248px] lg:translate-x-0 lg:visible", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)] lg:shadow-none" : "-translate-x-full invisible")}>
-      <div className="px-5 pt-6 pb-5">
-        <Link href={restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview"} className="flex items-center gap-3">
-          <BrandMark className="h-[22px] w-auto flex-none text-rail-ink-strong" />
-          <span className="leading-[1.1]">
-            <span className="block font-display is-small text-[14.5px] text-rail-ink-strong">Network Intelligence</span>
-            <span className="block text-[11.5px] text-rail-ink mt-0.5">{user.tenantName}</span>
-          </span>
-        </Link>
-      </div>
-      <nav className="px-3 flex-1 space-y-0.5 overflow-y-auto py-1">
+    {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-x-0 bottom-0 top-14 z-20 bg-ink/35 lg:hidden cursor-default" /> : null}
+    <aside id="app-nav" className={cn("rail-surface flex flex-col text-rail-ink border-r border-rail-line flex-none fixed top-14 bottom-0 left-0 z-30 w-[272px] max-w-[86vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-14 lg:bottom-auto lg:h-[calc(100dvh-56px)] lg:z-auto lg:w-[248px] lg:translate-x-0 lg:visible", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)] lg:shadow-none" : "-translate-x-full invisible")}>
+      <nav className="px-3 flex-1 space-y-0.5 overflow-y-auto pt-4 pb-6">
         {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {INTERNAL_NAV.map((i) => <Item key={i.href} {...i} />)}
@@ -95,20 +85,6 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
           </>
         )}
       </nav>
-      <div className="m-3 mt-2 rounded-[10px] bg-surface ring-1 ring-rail-line px-3 py-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="h-8 w-8 rounded-full bg-navy text-white dark:text-canvas text-[11px] font-semibold inline-flex items-center justify-center flex-none">{user.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}</span>
-            <div className="min-w-0 leading-tight">
-              <div className="text-[12.5px] font-medium text-rail-ink-strong truncate">{user.name}</div>
-              <div className="text-[11px] text-rail-ink truncate capitalize">{user.role.toLowerCase()}</div>
-            </div>
-          </div>
-          <form action="/api/auth/signout" method="post">
-            <button className="p-1.5 rounded-md text-rail-ink hover:text-rail-ink-strong hover:bg-rail-active cursor-pointer" title="Sign out" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
-          </form>
-        </div>
-      </div>
     </aside>
     </>
   );

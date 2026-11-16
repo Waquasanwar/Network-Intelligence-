@@ -117,7 +117,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      <div data-sortable className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
+      <div data-sortable className="rounded-[8px] border border-line bg-surface shadow-[var(--shadow-card)] overflow-x-auto">
         {people.length === 0 ? (
           <EmptyState title="No one matches" description="Try a broader search, or add the person you have in mind." />
         ) : (

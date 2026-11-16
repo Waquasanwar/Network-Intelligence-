@@ -36,7 +36,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]">
-      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[16px]">
+      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[10px]">
         <div className="flex items-center gap-2.5 relative z-10">
           <BrandMark className="h-7 w-auto" />
           <span className="font-display is-small text-[16px]">Network Intelligence</span>
@@ -60,8 +60,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h2 className="font-display text-[30px] leading-[1.1]">Welcome back</h2>
           <p className="text-[15px] text-ink-muted mt-2.5">Sign in to your network.</p>
 
-          {sp.registered ? <div className="mt-5 rounded-[10px] border border-teal/25 bg-teal/5 px-3.5 py-2.5 text-[12.5px] text-ink">Account created. Sign in to start your screening.</div> : null}
-          {sp.error ? <div className="mt-5 rounded-[10px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
+          {sp.registered ? <div className="mt-5 rounded-[6px] border border-teal/25 bg-teal/5 px-3.5 py-2.5 text-[12.5px] text-ink">Account created. Sign in to start your screening.</div> : null}
+          {sp.error ? <div className="mt-5 rounded-[6px] border border-risk/25 bg-risk-100 px-3.5 py-2.5 text-[12.5px] text-risk">Email or password was not recognised.</div> : null}
 
           <form action={login} className="mt-7 space-y-3.5">
             <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/"} />
@@ -78,7 +78,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           ) : null}
 
           {showDemo ? (
-            <div className="mt-6 rounded-[10px] border border-line bg-surface/60 p-3.5 text-[11.5px] text-ink-muted leading-5">
+            <div className="mt-6 rounded-[6px] border border-line bg-surface/60 p-3.5 text-[11.5px] text-ink-muted leading-5">
               <div className="font-medium text-ink mb-1.5">Demo accounts · password <span className="mono">Password123!</span></div>
               <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5">
                 <span className="mono">waqas@networkintelligence.local</span><span>Owner</span>

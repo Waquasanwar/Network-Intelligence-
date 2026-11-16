@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CIRCLES, circleOf } from "@/lib/circles";
 
 /** An open requirement this person genuinely fits (from the matching engine, never a guess). */
 export type GRole = { id: string; title: string; route: string | null; location: string | null; tier: "meets" | "conversation"; fit: number };
@@ -19,13 +20,8 @@ const initials = (name: string) => name.split(/\s+/).map((s) => s[0]).join("").s
 const shortName = (name: string) => { const [first, ...rest] = name.split(/\s+/); return rest.length ? `${first} ${rest[rest.length - 1][0]}.` : first; };
 const TONE: Record<string, string> = { teal: "text-teal border-teal/30 bg-teal-50", amber: "text-amber border-amber/30 bg-amber-50", neutral: "text-ink-muted border-line bg-surface-muted" };
 
-// Three circles, closest first. A person sits in exactly one.
-const RINGS = [
-  { label: "Worked together", hint: "You have delivered with them" },
-  { label: "Known to us", hint: "Screened, vouched for or in conversation" },
-  { label: "New to the network", hint: "Introduced, not yet known" },
-] as const;
-const ringOf = (n: GNode) => (n.worked ? 0 : n.screened || n.trust >= 10 ? 1 : 2);
+const RINGS = CIRCLES;
+const ringOf = circleOf;
 
 type Placed = GNode & { ring: number; x: number; y: number; size: number; angle: number };
 const base0 = (ring: number, compact: boolean, narrow = false) => (narrow ? [30, 26, 22] : compact ? [36, 32, 28] : [44, 38, 32])[ring];
@@ -131,7 +127,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
   const hovered = hover ? byId.get(hover) : null;
 
   return (
-    <div className={cn("relative w-full flex rounded-[12px] border border-line bg-surface overflow-hidden", heightClass)}>
+    <div className={cn("relative w-full flex rounded-[8px] border border-line bg-surface overflow-hidden", heightClass)}>
       <div ref={wrapRef} className="relative flex-1 min-w-0" onClick={() => setSelected(null)}>
         {layout ? (
           <>
@@ -193,7 +189,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
             })}
 
             {hovered ? (
-              <div className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-[8px] border border-line bg-surface px-3 py-2 shadow-[var(--shadow-pop)]" style={{ left: Math.min(Math.max(hovered.x, 120), (box?.w ?? 0) - 120), top: hovered.y - hovered.size / 2 - 8 }}>
+              <div className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-[6px] border border-line bg-surface px-3 py-2 shadow-[var(--shadow-pop)]" style={{ left: Math.min(Math.max(hovered.x, 120), (box?.w ?? 0) - 120), top: hovered.y - hovered.size / 2 - 8 }}>
                 <div className="text-[12.5px] font-semibold text-ink whitespace-nowrap">{hovered.name}</div>
                 {hovered.headline ? <div className="text-[11.5px] text-ink-muted max-w-[230px] truncate">{hovered.headline}</div> : null}
                 <div className="text-[11px] text-ink-faint mt-1 tabular">Trust {Math.round(hovered.trust)} · {RINGS[hovered.ring].label.toLowerCase()}{hovered.roles?.length ? ` · fits ${hovered.roles.length} open role${hovered.roles.length === 1 ? "" : "s"}` : ""}</div>
@@ -214,7 +210,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
         ) : null}
 
         {/* On the home page and on small screens the person opens as a floating card. */}
-        {card ? <div onClick={(e) => e.stopPropagation()} className={cn("absolute right-3 top-3 z-30 w-[300px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[10px] border border-line bg-surface shadow-[var(--shadow-pop)]", compact ? "" : "lg:hidden")}>{card}</div> : null}
+        {card ? <div onClick={(e) => e.stopPropagation()} className={cn("absolute right-3 top-3 z-30 w-[300px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[6px] border border-line bg-surface shadow-[var(--shadow-pop)]", compact ? "" : "lg:hidden")}>{card}</div> : null}
 
         <div className="pointer-events-none absolute inset-x-4 bottom-3.5 flex items-end justify-between gap-3">
           <div className="pointer-events-auto flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -313,7 +309,7 @@ function PersonCard({ n, connections, onClose }: { n: GNode; connections: number
       </div>
 
       <div className="p-4 border-t border-line">
-        <Link href={`/network/${n.id}`} className="flex h-9 items-center justify-center gap-1.5 rounded-[8px] bg-navy text-white text-[13px] font-semibold transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">Open profile <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+        <Link href={`/network/${n.id}`} className="flex h-9 items-center justify-center gap-1.5 rounded-[6px] bg-navy text-white text-[13px] font-semibold transition-colors duration-200 hover:bg-navy-600 dark:text-canvas">Open profile <ArrowUpRight className="h-3.5 w-3.5" /></Link>
       </div>
     </div>
   );

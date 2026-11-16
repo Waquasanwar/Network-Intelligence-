@@ -1,6 +1,6 @@
 import { Sidebar } from "./sidebar";
 import { CommandPalette } from "./command-palette";
-import { TopBar } from "./topbar";
+import { TopBar, Crumbs } from "./topbar";
 import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
@@ -37,13 +37,15 @@ export async function AppShell({ user, children }: { user: SessionUser; children
   }
 
   return (
-    <div className="flex min-h-screen relative">
-      <div className="ambient" aria-hidden="true" />
-      <Sidebar user={user} />
-      <div className="flex-1 min-w-0 flex flex-col relative z-[1]">
-        <TopBar alerts={alerts} />
-        <main className="flex-1">
-          <div className="max-w-[1220px] mx-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-9 reveal">{children}</div>
+    <div className="flex min-h-screen flex-col">
+      <TopBar alerts={alerts} user={{ name: user.name, role: user.role, tenantName: user.tenantName }} home={user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : user.role === "CLIENT" ? "/client-workspace" : "/overview"} />
+      <div className="flex flex-1 min-w-0">
+        <Sidebar user={user} />
+        <main className="flex-1 min-w-0">
+          <div className="max-w-[1280px] mx-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <Crumbs />
+            <div className="reveal">{children}</div>
+          </div>
         </main>
       </div>
       <CommandPalette items={items} />

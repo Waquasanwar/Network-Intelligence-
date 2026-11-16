@@ -12,10 +12,12 @@ import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge, StageBadge, IntroBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { formatMoneyCompact, fullName } from "@/lib/utils";
-import { ROUTE_LABELS } from "@/lib/labels";
+import { ROUTE_LABELS, AVAILABILITY_LABELS } from "@/lib/labels";
+import { CIRCLES, circleOf } from "@/lib/circles";
+import { SegmentedBar, BarList } from "@/components/ui/charts";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { Button } from "@/components/ui/button";
-import { Upload, Sparkles, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight } from "lucide-react";
+import { Upload, Sparkles, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight, Users, Briefcase, TrendingUp, UserCheck, UserPlus, ClipboardList, Send, Share2 } from "lucide-react";
 import { AgentComposer } from "@/components/domain/agent-composer";
 
 // What the agent has queued for you, by the kind of decision it needs.
@@ -84,6 +86,11 @@ export default async function OverviewPage() {
   const counts = (xs: string[]) => [...xs.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).map(([k]) => k);
   const topCaps = counts(mapNodes.flatMap((n) => n.capabilities ?? []));
   const topCities = counts(mapNodes.map((n) => n.city?.split(",")[0]).filter((c): c is string => !!c));
+  const mapPeople = mapNodes.filter((n) => !n.hub);
+  const circleCounts = [0, 1, 2].map((c) => mapPeople.filter((n) => circleOf(n) === c).length);
+  const tally = (xs: string[]) => [...xs.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]);
+  const availabilityRows = tally(people.map((p) => p.availabilityStatus)).slice(0, 5).map(([k, v]) => ({ label: AVAILABILITY_LABELS[k as keyof typeof AVAILABILITY_LABELS] ?? k, value: v, href: `/network?status=${k}` }));
+  const expertiseRows = tally(mapPeople.flatMap((n) => (n.capabilities ?? []).map((c) => c.trim()).filter(Boolean))).slice(0, 5).map(([k, v]) => ({ label: k, value: v, href: `/network?q=${encodeURIComponent(k)}` }));
   const askSuggestions = [
     topCaps[0] ? `${topCaps[0]}, available now` : null,
     topCities[0] ? `People in ${topCities[0]}` : null,
@@ -92,55 +99,91 @@ export default async function OverviewPage() {
 
   return (
     <>
-      {/* The navy stage: greeting, the question box, and the four numbers as a ruled strip. */}
-      <section className="brand-panel rounded-[16px] mb-4 overflow-hidden">
-        <div className="px-5 pt-6 sm:px-10 sm:pt-9">
-          <div className="flex items-center justify-between gap-4">
-            <p className="eyebrow text-stage-muted">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
-            <AddPersonDrawer people={existingPeopleForDrawer} variant="accent" />
-          </div>
-          <h1 className="font-display text-[30px] sm:text-[44px] leading-[1.08] mt-7 sm:mt-9 text-balance">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}.</h1>
-          <p className="text-stage-muted text-[15.5px] mt-3 max-w-[58ch] leading-[1.6]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
-          <AgentComposer suggestions={askSuggestions} />
+      {/* Page title and the two things you do most. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-5">
+        <div className="min-w-0">
+          <p className="text-[12.5px] text-ink-faint">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+          <h1 className="font-display text-[24px] sm:text-[28px] leading-[1.15] mt-1">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
         </div>
-        <dl className="mt-8 sm:mt-10 grid grid-cols-2 lg:grid-cols-4 border-t border-stage-line">
-          {(showP23
-            ? [
-                { label: "In the network", value: total, hint: `${workedWith} you've worked with`, href: "/network", delta: last7(peopleDates) },
-                { label: "Live opportunities", value: activeOpps.length, hint: amanaDemand ? `${amanaDemand} via Amana` : "open requirements", href: "/opportunities", delta: last7(oppDates) },
-                { label: "Introductions live", value: liveIntros.length, hint: "in flight now", href: "/opportunities", delta: last7(introDates) },
-                { label: "Indicative pipeline", value: formatMoneyCompact(pipeline), hint: "rough, not a forecast", href: "/requirements", delta: null },
-              ]
-            : [
-                { label: "In the network", value: total, hint: `${workedWith} you've worked with`, href: "/network", delta: last7(peopleDates) },
-                { label: "Signed up", value: members, hint: "members in your network", href: "/network", delta: null },
-                { label: "Awaiting screening", value: awaitingScreening, hint: "registered, not yet screened", href: "/conversations", delta: null },
-                { label: "Worked with", value: workedWith, hint: "people you've delivered with", href: "/network?workedWith=1", delta: null },
-              ]
-          ).map((k, i) => (
-            <Link key={k.label} href={k.href} className={`group block px-5 py-5 sm:px-10 sm:py-6 transition-colors duration-200 hover:bg-white/[0.04] ${i % 2 ? "border-l border-stage-line" : ""} ${i >= 2 ? "border-t lg:border-t-0 border-stage-line" : ""} ${i === 2 ? "lg:border-l" : ""}`}>
-              <dt className="label-caps text-stage-muted">{k.label}</dt>
-              <dd className="mt-3 flex items-baseline gap-2.5">
-                <span className="font-display text-[34px] sm:text-[40px] tabular leading-none text-accent">{k.value}</span>
-                {k.delta ? <span className="text-[12px] font-semibold tabular text-stage-ink">+{k.delta} <span className="font-normal text-stage-muted">this week</span></span> : null}
-              </dd>
-              <dd className="text-[12.5px] text-stage-muted mt-2">{k.hint}</dd>
-            </Link>
-          ))}
-        </dl>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import contacts</Button></Link>
+          <AddPersonDrawer people={existingPeopleForDrawer} />
+        </div>
+      </div>
+
+      {/* The search banner: one question box, in plain words. */}
+      <section className="brand-panel rounded-[10px] px-5 py-6 sm:px-8 sm:py-7 mb-4">
+        <h2 className="font-display is-small text-[19px] sm:text-[21px] leading-[1.25]">Who are you looking for?</h2>
+        <p className="text-stage-muted text-[14px] mt-1 max-w-[70ch]">Ask in plain words. The agent searches everyone in your network and ranks them by how well you know and trust them.</p>
+        <AgentComposer suggestions={askSuggestions} />
       </section>
 
-      {total < 25 ? (
-        <Card className="mb-4">
-          <CardBody className="pt-5 pb-5 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="font-display is-small text-[16px]">Start with the people you already know</div>
-              <div className="text-[12.5px] text-ink-muted mt-0.5">Import your contact list from a spreadsheet, then book conversations from the reconnect queue. Provenance is recorded for every person automatically.</div>
+      {/* Headline numbers. Each one opens the list behind it. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        {(showP23
+          ? [
+              { label: "People in the network", value: total, hint: `${workedWith} you've worked with`, href: "/network", delta: last7(peopleDates), icon: Users },
+              { label: "Live opportunities", value: activeOpps.length, hint: amanaDemand ? `${amanaDemand} via Amana` : "open requirements", href: "/opportunities", delta: last7(oppDates), icon: Briefcase },
+              { label: "Introductions in flight", value: liveIntros.length, hint: "waiting on a reply or a meeting", href: "/opportunities", delta: last7(introDates), icon: Handshake },
+              { label: "Indicative pipeline", value: formatMoneyCompact(pipeline), hint: "rough, not a forecast", href: "/requirements", delta: 0, icon: TrendingUp },
+            ]
+          : [
+              { label: "People in the network", value: total, hint: `${workedWith} you've worked with`, href: "/network", delta: last7(peopleDates), icon: Users },
+              { label: "Signed up", value: members, hint: "members in your network", href: "/network", delta: 0, icon: UserCheck },
+              { label: "Awaiting screening", value: awaitingScreening, hint: "registered, not yet screened", href: "/conversations", delta: 0, icon: ListChecks },
+              { label: "Worked with", value: workedWith, hint: "people you've delivered with", href: "/network?workedWith=1", delta: 0, icon: Handshake },
+            ]
+        ).map((k) => (
+          <Link key={k.label} href={k.href} className="group block rounded-[8px] border border-line bg-surface p-4 sm:p-5 transition-colors duration-200 hover:border-line-strong">
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-[12.5px] font-medium text-ink-muted leading-tight">{k.label}</div>
+              <span className="grid h-8 w-8 flex-none place-items-center rounded-[6px] bg-navy-50 text-ink"><k.icon className="h-4 w-4" /></span>
             </div>
-            <Link href="/network/import" className="flex-none"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import contacts</Button></Link>
-          </CardBody>
-        </Card>
+            <div className="font-display text-[30px] sm:text-[34px] leading-none mt-3 text-ink">{k.value}</div>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-faint">
+              {k.delta ? <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-1.5 py-0.5 font-semibold text-teal">+{k.delta} this week</span> : null}
+              <span>{k.hint}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* The everyday jobs, one click each. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        {[
+          { title: "Add a person", text: "Paste a LinkedIn link or a few lines and let the assistant draft the profile.", href: "/network/intake", icon: UserPlus },
+          { title: "Post a requirement", text: "Describe what a client needs; get a shortlist from people you know.", href: "/requirements", icon: ClipboardList },
+          { title: "Invite someone", text: "Send your link. They register, do the screening, and you review.", href: "/settings/invite", icon: Send },
+          { title: "Open the network map", text: "See your circles of trust and who introduced whom.", href: "/network/map", icon: Share2 },
+        ].map((q) => (
+          <Link key={q.title} href={q.href} className="group flex items-start gap-3 rounded-[8px] border border-line bg-surface p-4 transition-colors duration-200 hover:border-ink">
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-[6px] bg-stage text-accent"><q.icon className="h-[18px] w-[18px]" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center justify-between gap-2 text-[13.5px] font-semibold text-ink">{q.title} <ArrowRight className="arrow-badge h-3.5 w-3.5 flex-none text-ink-faint group-hover:text-ink" /></span>
+              <span className="block text-[12.5px] text-ink-muted leading-[1.45] mt-0.5">{q.text}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      {/* The shape of the network: how close people are, who is free, and what they are good at. */}
+      {total ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+          <Card>
+            <CardHeader title="How well you know them" description="Everyone in the network, by circle of trust" />
+            <CardBody><SegmentedBar parts={CIRCLES.map((c, i) => ({ label: c.label, hint: c.hint, value: circleCounts[i] }))} /></CardBody>
+          </Card>
+          <Card>
+            <CardHeader title="Availability" description="What people last told you" action={<Link href="/network" className="text-[12.5px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[5px] hover:decoration-ink">All</Link>} />
+            <CardBody><BarList rows={availabilityRows} /></CardBody>
+          </Card>
+          <Card>
+            <CardHeader title="Top expertise" description="What your network is strongest at" />
+            <CardBody><BarList rows={expertiseRows} empty="No expertise recorded yet. It is captured in the screening." /></CardBody>
+          </Card>
+        </div>
       ) : null}
+
       {people.length > 1 ? (
         <Card className="mb-4 overflow-hidden">
           <CardHeader title="Circles of trust" description="You at the centre; the people you have worked with closest in. Click a person for their trust and the open roles they fit." action={<Link href="/network/map" className="text-[13px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[6px]">Open full map</Link>} />
@@ -159,7 +202,7 @@ export default async function OverviewPage() {
                     const k = QUEUE[s.kind]; const Icon = k.icon;
                     return (
                       <li key={i}>
-                        <Link href={s.href} className="group flex items-center gap-3 rounded-[10px] border border-line bg-surface px-3 py-2.5 transition-colors duration-200 hover:border-ink">
+                        <Link href={s.href} className="group flex items-center gap-3 rounded-[6px] border border-line bg-surface px-3 py-2.5 transition-colors duration-200 hover:border-ink">
                           <span className="grid h-8 w-8 flex-none place-items-center rounded-[6px] bg-surface-muted text-ink"><Icon className="h-4 w-4" /></span>
                           <span className="min-w-0 flex-1">
                             <span className="label-caps block text-ink-faint">{k.tag}</span>
@@ -214,7 +257,7 @@ export default async function OverviewPage() {
             <CardBody>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
                 {stageCounts.map((s) => (
-                  <div key={s.stage} className="rounded-[8px] bg-surface-muted px-2 py-2.5 text-center">
+                  <div key={s.stage} className="rounded-[6px] bg-surface-muted px-2 py-2.5 text-center">
                     <div className="text-[16px] font-semibold tabular text-ink leading-none">{s.count}</div>
                     <div className="text-[9.5px] uppercase tracking-[0.06em] text-ink-faint mt-1 truncate">{s.stage.toLowerCase()}</div>
                   </div>

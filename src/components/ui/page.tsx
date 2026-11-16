@@ -17,7 +17,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
 
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
   return (
-    <div className="rounded-[10px] border border-dashed border-line-strong px-6 py-10 text-center bg-surface-muted/60">
+    <div className="rounded-[6px] border border-dashed border-line-strong px-6 py-10 text-center bg-surface-muted/60">
       <div className="text-[14px] font-semibold text-ink">{title}</div>
       {description ? <div className="text-[12.5px] text-ink-muted mt-1 max-w-sm mx-auto leading-5">{description}</div> : null}
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
