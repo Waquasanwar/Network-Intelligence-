@@ -27,7 +27,7 @@ export function PulseLine({ days, beats, height = 64 }: { days: number; beats: B
     <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} role="img" aria-label={`Posting rhythm: ${beats.length} posts in ${days} days`} style={{ display: "block", overflow: "visible" }}>
       <path d={d} fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1.5" strokeLinejoin="round" />
       <path d={d} fill="none" stroke="var(--coral-mark-stage)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity=".55" />
-      <path d={d} pathLength={1000} fill="none" stroke="#ffd2cc" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="pulse-comet" />
+      <path d={d} pathLength={1000} fill="none" stroke="#ffc9c3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="pulse-comet" />
       {tops.map(({ cx, cy, b }) => (
         <g key={`${b.day}-${b.title}`}>
           <circle cx={cx} cy={cy} r="4" fill="var(--coral-mark-stage)" stroke="var(--stage)" strokeWidth="2" />

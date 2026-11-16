@@ -118,10 +118,6 @@ export function Scatter({
           <>
             <line x1={sx(mx)} x2={sx(mx)} y1={pad.t} y2={height - pad.b} stroke="var(--line-strong)" strokeDasharray="0" strokeWidth="1" opacity=".7" />
             <line x1={pad.l} x2={W - pad.r} y1={sy(my)} y2={sy(my)} stroke="var(--line-strong)" strokeWidth="1" opacity=".7" />
-            <text x={pad.l + 6} y={pad.t + 14} className="q">{quadrants[0]}</text>
-            <text x={W - pad.r - 6} y={pad.t + 14} textAnchor="end" className="q">{quadrants[1]}</text>
-            <text x={pad.l + 6} y={height - pad.b - 8} className="q">{quadrants[2]}</text>
-            <text x={W - pad.r - 6} y={height - pad.b - 8} textAnchor="end" className="q">{quadrants[3]}</text>
           </>
         ) : null}
         {fit ? <line {...fit} stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" opacity=".55" /> : null}
@@ -131,6 +127,14 @@ export function Scatter({
             <circle cx={sx(p.x)} cy={sy(p.y)} r="13" fill="transparent" />
           </g>
         ))}
+        {quadrants ? (
+          <g pointerEvents="none">
+            <text x={pad.l + 6} y={pad.t + 14} className="q">{quadrants[0]}</text>
+            <text x={W - pad.r - 6} y={pad.t + 14} textAnchor="end" className="q">{quadrants[1]}</text>
+            <text x={pad.l + 6} y={height - pad.b - 8} className="q">{quadrants[2]}</text>
+            <text x={W - pad.r - 6} y={height - pad.b - 8} textAnchor="end" className="q">{quadrants[3]}</text>
+          </g>
+        ) : null}
       </svg>
       {hover ? (
         <div className="chart-tip" style={{ left: `${(sx(hover.x) / W) * 100}%`, top: `calc(${(sy(hover.y) / height) * 100}% - 64px)` }}>

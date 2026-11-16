@@ -1,6 +1,6 @@
 /** Server-rendered small charts: sparkline and score ring. */
 
-export function Sparkline({ values, width = 96, height = 28, color = "var(--mint)" }: { values: (number | null)[]; width?: number; height?: number; color?: string }) {
+export function Sparkline({ values, width = 96, height = 28, color = "rgba(244,243,239,.85)" }: { values: (number | null)[]; width?: number; height?: number; color?: string }) {
   const v = values.filter((x): x is number => x != null);
   if (v.length < 2) return <svg width={width} height={height} aria-hidden />;
   const max = Math.max(...v) || 1;

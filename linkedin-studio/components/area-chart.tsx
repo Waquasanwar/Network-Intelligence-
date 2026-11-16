@@ -22,7 +22,7 @@ const dayLabel = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateStrin
 
 /**
  * One series over time. Hover (or touch) shows a crosshair and the exact value.
- * `tone="stage"` draws it in mint for the navy hero.
+ * `tone="stage"` draws it in coral for the ink-blue hero.
  */
 export function AreaChart({
   points,
