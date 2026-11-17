@@ -78,7 +78,9 @@ export function NetworkGlobe({ places, arcs, home, unplaced = 0, heightClass = "
     const drag = { on: false, x: 0, y: 0, moved: 0, id: -1 };
     const t0 = performance.now();
 
-    const size = () => { const r = wrap.getBoundingClientRect(); dpr = Math.min(window.devicePixelRatio || 1, 2.5); w = r.width; h = r.height; canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    // Layout size, not the on-screen box: the two differ when the page is magnified, and everything
+    // here is drawn in layout pixels. The magnification goes into the pixel ratio instead, so it stays sharp.
+    const size = () => { w = wrap.clientWidth; h = wrap.clientHeight; const mag = w ? wrap.getBoundingClientRect().width / w : 1; dpr = Math.min((window.devicePixelRatio || 1) * mag, 3); canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
       const baseR = Math.min(w * 0.46, h * 0.43) || 1; zoom.current.fit = clamp((0.4 * Math.min(w, h)) / (Math.sin(Math.min(start.spread + 0.1, Math.PI / 2)) * baseR), 1, 2.6); if (!zoomNow) zoomNow = zoom.current.fit; };
     const ro = new ResizeObserver(size); ro.observe(wrap); size();
 
@@ -175,11 +177,11 @@ export function NetworkGlobe({ places, arcs, home, unplaced = 0, heightClass = "
     };
     raf = requestAnimationFrame(draw);
 
-    const pick = (e: PointerEvent) => { const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top; let best: Hit | null = null, d = Infinity; for (const hit of hits) { const q = Math.hypot(hit.x - x, hit.y - y); if (q < hit.r && q < d) { best = hit; d = q; } } return best; };
+    const pick = (e: PointerEvent) => { const b = canvas.getBoundingClientRect(), k = b.width ? w / b.width : 1, x = (e.clientX - b.left) * k, y = (e.clientY - b.top) * k; let best: Hit | null = null, d = Infinity; for (const hit of hits) { const q = Math.hypot(hit.x - x, hit.y - y); if (q < hit.r && q < d) { best = hit; d = q; } } return best; };
     const down = (e: PointerEvent) => { drag.on = true; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0; drag.id = e.pointerId; canvas.setPointerCapture(e.pointerId); };
     const move = (e: PointerEvent) => {
       if (drag.on) {
-        const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
+        const b = canvas.getBoundingClientRect(), k = b.width ? w / b.width : 1, dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k; drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
         base.lng -= (dx / R) * 57.3; base.lat = clamp(base.lat + (dy / R) * 57.3, -70, 70); goal = null;
         if (drag.moved > 4) { canvas.style.cursor = "grabbing"; setHover(null); }
         return;
@@ -199,7 +201,7 @@ export function NetworkGlobe({ places, arcs, home, unplaced = 0, heightClass = "
 
   return (
     <div className={cn("ink-stage widget relative w-full overflow-hidden lg:flex", heightClass)}>
-      <div ref={wrapRef} className="globe-stage relative h-[min(92vw,460px)] min-w-0 flex-1 lg:h-auto">
+      <div ref={wrapRef} className="globe-stage relative h-[min(92vw,460px)] min-w-0 flex-1 select-none lg:h-auto">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" style={{ touchAction: "pan-y", cursor: "grab" }} aria-hidden="true" />
         <dl className="pointer-events-none absolute left-3 top-3 flex gap-6 rounded-[20px] bg-[#0b1a3a]/60 px-4 py-3 backdrop-blur-sm sm:left-4 sm:top-4 sm:gap-7">
           {[[total, total === 1 ? "person on the map" : "people on the map"], [listed.length, listed.length === 1 ? "city" : "cities"], [open, "open to work"]].map(([v, l]) => (
