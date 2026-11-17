@@ -39,10 +39,20 @@ export function AskDock() {
     return () => { window.removeEventListener("scroll", onScroll); window.clearTimeout(rest); };
   }, []);
 
+  // While you are filling something in, the bar keeps out of the way of the buttons under your hands.
+  const [editing, setEditing] = React.useState(false);
+  React.useEffect(() => {
+    const field = (t: EventTarget | null) => t instanceof HTMLElement && t.matches("input:not([type=checkbox]):not([type=radio]), textarea, select") && !t.closest('[role="dialog"]');
+    const on = (e: FocusEvent) => { if (field(e.target)) setEditing(true); };
+    const off = (e: FocusEvent) => { if (field(e.target)) setEditing(false); };
+    document.addEventListener("focusin", on); document.addEventListener("focusout", off);
+    return () => { document.removeEventListener("focusin", on); document.removeEventListener("focusout", off); };
+  }, []);
+
   if (pathname === "/overview") return null; // Home has the full composer.
   const q = list[i % list.length];
   return (
-    <div className="ask-dock" data-away={away || undefined}>
+    <div className="ask-dock" data-away={away || editing || undefined}>
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette", { detail: { q } }))} aria-label={`Ask your network. For example: ${q}`} className="ask-dock-bar group">
         <span className="ai-orb" aria-hidden="true" />
         <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left"><span className="flex-none font-semibold text-ink">Ask</span><span key={q} className="rise-in min-w-0 truncate text-ink-muted">{q}</span></span>
