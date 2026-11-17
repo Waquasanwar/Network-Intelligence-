@@ -88,7 +88,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
   const topCaps = useMemo(() => {
     const seen = new Map<string, { label: string; n: number }>();
     for (const p of people) for (const c of p.capabilities ?? []) { const k = c.trim().toLowerCase(); if (!k) continue; const e = seen.get(k); if (e) e.n += 1; else seen.set(k, { label: c.trim(), n: 1 }); }
-    return [...seen.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, compact ? 4 : 6).map(([key, v]) => ({ key, label: v.label }));
+    return [...seen.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, compact ? 3 : 4).map(([key, v]) => ({ key, label: v.label }));
   }, [people, compact]);
   const degree = useMemo(() => {
     const d = new Map<string, number>();
@@ -302,7 +302,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
           <div className="pointer-events-auto flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
             {topCaps.length ? (
               <>
-                <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>Everyone</button>
+                <button type="button" onClick={() => { setCap(null); setFresh(false); }} aria-pressed={cap === null && !fresh} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null && !fresh ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>Everyone</button>
                 {stats.fresh ? <button type="button" onClick={() => setFresh(!fresh)} aria-pressed={fresh} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", fresh ? "border-amber bg-amber text-[#2b1d00] font-semibold" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}><span className="orbit-bud-key" aria-hidden="true" /> New this month</button> : null}
                 {topCaps.map((c) => (
                   <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === c.key ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>{c.label}</button>
