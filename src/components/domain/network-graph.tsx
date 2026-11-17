@@ -12,9 +12,14 @@ export type GNode = {
   band?: string; vouchedBy?: number; capabilities?: string[]; city?: string | null;
   availability?: string; availabilityTone?: "teal" | "amber" | "neutral"; open?: boolean;
   member?: boolean; screened?: boolean; roles?: GRole[];
+  /** Days since they were added. Under 30 counts as new growth. */
+  addedDays?: number;
 };
 export type GLink = { source: string; target: string; worked: boolean };
 
+/** Added within this many days counts as growth. */
+const FRESH_DAYS = 30;
+const isFresh = (n: GNode) => n.addedDays != null && n.addedDays < FRESH_DAYS;
 const TRUSTED = 60; // the "trusted" band and above — see lib/trust.ts
 const initials = (name: string) => name.split(/\s+/).map((s) => s[0]).join("").slice(0, 2).toUpperCase();
 const shortName = (name: string) => { const [first, ...rest] = name.split(/\s+/); return rest.length ? `${first} ${rest[rest.length - 1][0]}.` : first; };
@@ -56,6 +61,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
   const [hover, setHover] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [cap, setCap] = useState<string | null>(null);
+  const [fresh, setFresh] = useState(false);
   const clock = useRef(0);                                   // seconds of drift so far; frozen while you inspect someone
   const nodeEls = useRef(new Map<string, HTMLButtonElement>());
   const linkEls = useRef(new Map<number, SVGPathElement>());
@@ -72,7 +78,13 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
 
   const hub = useMemo(() => nodes.find((n) => n.hub) ?? null, [nodes]);
   const people = useMemo(() => nodes.filter((n) => !n.hub), [nodes]);
-  const stats = useMemo(() => ({ total: people.length, trusted: people.filter((n) => n.trust >= TRUSTED).length, open: people.filter((n) => n.open).length }), [people]);
+  const stats = useMemo(() => ({ total: people.length, trusted: people.filter((n) => n.trust >= TRUSTED).length, open: people.filter((n) => n.open).length, fresh: people.filter(isFresh).length }), [people]);
+  // People added in each of the last six months, oldest first: where the network has been growing.
+  const growth = useMemo(() => {
+    const now = new Date(), months = Array.from({ length: 6 }, (_, i) => ({ label: new Date(now.getFullYear(), now.getMonth() - (5 - i), 1).toLocaleDateString("en-GB", { month: "short" }), n: 0 }));
+    for (const p of people) { if (p.addedDays == null) continue; const d = new Date(now.getTime() - p.addedDays * 86_400_000), back = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth(); if (back >= 0 && back < 6) months[5 - back].n++; }
+    return months;
+  }, [people]);
   const topCaps = useMemo(() => {
     const seen = new Map<string, { label: string; n: number }>();
     for (const p of people) for (const c of p.capabilities ?? []) { const k = c.trim().toLowerCase(); if (!k) continue; const e = seen.get(k); if (e) e.n += 1; else seen.set(k, { label: c.trim(), n: 1 }); }
@@ -181,7 +193,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
   const signals = useMemo(() => { const step = Math.max(1, Math.ceil(links.length / 16)); return links.map((_, i) => i).filter((i) => i % step === 0); }, [links]);
   // Names sit beside the people you know best; everyone else shows theirs on hover.
   const showNames = !layout?.narrow;
-  const matches = (n: GNode) => !cap || (n.capabilities ?? []).some((c) => c.trim().toLowerCase() === cap);
+  const matches = (n: GNode) => (!cap || (n.capabilities ?? []).some((c) => c.trim().toLowerCase() === cap)) && (!fresh || isFresh(n));
   const lit = (id: string) => !focus || id === focus || neighbours.get(focus)?.has(id);
 
   const card = selectedNode ? <PersonCard n={selectedNode} connections={degree.get(selectedNode.id) ?? 0} onClose={() => setSelected(null)} /> : null;
@@ -243,7 +255,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
               const named = showNames && (p.ring === 0 || active);
               return (
                 <button
-                  key={p.id} type="button" aria-label={`${p.name}, trust ${Math.round(p.trust)}`} aria-pressed={selected === p.id}
+                  key={p.id} type="button" aria-label={`${p.name}, trust ${Math.round(p.trust)}${isFresh(p) ? ", added this month" : ""}`} aria-pressed={selected === p.id}
                   ref={(el) => { if (el) nodeEls.current.set(p.id, el); else nodeEls.current.delete(p.id); }}
                   onClick={(e) => { e.stopPropagation(); setSelected(selected === p.id ? null : p.id); }}
                   onPointerEnter={() => setHover(p.id)} onPointerLeave={() => setHover(null)} onFocus={() => setHover(p.id)} onBlur={() => setHover(null)}
@@ -252,6 +264,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
                 >
                   <span className="node-in relative block" style={{ width: dot, height: dot, animationDelay: `${Math.min(i * 14, 600)}ms` }}>
                     {/* Lights up as the wave from the centre reaches this person's circle. */}
+                    {isFresh(p) ? <span className="orbit-bud" aria-hidden="true" /> : null}
                     <span className={cn("orbit-glow", p.ring === 0 ? "is-near" : p.ring === 2 ? "is-far" : "")} style={{ animationDelay: `${beatDelay(layout.scale[p.ring]).toFixed(2)}s` }} aria-hidden="true" />
                     <span className={cn("orbit-dot absolute inset-0 grid place-items-center rounded-full font-semibold leading-none transition-transform duration-200 group-hover:scale-[1.18]", trusted || p.ring === 0 ? "is-mint" : p.ring === 1 ? "is-white" : "is-faint", active && "scale-[1.18]", selected === p.id && "is-selected")} style={{ fontSize: Math.max(8.5, Math.round(dot * 0.36)) }}>{dot >= 22 ? initials(p.name) : ""}</span>
                     {p.open ? <span className="orbit-ping absolute -right-[2px] -bottom-[2px] h-[10px] w-[10px] rounded-full bg-coral ring-2 ring-surface" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
@@ -265,7 +278,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
               <div className="pointer-events-none absolute z-[70] -translate-x-1/2 -translate-y-full rounded-[14px] bg-surface text-ink px-3 py-2 shadow-[var(--shadow-pop)]" style={{ left: Math.min(Math.max(hoveredAt.x, 130), (box?.w ?? 0) - 130), top: hoveredAt.y - (hovered.size * hoveredAt.k) / 2 - 10 }}>
                 <div className="text-[12.5px] font-semibold whitespace-nowrap">{hovered.name}</div>
                 {hovered.headline ? <div className="text-[11.5px] text-ink-muted max-w-[230px] truncate">{hovered.headline}</div> : null}
-                <div className="text-[11px] text-ink-faint mt-1">Trust {Math.round(hovered.trust)} · {RINGS[hovered.ring].label.toLowerCase()}{hovered.roles?.length ? ` · fits ${hovered.roles.length} open role${hovered.roles.length === 1 ? "" : "s"}` : ""}</div>
+                <div className="text-[11px] text-ink-faint mt-1">Trust {Math.round(hovered.trust)} · {RINGS[hovered.ring].label.toLowerCase()}{hovered.roles?.length ? ` · fits ${hovered.roles.length} open role${hovered.roles.length === 1 ? "" : "s"}` : ""}{isFresh(hovered) ? ` · added ${hovered.addedDays === 0 ? "today" : `${hovered.addedDays} day${hovered.addedDays === 1 ? "" : "s"} ago`}` : ""}</div>
               </div>
             ) : null}
           </>
@@ -273,7 +286,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
 
         {!compact ? (
           <dl className="pointer-events-none absolute left-6 top-5 flex gap-7">
-            {[[stats.total, "in the network"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
+            {[[stats.total, "in the network"], [`+${stats.fresh}`, "added in 30 days"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
               <div key={String(l)}>
                 <dd className="font-display num-grad text-[26px] leading-none">{v}</dd>
                 <dt className="text-[11.5px] text-ink-muted mt-1.5">{l}</dt>
@@ -290,6 +303,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
             {topCaps.length ? (
               <>
                 <button type="button" onClick={() => setCap(null)} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>Everyone</button>
+                {stats.fresh ? <button type="button" onClick={() => setFresh(!fresh)} aria-pressed={fresh} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", fresh ? "border-amber bg-amber text-[#2b1d00] font-semibold" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}><span className="orbit-bud-key" aria-hidden="true" /> New this month</button> : null}
                 {topCaps.map((c) => (
                   <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === c.key ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>{c.label}</button>
                 ))}
@@ -301,6 +315,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
             <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-white h-3 w-3 rounded-full" /> known</span>
             <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-faint h-2 w-2 rounded-full" /> new</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-coral" /> open to work</span>
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-bud-key" /> new this month</span>
           </div>
         </div>
       </div>
@@ -318,7 +333,19 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
                   </li>
                 ))}
               </ul>
-              <p className="text-[12.5px] text-ink-muted mt-6 pt-5 border-t border-line leading-[1.5]">Click anyone to see why you&apos;d trust them, whether they&apos;re free, and the open roles they fit. Hover to trace who introduced them.</p>
+              <div className="mt-6 pt-5 border-t border-line">
+                <div className="flex items-baseline justify-between gap-3"><span className="label-caps text-ink-faint">Growth</span><span className="text-[12px] text-ink-muted"><b className="font-display text-[18px] font-normal text-ink">+{stats.fresh}</b> in 30 days</span></div>
+                <div className="mt-3 flex h-[58px] items-end gap-1.5" role="img" aria-label={`People added in each of the last six months, oldest first: ${growth.map((m) => `${m.label} ${m.n}`).join(", ")}`}>
+                  {growth.map((m, i) => { const top = Math.max(1, ...growth.map((x) => x.n)); return (
+                    <div key={m.label + i} className="flex h-full flex-1 flex-col justify-end" title={`${m.label}: ${m.n}`}>
+                      <span className="w-full rounded-t-[5px] rounded-b-[2px]" style={{ height: m.n ? `${Math.max(14, (m.n / top) * 100)}%` : "3px", background: !m.n ? "var(--color-line)" : i === 5 ? "var(--color-amber)" : "#7ee3bc" }} />
+                    </div>
+                  ); })}
+                </div>
+                <div className="mt-1.5 flex justify-between text-[11px] text-ink-faint">{growth.map((m, i) => <span key={m.label + i} className="flex-1 text-center">{m.label}</span>)}</div>
+                <p className="mt-2 text-[12px] leading-[1.45] text-ink-muted">People added each month. Anyone added in the last 30 days carries a gold ring on the map.</p>
+              </div>
+              <p className="text-[12.5px] text-ink-muted mt-5 pt-5 border-t border-line leading-[1.5]">Click anyone to see why you&apos;d trust them, whether they&apos;re free, and the open roles they fit. Hover to trace who introduced them.</p>
             </div>
           )}
         </aside>

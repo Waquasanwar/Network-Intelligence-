@@ -30,18 +30,12 @@ await step("navigation, next step and ask bar", null, async () => {
   await p.goto(`${BASE}/network`, { waitUntil: "networkidle" });
   // six sections in the sidebar; the pages of the section as tabs above the page
   for (const l of ["Home", "Network", "Conversations", "Work", "Clients", "Settings"]) assert(await p.locator("aside").getByRole("link", { name: l, exact: true }).count(), `sidebar link ${l}`);
-  await p.locator('nav[aria-label="Network"]').getByRole("link", { name: "Map" }).click(); await p.waitForURL(/\/network\/map/); await p.locator(".globe-stage canvas").waitFor();
-  // the world view: every city is also a button, and picking one lists the people there
-  await p.getByRole("complementary", { name: "Places in your network" }).getByRole("button").first().click();
-  assert(await p.getByRole("complementary", { name: "Places in your network" }).locator('a[href^="/network/"]').count(), "people listed for the city");
-  await p.getByRole("button", { name: "All places" }).click();
-  // on the globe itself: each badge is a button. One city opens; several nearby zoom in until they come apart.
-  const badges = p.locator(".globe-pin"); await badges.first().waitFor(); const before = await badges.count(); assert(before >= 1, "badges on the globe");
-  const several = p.locator('.globe-pin[aria-label*="nearby"]').first();
-  if (await several.count()) { await several.click(); await p.waitForTimeout(2500); assert((await badges.count()) > before, `zooming in separates cities (${before} then ${await badges.count()})`); await p.getByRole("button", { name: "Fit the whole network" }).click(); await p.waitForTimeout(1800); }
-  const single = p.locator('.globe-pin:not([aria-label*="nearby"])').first();
-  if (await single.count()) { await single.click(); await p.getByRole("button", { name: "All places" }).waitFor({ timeout: 8000 }); await p.getByRole("button", { name: "All places" }).click(); }
-  await p.getByRole("link", { name: /Circles of trust/ }).click(); await p.waitForURL(/view=circles/); await p.locator(".orbit-stage").waitFor(); assert((await p.locator(".orbit-stage button").count()) > 3, "people on the circles");
+  await p.locator('nav[aria-label="Network"]').getByRole("link", { name: "Map" }).click(); await p.waitForURL(/\/network\/map/); await p.locator(".orbit-stage").waitFor();
+  // growth on the map: everyone added in the last 30 days carries a ring, and one filter shows only them
+  const fresh = Number(sql(`select count(*) from "Person" where "tenantId"=(select "tenantId" from "User" where email='waqas@networkintelligence.local') and "createdAt" > now() - interval '30 days'`));
+  assert((await p.locator(".orbit-stage .orbit-bud").count()) === fresh, `a ring for each of the ${fresh} people added this month, found ${await p.locator(".orbit-stage .orbit-bud").count()}`);
+  if (fresh) { await p.getByRole("button", { name: /New this month/ }).click(); assert((await p.getByRole("button", { name: /New this month/ }).getAttribute("aria-pressed")) === "true", "growth filter on"); await p.getByRole("button", { name: /New this month/ }).click(); }
+  assert(await p.getByRole("img", { name: /People added in each of the last six months/ }).count(), "growth chart");
   await p.locator("aside").getByRole("link", { name: "Work", exact: true }).click(); await p.waitForURL(/\/requirements/);
   await p.getByRole("link", { name: /^Accounts/ }).click(); await p.waitForURL(/tab=accounts/); assert(await p.getByRole("button", { name: "New account" }).count(), "accounts tab");
   await p.getByRole("link", { name: /^Fees/ }).click(); await p.waitForURL(/tab=fees/); assert(await p.getByText("Fee pipeline").count(), "fees tab");

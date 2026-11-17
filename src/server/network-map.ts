@@ -22,7 +22,7 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
     prisma.person.findMany({
       where: { tenantId: user.tenantId },
       select: {
-        id: true, firstName: true, lastName: true, preferredName: true, headline: true, memberSince: true,
+        id: true, firstName: true, lastName: true, preferredName: true, headline: true, memberSince: true, createdAt: true,
         capabilities: true, sectors: true, seniority: true, engagementPreferences: true, primaryCity: true, primaryCountry: true, targetLocations: true,
         rateExpectation: true, salaryExpectation: true, workRights: true, relocationInterest: true, attributes: true,
         screeningStatus: true, screenedAt: true, availabilityStatus: true, availabilityConfirmedAt: true, nextCheckDate: true,
@@ -86,6 +86,7 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
       capabilities: p.capabilities.slice(0, 6), city: p.primaryCity ?? p.primaryCountry ?? null,
       availability: AVAILABILITY_LABELS[p.availabilityStatus], availabilityTone: p.availabilityStatus === "NEEDS_REFRESH" || freshness !== "fresh" ? "amber" : open ? "teal" : "neutral", open,
       member: !!p.memberSince, screened: p.screeningStatus === "APPROVED" || !!p.screenedAt,
+      addedDays: Math.max(0, Math.floor((now.getTime() - p.createdAt.getTime()) / 86_400_000)),
       roles: (rolesFor.get(p.id) ?? []).sort((a, b) => (a.tier === b.tier ? b.fit - a.fit : a.tier === "meets" ? -1 : 1)).slice(0, 4),
     });
 
