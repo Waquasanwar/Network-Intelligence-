@@ -35,6 +35,12 @@ await step("navigation, next step and ask bar", null, async () => {
   await p.getByRole("complementary", { name: "Places in your network" }).getByRole("button").first().click();
   assert(await p.getByRole("complementary", { name: "Places in your network" }).locator('a[href^="/network/"]').count(), "people listed for the city");
   await p.getByRole("button", { name: "All places" }).click();
+  // on the globe itself: each badge is a button. One city opens; several nearby zoom in until they come apart.
+  const badges = p.locator(".globe-pin"); await badges.first().waitFor(); const before = await badges.count(); assert(before >= 1, "badges on the globe");
+  const several = p.locator('.globe-pin[aria-label*="nearby"]').first();
+  if (await several.count()) { await several.click(); await p.waitForTimeout(2500); assert((await badges.count()) > before, `zooming in separates cities (${before} then ${await badges.count()})`); await p.getByRole("button", { name: "Fit the whole network" }).click(); await p.waitForTimeout(1800); }
+  const single = p.locator('.globe-pin:not([aria-label*="nearby"])').first();
+  if (await single.count()) { await single.click(); await p.getByRole("button", { name: "All places" }).waitFor({ timeout: 8000 }); await p.getByRole("button", { name: "All places" }).click(); }
   await p.getByRole("link", { name: /Circles of trust/ }).click(); await p.waitForURL(/view=circles/); await p.locator(".orbit-stage").waitFor(); assert((await p.locator(".orbit-stage button").count()) > 3, "people on the circles");
   await p.locator("aside").getByRole("link", { name: "Work", exact: true }).click(); await p.waitForURL(/\/requirements/);
   await p.getByRole("link", { name: /^Accounts/ }).click(); await p.waitForURL(/tab=accounts/); assert(await p.getByRole("button", { name: "New account" }).count(), "accounts tab");
