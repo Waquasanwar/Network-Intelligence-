@@ -104,7 +104,7 @@ export function EmptyRow({ children }: { children: ReactNode }) {
 }
 
 export function Kpi({ label, value, hint, tone }: { label: string; value: ReactNode; hint?: string; tone?: "danger" | "warn" | "ok" | "accent" }) {
-  const hue = tone === "danger" ? "var(--danger)" : tone === "warn" ? "var(--warn)" : tone === "ok" ? "var(--ok)" : tone === "accent" ? "var(--accent)" : "var(--section)";
+  const hue = tone === "danger" ? "var(--danger)" : tone === "warn" ? "var(--warn)" : tone === "ok" ? "var(--ok)" : tone === "accent" ? "var(--accent-text)" : "var(--ink)";
   return (
     <div className="card kpi px-4 py-3.5" style={{ ["--hue" as string]: hue }}>
       <div className="label">{label}</div>

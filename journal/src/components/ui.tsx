@@ -28,7 +28,7 @@ export function TypeBadge({ type, short }: { type?: EntryType; short?: boolean }
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)*0.6)] px-1.5 py-0.5 text-xs font-medium whitespace-nowrap"
-      style={{ background: `color-mix(in oklab, ${c} 15%, var(--surface))`, color: `color-mix(in oklab, ${c}, var(--ink) 45%)` }}
+      style={{ background: "var(--surface-2)", color: "var(--ink-2)" }}
     >
       <TypeDot type={t} />
       {short ? t.split(" ")[0] : t}
@@ -39,10 +39,10 @@ export function TypeBadge({ type, short }: { type?: EntryType; short?: boolean }
 export function Chip({ children, tone = "plain", title }: { children: ReactNode; tone?: "plain" | "accent" | "danger" | "ok" | "warn" | "guess"; title?: string }) {
   const tones = {
     plain: "bg-surface-2/80 text-ink-2",
-    accent: "bg-accent-soft text-accent-fg",
-    danger: "bg-danger/12 text-danger",
-    ok: "bg-ok/12 text-ok",
-    warn: "bg-warn/12 text-warn",
+    accent: "bg-surface-2 text-accent-fg",
+    danger: "bg-surface-2 text-danger font-medium",
+    ok: "bg-surface-2 text-ok",
+    warn: "bg-surface-2 text-warn",
     guess: "guess text-ink-2",
   };
   return (
@@ -69,7 +69,7 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 export function Stat({ label, value, tone, hue }: { label: string; value: ReactNode; tone?: "danger" | "accent"; hue?: string }) {
-  const h = hue ?? (tone === "danger" ? "var(--danger)" : tone === "accent" ? "var(--accent)" : "var(--ink-3)");
+  const h = hue ?? (tone === "danger" ? "var(--danger)" : tone === "accent" ? "var(--accent-text)" : "var(--ink)");
   return (
     <div className="card kpi lift px-4 py-3.5" style={{ ["--hue" as string]: h }}>
       <div className="kpi-value num text-[1.75rem] leading-none font-medium">{value}</div>

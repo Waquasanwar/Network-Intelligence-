@@ -31,23 +31,27 @@
   --mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
   /* Paper */
-  --n-bg: #f3f5f7; /* snow grey page */
+  --n-bg: #f4f6f7; /* clean light grey page */
   --n-surface: #ffffff; /* sheet */
-  --n-surface-2: #eef1f4; /* inset / chip */
-  --n-line: #dce1e6; /* hairline rule */
-  --ink: #1f2429; /* graphite */
-  --ink-2: #4f5862;
-  --ink-3: #87909a;
+  --n-surface-2: #f0f3f5; /* inset / chip */
+  --n-line: #e0e5e9; /* hairline rule */
+  --ink: #1d2327; /* graphite */
+  --ink-2: #4c565e;
+  --ink-3: #848e96;
+
+  /* Signal colours, each with one job */
+  --mint: #2ed3a3; /* you are here, done, connected */
+  --orange: #ff6a1f; /* needs you: overdue, stuck, urgent */
 
   /* The binder spine (sidebar) stays graphite in both modes. */
-  --spine: #272d39; /* graphite with an ink-blue undertone */
-  --spine-2: #323a4a;
-  --spine-ink: #e9edf1;
-  --spine-ink-2: #9aa3ad;
+  --spine: #2f373d; /* gunmetal */
+  --spine-2: #3a434a;
+  --spine-ink: #eef2f4;
+  --spine-ink-2: #a3adb5;
 
-  --danger: #c8372d;
-  --ok: #1b8a5a;
-  --warn: #b86e00;
+  --danger: #e2560f; /* electric orange, darkened for text on white */
+  --ok: #0f8f6a; /* mint, darkened for text on white */
+  --warn: #a86500;
   --shadow: 0 1px 2px rgb(31 36 41 / 5%), 0 8px 20px -14px rgb(31 36 41 / 22%);
   --shadow-lift: 0 2px 4px rgb(31 36 41 / 6%), 0 16px 32px -18px rgb(31 36 41 / 30%);
 
@@ -64,10 +68,10 @@
   --ink: #e9edf1;
   --ink-2: #b3bbc4;
   --ink-3: #818a94;
-  --spine: #151923;
-  --spine-2: #212737;
-  --danger: #ff7a6e;
-  --ok: #48c98c;
+  --spine: #1d2328;
+  --spine-2: #2a3238;
+  --danger: #ff7b38;
+  --ok: #3ddbaa;
   --warn: #f0a63a;
   --shadow: 0 1px 2px rgb(0 0 0 / 25%), 0 10px 24px -16px rgb(0 0 0 / 60%);
   --shadow-lift: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 36px -18px rgb(0 0 0 / 70%);
@@ -84,10 +88,10 @@
     --ink: #e9edf1;
     --ink-2: #b3bbc4;
     --ink-3: #818a94;
-    --spine: #151923;
-    --spine-2: #212737;
-    --danger: #ff7a6e;
-    --ok: #48c98c;
+    --spine: #1d2328;
+    --spine-2: #2a3238;
+    --danger: #ff7b38;
+    --ok: #3ddbaa;
     --warn: #f0a63a;
     --shadow: 0 1px 2px rgb(0 0 0 / 25%), 0 10px 24px -16px rgb(0 0 0 / 60%);
     --shadow-lift: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 36px -18px rgb(0 0 0 / 70%);
@@ -103,7 +107,7 @@
   --surface: color-mix(in oklab, var(--brand) calc(var(--tint) * 0.4), var(--n-surface));
   --surface-2: color-mix(in oklab, var(--brand) var(--tint), var(--n-surface-2));
   --line: color-mix(in oklab, var(--brand) var(--tint), var(--n-line));
-  --accent-soft: color-mix(in oklab, var(--accent) 11%, var(--surface));
+  --accent-soft: var(--surface-2);
   --accent-text: color-mix(in oklab, var(--accent), var(--ink) 20%);
   --accent-2: var(--accent);
   --ring: color-mix(in oklab, var(--accent) 28%, transparent);
@@ -370,13 +374,12 @@
   .card.lift:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lift);
-    border-color: color-mix(in oklab, var(--section) 35%, var(--line));
+    border-color: color-mix(in oklab, var(--ink) 18%, var(--line));
   }
 
   /* The current section's colour washes the top of the page, like a coloured divider sheet. */
   .section-wash {
-    background-image: linear-gradient(to bottom, color-mix(in oklab, var(--section) 12%, transparent), transparent 300px);
-    background-repeat: no-repeat;
+    background-image: none;
   }
 
   /* Page titles carry the section's index-tab colour. */
@@ -396,23 +399,18 @@
 
   /* Tinted figure tiles: the tint says what the number means. */
   .kpi {
-    background: color-mix(in oklab, var(--hue) 10%, var(--surface));
-    border-color: color-mix(in oklab, var(--hue) 24%, var(--line));
+    background: var(--surface);
   }
   .kpi .kpi-value {
-    color: color-mix(in oklab, var(--hue), var(--ink) 30%);
+    color: var(--hue, var(--ink));
   }
 
   /* Index-tab colour marker on the spine. */
   .tab-mark {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 0.15rem;
-    background: var(--tab);
-    opacity: 0.9;
+    display: none;
   }
   .tab[aria-current="page"]::before {
-    background: var(--tab, var(--accent));
+    background: var(--mint);
   }
 }
 
@@ -440,7 +438,7 @@ main .card:nth-child(n + 7) { animation-delay: 240ms; }
   position: relative;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    radial-gradient(120% 60% at 0% 0%, rgb(255 255 255 / 7%), transparent 60%),
+    radial-gradient(120% 60% at 0% 0%, rgb(255 255 255 / 6%), transparent 60%),
     linear-gradient(180deg, var(--spine-top) 0%, var(--spine) 45%, var(--spine-bottom) 100%);
   box-shadow:
     inset -1px 0 0 rgb(255 255 255 / 7%),
@@ -448,17 +446,17 @@ main .card:nth-child(n + 7) { animation-delay: 240ms; }
     6px 0 28px -14px rgb(15 18 22 / 45%);
 }
 :root {
-  --spine-top: #374055;
-  --spine-bottom: #191d27;
+  --spine-top: #3b454c;
+  --spine-bottom: #262d32;
 }
 :root[data-mode="dark"] {
-  --spine-top: #222a3b;
-  --spine-bottom: #0d1017;
+  --spine-top: #283036;
+  --spine-bottom: #14181b;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-mode="system"] {
-    --spine-top: #222a3b;
-    --spine-bottom: #0d1017;
+    --spine-top: #283036;
+    --spine-bottom: #14181b;
   }
 }
 .spine .tab:hover {
@@ -469,9 +467,9 @@ main .card:nth-child(n + 7) { animation-delay: 240ms; }
   box-shadow: -6px 2px 14px -8px rgb(0 0 0 / 45%);
 }
 .spine-logo {
-  background: linear-gradient(160deg, color-mix(in oklab, var(--accent), white 18%), var(--accent) 55%, color-mix(in oklab, var(--accent), black 18%));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%), 0 3px 8px -2px rgb(0 0 0 / 45%);
-  color: var(--accent-ink);
+  background: linear-gradient(160deg, color-mix(in oklab, var(--mint), white 15%), var(--mint));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%), 0 3px 8px -2px rgb(0 0 0 / 40%);
+  color: #1d2327;
 }
 .spine .btn-primary {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), 0 4px 12px -4px rgb(0 0 0 / 50%);

@@ -49,7 +49,7 @@ export function Bottlenecks({ entries, projects, people, today }: { entries: Ent
                   <tr key={x.who}>
                     <td className="px-4 py-2.5 font-medium text-ink">
                       {x.who}
-                      {x.stuck > 0 && <span className="ml-2 rounded bg-danger/12 px-1.5 py-0.5 text-[0.68rem] whitespace-nowrap text-danger">{x.stuck} stuck</span>}
+                      {x.stuck > 0 && <span className="ml-2 rounded bg-surface-2 font-medium px-1.5 py-0.5 text-[0.68rem] whitespace-nowrap text-danger">{x.stuck} stuck</span>}
                     </td>
                     <td className="px-2 py-2.5">
                       <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export function Bottlenecks({ entries, projects, people, today }: { entries: Ent
                 <span className="num text-right text-xs text-ink-3">{s.count ? `${s.avgDays}d` : ""}</span>
               </div>
             ))}
-            <p className="pt-1 text-xs text-ink-3">Bar colour shows average age at that stage: amber over a week, red over two.</p>
+            <p className="pt-1 text-xs text-ink-3">Bar colour shows average age at that stage: amber over a week, orange over two.</p>
           </div>
         </Section>
       </div>

@@ -99,7 +99,7 @@ export function StartGuide({ checks, mode, origin }: { checks: Check[]; mode: "n
           <p className="font-medium text-ink">{done === checks.length ? "All set. Your journal is live." : mode === "demo" ? "Running on sample data until Notion is connected." : "Connected to Notion. A few settings left."}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {checks.map((c) => (
-              <span key={c.key} title={c.why} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.done ? "bg-ok/12 text-ok" : "guess text-ink-3"}`}>
+              <span key={c.key} title={c.why} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.done ? "bg-surface-2 text-ok" : "guess text-ink-3"}`}>
                 {c.done && <Icon name="check" className="size-3" />}
                 {c.label}
               </span>

@@ -96,11 +96,11 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
           <div className="spine-divider" />
           <Link href="/start" aria-current={active("/start") ? "page" : undefined} className="flex items-center justify-between rounded-[var(--radius)] px-1 py-1 text-spine-ink hover:text-white">
             <span className="flex items-center gap-2"><Icon name="rocket" className="size-4" /> Get started</span>
-            <span className={`num text-[0.7rem] ${setupDone === setupTotal ? "text-ok" : "text-warn"}`}>{setupDone}/{setupTotal}</span>
+            <span className={`num text-[0.7rem] ${setupDone === setupTotal ? "text-[var(--mint)]" : "text-[var(--orange)]"}`}>{setupDone}/{setupTotal}</span>
           </Link>
           <QuickTheme />
           <p className="flex items-start gap-2 leading-snug">
-            <span className={`mt-1 size-1.5 shrink-0 rounded-full ${mode === "demo" ? "bg-warn" : "bg-ok"}`} />
+            <span className={`mt-1 size-1.5 shrink-0 rounded-full ${mode === "demo" ? "bg-[var(--orange)]" : "bg-[var(--mint)]"}`} />
             {mode === "demo" ? "Sample data, not saved. Add NOTION_TOKEN to connect your Notion." : "Saving to Notion"}
           </p>
           {authed && (
@@ -111,7 +111,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
         </div>
       </aside>
 
-      <main className="section-wash w-full flex-1" style={{ ["--section" as string]: sectionColor(path) }}>
+      <main className="section-wash w-full flex-1" style={{ ["--section" as string]: "var(--accent)" }}>
        <div className="mx-auto w-full max-w-5xl px-4 pt-4 pb-28 md:px-10 md:pt-9 md:pb-12">
         <div className="spine -mx-4 -mt-4 mb-5 flex items-center justify-between px-4 py-3 text-spine-ink md:hidden">
           <Link href="/" className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
             aria-current={active(n.href) ? "page" : undefined}
             className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.68rem] ${active(n.href) ? "text-accent-fg" : "text-ink-3"}`}
           >
-            {active(n.href) && <span className="absolute top-0 h-0.5 w-8 rounded-b" style={{ background: n.color }} />}
+            {active(n.href) && <span className="absolute top-0 h-0.5 w-8 rounded-b bg-[var(--mint)]" />}
             <Icon name={n.icon} className="size-5" />
             {n.label}
           </Link>

@@ -73,10 +73,10 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
       <CaptureBox people={people} projects={projects} tags={tags} />
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Link href="/review"><Stat label="To review" value={inbox.length} hue="#e09a12" /></Link>
-        <Stat label="Captured today" value={todays.length} hue="#0f9a86" />
-        <Link href="/plan?view=day"><Stat label="To chase" value={chaseCount} hue="#7b52e8" /></Link>
-        <Link href="/timeline?filter=overdue"><Stat label="Overdue" value={overdue} hue={overdue ? "var(--danger)" : "var(--ok)"} /></Link>
+        <Link href="/review"><Stat label="To review" value={inbox.length} /></Link>
+        <Stat label="Captured today" value={todays.length} hue={todays.length ? "var(--ok)" : undefined} />
+        <Link href="/plan?view=day"><Stat label="To chase" value={chaseCount} tone={chaseCount ? "accent" : undefined} /></Link>
+        <Link href="/timeline?filter=overdue"><Stat label="Overdue" value={overdue} tone={overdue ? "danger" : undefined} /></Link>
       </div>
 
       {mounted && (

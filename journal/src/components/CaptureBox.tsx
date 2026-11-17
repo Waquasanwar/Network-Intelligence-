@@ -6,8 +6,7 @@ import { captureAction } from "@/app/actions";
 import { parseCapture } from "@/lib/parse";
 import { ENTRY_TYPES, type EntryType, type Ref } from "@/lib/schema";
 import { shortDate, todayLocal } from "@/lib/format";
-import { Chip, TYPE_HEX, TypeDot } from "./ui";
-import { inkOn } from "@/lib/theme";
+import { Chip, TypeDot } from "./ui";
 
 const QUICK_TYPES: EntryType[] = ["Note", "Decision", "Request", "Purchase Request", "Service Request", "Question", "Blocker / Risk", "Win"];
 const SHORT: Partial<Record<EntryType, string>> = { "Purchase Request": "Purchase", "Service Request": "Service", "Blocker / Risk": "Blocker" };
@@ -186,14 +185,10 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
             onClick={() => setTypeOverride(t === type && typeOverride ? null : t)}
             aria-pressed={t === type}
             className="rounded-[calc(var(--radius)*0.6)] px-2 py-1 text-xs font-medium transition hover:brightness-95"
-            style={
-              t === type
-                ? { background: TYPE_HEX[t], color: inkOn(TYPE_HEX[t]) }
-                : { background: `color-mix(in oklab, ${TYPE_HEX[t]} 12%, var(--surface))`, color: `color-mix(in oklab, ${TYPE_HEX[t]}, var(--ink) 50%)` }
-            }
+            style={t === type ? { background: "var(--accent)", color: "var(--accent-ink)" } : { background: "var(--surface-2)", color: "var(--ink-2)" }}
             title={t === type && !typeOverride && inferred("type") ? "Guessed from your wording" : undefined}
           >
-            <span className="inline-flex items-center gap-1.5">{t !== type && <TypeDot type={t} />}{SHORT[t] ?? t.split(" ")[0]}</span>
+            <span className="inline-flex items-center gap-1.5"><TypeDot type={t} />{SHORT[t] ?? t.split(" ")[0]}</span>
             {t === type && !typeOverride && inferred("type") && <span className="ml-1 font-mono text-[0.62rem] opacity-70">guessed</span>}
           </button>
         ))}
