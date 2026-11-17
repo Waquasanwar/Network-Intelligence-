@@ -61,7 +61,7 @@ export function QuickTheme() {
         <button
           type="button"
           onClick={() => setTheme({ mode: nextMode[theme.mode] })}
-          className="ml-auto grid size-6 place-items-center rounded-full text-sm text-ink-2 hover:bg-surface-2 hover:text-ink"
+          className="ml-auto grid size-6 place-items-center rounded-[var(--radius)] text-sm text-spine-ink-2 hover:text-spine-ink"
           title={`Theme: ${theme.mode}. Click to switch.`}
           aria-label={`Colour mode: ${theme.mode}. Switch to ${nextMode[theme.mode]}`}
         >
@@ -105,18 +105,18 @@ export function AppearanceSettings() {
           <Options<Mode> label="Mode" value={theme.mode} onChange={(mode) => setTheme({ mode })} options={[["dark", "Dark"], ["light", "Light"], ["system", "System"]]} />
           <Options<Tint> label="Background tint" value={theme.tint} onChange={(tint) => setTheme({ tint })} options={[["off", "Off"], ["subtle", "Subtle"], ["vivid", "Vivid"]]} />
           <Options<Corners> label="Corners" value={theme.corners} onChange={(corners) => setTheme({ corners })} options={[["sharp", "Sharp"], ["soft", "Soft"], ["round", "Round"]]} />
-          <Options<Headings> label="Headings" value={theme.headings} onChange={(headings) => setTheme({ headings })} options={[["sans", "Clean sans"], ["serif", "Serif"]]} />
+          <Options<Headings> label="Headings" value={theme.headings} onChange={(headings) => setTheme({ headings })} options={[["condensed", "Plex Condensed"], ["sans", "Same as text"]]} />
           <Options<Font> label="Body text" value={theme.font} onChange={(font) => setTheme({ font })} options={(Object.keys(FONTS) as Font[]).map((f) => [f, FONTS[f].label])} />
         </div>
 
         {/* Live preview */}
         <aside className="space-y-3 lg:sticky lg:top-6 lg:self-start">
-          <p className="text-xs font-medium tracking-wide text-ink-3 uppercase">Preview</p>
-          <div className="card glow-focus space-y-3 p-4" tabIndex={-1}>
+          <p className="label">Preview</p>
+          <div className="card flagged space-y-3 p-4">
             <div className="flex items-center gap-2">
-              <span className="brand-mark grid size-8 place-items-center rounded-[calc(var(--radius)*0.6)]"><Icon name="logo" /></span>
+              <span className="grid size-8 place-items-center rounded-[var(--radius)] bg-accent text-accent-ink"><Icon name="logo" /></span>
               <span className="font-display text-xl">
-                <span className="text-metal">Good morning</span>
+                Tuesday 17 November
               </span>
             </div>
             <p className="text-sm text-ink-2">Went with vendor B for the migration, cheaper and SOC2 ready.</p>

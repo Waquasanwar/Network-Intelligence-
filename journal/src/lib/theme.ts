@@ -5,7 +5,7 @@ export type Mode = "system" | "light" | "dark";
 export type Tint = "off" | "subtle" | "vivid";
 export type Corners = "sharp" | "soft" | "round";
 export type Font = "sans" | "rounded" | "serif" | "mono";
-export type Headings = "serif" | "sans";
+export type Headings = "condensed" | "sans";
 
 export interface Theme {
   mode: Mode;
@@ -16,33 +16,31 @@ export interface Theme {
   headings: Headings;
 }
 
-// Fresh and light by default: snow white, frosted glass, graphite text and an azure accent.
+// Snow grey paper, graphite ink, azure for action. Set in IBM Plex.
 export const PRESETS: Array<{ name: string; hex: string }> = [
-  { name: "Azure", hex: "#0a84ff" },
-  { name: "Graphite", hex: "#5b6576" },
-  { name: "Mint", hex: "#10b39a" },
-  { name: "Cobalt", hex: "#3d5afe" },
-  { name: "Cyan", hex: "#06b6d4" },
-  { name: "Violet", hex: "#7c5cff" },
-  { name: "Coral", hex: "#ff6b57" },
-  { name: "Amber", hex: "#f59e0b" },
+  { name: "Azure", hex: "#1c6fd6" },
+  { name: "Graphite", hex: "#3d4550" },
+  { name: "Teal", hex: "#0f7d74" },
+  { name: "Cobalt", hex: "#3b4fd8" },
+  { name: "Signal orange", hex: "#d4561c" },
+  { name: "Plum", hex: "#7a3f8f" },
 ];
 
-export const DEFAULT_THEME: Theme = { mode: "light", accent: "#0a84ff", tint: "subtle", corners: "round", font: "sans", headings: "sans" };
+export const DEFAULT_THEME: Theme = { mode: "light", accent: "#1c6fd6", tint: "off", corners: "soft", font: "sans", headings: "condensed" };
 
 export const THEME_COOKIE = "journal_theme";
 
 const TINT: Record<Tint, string> = { off: "0%", subtle: "3%", vivid: "7%" };
-const RADIUS: Record<Corners, string> = { sharp: "0.375rem", soft: "0.75rem", round: "1.125rem" };
+const RADIUS: Record<Corners, string> = { sharp: "0.125rem", soft: "0.375rem", round: "0.75rem" };
 export const FONTS: Record<Font, { label: string; stack: string }> = {
-  sans: { label: "Modern", stack: 'var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
+  sans: { label: "Plex Sans", stack: 'var(--font-plex), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif' },
   rounded: { label: "Rounded", stack: 'ui-rounded, "SF Pro Rounded", "Nunito", "Quicksand", "Varela Round", system-ui, sans-serif' },
   serif: { label: "Editorial", stack: '"Iowan Old Style", "Charter", "Source Serif Pro", ui-serif, Georgia, serif' },
-  mono: { label: "Mono", stack: 'var(--font-mono-face), ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace' },
+  mono: { label: "Plex Mono", stack: 'var(--font-plex-mono), "IBM Plex Mono", ui-monospace, Menlo, monospace' },
 };
 
 export const DISPLAY_FONTS: Record<Headings, { label: string; stack: string }> = {
-  serif: { label: "Serif", stack: 'var(--font-cormorant), "Cormorant Garamond", "Playfair Display", "Iowan Old Style", "Didot", "Bodoni 72", "Charter", Georgia, ui-serif, serif' },
+  condensed: { label: "Plex Condensed", stack: 'var(--font-plex-cond), "IBM Plex Sans Condensed", var(--font)' },
   sans: { label: "Same as text", stack: "var(--font)" },
 };
 
@@ -69,7 +67,7 @@ export function parseTheme(raw: string | undefined | null): Theme {
       tint: t.tint && t.tint in TINT ? t.tint : DEFAULT_THEME.tint,
       corners: t.corners && t.corners in RADIUS ? t.corners : DEFAULT_THEME.corners,
       font: t.font && t.font in FONTS ? t.font : DEFAULT_THEME.font,
-      headings: t.headings === "serif" ? "serif" : "sans",
+      headings: t.headings === "sans" ? "sans" : "condensed",
     };
   } catch {
     return DEFAULT_THEME;

@@ -13,81 +13,82 @@
 }
 
 /* ---------------------------------------------------------------------------------------------
-   Theme inputs, set on <html> from Appearance settings:
-     --brand  accent colour      --brand-ink  text on the accent
-     --tint   how much accent tints neutrals (0%–7%)
-     --radius corner radius      --font / --font-heading  font stacks
-   Everything else derives from these.
+   Work Journal: an operations logbook.
+   Snow grey paper, white sheets, graphite ink and a graphite binder spine; azure only for
+   action and "you are here". Set in IBM Plex (condensed for headings, mono for figures).
+
+   Theme inputs set on <html> from Appearance: --brand, --brand-ink, --tint, --radius,
+   --font, --font-heading. Everything else derives from these.
 --------------------------------------------------------------------------------------------- */
 :root {
-  --brand: #0a84ff;
+  --brand: #1c6fd6;
   --brand-ink: #ffffff;
   --tint: 0%;
-  --radius: 0.625rem;
-  --font: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font);
-  --mono: var(--font-mono-face), ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 0.375rem;
+  --font: var(--font-plex), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-plex-cond), "IBM Plex Sans Condensed", var(--font);
+  --mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
-  /* Light (default): airy snow white, frosted glass and graphite ink */
-  --n-bg: #f6f8fb;
-  --n-surface: #ffffff;
-  --n-surface-2: #f1f4f8;
-  --n-line: #e3e8ef;
-  --ink: #111827;
-  --ink-2: #4b5565;
-  --ink-3: #8b95a5;
-  --danger: #e0364a;
-  --ok: #0f9d6b;
-  --warn: #c26a00;
-  --glass: 62%;
-  --dot: color-mix(in oklch, var(--ink) 6%, transparent);
-  --highlight: color-mix(in oklch, white 80%, transparent);
-  --shadow: 0 1px 2px rgb(16 24 40 / 4%), 0 14px 34px -18px rgb(16 24 40 / 18%);
-  --aurora: 42%;
+  /* Paper */
+  --n-bg: #f3f5f7; /* snow grey page */
+  --n-surface: #ffffff; /* sheet */
+  --n-surface-2: #eef1f4; /* inset / chip */
+  --n-line: #dce1e6; /* hairline rule */
+  --ink: #1f2429; /* graphite */
+  --ink-2: #4f5862;
+  --ink-3: #87909a;
+
+  /* The binder spine (sidebar) stays graphite in both modes. */
+  --spine: #2b3036;
+  --spine-2: #353b42;
+  --spine-ink: #e9edf1;
+  --spine-ink-2: #9aa3ad;
+
+  --danger: #c8372d;
+  --ok: #1b8a5a;
+  --warn: #b86e00;
+  --shadow: 0 1px 0 rgb(31 36 41 / 4%);
 
   --accent: var(--brand);
   --accent-ink: var(--brand-ink);
   color-scheme: light;
 }
 
-/* Dark: jet black with graphite panels and snow-grey text */
 :root[data-mode="dark"] {
-  --n-bg: #13151b;
-  --n-surface: #1c1f27;
-  --n-surface-2: #252a34;
-  --n-line: #313744;
-  --ink: #eef1f6;
-  --ink-2: #b4bbc8;
-  --ink-3: #7f8898;
-  --danger: #ff6b6b;
-  --ok: #3ddc97;
-  --warn: #ffb547;
-  --glass: 66%;
-  --dot: color-mix(in oklch, var(--ink) 6%, transparent);
-  --highlight: color-mix(in oklch, white 7%, transparent);
-  --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 18px 40px -20px rgb(0 0 0 / 55%);
-  --aurora: 24%;
-  --accent: color-mix(in oklch, var(--brand) 88%, white);
+  --n-bg: #1a1e23;
+  --n-surface: #22272d;
+  --n-surface-2: #2b3138;
+  --n-line: #363d45;
+  --ink: #e9edf1;
+  --ink-2: #b3bbc4;
+  --ink-3: #818a94;
+  --spine: #14171b;
+  --spine-2: #1f2328;
+  --danger: #ff7a6e;
+  --ok: #48c98c;
+  --warn: #f0a63a;
+  --shadow: 0 1px 0 rgb(0 0 0 / 25%);
+  --accent: color-mix(in oklch, var(--brand) 82%, white);
+  --accent-ink: #0e1116;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-mode="system"] {
-    --n-bg: #13151b;
-    --n-surface: #1c1f27;
-    --n-surface-2: #252a34;
-    --n-line: #313744;
-    --ink: #eef1f6;
-    --ink-2: #b4bbc8;
-    --ink-3: #7f8898;
-    --danger: #ff6b6b;
-    --ok: #3ddc97;
-    --warn: #ffb547;
-    --glass: 66%;
-    --dot: color-mix(in oklch, var(--ink) 6%, transparent);
-    --highlight: color-mix(in oklch, white 7%, transparent);
-    --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 18px 40px -20px rgb(0 0 0 / 55%);
-    --aurora: 24%;
-    --accent: color-mix(in oklch, var(--brand) 88%, white);
+    --n-bg: #1a1e23;
+    --n-surface: #22272d;
+    --n-surface-2: #2b3138;
+    --n-line: #363d45;
+    --ink: #e9edf1;
+    --ink-2: #b3bbc4;
+    --ink-3: #818a94;
+    --spine: #14171b;
+    --spine-2: #1f2328;
+    --danger: #ff7a6e;
+    --ok: #48c98c;
+    --warn: #f0a63a;
+    --shadow: 0 1px 0 rgb(0 0 0 / 25%);
+    --accent: color-mix(in oklch, var(--brand) 82%, white);
+    --accent-ink: #0e1116;
     color-scheme: dark;
   }
 }
@@ -98,25 +99,21 @@
   --surface: color-mix(in oklch, var(--brand) calc(var(--tint) * 0.4), var(--n-surface));
   --surface-2: color-mix(in oklch, var(--brand) var(--tint), var(--n-surface-2));
   --line: color-mix(in oklch, var(--brand) var(--tint), var(--n-line));
-  --accent-soft: color-mix(in oklch, var(--accent) 14%, var(--surface));
-  --accent-text: color-mix(in oklch, var(--accent), var(--ink) 25%);
+  --accent-soft: color-mix(in oklch, var(--accent) 11%, var(--surface));
+  --accent-text: color-mix(in oklch, var(--accent), var(--ink) 20%);
   --accent-2: var(--accent);
-  --ring: color-mix(in oklch, var(--accent) 30%, transparent);
+  --ring: color-mix(in oklch, var(--accent) 28%, transparent);
 
   /* Charts: single series in the accent; energy is an ordinal ramp of it; sentiment keeps a
      fixed colour-blind-safe diverging pair so its meaning never changes with the theme. */
   --series-1: var(--accent);
-  --seq-strong: color-mix(in oklch, var(--accent), var(--ink) 30%);
+  --seq-strong: color-mix(in oklch, var(--accent), var(--ink) 35%);
   --seq-mid: var(--accent);
-  --seq-light: color-mix(in oklch, var(--accent) 40%, var(--surface));
+  --seq-light: color-mix(in oklch, var(--accent) 38%, var(--surface));
   --pos: #2a78d6;
   --neg: #eb6834;
   --mid: #a3a29c;
-  --grid: color-mix(in oklch, var(--line) 70%, transparent);
-  /* Aurora wash behind the glass: azure, mint and lilac by default. */
-  --aurora-a: #6fb6ff;
-  --aurora-b: #6ee7c8;
-  --aurora-c: #c4b2ff;
+  --grid: var(--line);
 }
 :root[data-mode="dark"] {
   --pos: #3987e5;
@@ -131,24 +128,19 @@
   }
 }
 
-/* Relative colours, where supported: a slightly shifted partner for gradients, and accent text
-   clamped for contrast (darker on light backgrounds, lighter on dark). */
+/* Accent used as text is clamped for contrast: darker on light paper, lighter on dark. */
 @supports (color: oklch(from red l c h)) {
   :root {
-    --aurora-a: oklch(from var(--accent) 0.8 max(c, 0.12) h);
-    --aurora-b: oklch(from var(--accent) 0.86 max(c, 0.11) calc(h - 72));
-    --aurora-c: oklch(from var(--accent) 0.82 max(c, 0.1) calc(h + 52));
-    --accent-2: oklch(from var(--accent) calc(l + 0.06) c calc(h + 18));
     --accent-text: oklch(from var(--accent) min(l, 0.5) c h);
   }
   :root[data-mode="dark"] {
-    --accent-text: oklch(from var(--accent) max(l, 0.74) c h);
+    --accent-text: oklch(from var(--accent) max(l, 0.76) c h);
   }
 }
 @media (prefers-color-scheme: dark) {
   @supports (color: oklch(from red l c h)) {
     :root[data-mode="system"] {
-      --accent-text: oklch(from var(--accent) max(l, 0.74) c h);
+      --accent-text: oklch(from var(--accent) max(l, 0.76) c h);
     }
   }
 }
@@ -169,6 +161,10 @@
   --color-danger: var(--danger);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
+  --color-spine: var(--spine);
+  --color-spine-2: var(--spine-2);
+  --color-spine-ink: var(--spine-ink);
+  --color-spine-ink-2: var(--spine-ink-2);
   --font-sans: var(--font);
   --font-display: var(--font-heading);
   --font-mono: var(--mono);
@@ -183,23 +179,17 @@
 
   body {
     font-family: var(--font);
-    font-feature-settings: "cv11", "ss01", "ss03";
+    font-size: 0.9375rem;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    /* Soft aurora of three colour washes over a very fine dot grid. */
-    background-image:
-      radial-gradient(60vw 55vh at 8% -5%, color-mix(in oklch, var(--aurora-a) var(--aurora), transparent), transparent 70%),
-      radial-gradient(55vw 50vh at 100% 8%, color-mix(in oklch, var(--aurora-b) var(--aurora), transparent), transparent 70%),
-      radial-gradient(65vw 60vh at 65% 110%, color-mix(in oklch, var(--aurora-c) var(--aurora), transparent), transparent 70%),
-      radial-gradient(var(--dot) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px;
-    background-attachment: fixed;
   }
 
   h1,
   .font-display {
     font-family: var(--font-heading);
     font-weight: 600;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
   }
 
   /* Let grid columns shrink below their content so long titles truncate instead of overflowing. */
@@ -208,7 +198,7 @@
   }
 
   ::selection {
-    background: color-mix(in oklch, var(--accent) 35%, transparent);
+    background: color-mix(in oklch, var(--accent) 25%, transparent);
   }
 
   :focus-visible {
@@ -219,47 +209,55 @@
   kbd {
     font-family: var(--mono);
     font-size: 0.68rem;
-    border: 1px solid color-mix(in oklch, currentColor 30%, transparent);
+    border: 1px solid color-mix(in oklch, currentColor 35%, transparent);
     border-bottom-width: 2px;
-    border-radius: 0.3rem;
+    border-radius: 0.25rem;
     padding: 0 0.3rem;
-    line-height: 1.3;
+    line-height: 1.35;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 }
 
 @layer components {
-  /* Glass panel: translucent graphite with a hairline border and a faint top highlight. */
+  /* A sheet: solid paper, hairline edge, the faintest lift. */
   .card {
-    background: color-mix(in oklch, var(--surface) var(--glass), transparent);
-    -webkit-backdrop-filter: blur(16px) saturate(1.2);
-    backdrop-filter: blur(16px) saturate(1.2);
-    border: 1px solid color-mix(in oklch, var(--line) 80%, transparent);
+    background: var(--surface);
+    border: 1px solid var(--line);
     border-radius: var(--radius);
-    box-shadow:
-      inset 0 1px 0 var(--highlight),
-      var(--shadow);
+    box-shadow: var(--shadow);
   }
 
-  .glass {
-    background: color-mix(in oklch, var(--surface) 55%, transparent);
-    -webkit-backdrop-filter: blur(18px) saturate(1.3);
-    backdrop-filter: blur(18px) saturate(1.3);
+  /* Small-caps mono label for section headings and table heads. */
+  .label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
   }
 
   .field {
     width: 100%;
-    border-radius: calc(var(--radius) * 0.7);
+    border-radius: var(--radius);
     border: 1px solid var(--line);
-    background: color-mix(in oklch, var(--surface-2) 70%, transparent);
-    padding: 0.5rem 0.65rem;
+    background: var(--surface);
+    padding: 0.45rem 0.6rem;
     font-size: 0.875rem;
     color: var(--ink);
-    transition: border-color 120ms, box-shadow 120ms, background 120ms;
+    transition: border-color 120ms, box-shadow 120ms;
   }
   .field:focus {
     outline: none;
     border-color: var(--accent);
-    background: var(--surface);
     box-shadow: 0 0 0 3px var(--ring);
   }
 
@@ -267,83 +265,93 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    border-radius: calc(var(--radius) * 0.7);
-    padding: 0.45rem 0.85rem;
+    border-radius: var(--radius);
+    padding: 0.42rem 0.8rem;
     font-size: 0.85rem;
     font-weight: 500;
     border: 1px solid var(--line);
-    background: color-mix(in oklch, var(--surface-2) 80%, transparent);
+    background: var(--surface);
     color: var(--ink);
-    box-shadow: inset 0 1px 0 var(--highlight);
-    transition: background 120ms, border-color 120ms, transform 120ms, box-shadow 160ms;
+    transition: background 120ms, border-color 120ms;
   }
   .btn:hover {
-    border-color: color-mix(in oklch, var(--ink) 22%, var(--line));
+    background: var(--surface-2);
+    border-color: color-mix(in oklch, var(--ink) 20%, var(--line));
   }
   .btn:active {
     transform: translateY(1px);
   }
   .btn-primary {
-    border-color: color-mix(in oklch, var(--accent), white 18%);
+    border-color: var(--accent);
+    background: var(--accent);
     color: var(--accent-ink);
-    background: linear-gradient(180deg, color-mix(in oklch, var(--accent), white 10%), var(--accent));
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklch, white 28%, transparent),
-      0 0 0 1px color-mix(in oklch, var(--accent) 30%, transparent),
-      0 8px 24px -10px color-mix(in oklch, var(--accent) 80%, transparent);
   }
   .btn-primary:hover {
-    border-color: color-mix(in oklch, var(--accent), white 30%);
-    filter: brightness(1.07);
+    background: color-mix(in oklch, var(--accent), black 10%);
+    border-color: color-mix(in oklch, var(--accent), black 10%);
   }
   .btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
-    box-shadow: none;
-    filter: none;
+    transform: none;
   }
 
-  /* Capture box: hairline gradient edge in the accent, brighter on focus. */
-  .glow-focus {
-    border-color: transparent;
-    background:
-      linear-gradient(color-mix(in oklch, var(--surface) 92%, transparent), color-mix(in oklch, var(--surface) 92%, transparent)) padding-box,
-      linear-gradient(135deg, color-mix(in oklch, var(--accent) 55%, transparent), var(--line) 40%, var(--line) 60%, color-mix(in oklch, var(--accent-2) 45%, transparent)) border-box;
-    transition: box-shadow 160ms;
+  /* Capture sheet: the one surface that changes when you work in it. */
+  .capture {
+    transition: border-color 120ms, box-shadow 120ms;
   }
-  .glow-focus:focus-within {
-    background:
-      linear-gradient(var(--surface), var(--surface)) padding-box,
-      linear-gradient(135deg, var(--accent), color-mix(in oklch, var(--accent) 25%, var(--line)) 50%, var(--accent-2)) border-box;
-    box-shadow:
-      0 0 0 4px var(--ring),
-      0 24px 60px -28px color-mix(in oklch, var(--accent) 70%, transparent);
+  .capture:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
   }
 
-  .brand-mark {
-    background: linear-gradient(145deg, color-mix(in oklch, var(--accent), white 12%), color-mix(in oklch, var(--accent), black 25%));
-    color: var(--accent-ink);
-    box-shadow: inset 0 1px 0 color-mix(in oklch, white 30%, transparent), 0 6px 18px -8px color-mix(in oklch, var(--accent) 80%, transparent);
+  /* Highlighted sheet (e.g. the Monday brief): a solid accent rule down the left edge. */
+  .flagged {
+    border-left: 3px solid var(--accent);
   }
 
-  /* Snow-to-graphite metallic headline text. */
-  .text-metal {
-    background: linear-gradient(180deg, var(--ink) 30%, color-mix(in oklch, var(--ink), var(--ink-3) 70%));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .text-gradient {
-    background: linear-gradient(110deg, var(--accent-text), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  /* Guessed values: dashed outline says "suggestion, not fact". */
+  .guess {
+    border: 1px dashed color-mix(in oklch, var(--ink) 30%, transparent);
+    background: transparent;
   }
 
   .num {
     font-family: var(--mono);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
+  }
+
+  /* Index tabs on the binder spine. The current page's tab is cut from the page itself. */
+  .tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-right: -0.75rem;
+    padding: 0.5rem 1.6rem 0.5rem 0.85rem;
+    border-radius: var(--radius) 0 0 var(--radius);
+    color: var(--spine-ink-2);
+    font-size: 0.875rem;
+    transition: color 120ms, background 120ms;
+  }
+  .tab:hover {
+    color: var(--spine-ink);
+    background: var(--spine-2);
+  }
+  .tab[aria-current="page"] {
+    background: var(--bg);
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .tab[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.45rem;
+    bottom: 0.45rem;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background: var(--accent);
   }
 }

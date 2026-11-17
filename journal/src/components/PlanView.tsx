@@ -106,7 +106,7 @@ function WeekView({ entries, projects, people, today }: { entries: Entry[]; proj
 
   return (
     <div className="space-y-4">
-      <div className={`card flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${isMonday ? "glow-focus" : ""}`}>
+      <div className={`card flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${isMonday ? "flagged" : ""}`}>
         <div>
           <p className="text-sm font-semibold text-ink">{isMonday ? "Monday brief" : "This week's brief"} · {fmt(days[0], { day: "numeric", month: "short" })} – {fmt(days[6], { day: "numeric", month: "short" })}</p>
           <p className="text-xs text-ink-3">Arrives in Notion automatically every Monday at 9am. Save a copy now if you want it today.</p>

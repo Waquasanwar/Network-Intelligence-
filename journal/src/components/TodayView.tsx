@@ -12,9 +12,11 @@ import { CaptureBox } from "./CaptureBox";
 import { EntryCard } from "./EntryCard";
 import { Empty, Stat } from "./ui";
 
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+/** ISO week number, as printed on planners and in most offices. */
+function isoWeek(d: Date) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  return Math.ceil(((t.getTime() - Date.UTC(t.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
 }
 
 export function TodayView({ entries, people, projects, tags }: { entries: Entry[]; people: Ref[]; projects: Project[]; tags: string[] }) {
@@ -37,20 +39,10 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-metal text-[2rem] leading-tight" suppressHydrationWarning>
-          {mounted ? (
-            <>
-              {greeting()}
-            </>
-          ) : (
-            "Hello"
-          )}
-        </h1>
-        <p className="mt-0.5 text-sm text-ink-3" suppressHydrationWarning>
-          {mounted ? new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) : " "}
-        </p>
-      </div>
+      <header suppressHydrationWarning>
+        <p className="label">{mounted ? `Week ${isoWeek(new Date())} · ${new Date().toLocaleDateString("en-GB", { weekday: "long" })}` : "Today"}</p>
+        <h1 className="mt-1 text-[2.25rem] text-ink">{mounted ? new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long" }) : " "}</h1>
+      </header>
 
       <CaptureBox people={people} projects={projects} tags={tags} />
 
@@ -66,7 +58,7 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
           title={isMonday ? "Your Monday brief" : "This week's focus"}
           sub={isMonday ? "The week's priorities, ranked. Also saved to Notion at 9am." : "Top priorities this week, ranked by urgency, chasing, impact and project risk"}
           action={<Link href="/plan?view=week" className="text-xs text-accent-fg hover:underline">Full week →</Link>}
-          className={isMonday ? "glow-focus" : ""}
+          className={isMonday ? "flagged" : ""}
         >
           <PriorityList entries={entries} projects={projects} people={people} today={today} limit={5} />
         </Section>

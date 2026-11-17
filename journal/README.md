@@ -18,7 +18,7 @@ Everything is stored in the **Work Journal** page in your Notion workspace (Jour
 | **Plan** | Day (do, chase, follow up, coming up), Week (ranked priorities with reasons, Mon–Sun strip, brief) and Month (calendar with dues and activity). |
 | **Projects** | Every project with health (yours, or a suggested one from overdue, stuck and risk items), open/overdue/stuck/waiting counts, spend pending against budget, target date and next milestone. Each project has its own page with open work, procurement, decisions, risks and recent activity. |
 | **Procurement** | Purchase and service requests on a board by stage (Draft → Submitted → Awaiting approval → Approved → PO raised → Ordered → Received), with value, age, quiet days and chases. |
-| **Appearance** | Accent colour (Azure, Graphite, Mint, Cobalt, Cyan, Violet, Coral, Amber, or any colour), Light / Dark / System, background tint, corner style, sans or serif headings, and body font. Changes apply instantly and are remembered per device. Quick swatches also sit at the bottom of the sidebar. |
+| **Appearance** | Accent colour (Azure, Graphite, Teal, Cobalt, Signal orange, Plum, or any colour), Light / Dark / System, background tint, corner style, condensed or plain headings, and body font. Changes apply instantly and are remembered per device. Quick swatches also sit at the bottom of the sidebar. |
 
 Press **C** (or **⌘K**) anywhere to capture. On a phone, add it to the home screen; it runs like an app.
 

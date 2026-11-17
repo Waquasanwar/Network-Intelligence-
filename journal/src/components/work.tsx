@@ -58,7 +58,7 @@ export function WorkRow({
           {entry.title}
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-1">
-          {entry.waitingOn && <Chip tone={stuck ? "danger" : "warn"}>⏳ {entry.waitingOn}</Chip>}
+          {entry.waitingOn && <Chip tone={stuck ? "danger" : "warn"}>Waiting: {entry.waitingOn}</Chip>}
           {entry.stage && <Chip>{entry.stage}</Chip>}
           {entry.reference && <Chip>{entry.reference}</Chip>}
           {entry.amount ? <Chip tone="accent">{money(entry.amount)}</Chip> : null}
@@ -89,7 +89,7 @@ export function Section({ title, sub, action, children, className = "" }: { titl
     <section className={`card min-w-0 overflow-hidden ${className}`}>
       <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold text-ink">{title}</h2>
+          <h2 className="font-display text-[1.05rem] text-ink">{title}</h2>
           {sub && <p className="mt-0.5 text-xs text-ink-3">{sub}</p>}
         </div>
         {action}
@@ -107,7 +107,7 @@ export function Kpi({ label, value, hint, tone }: { label: string; value: ReactN
   const c = tone === "danger" ? "text-danger" : tone === "warn" ? "text-warn" : tone === "ok" ? "text-ok" : tone === "accent" ? "text-accent-fg" : "text-ink";
   return (
     <div className="card px-4 py-3">
-      <div className="text-[0.7rem] font-medium tracking-wide text-ink-3 uppercase">{label}</div>
+      <div className="label">{label}</div>
       <div className={`num mt-1 text-2xl ${c}`}>{value}</div>
       {hint && <div className="mt-0.5 text-xs text-ink-3">{hint}</div>}
     </div>

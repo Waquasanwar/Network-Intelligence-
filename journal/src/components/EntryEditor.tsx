@@ -197,7 +197,7 @@ export function EntryEditor({ entry, body, people, projects, tags, mode }: { ent
       </div>
 
       <div className="card p-4">
-        <h2 className="text-sm font-semibold">Notes</h2>
+        <h2 className="font-display text-[1.05rem]">Notes</h2>
         {body ? (
           <div className="mt-2 space-y-1 text-sm whitespace-pre-wrap text-ink-2">{body}</div>
         ) : (

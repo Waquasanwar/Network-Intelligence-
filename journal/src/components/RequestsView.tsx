@@ -36,7 +36,7 @@ function RequestCard({ entry, people }: { entry: Entry; people: Ref[] }) {
       </Link>
       <div className="mt-2 flex flex-wrap gap-1">
         {entry.direction && <Chip tone={entry.direction.startsWith("Incoming") ? "accent" : "plain"}>{entry.direction.startsWith("Incoming") ? "← to me" : entry.direction.startsWith("Upward") ? "↑ management" : entry.direction.startsWith("Outgoing") ? "→ from me" : "internal"}</Chip>}
-        {entry.waitingOn && <Chip tone="warn">⏳ {entry.waitingOn}</Chip>}
+        {entry.waitingOn && <Chip tone="warn">Waiting: {entry.waitingOn}</Chip>}
         {entry.chaseCount > 0 && <Chip>chased {entry.chaseCount}×</Chip>}
         {ppl.map((p) => (
           <Chip key={p}>@{p}</Chip>

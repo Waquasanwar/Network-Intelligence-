@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-test("phone layout: bottom tabs navigate and capture opens from the + button", async ({ page }) => {
+test("phone layout: bottom tabs navigate and new entry opens from the + button", async ({ page }) => {
   await page.goto("/");
   const tabs = page.getByRole("navigation", { name: "Main" }).last();
   await tabs.getByRole("link", { name: "Plan" }).click();
   await expect(page).toHaveURL(/\/plan/);
   await tabs.getByRole("link", { name: "Projects" }).click();
   await expect(page.getByText("Data Migration")).toBeVisible();
-  await page.getByRole("button", { name: "Capture" }).click();
-  await expect(page.getByRole("dialog", { name: "Capture" })).toBeVisible();
+  await page.getByRole("button", { name: "New entry" }).click();
+  await expect(page.getByRole("dialog", { name: "New entry" })).toBeVisible();
 });
 
 test("no page scrolls sideways on a phone", async ({ page }) => {

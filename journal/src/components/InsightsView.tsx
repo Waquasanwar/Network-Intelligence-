@@ -39,7 +39,7 @@ const SENTIMENT_COLOR: Record<string, string> = { Positive: "var(--pos)", Neutra
 function Panel({ title, sub, children, className = "" }: { title: string; sub?: string; children: ReactNode; className?: string }) {
   return (
     <section className={`card p-4 ${className}`}>
-      <h2 className="text-sm font-semibold">{title}</h2>
+      <h2 className="font-display text-[1.05rem]">{title}</h2>
       {sub && <p className="mt-0.5 text-xs text-ink-3">{sub}</p>}
       <div className="mt-3">{children}</div>
     </section>

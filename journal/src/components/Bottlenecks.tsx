@@ -35,7 +35,7 @@ export function Bottlenecks({ entries, projects, people, today }: { entries: Ent
             <div className="overflow-x-auto">
             <table className="w-full min-w-[30rem] text-sm">
               <thead>
-                <tr className="text-left text-[0.7rem] tracking-wide text-ink-3 uppercase">
+                <tr className="label text-left">
                   <th className="px-4 py-2 font-medium">Waiting on</th>
                   <th className="w-[30%] px-2 py-2 font-medium">Items</th>
                   <th className="px-2 py-2 text-right font-medium">Avg</th>
@@ -128,7 +128,7 @@ export function Bottlenecks({ entries, projects, people, today }: { entries: Ent
             ))}
           </div>
           <div className="divide-y divide-line border-t border-line">
-            <p className="px-4 pt-3 pb-1 text-[0.7rem] font-medium tracking-wide text-ink-3 uppercase">Most chased, still open</p>
+            <p className="label px-4 pt-3 pb-1">Most chased, still open</p>
             {c.mostChased.map((e) => (
               <WorkRow key={e.id} entry={e} today={today} projects={projects} people={people} />
             ))}

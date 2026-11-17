@@ -22,10 +22,10 @@ export function HealthBadge({ health, suggested }: { health?: Health; suggested:
   const h = set ? health : suggested;
   const dot = h === "On track" ? "var(--ok)" : h === "At risk" ? "var(--warn)" : h === "Off track" ? "var(--danger)" : "var(--ink-3)";
   return (
-    <Chip tone={HEALTH_TONE[h]} title={set ? "Health you set" : "Suggested from overdue, stuck and risk items"}>
-      <span className="size-1.5 rounded-full" style={{ background: dot, boxShadow: `0 0 8px ${dot}` }} />
+    <Chip tone={set ? HEALTH_TONE[h] : "guess"} title={set ? "Health you set" : "Suggested from overdue, stuck and risk items"}>
+      <span className="size-1.5 rounded-[2px]" style={{ background: dot }} />
       {h}
-      {!set && " ✨"}
+      {!set && <span className="font-mono text-[0.62rem] opacity-70">suggested</span>}
     </Chip>
   );
 }
@@ -167,7 +167,7 @@ export function ProjectDetail({ project, entries, projects, people, tags }: { pr
       <div>
         <Link href="/projects" className="text-xs text-ink-3 hover:text-ink">← Projects</Link>
         <div className="mt-1 flex flex-wrap items-center gap-3">
-          <h1 className="text-metal text-[1.65rem] leading-tight">{project.name}</h1>
+          <h1 className="text-[1.85rem] text-ink">{project.name}</h1>
           <HealthBadge health={project.health} suggested={s.suggested} />
           {project.url !== "#" && (
             <a href={project.url} target="_blank" rel="noreferrer" className="ml-auto text-xs text-ink-3 hover:text-accent-fg">Open in Notion ↗</a>

@@ -135,7 +135,7 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
   const inferred = (f: string) => parsed.inferred.includes(f as never);
 
   return (
-    <div className="card glow-focus relative p-3">
+    <div className="card capture relative p-3">
       <label htmlFor="capture" className="sr-only">
         Capture a thought
       </label>
@@ -185,12 +185,12 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
             onClick={() => setTypeOverride(t === type && typeOverride ? null : t)}
             aria-pressed={t === type}
             className={`rounded-md px-2 py-1 text-xs transition ${
-              t === type ? "bg-accent-soft text-accent-fg ring-1 ring-accent/50" : "bg-surface-2/80 text-ink-2 hover:text-ink"
+              t === type ? "bg-accent text-accent-ink" : "bg-surface-2/80 text-ink-2 hover:text-ink"
             }`}
             title={t === type && !typeOverride && inferred("type") ? "Guessed from your wording" : undefined}
           >
             <span className="inline-flex items-center gap-1.5"><TypeDot type={t} />{SHORT[t] ?? t.split(" ")[0]}</span>
-            {t === type && !typeOverride && inferred("type") && <span aria-hidden> ✨</span>}
+            {t === type && !typeOverride && inferred("type") && <span className="ml-1 font-mono text-[0.62rem] opacity-70">guessed</span>}
           </button>
         ))}
         <select
@@ -229,18 +229,16 @@ export function CaptureBox({ people, projects, tags, autoFocus, onSaved, compact
           {parsed.tags.map((t) => (
             <Chip key={t}>#{t}</Chip>
           ))}
-          {parsed.category && <Chip title="Guessed from your wording">✨ {parsed.category}</Chip>}
-          {parsed.source && <Chip title="Guessed from your wording">✨ via {parsed.source}</Chip>}
+          {parsed.category && <Chip tone="guess" title="Guessed from your wording">{parsed.category}</Chip>}
+          {parsed.source && <Chip tone="guess" title="Guessed from your wording">via {parsed.source}</Chip>}
           {parsed.sentiment && (
-            <Chip tone={parsed.sentiment === "Positive" ? "ok" : "danger"} title="Guessed from your wording">
-              ✨ {parsed.sentiment}
-            </Chip>
+            <Chip tone="guess" title="Guessed from your wording">{parsed.sentiment}</Chip>
           )}
           {parsed.priority && <Chip tone="warn">{parsed.priority}</Chip>}
           {parsed.amount !== undefined && <Chip tone="accent">£{parsed.amount.toLocaleString("en-GB")}</Chip>}
           {parsed.reference && <Chip>{parsed.reference}</Chip>}
           {(parsed.stage || type === "Purchase Request" || type === "Service Request") && <Chip>stage: {parsed.stage ?? "Submitted"}</Chip>}
-          {parsed.waitingOn && <Chip tone="warn" title={parsed.inferred.includes("waitingOn") ? "Guessed from your wording" : undefined}>{parsed.inferred.includes("waitingOn") ? "✨ " : ""}waiting on {parsed.waitingOn}</Chip>}
+          {parsed.waitingOn && <Chip tone={parsed.inferred.includes("waitingOn") ? "guess" : "warn"} title={parsed.inferred.includes("waitingOn") ? "Guessed from your wording" : undefined}>waiting on {parsed.waitingOn}</Chip>}
           {parsed.due && <Chip tone="warn">due {shortDate(parsed.due, todayLocal())}</Chip>}
           {parsed.followUp && <Chip>follow up {shortDate(parsed.followUp, todayLocal())}</Chip>}
           {parsed.direction && <Chip>{parsed.direction}</Chip>}
