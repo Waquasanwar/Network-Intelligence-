@@ -41,12 +41,14 @@ await stepIf("name release: contributor refused, owner needs consent, then it is
   const item = sql(`select id from "ShortlistItem" where "briefId"='${briefId}' and "personId"='${anaId}'`); assert(item, "ana is on the shortlist");
   sql(`update "Person" set "referralConsent"='ask' where id='${anaId}'`); sql(`update "ShortlistItem" set decision='CLIENT_INTERESTED' where id='${item}'`);
   const form = (p) => p.locator("form").filter({ has: p.locator(`input[name="itemId"][value="${item}"]`) });
-  await c.goto(`${BASE}/requirements/${briefId}`, { waitUntil: "networkidle" }); await form(c).locator('select[name="decision"]').selectOption("INTRODUCED"); await form(c).locator('input[name="consentConfirmed"]').check(); await form(c).getByRole("button", { name: "Save" }).click();
+  // Each person on the shortlist is one line; the decision is inside it, so open their line first.
+  const openRow = async (p) => { const row = p.locator("details").filter({ has: p.locator(`input[name="itemId"][value="${item}"]`) }); if (!(await row.evaluate((d) => d.open))) await row.locator("summary").click(); };
+  await c.goto(`${BASE}/requirements/${briefId}`, { waitUntil: "networkidle" }); await openRow(c); await form(c).locator('select[name="decision"]').selectOption("INTRODUCED"); await form(c).locator('input[name="consentConfirmed"]').check(); await form(c).getByRole("button", { name: "Save" }).click();
   await c.waitForURL(/notice=reveal-role/, { timeout: 15000 }); assert(sql(`select decision from "ShortlistItem" where id='${item}'`) === "CLIENT_INTERESTED", "contributor could not release");
-  await og(`/requirements/${briefId}`); await form(o).locator('select[name="decision"]').selectOption("INTRODUCED"); await form(o).getByRole("button", { name: "Save" }).click();
+  await og(`/requirements/${briefId}`); await openRow(o); await form(o).locator('select[name="decision"]').selectOption("INTRODUCED"); await form(o).getByRole("button", { name: "Save" }).click();
   await o.waitForURL(/notice=reveal-consent/, { timeout: 15000 }); await o.getByText(/record that they have agreed/).waitFor(); await o.screenshot({ path: `${DIR}/reveal-notice.png` });
   assert(sql(`select decision from "ShortlistItem" where id='${item}'`) === "CLIENT_INTERESTED", "owner blocked without consent");
-  await og(`/requirements/${briefId}`); await form(o).locator('select[name="decision"]').selectOption("INTRODUCED"); await form(o).locator('input[name="consentConfirmed"]').check(); await form(o).getByRole("button", { name: "Save" }).click(); await o.waitForTimeout(2500);
+  await og(`/requirements/${briefId}`); await openRow(o); await form(o).locator('select[name="decision"]').selectOption("INTRODUCED"); await form(o).locator('input[name="consentConfirmed"]').check(); await form(o).getByRole("button", { name: "Save" }).click(); await o.waitForTimeout(2500);
   assert(sql(`select decision from "ShortlistItem" where id='${item}'`) === "INTRODUCED", "released with consent");
   assert(Number(sql(`select count(*) from "AuditLog" where action='identity.reveal' and metadata->>'personId'='${anaId}'`)) >= 1, "identity.reveal audited");
 });

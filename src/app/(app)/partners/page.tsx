@@ -7,6 +7,7 @@ import { partnerRef } from "@/lib/refs";
 import { mayShowCard } from "@/lib/reveal";
 import { partnerHidden } from "@/lib/privacy";
 import { PageHeader, EmptyState } from "@/components/ui/page";
+import { Fold } from "@/components/ui/fold";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Chip } from "@/components/ui/badge";
 import { Input, Select, Textarea, Field, Checkbox } from "@/components/ui/form";
@@ -45,7 +46,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeader title="Agencies" description="Recruitment agencies you work with get controlled, anonymised access. They never see your network. Terms are set per agency." actions={<NewRequirementDrawer partners={partners.map((p) => ({ id: p.id, name: p.name }))} />} />
-      <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)] gap-4">
         <div className="widget overflow-hidden self-start">
           <ul className="divide-y divide-line">
             {partners.map((p) => (
@@ -85,28 +86,25 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
 ) : null}
               <div className="space-y-4">
                 <Card>
-                  <CardHeader title="Data boundary" description="What this partner can and cannot see" />
-                  <CardBody>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div><div className="text-teal font-medium mb-1">Can</div><ul className="space-y-0.5 text-ink-muted"><li>Submit requirements</li><li>See anonymised capability summaries</li><li>Request an introduction</li><li>Track their own activity</li></ul></div>
-                      <div><div className="text-risk font-medium mb-1">Cannot</div><ul className="space-y-0.5 text-ink-muted"><li>Browse relationship notes</li><li>Export the network</li><li>See who else is in the database</li><li>See other partners or Amana activity</li><li>Contact hidden profiles</li></ul></div>
-                    </div>
-                  </CardBody>
-                </Card>
-                <Card>
-                  <CardHeader title="Partner users" />
+                  <CardHeader title="Access" description="Who signs in for this agency, and what they can reach." />
                   <CardBody>
                     <ul className="text-xs space-y-1">{selected.tenant.users.map((u) => <li key={u.id} className="flex justify-between"><span>{u.name} <span className="text-ink-faint">{u.email}</span></span><span className="text-ink-faint">{u.lastLoginAt ? <DateText date={u.lastLoginAt} relative /> : "never signed in"}</span></li>)}{!selected.tenant.users.length ? <li className="text-ink-faint">No users provisioned.</li> : null}</ul>
+                    <Fold className="mt-4 border-t border-line pt-3" summary={<span className="text-[13px] font-semibold text-ink">What an agency can and cannot see</span>}>
+                      <div className="mt-3"><div className="grid grid-cols-2 gap-3 text-xs">
+                      <div><div className="text-teal font-medium mb-1">Can</div><ul className="space-y-0.5 text-ink-muted"><li>Submit requirements</li><li>See anonymised capability summaries</li><li>Request an introduction</li><li>Track their own activity</li></ul></div>
+                      <div><div className="text-risk font-medium mb-1">Cannot</div><ul className="space-y-0.5 text-ink-muted"><li>Browse relationship notes</li><li>Export the network</li><li>See who else is in the database</li><li>See other partners or Amana activity</li><li>Contact hidden profiles</li></ul></div>
+                    </div></div>
+                    </Fold>
                   </CardBody>
                 </Card>
               </div>
             </div>
 
             <Card>
-              <CardHeader title="Partner requirements" description="Link a requirement to an opportunity to share anonymised results." />
+              <CardHeader title="Requirements from this agency" description="Link a requirement to an opportunity to share anonymised results." />
               <CardBody className="px-0 pb-0">
                 {selected.requirements.length === 0 ? <div className="px-4 pb-4"><EmptyState title="No requirements submitted" /></div> : (
-                  <table className="data">
+                  <div className="overflow-x-auto"><table className="data">
                     <thead><tr><th className="pl-4">Requirement</th><th>Route</th><th>Capabilities</th><th>Budget</th><th>Status</th><th>Linked opportunity</th></tr></thead>
                     <tbody>
                       {selected.requirements.map((r) => (
@@ -127,14 +125,14 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </CardBody>
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
-                <CardHeader title="What the partner sees" description="Restricted, anonymised results for linked requirements" />
+                <CardHeader title="What the agency sees" description="Restricted, anonymised results for linked requirements" />
                 <CardBody>
                   {previews.length === 0 ? <div className="text-xs text-ink-faint">Link a requirement to an opportunity with recommended or possible matches.</div> : previews.map(({ requirement, results }) => (
                     <div key={requirement.id} className="mb-3">
@@ -147,7 +145,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                 </CardBody>
               </Card>
               <Card>
-                <CardHeader title="Introduction requests & commercial tracking" />
+                <CardHeader title="Introduction requests" />
                 <CardBody>
                   {selected.introductions.length === 0 ? <div className="text-xs text-ink-faint">No introductions yet.</div> : (
                     <ul className="space-y-2">{selected.introductions.map((i) => <li key={i.id} className="text-xs border border-line rounded-md px-2.5 py-2"><div className="flex items-center justify-between"><span className="font-medium text-[13px]">{fullName(i.person)}</span><IntroBadge status={i.status} /></div><div className="text-ink-faint">{i.opportunity.title}</div><div className="text-ink-muted mt-0.5">{ROUTE_LABELS[i.route]}{money ? <> · {i.commercialModel.replace(/_/g, " ").toLowerCase()}{i.commercialSharePct ? ` ${Number(i.commercialSharePct)}%` : ""}</> : null}{money && i.commercialValue ? ` of ${formatMoney(Number(i.commercialValue), i.currency ?? "GBP")} ≈ ${formatMoney(Number(i.commercialValue) * (Number(i.commercialSharePct ?? 0) / 100), i.currency ?? "GBP")}` : ""}</div><div className="text-ink-faint">Consent {i.consentStatus.toLowerCase()} · identity {i.status === "IDENTITY_REVEALED" || i.status === "INTRODUCED" || i.status === "ENGAGED" ? "revealed" : "hidden"}</div></li>)}</ul>
@@ -156,12 +154,9 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
               </Card>
             </div>
 
-            <Card>
-              <CardHeader title="Partner audit activity" />
-              <CardBody>
-                {audit.length === 0 ? <div className="text-xs text-ink-faint">No activity.</div> : <ul className="text-xs space-y-1">{audit.map((a) => <li key={a.id} className="flex justify-between gap-2"><span>{a.actor?.name ?? "system"} · <span className="font-mono text-[12px]">{a.action}</span></span><DateText date={a.createdAt} relative className="text-ink-faint" /></li>)}</ul>}
-              </CardBody>
-            </Card>
+            <Fold className="px-1" summary={<span className="text-[13px] font-semibold text-ink-muted">Activity</span>}>
+              <div className="mt-2">{audit.length === 0 ? <div className="text-xs text-ink-faint">No activity.</div> : <ul className="text-xs space-y-1">{audit.map((a) => <li key={a.id} className="flex justify-between gap-2"><span>{a.actor?.name ?? "system"} · <span className="font-mono text-[12px]">{a.action}</span></span><DateText date={a.createdAt} relative className="text-ink-faint" /></li>)}</ul>}</div>
+            </Fold>
           </div>
         ) : <EmptyState title="No partners" />}
       </div>

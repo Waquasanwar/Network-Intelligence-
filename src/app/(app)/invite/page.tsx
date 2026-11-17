@@ -4,6 +4,7 @@ import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { networkInviteToken } from "@/server/invites";
 import { PageHeader, EmptyState } from "@/components/ui/page";
+import { Fold } from "@/components/ui/fold";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarList } from "@/components/ui/charts";
@@ -59,16 +60,12 @@ export default async function InvitePage() {
     <>
       <PageHeader title="Grow the network" description="Bring in people you would put your name behind. They register, have their screening, and you review them before they go live." />
 
-      <ol className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        {steps.map((s, i) => (
-          <li key={s.label} className="relative widget px-5 py-4">
-            <div className="flex items-center justify-between">
-              <span className="chip-icon inline-flex h-8 w-8 items-center justify-center rounded-full"><s.icon className="h-4 w-4" /></span>
-              {i > 0 && total > 0 ? <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[12px] font-semibold text-teal" title={`${s.value} of ${total} people in your network`}>{Math.round((s.value / total) * 100)}% of network</span> : null}
-            </div>
-            <div className="font-display num-grad text-[30px] leading-none mt-3">{s.value}</div>
-            <div className="text-[13px] font-semibold text-ink mt-1.5">{s.label}</div>
-            <div className="text-[12px] text-ink-faint mt-0.5">{s.hint}</div>
+      <ol className="figures mb-6">
+        {steps.map((st, i) => (
+          <li key={st.label} className="figure">
+            <span className="block text-[12.5px] font-medium text-ink-muted leading-tight">{st.label}</span>
+            <span className="mt-2 block font-display num-grad text-[28px] sm:text-[32px] leading-none">{st.value}</span>
+            <span className="mt-1.5 block text-[12px] text-ink-faint leading-snug">{i > 0 && total > 0 ? `${Math.round((st.value / total) * 100)}% of your network · ` : ""}{st.hint}</span>
           </li>
         ))}
       </ol>
@@ -77,12 +74,11 @@ export default async function InvitePage() {
         <div className="xl:col-span-2 space-y-4">
           <Card>
             <CardHeader title="Invite someone by name" description="A personal invitation: it works once, lasts 30 days, and you see when it is opened and when they join." />
-            <CardBody><InviteComposer network={user.tenantName} from={from} /></CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="People you know who have not joined" description={notJoinedCount ? `${notJoinedCount} of ${total} profiles have no login yet. Once they join, they keep their own availability up to date and can bring others in.` : "Everyone you hold a profile for has joined."} />
-            <CardBody className={toInvite.length ? "pt-0" : ""}>
+            <CardBody>
+              <InviteComposer network={user.tenantName} from={from} />
+              {total ? (
+                <Fold className="mt-5 border-t border-line pt-4" summary={<span className="text-[13.5px] font-semibold text-ink">{notJoinedCount ? `Or invite someone you already know` : "Everyone you hold a profile for has joined"}{notJoinedCount ? <span className="ml-2 font-normal text-ink-faint">{notJoinedCount} of {total} have no login yet</span> : null}</span>}>
+                  <div className="mt-2">
               {toInvite.length === 0 ? <EmptyState icon={UserCheck} title={notJoinedCount ? "Everyone here has an open invitation" : "Nobody left to invite"} description={notJoinedCount ? "Their invitations are listed below. Send a reminder by copying the link again." : "Add people to the network, or import your contacts, and they appear here."} action={<Link href="/network/import" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-[13px] font-semibold text-ink hover:bg-surface-hover">Import contacts <ArrowRight className="h-3.5 w-3.5" /></Link>} /> : (
                 <ul className="divide-y divide-line">
                   {toInvite.map((p) => (
@@ -97,6 +93,9 @@ export default async function InvitePage() {
                 </ul>
               )}
               {notJoinedCount > toInvite.length && toInvite.length > 0 ? <p className="text-[12.5px] text-ink-faint mt-3">Showing {toInvite.length}. Open anyone in <Link href="/network" className="text-ink-muted underline underline-offset-4 hover:text-ink">the network</Link> to invite them from their profile.</p> : null}
+                  </div>
+                </Fold>
+              ) : null}
             </CardBody>
           </Card>
 
@@ -149,12 +148,10 @@ export default async function InvitePage() {
                 ))}
               </div>
               <div className="flex justify-between text-[12px] text-ink-faint mt-2"><span>8 weeks ago</span><span>This week</span></div>
+              <Fold className="mt-4 border-t border-line pt-3" summary={<span className="text-[13px] font-semibold text-ink">Who brings people in</span>}>
+                <div className="mt-3"><BarList rows={connectorRows} empty="No introductions recorded yet. When someone joins on a member's link, it shows here." /></div>
+              </Fold>
             </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="Who brings people in" description="Members and contacts by how many people they introduced." />
-            <CardBody><BarList rows={connectorRows} empty="No introductions recorded yet. When someone joins on a member's link, it shows here." /></CardBody>
           </Card>
         </div>
       </div>

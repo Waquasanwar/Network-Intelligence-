@@ -79,15 +79,15 @@ export function DataRights({ privacy, firstName, asPersonId }: { privacy: Privac
 /** Granular consent toggles — each one the person can switch on or off, effective immediately. */
 export function ConsentToggles({ privacy, update, asPersonId }: { privacy: Privacy; update: (fd: FormData) => void; asPersonId?: string }) {
   return (
-    <form action={update} className="space-y-1.5">
+    <form action={update} className="divide-y divide-line">
       {asPersonId ? <input type="hidden" name="asPersonId" value={asPersonId} /> : null}
       {CONSENTS.filter((c) => !c.required).map((c) => (
-        <label key={c.key} className="flex items-start gap-2.5 px-3 py-2 rounded-[11px] border border-line hover:border-line-strong cursor-pointer">
+        <label key={c.key} className="flex items-start gap-2.5 py-2.5 first:pt-0 cursor-pointer">
           <input type="checkbox" name={c.key} defaultChecked={privacy.consents[c.key]} className="mt-0.5 h-3.5 w-3.5 rounded border-line-strong accent-navy flex-none" />
           <span className="min-w-0"><span className="block text-[12.5px] text-ink font-medium">{c.label}</span><span className="block text-[12px] text-ink-faint leading-[1.45]">{c.detail}</span></span>
         </label>
       ))}
-      <div className="flex items-center justify-between gap-2 pt-1.5">
+      <div className="flex items-center justify-between gap-2 pt-3">
         <span className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint"><ShieldCheck className="h-3.5 w-3.5 text-teal" /> Effective immediately</span>
         <SubmitButton size="sm" variant="secondary" pendingText="…">Save permissions</SubmitButton>
       </div>

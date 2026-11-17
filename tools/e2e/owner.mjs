@@ -128,6 +128,7 @@ await step("requirement: find people, shortlist, open to members, terms, fee", p
   const cb = p.locator('input[name="openToMembers"]'); await cb.check(); await p.locator('[name="memberSummary"]').fill("Fractional CFO, Dubai, two days a week.");
   await p.locator("form").filter({ has: p.locator('input[name="openToMembers"]') }).getByRole("button", { name: "Save" }).click(); await p.waitForTimeout(1500);
   assert(sql(`select "openToMembers" from "Brief" where id='${briefId}'`) === "t", "open to members");
+  await p.getByText("Change the terms").click(); // the terms form is folded away until you ask for it
   await p.getByRole("button", { name: "Save terms" }).click(); await p.waitForTimeout(1500);
   await p.getByRole("button", { name: "Fee line" }).click();
   const d = dialog(p); await d.waitFor();

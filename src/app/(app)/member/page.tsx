@@ -22,7 +22,7 @@ import { startScreening, setConsent, submitReferral } from "@/server/actions/mem
 import { trustFor, fitFor } from "@/lib/trust-for";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
-import { privacyOf, privacySummary } from "@/lib/privacy";
+import { privacyOf } from "@/lib/privacy";
 import { resolveMemberPerson } from "@/server/queries";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
@@ -81,7 +81,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
 
       <div className="rounded-[28px] px-5 py-6 sm:px-9 sm:py-8 mb-5 bg-surface border border-line shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
         <div className="flex items-center gap-4"><Avatar person={p} size="xl" ring /><div><div className="eyebrow text-ink-faint">Network member{p.memberSince ? ` since ${p.memberSince.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}` : ""}</div><h1 className="font-display text-[26px] sm:text-[34px] leading-[1.1] mt-2.5">{fullName(p)}</h1><p className="text-ink-muted text-[15px] mt-2">{p.headline ?? "Add a headline in your screening"}</p><div className="flex flex-wrap gap-2 mt-2.5"><ScreeningBadge status={p.screeningStatus} /><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} />{p.referralConsent === "yes" ? <Badge tone="teal" filled>on the radar</Badge> : p.referralConsent === "no" ? <Badge filled>not being referred</Badge> : <Badge tone="amber" filled>asked each time</Badge>}</div></div></div>
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)} className={`min-w-[124px] rounded-[12px] px-4 py-3.5 ${l === "Open to you" ? "bg-navy text-white dark:text-canvas" : "bg-surface-muted"}`}><div className="text-[12px] font-semibold opacity-80">{l}</div><div className="font-display text-[28px] tabular leading-[1.05] mt-1.5">{v}</div><div className="text-[12px] text-ink-faint">{h}</div></div>)}</div>
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)} className="min-w-[96px] border-l border-line pl-4 first:border-l-0 first:pl-0"><div className="text-[12px] font-medium text-ink-muted">{l}</div><div className="font-display num-grad text-[28px] tabular leading-[1.05] mt-1.5">{v}</div><div className="text-[12px] text-ink-faint">{h}</div></div>)}</div>
       </div>
 
       <Card className="mb-5">
@@ -156,9 +156,8 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
                 : submitted ? <div><ScreeningBadge status="SUBMITTED" /><div className="text-[12px] text-ink-faint mt-1">A person is reviewing your answers. You will be on the radar for opportunities as soon as it is confirmed.</div></div>
                 : <div className="space-y-3"><div><b className="text-[15px]">Do your {SCREENING_MINUTES}-minute screening</b><p className="text-[13px] text-ink-muted mt-1 max-w-[60ch]">{SCREENING_SCRIPT.length} short sections: {SCREENING_SCRIPT.map((s) => s.title.toLowerCase()).join(", ")}. It is the one thing every member does, and it is what puts you on the radar for opportunities.</p></div><div className="flex flex-wrap gap-2"><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><SubmitButton pendingText="Starting…">Start the AI screening</SubmitButton></form><BookScreeningDrawer personId={p.id} label="Book a real call instead" /></div></div>}
             </CardBody></Card>
-            <div className="flex items-end justify-between"><div><h2 className="text-[15px] font-semibold">Open to members</h2><p className="text-[12.5px] text-ink-muted">Requirements you can pitch for or refer into. Client names stay hidden.</p></div><Link href={`/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`} className="text-[12.5px] text-ink-muted hover:text-ink">All →</Link></div>
-            {open.length ? <div className="space-y-3">{open.slice(0, 2).map((b) => <OppCard key={b.id} b={b} />)}</div> : <EmptyState title="Nothing open right now" />}
-            <FitCard rows={fit} self />
+            {open.length ? <Link href={`/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`} className="group flex items-center justify-between gap-3 rounded-[18px] px-1 py-1 text-[13.5px] text-ink-muted hover:text-ink"><span><b className="font-semibold text-ink">{open.length} {open.length === 1 ? "opportunity is" : "opportunities are"} open to you.</b> Client names stay hidden until an introduction is agreed.</span><span className="flex-none font-semibold text-ink">See them</span></Link> : null}
+            {fit.some((r) => r.combined !== null) ? <FitCard rows={fit} self /> : null}
           </div>
           <div className="space-y-4">
             <TrustCard t={t} firstName={p.firstName} self screened={screened} workedWith={p.relationships.some((r) => r.workedTogether)} />
@@ -167,10 +166,6 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
               <div className="flex flex-wrap gap-1 mt-1.5"><Chip>{anon.region ?? "region undisclosed"}</Chip><Chip>availability: {anon.availabilityBand}</Chip><Chip>vouched by {t.vouchedBy}</Chip>{highlights.map((h) => <Chip key={h}>{h}</Chip>)}{band ? <Chip>{band}</Chip> : null}</div>
               <div className="text-[12px] text-ink-muted mt-1.5">{anon.evidenceSummary}</div>
             </CardBody></Card>
-            <Card><CardHeader title="Your referrals and pitches" action={<Link href={`/member?tab=refer${internal ? `&person=${p.id}` : ""}`} className="text-[12px] text-ink-muted hover:text-ink">Refer</Link>} /><CardBody>
-              <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.slice(0, 4).map((r) => <li key={r.id} className="py-1.5 flex justify-between gap-2"><span><b>{r.name}</b><small className="block text-ink-faint">referral</small></span><Badge tone={r.status === "ACCEPTED" ? "teal" : "amber"} filled>{REF_STATUS[r.status]}</Badge></li>)}{p.pitches.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><b>{x.brief.roles[0] ?? "Requirement"}</b><small className="block text-ink-faint">pitch</small></span><Badge tone={x.status === "SHORTLISTED" ? "teal" : "navy"} filled>{PITCH_STATUS[x.status]}</Badge></li>)}{!p.referralsMade.length && !p.pitches.length ? <li className="text-ink-muted py-1">None yet. Refer someone or pitch for an opportunity.</li> : null}</ul>
-            </CardBody></Card>
-            <Link href={`/member?tab=privacy${internal ? `&person=${p.id}` : ""}`} className="lift flex items-center justify-between gap-3 widget px-4 py-3.5 shadow-[var(--shadow-card)]"><span className="min-w-0"><b className="block text-[13px] font-semibold">Privacy &amp; data</b><span className="block text-[12px] text-ink-muted">{privacySummary({ privacy })}</span></span><span className="flex-none text-[12px] text-navy">Manage →</span></Link>
           </div>
         </div>
       )}

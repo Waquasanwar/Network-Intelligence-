@@ -49,7 +49,7 @@ export function Dial({ value, size = 44, tone = "teal" }: { value: number; size?
 /** One vital sign in the profile's top row: a small drawing, the value, and what it means. */
 export function Vital({ graphic, label, value, hint }: { graphic: React.ReactNode; label: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-[18px] bg-surface-muted/70 px-4 py-3.5 min-w-0">
+    <div className="flex items-center gap-3.5 min-w-0">
       <span className="grid h-12 w-12 flex-none place-items-center">{graphic}</span>
       <span className="min-w-0">
         <span className="block text-[12px] text-ink-muted leading-tight">{label}</span>

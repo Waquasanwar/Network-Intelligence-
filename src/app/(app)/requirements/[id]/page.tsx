@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { requireInternal, getUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { Notice } from "@/components/ui/notice";
-import { PageHeader, EmptyState, Score, Section } from "@/components/ui/page";
+import { PageHeader, Score } from "@/components/ui/page";
+import { Fold } from "@/components/ui/fold";
+import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input, Select, Field, Checkbox } from "@/components/ui/form";
@@ -63,104 +65,111 @@ export default async function RequirementPage({ params, searchParams }: { params
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2 space-y-4">
+        <div className="xl:col-span-2 space-y-4 min-w-0">
           <Card>
             <CardHeader title="The brief" description="What was asked, in their words and in structure." />
             <CardBody>
-              <blockquote className="border-l-[3px] border-navy-400 bg-surface-muted rounded-r-[10px] px-4 py-3 text-[14px] italic leading-6 mb-3">{b.rawText}</blockquote>
+              <blockquote className="border-l-[3px] border-navy-400 pl-4 text-[14.5px] italic leading-6 text-ink mb-4">{b.rawText}</blockquote>
               <BriefChips b={d} />
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-4">
-                <div><div className="text-ink-faint">Roles</div><div>{b.roles.join(", ") || "to confirm"}</div></div>
-                <div><div className="text-ink-faint">Headcount</div><div>{b.headcount}</div></div>
-                <div><div className="text-ink-faint">Where</div><div>{b.locations.join(" / ") || "—"}{b.mustBeLocal ? <div className="text-[12px] text-ink-faint">must already be there</div> : null}</div></div>
-                <div><div className="text-ink-faint">Work rights</div><div>{b.workRights ?? "not required"}</div></div>
-                <div><div className="text-ink-faint">Seniority</div><div>{b.seniority ? SENIORITY_LABELS[b.seniority] : "—"}</div></div>
-                <div><div className="text-ink-faint">Sectors</div><div>{b.sectors.join(", ") || "—"}</div></div>
-                <div><div className="text-ink-faint">Budget</div><div className="tabular">{budgetLabel(d.budget) ?? "—"}</div></div>
-                <div><div className="text-ink-faint">Start · duration</div><div>{b.startBy ?? "—"}{b.durationMonths ? ` · ${b.durationMonths} months` : ""}</div></div>
-              </div>
-              {b.questions.length ? <div className="mt-3 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="label-caps tracking-wide font-medium text-amber mb-1">Still to confirm with {b.account.name}</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
+              <dl className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 text-[12.5px] mt-4">
+                <div><dt className="text-ink-faint">Roles</dt><dd>{b.roles.join(", ") || "to confirm"}</dd></div>
+                <div><dt className="text-ink-faint">Headcount</dt><dd>{b.headcount}</dd></div>
+                <div><dt className="text-ink-faint">Where</dt><dd>{b.locations.join(" / ") || "—"}{b.mustBeLocal ? <span className="block text-[12px] text-ink-faint">must already be there</span> : null}</dd></div>
+                <div><dt className="text-ink-faint">Work rights</dt><dd>{b.workRights ?? "not required"}</dd></div>
+                <div><dt className="text-ink-faint">Seniority</dt><dd>{b.seniority ? SENIORITY_LABELS[b.seniority] : "—"}</dd></div>
+                <div><dt className="text-ink-faint">Sectors</dt><dd>{b.sectors.join(", ") || "—"}</dd></div>
+                <div><dt className="text-ink-faint">Budget</dt><dd className="tabular">{budgetLabel(d.budget) ?? "—"}</dd></div>
+                <div><dt className="text-ink-faint">Start · duration</dt><dd>{b.startBy ?? "—"}{b.durationMonths ? ` · ${b.durationMonths} months` : ""}</dd></div>
+              </dl>
+              {b.questions.length ? <div className="mt-4 border-t border-line pt-3 text-[12.5px]"><div className="label-caps text-amber mb-1">Still to confirm with {b.account.name}</div><ul className="pl-4 list-disc space-y-0.5 text-ink-muted">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
             </CardBody>
           </Card>
 
-          <Section title="Shortlist" description="Retrieved for this brief only. Hard requirements are checked and labelled. Only people you mark as proposed appear in the portal, anonymised." action={<form action={findForBrief}><input type="hidden" name="briefId" value={b.id} /><SubmitButton variant={items.length ? "secondary" : "primary"} pendingText="Finding…"><Sparkles className="h-3.5 w-3.5" /> {items.length ? "Refresh" : "Find people"}</SubmitButton></form>}>
-            {items.length === 0 ? <EmptyState title="No shortlist yet" description="Find people for this brief. Nothing is shared until you propose someone." /> : (
-              <div className="space-y-3">
-                {items.map((s) => { const dims = (s.dimensions as MatchResult["dimensions"]).slice(0, 5); const checks = s.checks as HardCheck[]; const rec = ["PROPOSED", "CLIENT_INTERESTED", "INTRODUCED", "PLACED"].includes(s.decision); return (
-                  <Card key={s.id} className={rec ? "border-teal/40" : s.decision === "NOT_FOR_THIS" || s.decision === "CLIENT_PASSED" ? "opacity-60" : ""}>
-                    <CardBody className="pt-3">
-                      <div className="flex items-start justify-between gap-3"><PersonLink person={s.person} sub={s.person.headline} /><div className="flex flex-wrap items-center gap-2 justify-end shrink-0"><TierBadge tier={s.tier} /><Badge tone={s.person.vouches.filter((v) => v.wouldRecommend).length ? "teal" : "neutral"} filled>vouched by {s.person.vouches.filter((v) => v.wouldRecommend).length}</Badge><AvailabilityBadge status={s.person.availabilityStatus} confirmedAt={s.person.availabilityConfirmedAt} nextCheckDate={s.person.nextCheckDate} /><ShortlistBadge decision={s.decision} /></div></div>
-                      <CheckList checks={checks} />
-                      <FitChecks checks={fitChecks(traits, fitProfile((s.person.attributes as FitScores | null) ?? null, s.person.vouches.map((v) => v.attributes as FitScores | null).filter((a): a is FitScores => !!a)))} />
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name}><div className="label-caps text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>
-                      <p className="text-[13px] mt-3 leading-5">{s.fitExplanation}</p>
-                      {s.uncertainty.length ? <div className="mt-2 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2 text-[12px]"><div className="label-caps tracking-wide font-medium text-amber mb-0.5">Uncertainty</div><ul className="pl-4 list-disc space-y-0.5">{s.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul></div> : null}
-                      <form action={decideShortlist} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-2.5 items-end mt-3 pt-3 border-t border-line">
-                        <input type="hidden" name="itemId" value={s.id} />
-                        <Field label="Decision"><Select name="decision" defaultValue={s.decision}>{Object.entries(SHORTLIST_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
-                        <Field label="Note for the client (anonymised card)"><Input name="clientNote" defaultValue={s.clientNote ?? ""} placeholder="Why this person, in a sentence they can read." /></Field>
-                        <SubmitButton variant="secondary" pendingText="…">Save</SubmitButton>
-                        {s.person.referralConsent === "yes" || ["INTRODUCED", "PLACED"].includes(s.decision) ? null : <label className="md:col-span-3 flex items-center gap-2 text-[12.5px] text-ink-muted cursor-pointer"><input type="checkbox" name="consentConfirmed" className="h-3.5 w-3.5 rounded border-line-strong accent-navy" /> They have agreed to this introduction. Needed before choosing Introduced or Placed, which gives the client their name.</label>}
-                      </form>
-                    </CardBody>
-                  </Card>
+          {/* The shortlist: one line a person. Open a line for the reasoning and the decision. */}
+          <Card>
+            <CardHeader title="Shortlist" description={items.length ? `${items.length} ${items.length === 1 ? "person" : "people"} found for this requirement, best fit first. Open one to see why, and to decide. Only people you mark as proposed reach the client, and without their name.` : "Nothing is shared until you propose someone."} action={<form action={findForBrief}><input type="hidden" name="briefId" value={b.id} /><SubmitButton variant={items.length ? "secondary" : "primary"} pendingText="Finding…"><Sparkles className="h-3.5 w-3.5" /> {items.length ? "Refresh" : "Find people"}</SubmitButton></form>} />
+            {items.length === 0 ? <CardBody><p className="text-[13px] text-ink-muted">No shortlist yet. Find people for this requirement to start one.</p></CardBody> : (
+              <ul className="divide-y divide-line border-t border-line">
+                {items.map((s, i) => { const dims = (s.dimensions as MatchResult["dimensions"]).slice(0, 5); const checks = s.checks as HardCheck[]; const vouched = s.person.vouches.filter((v) => v.wouldRecommend).length; return (
+                  <li key={s.id} className={s.decision === "NOT_FOR_THIS" || s.decision === "CLIENT_PASSED" ? "opacity-60" : undefined}>
+                    <Fold open={i === 0} summaryClassName="px-5 py-3 sm:px-6 hover:bg-surface-muted/60" summary={
+                      <span className="flex min-w-0 items-center gap-3">
+                        <Avatar person={s.person} size="md" />
+                        <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-ink">{fullName(s.person)}</span><span className="block truncate text-[12.5px] text-ink-muted">{s.person.headline ?? "No headline yet"}</span></span>
+                        <span className="hidden flex-none md:block"><TierBadge tier={s.tier} /></span>
+                        <span className="w-8 flex-none text-right font-display text-[17px] tabular text-ink" title="Fit, out of 100">{Math.round(s.fitScore)}</span>
+                        <span className="hidden flex-none sm:block"><ShortlistBadge decision={s.decision} /></span>
+                      </span>
+                    }>
+                      <div className="px-5 pb-5 sm:px-6">
+                        <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+                          <span className="md:hidden"><TierBadge tier={s.tier} /></span><span className="sm:hidden"><ShortlistBadge decision={s.decision} /></span>
+                          <Badge tone={vouched ? "teal" : "neutral"} filled>vouched by {vouched}</Badge>
+                          <AvailabilityBadge status={s.person.availabilityStatus} confirmedAt={s.person.availabilityConfirmedAt} nextCheckDate={s.person.nextCheckDate} />
+                          <Link href={`/network/${s.person.id}`} className="ml-auto font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">Open profile</Link>
+                        </div>
+                        <CheckList checks={checks} />
+                        <FitChecks checks={fitChecks(traits, fitProfile((s.person.attributes as FitScores | null) ?? null, s.person.vouches.map((v) => v.attributes as FitScores | null).filter((x): x is FitScores => !!x)))} />
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name} className="min-w-0"><div className="label-caps text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>
+                        <p className="text-[13px] mt-3 leading-5">{s.fitExplanation}</p>
+                        {s.uncertainty.length ? <div className="mt-2 text-[12.5px]"><div className="label-caps text-amber mb-0.5">Not yet known</div><ul className="pl-4 list-disc space-y-0.5 text-ink-muted">{s.uncertainty.map((u) => <li key={u}>{u}</li>)}</ul></div> : null}
+                        <form action={decideShortlist} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-2.5 items-end mt-4 pt-4 border-t border-line">
+                          <input type="hidden" name="itemId" value={s.id} />
+                          <Field label="Decision"><Select name="decision" defaultValue={s.decision}>{Object.entries(SHORTLIST_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
+                          <Field label="Note for the client (anonymised card)"><Input name="clientNote" defaultValue={s.clientNote ?? ""} placeholder="Why this person, in a sentence they can read." /></Field>
+                          <SubmitButton variant="secondary" pendingText="…">Save</SubmitButton>
+                          {s.person.referralConsent === "yes" || ["INTRODUCED", "PLACED"].includes(s.decision) ? null : <label className="md:col-span-3 flex items-center gap-2 text-[12.5px] text-ink-muted cursor-pointer"><input type="checkbox" name="consentConfirmed" className="h-3.5 w-3.5 rounded border-line-strong accent-navy" /> They have agreed to this introduction. Needed before choosing Introduced or Placed, which gives the client their name.</label>}
+                        </form>
+                      </div>
+                    </Fold>
+                  </li>
                 ); })}
-              </div>
+              </ul>
             )}
-          </Section>
+          </Card>
         </div>
 
-        <div className="space-y-4">
-          <Card>
-            <CardHeader title="Private to you" description="Requirements are only ever seen by you and your team. Clients see their own; members see only what you open to them, without the client's name." />
-            <CardBody>
-              <form action={setBriefMembers} className="space-y-3"><input type="hidden" name="briefId" value={b.id} /><Checkbox name="openToMembers" label="Open to network members (anonymised)" defaultChecked={b.openToMembers} /><Field label="What members see"><Input name="memberSummary" defaultValue={b.memberSummary ?? ""} placeholder="The need in plain words, no client name." /></Field><div className="flex justify-end"><SubmitButton size="sm" variant="secondary" pendingText="…">Save</SubmitButton></div></form>
-              {b.pitches.length || b.referrals.length ? <ul className="mt-3 divide-y divide-line text-[12.5px]">{b.pitches.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><PersonLink person={x.person} sub={null} /><small className="block text-ink-faint">pitched · {x.status.toLowerCase()}</small></span><Link href="/referrals?tab=pitches" className="text-navy hover:underline text-[12px]">Review</Link></li>)}{b.referrals.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><b>{x.name}</b><small className="block text-ink-faint">referred by {x.referrer.firstName} {x.referrer.lastName} · {x.status.toLowerCase()}</small></span><Link href="/referrals" className="text-navy hover:underline text-[12px]">Review</Link></li>)}</ul> : null}
-            </CardBody>
-          </Card>
+        <div className="space-y-4 min-w-0">
           {money ? (
-<Card>
-            <CardHeader title="Commercials" description={`Who pays: ${b.account.name}. Change the model or the % here for this brief only.`} />
-            <CardBody>
-              <form action={saveBriefTerms} className="space-y-3">
-                <input type="hidden" name="briefId" value={b.id} />
+            <Card>
+              <CardHeader title="Commercials" description={`Paid by ${b.account.name}. Only you see this.`} action={<AddFeeDrawer briefId={b.id} people={items.map((s) => ({ id: s.personId, name: fullName(s.person) }))} defaults={{ gross: est.gross, ourTake: est.perHead, currency: est.currency, basis: est.basis }} />} />
+              <CardBody>
                 <FeeBox est={est} extra={est.confident && b.headcount > 1 ? <div className="text-[12px] text-ink-faint">{fmt(est.perHead, est.currency)} per placement</div> : null} />
-                <Field label="Fee model" hint={`${KIND_LABEL[b.account.kind]} · defaults come from the rate card in Settings`}><Select name="model" defaultValue={d.terms.model}>{Object.entries(FEE_MODEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
+                {b.feeLines.length ? <div className="mt-4"><div className="label-caps text-ink-faint mb-2">Fee lines</div><ul className="divide-y divide-line">{b.feeLines.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.person ? `${fullName(f.person)} · ` : ""}{f.basis}</div><form action={setFeeStatus} className="flex items-center gap-2 mt-1.5"><input type="hidden" name="feeId" value={f.id} /><Select name="status" defaultValue={f.status} className="h-7 text-xs w-[130px]">{Object.entries(FEE_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton></form></li>)}</ul></div> : <p className="mt-3 text-[12.5px] text-ink-muted">A fee line is created when someone is placed, or add one now.</p>}
+                <Fold className="mt-4 border-t border-line pt-3" summary={<span className="text-[13px] font-semibold text-ink">Change the terms</span>}>
+                  <form action={saveBriefTerms} className="space-y-3 mt-3">
+                    <input type="hidden" name="briefId" value={b.id} />
+                    <Field label="Fee model" hint={`${KIND_LABEL[b.account.kind]} · defaults come from the rate card in Settings`}><Select name="model" defaultValue={d.terms.model}>{Object.entries(FEE_MODEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
                 <div className="grid grid-cols-2 gap-3">
                   {d.terms.model === "INTRODUCTION_FEE" ? <Field label="Flat fee"><Input name="flat" type="number" step="0.5" min={0} defaultValue={d.terms.flat ?? ""} /></Field> : <Field label="Our %"><Input name="pct" type="number" step="0.5" min={0} defaultValue={d.terms.pct ?? ""} /></Field>}
                   <Field label="Currency"><Select name="currency" defaultValue={d.terms.currency}>{["GBP", "AED", "SAR", "USD", "EUR"].map((c) => <option key={c}>{c}</option>)}</Select></Field>
                 </div>
                 {b.engagementRoute === "ADVISORY" ? <Field label="Expert hours"><Input name="expertHours" type="number" min={1} defaultValue={b.expertHours ?? card.defaultExpertHours} /></Field> : null}
                 <Checkbox name="termsAccepted" label="Terms accepted by the paying party" defaultChecked={b.termsAccepted} />
-                <div className="flex justify-end"><SubmitButton size="sm" pendingText="Saving…">Save terms</SubmitButton></div>
-              </form>
-            </CardBody>
-          </Card>
-) : null}
-
-          {money ? (
-<Card>
-            <CardHeader title="Fees on this requirement" action={<AddFeeDrawer briefId={b.id} people={items.map((s) => ({ id: s.personId, name: fullName(s.person) }))} defaults={{ gross: est.gross, ourTake: est.perHead, currency: est.currency, basis: est.basis }} />} />
-            <CardBody>{b.feeLines.length === 0 ? <div className="text-xs text-ink-muted">A fee line is created when someone is placed, or add one now.</div> : <ul className="divide-y divide-line">{b.feeLines.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.person ? `${fullName(f.person)} · ` : ""}{f.basis}</div><form action={setFeeStatus} className="flex items-center gap-2 mt-1.5"><input type="hidden" name="feeId" value={f.id} /><Select name="status" defaultValue={f.status} className="h-7 text-xs w-[130px]">{Object.entries(FEE_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton></form></li>)}</ul>}</CardBody>
-          </Card>
-) : null}
+                    <div className="flex justify-end"><SubmitButton size="sm" pendingText="Saving…">Save terms</SubmitButton></div>
+                  </form>
+                </Fold>
+              </CardBody>
+            </Card>
+          ) : null}
 
           <Card>
-            <CardHeader title="What the client sees" description="Anonymised. Names only after introduction and consent." />
+            <CardHeader title="What the client sees" description="Without names, until an introduction is agreed." />
             <CardBody>
-              {visible.length === 0 ? <div className="text-xs text-ink-muted">Nothing yet. Mark someone as <b>Proposed to client</b> and an anonymised card appears here and in their portal.</div> : (
+              {visible.length === 0 ? <p className="text-[12.5px] text-ink-muted">Nothing yet. Mark someone as <b>Proposed to client</b> and an anonymised card appears here and in their portal.</p> : (
                 <>
                   <ul>{visible.map((s) => { const x = redactForPartner({ ...s.person, tenantId: b.tenantId, evidence: s.person.evidence, relationships: s.person.relationships }, { ref: partnerRef(b.accountId, s.person.id), hideRegion: partnerHidden({ privacy: s.person.privacy as never }).region }); const checks = s.checks as HardCheck[]; return <AnonCard key={s.id} refCode={x.ref} headline={x.headlineSummary || s.person.headline || "Profile"} region={x.region} availabilityBand={x.availabilityBand} evidenceSummary={x.evidenceSummary} rights={checks.find((c) => c.label === "Work rights")} rateStated={s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={b.account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={placedOrIntroduced(s.decision) ? fullName(s.person) : null} />; })}</ul>
-                  <Link href={`/portal?account=${b.accountId}`} className="text-[12px] text-navy hover:underline underline-offset-4 mt-2 inline-block">Open the portal as {b.account.name} →</Link>
+                  <Link href={`/portal?account=${b.accountId}`} className="text-[12.5px] font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink mt-2 inline-block">Open the portal as {b.account.name}</Link>
                 </>
               )}
+              <form action={setBriefMembers} className="mt-4 border-t border-line pt-4 space-y-3"><input type="hidden" name="briefId" value={b.id} /><Checkbox name="openToMembers" label="Also open to network members, without the client's name" defaultChecked={b.openToMembers} /><Field label="What members see"><Input name="memberSummary" defaultValue={b.memberSummary ?? ""} placeholder="The need in plain words, no client name." /></Field><div className="flex justify-end"><SubmitButton size="sm" variant="secondary" pendingText="…">Save</SubmitButton></div></form>
+              {b.pitches.length || b.referrals.length ? <ul className="mt-3 divide-y divide-line text-[12.5px]">{b.pitches.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><PersonLink person={x.person} sub={null} /><small className="block text-ink-faint">pitched · {x.status.toLowerCase()}</small></span><Link href="/referrals?tab=pitches" className="text-navy hover:underline text-[12px]">Review</Link></li>)}{b.referrals.map((x) => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span><b>{x.name}</b><small className="block text-ink-faint">referred by {x.referrer.firstName} {x.referrer.lastName} · {x.status.toLowerCase()}</small></span><Link href="/referrals" className="text-navy hover:underline text-[12px]">Review</Link></li>)}</ul> : null}
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader title="Activity" />
-            <CardBody>{audit.length === 0 ? <div className="text-xs text-ink-muted">No activity yet.</div> : <ul className="space-y-1.5 text-[12px]">{audit.map((a) => <li key={a.id}><span className="text-ink-faint"><DateText date={a.createdAt} relative /> · {a.actor?.name ?? "Portal user"}</span> <code className="text-[12px] bg-surface-muted rounded px-1">{a.action}</code></li>)}</ul>}</CardBody>
-          </Card>
+          <Fold className="px-1" summary={<span className="text-[13px] font-semibold text-ink-muted">Activity <span className="font-normal text-ink-faint">· {audit.length}</span></span>}>
+            {audit.length === 0 ? <p className="mt-2 text-[12.5px] text-ink-muted">No activity yet.</p> : <ul className="mt-2 space-y-1.5 text-[12px]">{audit.map((a) => <li key={a.id}><span className="text-ink-faint"><DateText date={a.createdAt} relative /> · {a.actor?.name ?? "Portal user"}</span> <code className="text-[12px] bg-surface-muted rounded px-1">{a.action}</code></li>)}</ul>}
+          </Fold>
         </div>
       </div>
     </>

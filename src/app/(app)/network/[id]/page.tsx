@@ -30,7 +30,7 @@ import { loadRateCard } from "@/server/queries";
 import { estimateFee, PORTAL_VISIBLE, FEE_STATUS_LABELS, type AccountKind, type ShortlistDecision } from "@/lib/demand";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { ClipboardList, GitMerge, MessagesSquare } from "lucide-react";
+import { ClipboardList, GitMerge } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
@@ -169,7 +169,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           {person.memberSince ? <Badge tone="teal" filled>network member</Badge> : null}
           <ScreeningBadge status={person.screeningStatus} />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-6 gap-y-4 mt-5 pt-4 border-t border-line">
           <Vital graphic={<Dial value={trust.score} tone={trust.score >= 35 ? "teal" : "amber"} />} label="Trust" value={`${trust.score} of 100`} hint={TRUST_BAND_LABEL[trust.band]} />
           <Vital graphic={<CircleGlyph ring={ring} />} label="Circle" value={CIRCLES[ring].label} hint={CIRCLES[ring].hint} />
           <Vital graphic={<Stack count={trust.vouchedBy} />} label="Vouched for by" value={`${trust.vouchedBy} ${trust.vouchedBy === 1 ? "person" : "people"}`} hint={trust.vouchedBy ? "who would recommend them" : "nobody yet"} />
@@ -202,7 +202,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                     <div><div className="label-caps text-ink-faint mb-1">Constraints</div><ul className="list-disc pl-4 space-y-0.5">{latestSummary.constraints.map((s) => <li key={s}>{s}</li>)}{!latestSummary.constraints.length && <li className="list-none text-ink-faint">—</li>}</ul></div>
                     {latestSummary.unresolvedQuestions.length ? <div className="md:col-span-2 rounded-md bg-amber-100/60 border border-amber/20 p-3"><div className="label-caps text-amber mb-1">Still to find out</div><ul className="list-disc pl-4 space-y-0.5 text-ink">{latestSummary.unresolvedQuestions.map((s) => <li key={s}>{s}</li>)}</ul></div> : null}
                   </div>
-                ) : <EmptyState icon={MessagesSquare} title="No conversation on record yet" description="Book a conversation, capture the notes, and approve the summary. It then appears here." />}
+                ) : <p className="text-[13px] text-ink-muted">Nothing on record yet. Book a conversation, capture the notes and approve the summary, and it appears here.</p>}
               </CardBody>
             </Card>
             <Card>
@@ -239,15 +239,11 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
           <div className="space-y-4">
             <TrustCard t={trust} firstName={person.firstName} screened={person.screeningStatus === "APPROVED" || !!person.screenedAt} workedWith={person.relationships.some((r) => r.workedTogether)} action={<VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} />} />
-            <Card>
-              <CardHeader title="Keeping in touch" description="Conversations, vouches and evidence, month by month." />
-              <CardBody><ActivityStrip dates={contactDates} /></CardBody>
-            </Card>
-            <ReferredCard rows={referredRows} showFees={money} action={<ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} variant="secondary" size="sm" label="Refer" showFees={money} />} />
             {person.vouches.length ? <VouchList vouches={person.vouches} /> : null}
             <Card>
               <CardHeader title="Details" />
               <CardBody className="space-y-5">
+                <div><div className="label-caps text-ink-faint mb-2">Keeping in touch</div><ActivityStrip dates={contactDates} /></div>
                 <div>
                   <div className="label-caps text-ink-faint mb-2">Who knows them</div>
                   <ul className="space-y-2.5">
@@ -358,6 +354,9 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         </Section>
       ) : null}
 
+      {tab === "opportunities" ? (
+        <div className="mb-4"><ReferredCard rows={referredRows} showFees={money} action={<ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} variant="secondary" size="sm" label="Refer" showFees={money} />} /></div>
+      ) : null}
       {tab === "opportunities" ? (
         <Section title="Opportunities" description="Where this person has been considered. Scores are per-opportunity, never a global rank.">
           {person.matches.length === 0 && person.teamMemberships.length === 0 ? <EmptyState title="Not yet considered for an opportunity" /> : (

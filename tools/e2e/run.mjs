@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 // Order matters: later journeys use people and requirements the earlier ones create.
-const suites = ["owner", "network", "roles", "privacy", "money", "misc"];
+const suites = ["owner", "network", "roles", "privacy", "money", "misc", "clutter"];
 let failed = 0;
 for (const s of suites) {
   console.log(`\n=== ${s} ===`);

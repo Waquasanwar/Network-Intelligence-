@@ -1,6 +1,7 @@
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Chip } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Fold } from "@/components/ui/fold";
 import { TRUST_BAND_LABEL, type TrustScore } from "@/lib/trust";
 import { ATTRIBUTES, type FitProfileRow } from "@/lib/fit";
 import type { ScreeningStatus, Vouch } from "@prisma/client";
@@ -60,8 +61,9 @@ export function FitCard({ rows, self, traits = [] }: { rows: FitProfileRow[]; se
       <CardBody>
         {!any ? <div className="text-xs text-ink-muted">{self ? "Complete the screening to build your working-style profile." : "Not assessed yet. The screening call captures this, and each vouch adds what people have seen."}</div> : (
           <>
-            <div className="flex justify-center mb-4"><StyleRadar rows={rows} /></div>
-            <ul className="space-y-2.5">
+            <div className="flex justify-center"><StyleRadar rows={rows} /></div>
+            <Fold className="mt-2 border-t border-line pt-3" summary={<span className="text-[13px] font-semibold text-ink">All eight scales</span>}>
+            <ul className="space-y-2.5 mt-3">
               {rows.map((r) => (
                 <li key={r.key} className={cn("grid grid-cols-1 md:grid-cols-[170px_1fr_74px] gap-x-3 gap-y-1 items-center text-[12.5px]", traits.includes(r.key) && "bg-navy-100/60 rounded-[12px] px-2 py-1.5 -mx-2")}>
                   <span className="flex flex-col items-start gap-0.5"><b className="font-medium">{r.label}</b>{traits.includes(r.key) ? <Badge tone="navy" filled>asked for</Badge> : null}</span>
@@ -71,6 +73,7 @@ export function FitCard({ rows, self, traits = [] }: { rows: FitProfileRow[]; se
               ))}
             </ul>
             <p className="mt-3 text-[12px] text-ink-faint flex items-center gap-1.5 flex-wrap"><i className="inline-block h-2.5 w-2.5 rounded-full bg-navy-400" /> self-assessed in screening <i className="inline-block h-2.5 w-2.5 rounded-full bg-teal ml-2" /> observed by people who vouched</p>
+            </Fold>
           </>
         )}
       </CardBody>
