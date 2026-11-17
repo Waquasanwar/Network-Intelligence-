@@ -50,7 +50,7 @@ const swayOf = (ring: number, t: number) => SWAY[ring].amp * Math.sin((t / SWAY[
  * at the back, and each circle drifts slowly. A mint arc shows trust; a mint dot means open to work.
  * Hover to trace who introduced whom; filter by capability; click a person for the roles they fit.
  */
-export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)] min-h-[580px]", openRoles, compact = false }: { nodes: GNode[]; links: GLink[]; heightClass?: string; openRoles?: number; compact?: boolean }) {
+export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)] min-h-[560px]", openRoles, compact = false }: { nodes: GNode[]; links: GLink[]; heightClass?: string; openRoles?: number; compact?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -190,7 +190,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-180px)
   const t0 = clock.current;
 
   return (
-    <div className={cn("widget relative w-full flex overflow-hidden", heightClass)}>
+    <div className={cn("ink-stage widget relative w-full flex overflow-hidden", heightClass)}>
       <div ref={wrapRef} className="orbit-stage relative flex-1 min-w-0 text-ink" onClick={() => setSelected(null)}>
         {layout ? (
           <>

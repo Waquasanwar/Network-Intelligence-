@@ -218,7 +218,7 @@ await step("intake: summarise a conversation", p, async () => {
 });
 await step("network: search + filters", p, async () => {
   await go("/network?q=cyber"); assert(await p.getByText(/Hassan Ali/).count(), "search finds cyber person");
-  await go("/network/map"); await p.locator(".orbit-stage").waitFor();
+  await go("/network/map"); await p.locator(".globe-stage canvas").waitFor(); await go("/network/map?view=circles"); await p.locator(".orbit-stage").waitFor();
 });
 await step("person: export + deletion request (owner)", p, async () => {
   await go(`/network/${personId}`);

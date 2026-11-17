@@ -22,6 +22,9 @@ const SECTIONS: NavSection[] = [
 
 /** The sections and pages this person can see. */
 export function sectionsFor(role: Role): NavSection[] {
+  // Clients, agencies and members have their own short menu. They get none of the team's sections,
+  // not even as tab labels.
+  if (role === "CLIENT" || role === "PARTNER" || role === "MEMBER") return [];
   return SECTIONS.filter((s) => SHOW_PHASE23 || !s.phase23).map((s) => ({ ...s, pages: s.pages.filter((p) => !p.ownerOnly || role === "OWNER") }));
 }
 

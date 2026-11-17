@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { canSeeMoney } from "@/lib/authz";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { NetworkGraph } from "@/components/domain/network-graph";
+import { NetworkGlobe } from "@/components/domain/network-globe";
+import { buildGlobe } from "@/server/network-globe";
 import { buildNetworkMap } from "@/server/network-map";
 import { InviteCard } from "@/components/domain/invite-card";
 import { networkInviteToken } from "@/server/invites";
@@ -83,6 +85,8 @@ export default async function OverviewPage() {
 
   // The same living map as /network/map — real trust scores and real role matches — in a compact frame.
   const { nodes: mapNodes, links: mapLinks } = await buildNetworkMap(user, now);
+  const globe = await buildGlobe(user.tenantId, mapNodes, mapLinks);
+  const onGlobe = globe.places.some((pl) => pl.people.length);
 
   const counts = (xs: string[]) => [...xs.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).map(([k]) => k);
   const topCaps = counts(mapNodes.flatMap((n) => n.capabilities ?? []));
@@ -190,8 +194,8 @@ export default async function OverviewPage() {
 
       {people.length > 1 ? (
         <Card className="mb-4 overflow-hidden">
-          <CardHeader title="Circles of trust" description="You at the centre; the people you have worked with closest in. Click a person for their trust and the open roles they fit." action={<Link href="/network/map" className="text-[13px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[6px]">Open full map</Link>} />
-          <div className="px-3 pb-3"><NetworkGraph nodes={mapNodes} links={mapLinks} heightClass="h-[480px]" compact /></div>
+          <CardHeader title={onGlobe ? "Your network around the world" : "Circles of trust"} description={onGlobe ? "Every city your people are in, and the routes between them. Pick a city to see who is there." : "You at the centre; the people you have worked with closest in. Click a person for their trust and the open roles they fit."} action={<Link href="/network/map" className="text-[13px] font-semibold text-ink underline decoration-accent decoration-[3px] underline-offset-[6px]">Open full map</Link>} />
+          <div className="px-3 pb-3">{onGlobe ? <NetworkGlobe places={globe.places} arcs={globe.arcs} home={globe.home} unplaced={globe.unplaced} heightClass="lg:h-[500px]" compact /> : <NetworkGraph nodes={mapNodes} links={mapLinks} heightClass="h-[480px]" compact />}</div>
         </Card>
       ) : null}
 

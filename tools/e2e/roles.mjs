@@ -59,6 +59,7 @@ await stepIf("partner: portal shows keyed references, never names or ids", null,
   const p = await session(b, "partner@harboursearch.local"); await p.goto(`${BASE}/partner-portal`, { waitUntil: "networkidle" }); await p.screenshot({ path: `${DIR}/partner-portal.png`, fullPage: true });
   const html = await p.content(); for (const id of sql(`select id from "Person" limit 60`).split("\n")) assert(!html.includes(id), "person id in partner page: " + id);
   await p.goto(`${BASE}/portal`, { waitUntil: "networkidle" }); const html2 = await p.content(); for (const id of sql(`select id from "Person" limit 60`).split("\n")) assert(!html2.includes(id), "person id in portal page: " + id);
+  await p.goto(`${BASE}/portal`, { waitUntil: "networkidle" }); assert(!(await p.locator("header, nav").getByText(/Agencies|Amana Expert Network|Commercials/).count()), "the team's section tabs are shown to a partner");
   for (const u of ["/network", "/invite", "/overview", "/member", "/partners"]) { await p.goto(BASE + u, { waitUntil: "domcontentloaded" }); assert(/forbidden/.test(p.url()), u + " open to partner"); }
   if (p.errs.length) throw new Error(p.errs.join("; ")); await p.context().close();
 });

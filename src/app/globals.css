@@ -329,34 +329,55 @@ kbd {
 .more-menu button svg { color: var(--color-ink-muted); width: 16px; height: 16px; }
 
 /* ---------- Network map ---------- */
-/* A light, quiet stage. Three soft circles, people as faces, and one calm rhythm (2.4s): the centre
-   beats, a faint wave crosses the circles, and each person answers as it reaches them. Colours come
-   from the theme tokens, so the map follows light and dark like everything else. */
-.orbit-stage { background: radial-gradient(60% 70% at 50% 46%, color-mix(in srgb, var(--color-accent) 16%, var(--color-surface)) 0%, var(--color-surface) 72%); }
-.orbit-band { fill: color-mix(in srgb, var(--color-accent) 7%, transparent); stroke: color-mix(in srgb, var(--color-ink) 14%, transparent); }
-.orbit-band.is-2 { fill: transparent; stroke: color-mix(in srgb, var(--color-ink) 20%, transparent); }
-.orbit-band.is-0 { fill: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+/* Ink blue, in both themes: the map is the one place the product goes dark on purpose. Everything
+   inside reads the same tokens as the rest of the app, re-pointed here, so cards, chips and text
+   inside the stage follow without a second set of classes. */
+.ink-stage {
+  --color-ink: #eef3fc; --color-ink-muted: #b3c0dc; --color-ink-faint: #8794b6;
+  --color-surface: #0f2044; --color-surface-muted: rgba(255, 255, 255, 0.07);
+  --color-line: rgba(255, 255, 255, 0.12); --color-line-strong: rgba(255, 255, 255, 0.24);
+  --color-navy: #7ee3bc; --color-navy-100: rgba(126, 227, 188, 0.14); --color-navy-400: #9db4e0;
+  --color-teal: #7ee3bc; --color-teal-50: rgba(126, 227, 188, 0.12); --color-teal-100: rgba(126, 227, 188, 0.18); --color-teal-400: #7ee3bc;
+  --color-amber: #f2c46d; --color-amber-50: rgba(242, 196, 109, 0.12); --color-amber-100: rgba(242, 196, 109, 0.16);
+  --color-canvas: #06231a; --shadow-pop: 0 18px 40px -16px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: var(--color-ink); color-scheme: dark;
+  background:
+    radial-gradient(60% 80% at 82% -10%, rgba(47, 179, 137, 0.2) 0%, rgba(47, 179, 137, 0) 60%),
+    radial-gradient(55% 70% at -6% 108%, rgba(255, 84, 64, 0.14) 0%, rgba(255, 84, 64, 0) 62%),
+    radial-gradient(70% 90% at 50% 40%, #12295a 0%, #0b1a3a 55%, #081226 100%);
+}
+/* What was navy on a light page is mint here, so anything sitting on it needs dark text. */
+.ink-stage .bg-navy { color: #06231a; }
+.ink-stage .num-grad { background-image: linear-gradient(180deg, #ffffff 35%, #7ee3bc 115%); }
+.globe-stage { background: radial-gradient(46% 46% at 50% 50%, rgba(72, 132, 255, 0.08), rgba(72, 132, 255, 0) 100%); }
+
+/* Circles of trust. Three soft rings, people as faces, and one calm rhythm (2.4s): the centre beats,
+   a faint wave crosses the rings, and each person answers as it reaches them. */
+.orbit-stage { background: radial-gradient(52% 62% at 50% 48%, rgba(126, 227, 188, 0.1) 0%, rgba(126, 227, 188, 0) 100%); }
+.orbit-band { fill: rgba(126, 227, 188, 0.045); stroke: rgba(190, 212, 255, 0.2); }
+.orbit-band.is-2 { fill: transparent; stroke: rgba(190, 212, 255, 0.26); }
+.orbit-band.is-0 { fill: rgba(126, 227, 188, 0.08); }
 
 @keyframes orbit-flow { to { stroke-dashoffset: -22; } }
 .orbit-flow { stroke-dasharray: 5 6; animation: orbit-flow 0.9s linear infinite; }
 
 /* People. Worked together: mint. Known: white. New: a small slate dot. */
-.orbit-dot { box-shadow: 0 0 0 2px var(--color-surface), 0 4px 10px -3px rgba(12, 27, 51, 0.28); color: #0c1b33; }
-.orbit-dot.is-mint { background: linear-gradient(140deg, #dff8ee, #9fe6cb); color: #0b3a2c; }
-.orbit-dot.is-white { background: linear-gradient(140deg, #ffffff, #e8eef6); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ink) 16%, transparent), 0 0 0 3px var(--color-surface), 0 4px 10px -3px rgba(12, 27, 51, 0.22); }
-.orbit-dot.is-faint { background: #a3b1c6; box-shadow: 0 0 0 2px var(--color-surface); }
-.orbit-dot.is-selected { box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-ink), 0 6px 14px -4px rgba(12, 27, 51, 0.35); }
+.orbit-dot { box-shadow: 0 0 0 2px #0b1a3a, 0 6px 14px -4px rgba(0, 0, 0, 0.6); color: #0c1b33; }
+.orbit-dot.is-mint { background: linear-gradient(140deg, #e3faf0, #8fe0c0); color: #0b3a2c; }
+.orbit-dot.is-white { background: linear-gradient(140deg, #ffffff, #dbe5f6); }
+.orbit-dot.is-faint { background: #7f92ba; }
+.orbit-dot.is-selected { box-shadow: 0 0 0 2px #0b1a3a, 0 0 0 4px #ffffff, 0 8px 18px -4px rgba(0, 0, 0, 0.7); }
 
 /* You, at the centre. */
 @keyframes orbit-beat { 0%, 34%, 100% { transform: scale(1); } 7% { transform: scale(1.06); } 15% { transform: scale(1); } 23% { transform: scale(1.03); } }
-.orbit-beat { background: linear-gradient(150deg, #1d3156, #0c1b33); box-shadow: 0 0 0 4px var(--color-surface), 0 0 0 5px color-mix(in srgb, var(--color-accent) 80%, transparent), 0 14px 30px -10px rgba(12, 27, 51, 0.5); animation: orbit-beat 2.4s ease-in-out infinite; }
+.orbit-beat { background: linear-gradient(150deg, #ffffff, #cfe3ff); color: #0c1b33; box-shadow: 0 0 0 4px #0b1a3a, 0 0 0 5px rgba(126, 227, 188, 0.85), 0 0 34px 2px rgba(126, 227, 188, 0.35); animation: orbit-beat 2.4s ease-in-out infinite; }
 .orbit-halo { display: none; }
 
 /* The wave, and each person's answer to it. */
 @keyframes orbit-ripple { 0% { transform: scale(0.04); opacity: 0; } 8% { opacity: 0.55; } 70% { opacity: 0.2; } 100% { transform: scale(1.1); opacity: 0; } }
-.orbit-ripple { position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid var(--color-teal-400); opacity: 0; animation: orbit-ripple 7.2s linear infinite; will-change: transform, opacity; }
+.orbit-ripple { position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid #7ee3bc; opacity: 0; animation: orbit-ripple 7.2s linear infinite; will-change: transform, opacity; }
 @keyframes orbit-glow { 0%, 60%, 100% { opacity: 0; transform: scale(0.9); } 10% { opacity: var(--glow, 0.6); transform: scale(1); } 40% { opacity: 0; transform: scale(1.22); } }
-.orbit-glow { position: absolute; inset: -6px; border-radius: 9999px; pointer-events: none; opacity: 0; --glow: 0.55; border: 2px solid var(--color-teal-400); animation: orbit-glow 2.4s ease-out infinite; will-change: transform, opacity; }
+.orbit-glow { position: absolute; inset: -6px; border-radius: 9999px; pointer-events: none; opacity: 0; --glow: 0.55; border: 2px solid #7ee3bc; animation: orbit-glow 2.4s ease-out infinite; will-change: transform, opacity; }
 .orbit-glow.is-near { --glow: 0.8; }
 .orbit-glow.is-far { --glow: 0.3; inset: -4px; border-width: 1.5px; }
 @keyframes orbit-ping { 0% { transform: scale(1); opacity: 0.8; } 65%, 100% { transform: scale(2.6); opacity: 0; } }
