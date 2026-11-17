@@ -7,9 +7,7 @@ the snapshot store in server.py.
 
 from __future__ import annotations
 
-import httpx
-
-from .base import TIMEOUT, TokenCache, entra_token, env
+from .base import TokenCache, client, entra_token, env
 
 _tokens = TokenCache()
 SCOPE = "https://management.azure.com/.default"
@@ -41,12 +39,10 @@ securityresources
 def _rg(kql: str) -> list[dict]:
     cfg = env("DEFENDER_SUBSCRIPTION_IDS")
     token = entra_token(_tokens, SCOPE)
-    resp = httpx.post(
+    resp = client().post(
         URL,
         headers={"Authorization": f"Bearer {token}"},
-        json={"subscriptions": [s.strip() for s in cfg["DEFENDER_SUBSCRIPTION_IDS"].split(",")], "query": kql},
-        timeout=TIMEOUT,
-    )
+        json={"subscriptions": [s.strip() for s in cfg["DEFENDER_SUBSCRIPTION_IDS"].split(",")], "query": kql})
     resp.raise_for_status()
     return resp.json().get("data", [])
 

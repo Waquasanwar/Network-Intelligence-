@@ -29,7 +29,8 @@ from typing import Any, Callable, Literal
 from mcp.server.fastmcp import FastMCP
 
 from .auth import from_env
-from .sources import defender_cloud, gitlab, mimecast, sentinel
+from .sources import cyberark, defender_cloud, defender_xdr, entra, gitlab, mimecast, netskope, sentinel, sentinelone
+from .sources.registry import check_all
 from .sources.base import NotConfigured
 from .sources.vendor_mcp import pointer
 
@@ -89,7 +90,8 @@ def vulnerability_summary() -> dict:
         "mode": "live",
         "defender_for_cloud": _call("defender", defender_cloud.summary),
         "gitlab": _call("gitlab", gitlab.summary),
-        "sentinelone": pointer("SentinelOne"),
+        "defender_for_endpoint": _call("defender_xdr", defender_xdr.vulnerabilities),
+        "sentinelone": _call("sentinelone", sentinelone.summary),
         "orca": pointer("Orca"),
     }
     _snapshot("vulnerability_summary", out)
@@ -117,7 +119,8 @@ def phishing_summary() -> dict:
         m, w = SAMPLE["mail"], SAMPLE["weekly"]
         return _sample({"blocked": m["phish_blocked"], "delivered": [x["phish_delivered"] for x in w], "clicked": [x["phish_clicked"] for x in w],
                         "reported": m["reported_by_users"], "credentials_entered": m["credentials_entered"], "simulation": m["simulation"]})
-    out = {"mode": "live", "simulation_campaigns": _call("mimecast", mimecast.simulation_campaigns)}
+    out = {"mode": "live", "threats": _call("mimecast", mimecast.threat_summary),
+           "simulation_campaigns": _call("mimecast", mimecast.simulation_campaigns)}
     _snapshot("phishing_summary", out)
     return out
 
@@ -129,7 +132,8 @@ def user_and_app_risk(weeks: int = 12) -> dict:
     if MODE != "live":
         return _sample({"weekly": SAMPLE["top"]["weekly"], "dlp_types": SAMPLE["top"]["dlp_types"]})
     return {"mode": "live", "signins": _call("sentinel", lambda: sentinel.signin_risk(weeks)),
-            "netskope": pointer("Netskope"), "cyberark": pointer("CyberArk")}
+            "netskope": _call("netskope", lambda: netskope.summary(weeks)), "cyberark": _call("cyberark", cyberark.summary),
+            "entra_risky_users": _call("entra", entra.risky_users)}
 
 
 @mcp.tool()
@@ -162,6 +166,12 @@ def top_list(name: TopList, limit: int = 10) -> dict:
         return {"mode": "live", "list": name, **_call("sentinel", live[name])}
     return {"mode": "live", "list": name, "status": "not_implemented",
             "detail": "This list comes from a source served by its vendor's MCP server or not yet wired; see the README."}
+
+
+@mcp.tool()
+def connection_check() -> dict:
+    """Which source systems are connected, not configured, or failing, with a hint for each failure."""
+    return check_all()
 
 
 @mcp.tool()

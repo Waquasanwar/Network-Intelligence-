@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import os
 
-import httpx
-
-from .base import TIMEOUT, env
+from .base import client, env
 
 SEVERITY_COUNTS = """
 query($path: ID!) {
@@ -27,12 +25,10 @@ def summary() -> dict:
     base = os.environ.get("GITLAB_URL", "https://gitlab.com").rstrip("/")
     out = []
     for path in [g.strip() for g in cfg["GITLAB_GROUPS"].split(",") if g.strip()]:
-        resp = httpx.post(
+        resp = client().post(
             f"{base}/api/graphql",
             headers={"Authorization": f"Bearer {cfg['GITLAB_TOKEN']}"},
-            json={"query": SEVERITY_COUNTS, "variables": {"path": path}},
-            timeout=TIMEOUT,
-        )
+            json={"query": SEVERITY_COUNTS, "variables": {"path": path}})
         resp.raise_for_status()
         body = resp.json()
         if body.get("errors"):

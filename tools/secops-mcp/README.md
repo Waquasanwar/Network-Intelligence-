@@ -121,12 +121,16 @@ against a real tenant**. Test each one with a read-only identity before relying 
 | Tool | Dashboard view | Live source today |
 |---|---|---|
 | `soc_weekly` | SOC operations | Microsoft Sentinel (`SecurityIncident`, `SecurityAlert`) |
-| `vulnerability_summary` | Vulnerabilities | Defender for Cloud (Resource Graph), GitLab (GraphQL); SentinelOne and Orca through their own MCP servers |
+| `vulnerability_summary` | Vulnerabilities | Defender for Endpoint (by servers, workstations, mobile), Defender for Cloud, SentinelOne, GitLab |
 | `remediation_weekly` | Remediation | Weekly snapshot files written by the server |
-| `phishing_summary` | Email and phishing | Mimecast API 2.0 (Awareness Training) |
-| `user_and_app_risk` | Users and apps | Entra ID sign-ins through Sentinel; Netskope and CyberArk through their own servers |
+| `phishing_summary` | Email and phishing | Mimecast API 2.0: URL, attachment and impersonation logs, Awareness Training |
+| `user_and_app_risk` | Users and apps | Entra ID sign-ins and risky users, Netskope DLP and risky apps, CyberArk privileged accounts |
 | `coverage` | Control areas | Defender for Cloud plans |
-| `top_list` | Top lists on every view | Sentinel for alert hosts and noisy rules; the rest in sample mode for now |
+| `top_list` | Top lists on every view | Sentinel for alert hosts and noisy rules; other lists fill through `dashboard_data` |
+| `connection_check` | (setup) | Calls every configured system once and reports connected, not configured, or failing |
+| `dashboard_data` | Every view | The whole dashboard in one document |
+
+**Connecting each system:** identities, permissions, settings and what each fills are in [SOURCES.md](SOURCES.md).
 
 ## What exists for each system (research, November 2026)
 

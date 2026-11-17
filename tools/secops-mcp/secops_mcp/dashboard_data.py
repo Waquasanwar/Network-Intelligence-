@@ -131,7 +131,10 @@ def build() -> dict:
     if folder.exists():
         _apply_exports(data, sources, folder)
     if os.environ.get("SECOPS_MODE", "sample").lower() == "live":
+        from .live import apply_all
+
         _apply_sentinel(data, sources)
+        data["_systems"] = apply_all(data, sources)
     data["custom"], data["_custom_status"] = _custom_metrics(folder)
     data["_sources"] = sources
     data["_built_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())

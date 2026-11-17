@@ -132,7 +132,7 @@ function rank(title,sub,head,rows,o={}){const bi=o.bar||1,max=Math.max(...rows.m
 const R={
   hostsAlert:()=>rank('Hosts raising the most alerts','This week',['Host','Alerts','Incidents'],T.alert_hosts.map((h)=>[[h.host,h.type],h.alerts,h.incidents])),
   rules:()=>rank('Detection rules making the most noise','This week',['Rule','Alerts','False alarms'],T.rules.map((r)=>[[r.rule,r.source],r.alerts,r.false_pct]),{units:{2:'%'},flag:(r,k)=>k===2&&r[2]>=60,note:'A rule in red is wrong more than six times in ten and is a candidate for tuning.'}),
-  hostsVuln:()=>rank('Most exposed hosts','Critical and high findings open',['Host','Critical','High','Oldest'],T.vuln_hosts.map((h)=>[[h.host,`${h.type} · ${h.team}`],h.critical,h.high,h.oldest_days]),{units:{3:' days'},flag:(r,k)=>k===3&&r[3]>90}),
+  hostsVuln:()=>rank('Most exposed hosts','Critical and high findings open',['Host','Critical','High','Oldest'],T.vuln_hosts.map((h)=>[[h.host,[h.type,h.team].filter(Boolean).join(' · ')],h.critical,h.high,h.oldest_days]),{units:{3:' days'},flag:(r,k)=>k===3&&r[3]>90}),
   common:()=>rank('Most common weaknesses','Assets affected',['Weakness','Assets','Severity'],T.common.map((c)=>[[c.title,c.where],c.assets,c.severity]),{flag:(r,k)=>k===2&&r[2]==='Critical'}),
   targets:()=>rank('Most targeted people','Phishing emails aimed at them this month',['Person','Received','Clicked','Reported'],T.targets.map((u)=>[[u.id,`${u.role} · ${u.dept}`],u.received,u.clicked,u.reported]),{flag:(r,k)=>k===2&&r[2]>0}),
   clickers:()=>rank('Repeat clickers','Real and simulated phishing, last 90 days',['Person','Clicks','Training'],T.repeat_clickers.map((u)=>[[u.id,u.dept],u.clicks,u.training]),{hot:(r)=>r[1]>=4,flag:(r,k)=>k===2&&r[2]==='Overdue'}),

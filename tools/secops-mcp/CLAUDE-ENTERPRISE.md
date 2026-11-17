@@ -52,10 +52,16 @@ az containerapp create -n secops-metrics -g <rg> --environment <aca-env> \
     MIMECAST_CLIENT_ID=<id> MIMECAST_CLIENT_SECRET=secretref:mimecast-secret
 ```
 
+Add the settings for each other system you use (SentinelOne, CyberArk, Netskope and so on) the
+same way: [SOURCES.md](SOURCES.md) lists the identity and permissions for each, and
+`.env.example` lists every setting. After deploying, run `python -m secops_mcp.check` in the
+container (or ask Claude to run the `connection_check` tool) and fix anything marked FAIL.
+
 Then:
 
 - **Data access.** Give the container's managed identity "Microsoft Sentinel Reader" on the
-  workspace and "Security Reader" on each subscription in scope. No Azure secret is stored;
+  workspace, "Security Reader" on each subscription in scope, and the Graph and Defender
+  application permissions listed in SOURCES.md. No Azure secret is stored;
   the server uses the managed identity automatically.
 - **Address.** Add a custom domain and certificate, for example `secops-metrics.<your-domain>`.
 - **Who can reach it.** Add ingress IP restrictions allowing only Anthropic's outbound range

@@ -15,9 +15,7 @@ Notes on the measures:
 
 from __future__ import annotations
 
-import httpx
-
-from .base import TIMEOUT, TokenCache, entra_token, env
+from .base import TokenCache, client, entra_token, env
 
 _tokens = TokenCache()
 SCOPE = "https://api.loganalytics.io/.default"
@@ -27,7 +25,8 @@ let weeks = {weeks};
 SecurityIncident
 | where CreatedTime > ago(weeks * 7d)
 | summarize arg_max(TimeGenerated, *) by IncidentNumber
-| extend week_ending = startofweek(CreatedTime) + 6d
+| extend week_ending = startofweek(CreatedTime - 1d) + 7d  // weeks run Monday to Sunday
+| where week_ending < startofday(now())  // completed weeks only
 | summarize
     incidents = count(),
     high = countif(Severity == "High"),
@@ -47,7 +46,8 @@ let weeks = {weeks};
 SecurityAlert
 | where TimeGenerated > ago(weeks * 7d)
 | summarize arg_max(TimeGenerated, *) by SystemAlertId
-| extend week_ending = startofweek(TimeGenerated) + 6d
+| extend week_ending = startofweek(TimeGenerated - 1d) + 7d
+| where week_ending < startofday(now())
 | summarize alerts = count(), by_product = make_bag(bag_pack(ProductName, 1)) by week_ending
 | order by week_ending asc
 """
@@ -75,7 +75,8 @@ SecurityIncident
 RISKY_SIGNINS_KQL = """
 SigninLogs
 | where TimeGenerated > ago({weeks} * 7d)
-| extend week_ending = startofweek(TimeGenerated) + 6d
+| extend week_ending = startofweek(TimeGenerated - 1d) + 7d
+| where week_ending < startofday(now())
 | summarize
     risky_signins = countif(RiskLevelDuringSignIn in ("medium", "high")),
     mfa_failures = countif(ResultType == "500121")
@@ -87,12 +88,10 @@ SigninLogs
 def query(kql: str) -> list[dict]:
     cfg = env("SENTINEL_WORKSPACE_ID")
     token = entra_token(_tokens, SCOPE)
-    resp = httpx.post(
+    resp = client().post(
         f"https://api.loganalytics.io/v1/workspaces/{cfg['SENTINEL_WORKSPACE_ID']}/query",
         headers={"Authorization": f"Bearer {token}"},
-        json={"query": kql},
-        timeout=TIMEOUT,
-    )
+        json={"query": kql})
     resp.raise_for_status()
     table = resp.json()["tables"][0]
     cols = [c["name"] for c in table["columns"]]

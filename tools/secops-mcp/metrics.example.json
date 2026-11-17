@@ -17,7 +17,7 @@
       "better": "lower",
       "source": {
         "type": "kql",
-        "query": "SecurityAlert | where TimeGenerated > ago(84d) and AlertName has 'ransom' | summarize value = dcount(SystemAlertId) by week_ending = startofweek(TimeGenerated) + 6d | order by week_ending asc"
+        "query": "SecurityAlert | where TimeGenerated > ago(84d) and AlertName has 'ransom' | summarize value = dcount(SystemAlertId) by week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | order by week_ending asc"
       }
     },
     {
