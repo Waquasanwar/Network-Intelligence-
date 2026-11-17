@@ -1,0 +1,1547 @@
+{
+ "weekly": [
+  {
+   "week_ending": "2026-08-30",
+   "open_critical": 94,
+   "open_high": 414,
+   "opened": 118,
+   "closed": 126,
+   "sla_pct": 86.1,
+   "sla_target": 95,
+   "mttr_critical_days": 16.5,
+   "incidents": 52,
+   "mttd_minutes": 46,
+   "phish_delivered": 142,
+   "phish_clicked": 13
+  },
+  {
+   "week_ending": "2026-09-06",
+   "open_critical": 91,
+   "open_high": 409,
+   "opened": 131,
+   "closed": 139,
+   "sla_pct": 86.4,
+   "sla_target": 95,
+   "mttr_critical_days": 16.1,
+   "incidents": 47,
+   "mttd_minutes": 44,
+   "phish_delivered": 128,
+   "phish_clicked": 11
+  },
+  {
+   "week_ending": "2026-09-13",
+   "open_critical": 86,
+   "open_high": 392,
+   "opened": 109,
+   "closed": 131,
+   "sla_pct": 87.0,
+   "sla_target": 95,
+   "mttr_critical_days": 15.8,
+   "incidents": 58,
+   "mttd_minutes": 47,
+   "phish_delivered": 151,
+   "phish_clicked": 14
+  },
+  {
+   "week_ending": "2026-09-20",
+   "open_critical": 85,
+   "open_high": 399,
+   "opened": 124,
+   "closed": 118,
+   "sla_pct": 86.8,
+   "sla_target": 95,
+   "mttr_critical_days": 15.9,
+   "incidents": 44,
+   "mttd_minutes": 42,
+   "phish_delivered": 119,
+   "phish_clicked": 9
+  },
+  {
+   "week_ending": "2026-09-27",
+   "open_critical": 81,
+   "open_high": 391,
+   "opened": 137,
+   "closed": 149,
+   "sla_pct": 87.9,
+   "sla_target": 95,
+   "mttr_critical_days": 14.7,
+   "incidents": 49,
+   "mttd_minutes": 41,
+   "phish_delivered": 124,
+   "phish_clicked": 10
+  },
+  {
+   "week_ending": "2026-10-04",
+   "open_critical": 76,
+   "open_high": 375,
+   "opened": 112,
+   "closed": 133,
+   "sla_pct": 88.6,
+   "sla_target": 95,
+   "mttr_critical_days": 14.2,
+   "incidents": 41,
+   "mttd_minutes": 39,
+   "phish_delivered": 108,
+   "phish_clicked": 8
+  },
+  {
+   "week_ending": "2026-10-11",
+   "open_critical": 82,
+   "open_high": 414,
+   "opened": 186,
+   "closed": 141,
+   "sla_pct": 87.2,
+   "sla_target": 95,
+   "mttr_critical_days": 14.9,
+   "incidents": 63,
+   "mttd_minutes": 43,
+   "phish_delivered": 133,
+   "phish_clicked": 12
+  },
+  {
+   "week_ending": "2026-10-18",
+   "open_critical": 74,
+   "open_high": 385,
+   "opened": 121,
+   "closed": 158,
+   "sla_pct": 88.4,
+   "sla_target": 95,
+   "mttr_critical_days": 13.6,
+   "incidents": 46,
+   "mttd_minutes": 38,
+   "phish_delivered": 101,
+   "phish_clicked": 7
+  },
+  {
+   "week_ending": "2026-10-25",
+   "open_critical": 67,
+   "open_high": 359,
+   "opened": 104,
+   "closed": 137,
+   "sla_pct": 89.5,
+   "sla_target": 95,
+   "mttr_critical_days": 12.9,
+   "incidents": 39,
+   "mttd_minutes": 36,
+   "phish_delivered": 96,
+   "phish_clicked": 6
+  },
+  {
+   "week_ending": "2026-11-01",
+   "open_critical": 64,
+   "open_high": 349,
+   "opened": 116,
+   "closed": 129,
+   "sla_pct": 90.1,
+   "sla_target": 95,
+   "mttr_critical_days": 12.4,
+   "incidents": 42,
+   "mttd_minutes": 34,
+   "phish_delivered": 104,
+   "phish_clicked": 7
+  },
+  {
+   "week_ending": "2026-11-08",
+   "open_critical": 58,
+   "open_high": 326,
+   "opened": 98,
+   "closed": 127,
+   "sla_pct": 90.6,
+   "sla_target": 95,
+   "mttr_critical_days": 11.8,
+   "incidents": 37,
+   "mttd_minutes": 33,
+   "phish_delivered": 92,
+   "phish_clicked": 5
+  },
+  {
+   "week_ending": "2026-11-15",
+   "open_critical": 55,
+   "open_high": 315,
+   "opened": 107,
+   "closed": 121,
+   "sla_pct": 91.4,
+   "sla_target": 95,
+   "mttr_critical_days": 11.2,
+   "incidents": 35,
+   "mttd_minutes": 31,
+   "phish_delivered": 88,
+   "phish_clicked": 6
+  }
+ ],
+ "vulns": [
+  {
+   "source": "Orca",
+   "severity": "Critical",
+   "open": 21,
+   "overdue": 5
+  },
+  {
+   "source": "Orca",
+   "severity": "High",
+   "open": 107,
+   "overdue": 16
+  },
+  {
+   "source": "Orca",
+   "severity": "Medium",
+   "open": 612,
+   "overdue": 37
+  },
+  {
+   "source": "Defender for Cloud",
+   "severity": "Critical",
+   "open": 12,
+   "overdue": 2
+  },
+  {
+   "source": "Defender for Cloud",
+   "severity": "High",
+   "open": 79,
+   "overdue": 9
+  },
+  {
+   "source": "Defender for Cloud",
+   "severity": "Medium",
+   "open": 431,
+   "overdue": 22
+  },
+  {
+   "source": "GitLab",
+   "severity": "Critical",
+   "open": 15,
+   "overdue": 6
+  },
+  {
+   "source": "GitLab",
+   "severity": "High",
+   "open": 91,
+   "overdue": 26
+  },
+  {
+   "source": "GitLab",
+   "severity": "Medium",
+   "open": 388,
+   "overdue": 47
+  },
+  {
+   "source": "SentinelOne",
+   "severity": "Critical",
+   "open": 7,
+   "overdue": 1
+  },
+  {
+   "source": "SentinelOne",
+   "severity": "High",
+   "open": 38,
+   "overdue": 3
+  },
+  {
+   "source": "SentinelOne",
+   "severity": "Medium",
+   "open": 204,
+   "overdue": 6
+  }
+ ],
+ "owners": [
+  {
+   "team": "Platform Engineering",
+   "open_critical_high": 89,
+   "overdue": 13,
+   "sla_pct": 92.8,
+   "mttr_critical_days": 10.4
+  },
+  {
+   "team": "Customer Apps",
+   "open_critical_high": 78,
+   "overdue": 23,
+   "sla_pct": 84.1,
+   "mttr_critical_days": 17.9
+  },
+  {
+   "team": "Payments",
+   "open_critical_high": 44,
+   "overdue": 4,
+   "sla_pct": 97.2,
+   "mttr_critical_days": 6.8
+  },
+  {
+   "team": "Data and Analytics",
+   "open_critical_high": 63,
+   "overdue": 15,
+   "sla_pct": 87.6,
+   "mttr_critical_days": 14.6
+  },
+  {
+   "team": "Corporate IT",
+   "open_critical_high": 41,
+   "overdue": 5,
+   "sla_pct": 95.4,
+   "mttr_critical_days": 8.1
+  },
+  {
+   "team": "Infrastructure",
+   "open_critical_high": 55,
+   "overdue": 8,
+   "sla_pct": 93.1,
+   "mttr_critical_days": 9.9
+  }
+ ],
+ "tools": [
+  {
+   "system": "Microsoft Sentinel",
+   "watches": "Security events and incidents",
+   "measure": "Incidents raised",
+   "value": 35,
+   "previous": 37,
+   "unit": "",
+   "better": "lower",
+   "coverage_pct": 97,
+   "extracted": "2026-11-15",
+   "in_scope": 12400,
+   "scope_unit": "log sources"
+  },
+  {
+   "system": "GitLab",
+   "watches": "Code and pipelines",
+   "measure": "Critical and high code findings open",
+   "value": 106,
+   "previous": 115,
+   "unit": "",
+   "better": "lower",
+   "coverage_pct": 88,
+   "extracted": "2026-11-15",
+   "in_scope": 640,
+   "scope_unit": "projects"
+  },
+  {
+   "system": "Orca",
+   "watches": "Cloud workloads",
+   "measure": "Critical and high cloud findings open",
+   "value": 128,
+   "previous": 139,
+   "unit": "",
+   "better": "lower",
+   "coverage_pct": 94,
+   "extracted": "2026-11-15",
+   "in_scope": 3400,
+   "scope_unit": "cloud workloads"
+  },
+  {
+   "system": "Defender for Cloud",
+   "watches": "Cloud configuration",
+   "measure": "Secure score",
+   "value": 73,
+   "previous": 71,
+   "unit": "%",
+   "better": "higher",
+   "coverage_pct": 100,
+   "extracted": "2026-11-15",
+   "in_scope": 3400,
+   "scope_unit": "cloud resources"
+  },
+  {
+   "system": "Netskope",
+   "watches": "Web and SaaS traffic",
+   "measure": "Data loss policy violations",
+   "value": 187,
+   "previous": 214,
+   "unit": "",
+   "better": "lower",
+   "coverage_pct": 91,
+   "extracted": "2026-11-15",
+   "in_scope": 9100,
+   "scope_unit": "users"
+  },
+  {
+   "system": "CyberArk",
+   "watches": "Privileged access",
+   "measure": "Privileged accounts not vaulted",
+   "value": 39,
+   "previous": 46,
+   "unit": "",
+   "better": "lower",
+   "coverage_pct": 86,
+   "extracted": "2026-11-08",
+   "in_scope": 1850,
+   "scope_unit": "privileged accounts"
+  },
+  {
+   "system": "Mimecast",
+   "watches": "Email",
+   "measure": "Phishing emails delivered",
+   "value": 88,
+   "previous": 92,
+   "unit": "",
+   "better": "lower",
+   "coverage_pct": 100,
+   "extracted": "2026-11-15",
+   "in_scope": 9100,
+   "scope_unit": "mailboxes"
+  },
+  {
+   "system": "SentinelOne",
+   "watches": "Endpoint detection and response",
+   "measure": "Unresolved endpoint threats",
+   "value": 12,
+   "previous": 17,
+   "unit": "",
+   "better": "lower",
+   "coverage_pct": 96,
+   "extracted": "2026-11-15",
+   "in_scope": 9100,
+   "scope_unit": "endpoints"
+  }
+ ],
+ "trend": {
+  "Microsoft Sentinel": [
+   52,
+   47,
+   58,
+   44,
+   49,
+   41,
+   63,
+   46,
+   39,
+   42,
+   37,
+   35
+  ],
+  "Mimecast": [
+   142,
+   128,
+   151,
+   119,
+   124,
+   108,
+   133,
+   101,
+   96,
+   104,
+   92,
+   88
+  ],
+  "GitLab": [
+   141,
+   139,
+   136,
+   138,
+   133,
+   129,
+   134,
+   127,
+   122,
+   119,
+   115,
+   106
+  ],
+  "Orca": [
+   176,
+   171,
+   168,
+   163,
+   160,
+   154,
+   159,
+   151,
+   147,
+   143,
+   139,
+   128
+  ],
+  "Defender for Cloud": [
+   64,
+   64,
+   65,
+   66,
+   66,
+   67,
+   67,
+   68,
+   69,
+   70,
+   71,
+   73
+  ],
+  "Netskope": [
+   262,
+   248,
+   255,
+   239,
+   231,
+   244,
+   268,
+   236,
+   229,
+   221,
+   214,
+   187
+  ],
+  "CyberArk": [
+   71,
+   68,
+   66,
+   63,
+   60,
+   58,
+   55,
+   52,
+   50,
+   48,
+   46,
+   39
+  ],
+  "SentinelOne": [
+   31,
+   28,
+   29,
+   25,
+   24,
+   22,
+   27,
+   21,
+   19,
+   18,
+   17,
+   12
+  ]
+ },
+ "soc": {
+  "alerts": [
+   5120,
+   4980,
+   5340,
+   4870,
+   5010,
+   4760,
+   6210,
+   4890,
+   4620,
+   4710,
+   4540,
+   4480
+  ],
+  "triaged": [
+   1480,
+   1420,
+   1560,
+   1390,
+   1410,
+   1330,
+   1790,
+   1360,
+   1280,
+   1300,
+   1240,
+   1210
+  ],
+  "critical": [
+   4,
+   3,
+   5,
+   3,
+   3,
+   2,
+   6,
+   3,
+   2,
+   2,
+   2,
+   2
+  ],
+  "high": [
+   14,
+   12,
+   16,
+   11,
+   13,
+   10,
+   18,
+   12,
+   10,
+   11,
+   9,
+   8
+  ],
+  "false_positive_pct": [
+   41,
+   40,
+   42,
+   39,
+   38,
+   37,
+   39,
+   36,
+   35,
+   34,
+   33,
+   32
+  ],
+  "mtta_minutes": [
+   18,
+   17,
+   19,
+   16,
+   15,
+   14,
+   17,
+   13,
+   12,
+   12,
+   11,
+   10
+  ],
+  "contain_hours": [
+   9.4,
+   9.1,
+   9.8,
+   8.6,
+   8.4,
+   7.9,
+   9.2,
+   7.5,
+   7.1,
+   6.8,
+   6.5,
+   6.2
+  ],
+  "response_sla_pct": [
+   82,
+   83,
+   81,
+   85,
+   86,
+   87,
+   84,
+   88,
+   90,
+   91,
+   92,
+   93
+  ],
+  "response_target": 90,
+  "open_incidents": [
+   14,
+   13,
+   16,
+   12,
+   12,
+   10,
+   17,
+   11,
+   9,
+   9,
+   8,
+   7
+  ],
+  "categories": [
+   {
+    "name": "Phishing and email",
+    "now": 11,
+    "previous": 12
+   },
+   {
+    "name": "Malware on an endpoint",
+    "now": 7,
+    "previous": 8
+   },
+   {
+    "name": "Identity and access",
+    "now": 6,
+    "previous": 5
+   },
+   {
+    "name": "Cloud misconfiguration",
+    "now": 5,
+    "previous": 5
+   },
+   {
+    "name": "Data loss",
+    "now": 4,
+    "previous": 4
+   },
+   {
+    "name": "Other",
+    "now": 2,
+    "previous": 3
+   }
+  ],
+  "queue": [
+   {
+    "age": "Under 24 hours",
+    "count": 3
+   },
+   {
+    "age": "1 to 3 days",
+    "count": 2
+   },
+   {
+    "age": "3 to 7 days",
+    "count": 1
+   },
+   {
+    "age": "Over 7 days",
+    "count": 1,
+    "breach": true
+   }
+  ],
+  "attack": [
+   {
+    "tactic": "Initial Access",
+    "coverage": 78,
+    "incidents": 19
+   },
+   {
+    "tactic": "Execution",
+    "coverage": 71,
+    "incidents": 9
+   },
+   {
+    "tactic": "Persistence",
+    "coverage": 64,
+    "incidents": 4
+   },
+   {
+    "tactic": "Privilege Escalation",
+    "coverage": 58,
+    "incidents": 3
+   },
+   {
+    "tactic": "Defense Evasion",
+    "coverage": 42,
+    "incidents": 6
+   },
+   {
+    "tactic": "Credential Access",
+    "coverage": 69,
+    "incidents": 11
+   },
+   {
+    "tactic": "Discovery",
+    "coverage": 55,
+    "incidents": 2
+   },
+   {
+    "tactic": "Lateral Movement",
+    "coverage": 47,
+    "incidents": 5
+   },
+   {
+    "tactic": "Collection",
+    "coverage": 51,
+    "incidents": 1
+   },
+   {
+    "tactic": "Command and Control",
+    "coverage": 73,
+    "incidents": 4
+   },
+   {
+    "tactic": "Exfiltration",
+    "coverage": 61,
+    "incidents": 3
+   },
+   {
+    "tactic": "Impact",
+    "coverage": 66,
+    "incidents": 1
+   }
+  ]
+ },
+ "assets": [
+  {
+   "type": "Servers",
+   "in_scope": 1840,
+   "critical": 19,
+   "high": 96,
+   "overdue": 21,
+   "patched_pct": 88,
+   "avg_age_days": 34,
+   "trend": [
+    170,
+    166,
+    158,
+    159,
+    155,
+    147,
+    160,
+    147,
+    136,
+    131,
+    120,
+    115
+   ]
+  },
+  {
+   "type": "Cloud workloads",
+   "in_scope": 3400,
+   "critical": 14,
+   "high": 67,
+   "overdue": 12,
+   "patched_pct": 86,
+   "avg_age_days": 27,
+   "trend": [
+    111,
+    110,
+    105,
+    106,
+    103,
+    99,
+    109,
+    101,
+    93,
+    90,
+    84,
+    81
+   ]
+  },
+  {
+   "type": "Applications and code",
+   "in_scope": 260,
+   "critical": 12,
+   "high": 61,
+   "overdue": 22,
+   "patched_pct": 83,
+   "avg_age_days": 44,
+   "trend": [
+    91,
+    90,
+    86,
+    88,
+    87,
+    84,
+    93,
+    87,
+    81,
+    80,
+    75,
+    73
+   ]
+  },
+  {
+   "type": "Workstations",
+   "in_scope": 6200,
+   "critical": 6,
+   "high": 58,
+   "overdue": 7,
+   "patched_pct": 94,
+   "avg_age_days": 12,
+   "trend": [
+    98,
+    95,
+    91,
+    91,
+    88,
+    83,
+    91,
+    83,
+    77,
+    73,
+    67,
+    64
+   ]
+  },
+  {
+   "type": "Network devices",
+   "in_scope": 410,
+   "critical": 3,
+   "high": 21,
+   "overdue": 5,
+   "patched_pct": 79,
+   "avg_age_days": 61,
+   "trend": [
+    21,
+    22,
+    22,
+    23,
+    23,
+    23,
+    26,
+    25,
+    24,
+    25,
+    24,
+    24
+   ]
+  },
+  {
+   "type": "Mobile and other endpoints",
+   "in_scope": 2900,
+   "critical": 1,
+   "high": 12,
+   "overdue": 1,
+   "patched_pct": 91,
+   "avg_age_days": 9,
+   "trend": [
+    17,
+    17,
+    16,
+    17,
+    16,
+    15,
+    17,
+    16,
+    15,
+    14,
+    14,
+    13
+   ]
+  }
+ ],
+ "mail": {
+  "phish_blocked": [
+   4310,
+   4180,
+   4620,
+   4050,
+   4120,
+   3890,
+   5240,
+   4010,
+   3820,
+   3900,
+   3760,
+   3690
+  ],
+  "reported_by_users": [
+   164,
+   171,
+   158,
+   176,
+   182,
+   188,
+   201,
+   196,
+   204,
+   209,
+   207,
+   212
+  ],
+  "minutes_to_first_report": [
+   42,
+   40,
+   44,
+   38,
+   36,
+   35,
+   39,
+   31,
+   29,
+   28,
+   26,
+   24
+  ],
+  "credentials_entered": [
+   3,
+   2,
+   3,
+   2,
+   2,
+   1,
+   3,
+   1,
+   1,
+   1,
+   0,
+   1
+  ],
+  "types": [
+   {
+    "name": "Link to a fake sign-in page",
+    "share": 46
+   },
+   {
+    "name": "Malicious attachment",
+    "share": 21
+   },
+   {
+    "name": "Payment or invoice fraud",
+    "share": 14
+   },
+   {
+    "name": "QR code",
+    "share": 11
+   },
+   {
+    "name": "Other",
+    "share": 8
+   }
+  ],
+  "lures": [
+   {
+    "name": "File-share notification",
+    "share": 29
+   },
+   {
+    "name": "Password expiry notice",
+    "share": 24
+   },
+   {
+    "name": "Invoice or payment request",
+    "share": 19
+   },
+   {
+    "name": "Delivery notice",
+    "share": 15
+   },
+   {
+    "name": "Request from an executive",
+    "share": 13
+   }
+  ],
+  "simulation": {
+   "name": "October campaign",
+   "sent": 5800,
+   "reported_pct": 38,
+   "target_pct": 7,
+   "departments": [
+    {
+     "name": "Customer Apps",
+     "click_pct": 9.8
+    },
+    {
+     "name": "Sales",
+     "click_pct": 8.7
+    },
+    {
+     "name": "Operations",
+     "click_pct": 7.4
+    },
+    {
+     "name": "HR",
+     "click_pct": 5.2
+    },
+    {
+     "name": "Finance",
+     "click_pct": 4.1
+    },
+    {
+     "name": "IT",
+     "click_pct": 2.9
+    }
+   ],
+   "campaign_names": [
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October"
+   ],
+   "campaign_click_pct": [
+    11.2,
+    9.8,
+    8.9,
+    8.1,
+    7.0,
+    6.4
+   ]
+  }
+ },
+ "top": {
+  "weekly": {
+   "risky_signins": [
+    64,
+    61,
+    66,
+    58,
+    57,
+    52,
+    71,
+    55,
+    49,
+    51,
+    46,
+    44
+   ],
+   "mfa_failures": [
+    310,
+    298,
+    322,
+    290,
+    284,
+    271,
+    350,
+    268,
+    255,
+    262,
+    248,
+    240
+   ],
+   "shadow_apps": [
+    148,
+    146,
+    151,
+    143,
+    141,
+    139,
+    144,
+    137,
+    133,
+    134,
+    131,
+    128
+   ]
+  },
+  "alert_hosts": [
+   {
+    "host": "SRV-APP-114",
+    "type": "Server",
+    "alerts": 212,
+    "incidents": 3
+   },
+   {
+    "host": "WKS-FIN-0382",
+    "type": "Workstation",
+    "alerts": 164,
+    "incidents": 2
+   },
+   {
+    "host": "SRV-DB-021",
+    "type": "Server",
+    "alerts": 151,
+    "incidents": 1
+   },
+   {
+    "host": "CLD-K8S-NODE-07",
+    "type": "Cloud workload",
+    "alerts": 133,
+    "incidents": 2
+   },
+   {
+    "host": "WKS-SAL-0911",
+    "type": "Workstation",
+    "alerts": 118,
+    "incidents": 1
+   },
+   {
+    "host": "NET-FW-EDGE-02",
+    "type": "Network device",
+    "alerts": 97,
+    "incidents": 0
+   },
+   {
+    "host": "SRV-FILE-009",
+    "type": "Server",
+    "alerts": 88,
+    "incidents": 1
+   },
+   {
+    "host": "WKS-CAP-0445",
+    "type": "Workstation",
+    "alerts": 81,
+    "incidents": 1
+   }
+  ],
+  "rules": [
+   {
+    "rule": "Sign-in from an unfamiliar location",
+    "source": "Microsoft Sentinel",
+    "alerts": 612,
+    "false_pct": 71
+   },
+   {
+    "rule": "PowerShell run with a hidden command",
+    "source": "SentinelOne",
+    "alerts": 388,
+    "false_pct": 44
+   },
+   {
+    "rule": "Large download from a cloud app",
+    "source": "Netskope",
+    "alerts": 301,
+    "false_pct": 58
+   },
+   {
+    "rule": "Many failed sign-ins",
+    "source": "Microsoft Sentinel",
+    "alerts": 296,
+    "false_pct": 63
+   },
+   {
+    "rule": "New inbox forwarding rule",
+    "source": "Mimecast",
+    "alerts": 142,
+    "false_pct": 22
+   },
+   {
+    "rule": "Suspicious process on a server",
+    "source": "SentinelOne",
+    "alerts": 131,
+    "false_pct": 18
+   }
+  ],
+  "vuln_hosts": [
+   {
+    "host": "SRV-APP-114",
+    "type": "Server",
+    "team": "Customer Apps",
+    "critical": 4,
+    "high": 11,
+    "oldest_days": 96
+   },
+   {
+    "host": "SRV-DB-021",
+    "type": "Server",
+    "team": "Data and Analytics",
+    "critical": 3,
+    "high": 9,
+    "oldest_days": 74
+   },
+   {
+    "host": "CLD-K8S-NODE-07",
+    "type": "Cloud workload",
+    "team": "Platform Engineering",
+    "critical": 2,
+    "high": 8,
+    "oldest_days": 58
+   },
+   {
+    "host": "NET-FW-EDGE-02",
+    "type": "Network device",
+    "team": "Infrastructure",
+    "critical": 2,
+    "high": 6,
+    "oldest_days": 131
+   },
+   {
+    "host": "SRV-FILE-009",
+    "type": "Server",
+    "team": "Corporate IT",
+    "critical": 1,
+    "high": 9,
+    "oldest_days": 67
+   },
+   {
+    "host": "APP-PAYGW",
+    "type": "Application",
+    "team": "Payments",
+    "critical": 1,
+    "high": 7,
+    "oldest_days": 49
+   },
+   {
+    "host": "SRV-WEB-033",
+    "type": "Server",
+    "team": "Customer Apps",
+    "critical": 1,
+    "high": 6,
+    "oldest_days": 88
+   },
+   {
+    "host": "WKS-FIN-0382",
+    "type": "Workstation",
+    "team": "Corporate IT",
+    "critical": 1,
+    "high": 5,
+    "oldest_days": 33
+   }
+  ],
+  "common": [
+   {
+    "title": "Outdated encryption library",
+    "where": "Servers and cloud workloads",
+    "assets": 121,
+    "severity": "High"
+   },
+   {
+    "title": "Missing browser security update",
+    "where": "Workstations",
+    "assets": 96,
+    "severity": "High"
+   },
+   {
+    "title": "Unsupported operating system version",
+    "where": "Servers",
+    "assets": 38,
+    "severity": "Critical"
+   },
+   {
+    "title": "Default or weak service password",
+    "where": "Network devices and servers",
+    "assets": 22,
+    "severity": "High"
+   },
+   {
+    "title": "Remote management port open to the internet",
+    "where": "Servers and network devices",
+    "assets": 17,
+    "severity": "Critical"
+   },
+   {
+    "title": "Vulnerable logging library",
+    "where": "Applications",
+    "assets": 12,
+    "severity": "Critical"
+   }
+  ],
+  "targets": [
+   {
+    "id": "U-1042",
+    "dept": "Finance",
+    "role": "Accounts payable",
+    "received": 41,
+    "clicked": 1,
+    "reported": 9
+   },
+   {
+    "id": "U-0077",
+    "dept": "Executive office",
+    "role": "Executive assistant",
+    "received": 36,
+    "clicked": 0,
+    "reported": 12
+   },
+   {
+    "id": "U-2210",
+    "dept": "Sales",
+    "role": "Account manager",
+    "received": 29,
+    "clicked": 2,
+    "reported": 3
+   },
+   {
+    "id": "U-0931",
+    "dept": "HR",
+    "role": "Recruiter",
+    "received": 27,
+    "clicked": 0,
+    "reported": 8
+   },
+   {
+    "id": "U-1508",
+    "dept": "Customer Apps",
+    "role": "Developer",
+    "received": 24,
+    "clicked": 2,
+    "reported": 1
+   },
+   {
+    "id": "U-0312",
+    "dept": "Finance",
+    "role": "Treasury",
+    "received": 22,
+    "clicked": 0,
+    "reported": 7
+   },
+   {
+    "id": "U-1876",
+    "dept": "Operations",
+    "role": "Supervisor",
+    "received": 19,
+    "clicked": 1,
+    "reported": 2
+   },
+   {
+    "id": "U-0654",
+    "dept": "IT",
+    "role": "Service desk",
+    "received": 17,
+    "clicked": 0,
+    "reported": 10
+   }
+  ],
+  "repeat_clickers": [
+   {
+    "id": "U-1508",
+    "dept": "Customer Apps",
+    "clicks": 5,
+    "training": "Overdue"
+   },
+   {
+    "id": "U-2210",
+    "dept": "Sales",
+    "clicks": 4,
+    "training": "Booked"
+   },
+   {
+    "id": "U-1876",
+    "dept": "Operations",
+    "clicks": 3,
+    "training": "Done"
+   },
+   {
+    "id": "U-2044",
+    "dept": "Sales",
+    "clicks": 3,
+    "training": "Overdue"
+   },
+   {
+    "id": "U-1199",
+    "dept": "Customer Apps",
+    "clicks": 3,
+    "training": "Done"
+   }
+  ],
+  "app_users": [
+   {
+    "id": "U-1733",
+    "dept": "Data and Analytics",
+    "apps": 6,
+    "upload_mb": 2840,
+    "violations": 14
+   },
+   {
+    "id": "U-1508",
+    "dept": "Customer Apps",
+    "apps": 5,
+    "upload_mb": 1210,
+    "violations": 11
+   },
+   {
+    "id": "U-0420",
+    "dept": "Sales",
+    "apps": 4,
+    "upload_mb": 960,
+    "violations": 9
+   },
+   {
+    "id": "U-2291",
+    "dept": "Marketing",
+    "apps": 4,
+    "upload_mb": 2105,
+    "violations": 7
+   },
+   {
+    "id": "U-0988",
+    "dept": "Engineering",
+    "apps": 3,
+    "upload_mb": 3320,
+    "violations": 6
+   },
+   {
+    "id": "U-1345",
+    "dept": "Finance",
+    "apps": 2,
+    "upload_mb": 180,
+    "violations": 6
+   },
+   {
+    "id": "U-0719",
+    "dept": "HR",
+    "apps": 2,
+    "upload_mb": 95,
+    "violations": 5
+   },
+   {
+    "id": "U-1602",
+    "dept": "Operations",
+    "apps": 2,
+    "upload_mb": 410,
+    "violations": 4
+   }
+  ],
+  "apps": [
+   {
+    "name": "Unapproved AI assistants",
+    "action": "Allowed, monitored",
+    "users": 341,
+    "upload_gb": 6.2,
+    "risk": "High"
+   },
+   {
+    "name": "Personal cloud storage",
+    "action": "Uploads blocked",
+    "users": 212,
+    "upload_gb": 38.4,
+    "risk": "High"
+   },
+   {
+    "name": "File conversion sites",
+    "action": "Allowed, monitored",
+    "users": 158,
+    "upload_gb": 2.9,
+    "risk": "Medium"
+   },
+   {
+    "name": "Personal webmail",
+    "action": "Attachments blocked",
+    "users": 96,
+    "upload_gb": 1.8,
+    "risk": "Medium"
+   },
+   {
+    "name": "Unapproved messaging",
+    "action": "Allowed, monitored",
+    "users": 77,
+    "upload_gb": 0.6,
+    "risk": "Low"
+   },
+   {
+    "name": "Remote access tools",
+    "action": "Blocked",
+    "users": 14,
+    "upload_gb": 0.3,
+    "risk": "High"
+   }
+  ],
+  "priv_users": [
+   {
+    "id": "P-014",
+    "team": "Infrastructure",
+    "sessions": 86,
+    "out_of_hours": 21,
+    "unvaulted": 3
+   },
+   {
+    "id": "P-031",
+    "team": "Platform Engineering",
+    "sessions": 74,
+    "out_of_hours": 9,
+    "unvaulted": 0
+   },
+   {
+    "id": "P-007",
+    "team": "Database administration",
+    "sessions": 61,
+    "out_of_hours": 14,
+    "unvaulted": 2
+   },
+   {
+    "id": "P-052",
+    "team": "Network",
+    "sessions": 48,
+    "out_of_hours": 6,
+    "unvaulted": 4
+   },
+   {
+    "id": "P-023",
+    "team": "Cloud",
+    "sessions": 44,
+    "out_of_hours": 3,
+    "unvaulted": 0
+   },
+   {
+    "id": "P-040",
+    "team": "Third-party support",
+    "sessions": 31,
+    "out_of_hours": 17,
+    "unvaulted": 1
+   }
+  ],
+  "dlp_types": [
+   {
+    "name": "Customer personal data",
+    "count": 71
+   },
+   {
+    "name": "Source code",
+    "count": 44
+   },
+   {
+    "name": "Payment card numbers",
+    "count": 29
+   },
+   {
+    "name": "Passwords and keys",
+    "count": 25
+   },
+   {
+    "name": "HR records",
+    "count": 18
+   }
+  ]
+ },
+ "_note": "Sample data written to show the dashboard design. Not taken from any system."
+}
