@@ -41,7 +41,7 @@ type Placed = GNode & { ring: number; angle: number; size: number; a: number; b:
 // `base0` is the slot each person occupies (and the area you can click). Inside it, people in the
 // two inner circles are drawn as faces with initials; the outer circle, not yet known, as dots.
 const base0 = (ring: number, compact: boolean, narrow = false) => (narrow ? [30, 26, 22] : compact ? [40, 32, 24] : [46, 36, 26])[ring];
-const dotOf = (ring: number, trust: number, narrow = false) => Math.round((narrow ? [24, 18, 9] : [34, 26, 11])[ring] + Math.min(100, trust) * (ring === 2 ? 0.04 : 0.08));
+const dotOf = (ring: number, trust: number, narrow = false) => Math.round((narrow ? [27, 21, 11] : [40, 31, 14])[ring] + Math.min(100, trust) * (ring === 2 ? 0.04 : 0.08));
 
 
 // Each circle sways gently, in its own time and direction, so the map breathes instead of sitting still.
@@ -147,7 +147,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
         placed.push({ ...p, ring, angle, size, a, b });
       });
     });
-    return { cx, cy, rx, ry, scale, placed, labelled, narrow, hub: Math.round(Math.max(34, Math.min(compact ? 50 : 64, rx * scale[0] * 0.62))), counts: groups.map((g) => g.length) };
+    return { cx, cy, rx, ry, scale, placed, labelled, narrow, hub: Math.round(Math.max(34, Math.min(compact ? 62 : 76, rx * scale[0] * 0.66))), counts: groups.map((g) => g.length) };
   }, [box, people, links, hub, compact]);
 
   const byId = useMemo(() => new Map((layout?.placed ?? []).map((p) => [p.id, p])), [layout]);
@@ -202,7 +202,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
   const t0 = clock.current;
 
   return (
-    <div className={cn("ink-stage widget relative w-full flex overflow-hidden", heightClass)}>
+    <div className={cn("ink-stage relative w-full flex overflow-hidden rounded-[28px]", heightClass)}>
       <div ref={wrapRef} className="orbit-stage relative flex-1 min-w-0 text-ink" onClick={() => setSelected(null)}>
         {layout ? (
           <>
@@ -234,7 +234,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
 
             {/* Each orbit carries its name as a tag at the top, in the gap its people leave. */}
             {RINGS.map((r, i) => layout.labelled[i] ? (
-              <div key={r.label} className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface px-2.5 py-[5px] shadow-[0_1px_2px_rgba(12,27,51,0.06)]" style={{ left: layout.cx, top: layout.cy - layout.ry * layout.scale[i] }}>
+              <div key={r.label} className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2 orbit-tag inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-[3px]" style={{ left: layout.cx, top: layout.cy - layout.ry * layout.scale[i] }}>
                 <span className="label-caps text-ink-muted">{r.label}</span>
                 <span className="text-[10.5px] font-semibold leading-none text-ink">{layout.counts[i]}</span>
               </div>
@@ -267,7 +267,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
                     {isFresh(p) ? <span className="orbit-bud" aria-hidden="true" /> : null}
                     <span className={cn("orbit-glow", p.ring === 0 ? "is-near" : p.ring === 2 ? "is-far" : "")} style={{ animationDelay: `${beatDelay(layout.scale[p.ring]).toFixed(2)}s` }} aria-hidden="true" />
                     <span className={cn("orbit-dot absolute inset-0 grid place-items-center rounded-full font-semibold leading-none transition-transform duration-200 group-hover:scale-[1.18]", trusted || p.ring === 0 ? "is-mint" : p.ring === 1 ? "is-white" : "is-faint", active && "scale-[1.18]", selected === p.id && "is-selected")} style={{ fontSize: Math.max(8.5, Math.round(dot * 0.36)) }}>{dot >= 22 ? initials(p.name) : ""}</span>
-                    {p.open ? <span className="orbit-ping absolute -right-[2px] -bottom-[2px] h-[10px] w-[10px] rounded-full bg-coral ring-2 ring-surface" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
+                    {p.open ? <span className="orbit-ping orbit-open absolute -right-[3px] -bottom-[3px] h-[13px] w-[13px] rounded-full" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
                     {named ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none tracking-[0.01em] transition-colors duration-200", active ? "text-ink font-semibold" : "text-ink-muted")}>{shortName(p.name)}</span> : null}
                   </span>
                 </button>
@@ -284,28 +284,33 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
           </>
         ) : null}
 
-        {!compact ? (
-          <dl className="pointer-events-none absolute left-6 top-5 flex gap-7">
-            {[[stats.total, "in the network"], [`+${stats.fresh}`, "added in 30 days"], [stats.trusted, "trusted"], [stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])].map(([v, l]) => (
-              <div key={String(l)}>
-                <dd className="font-display num-grad text-[26px] leading-none">{v}</dd>
-                <dt className="text-[11.5px] text-ink-muted mt-1.5">{l}</dt>
-              </div>
-            ))}
-          </dl>
-        ) : null}
+        <dl className={cn("pointer-events-none absolute left-6 top-5 flex flex-wrap items-end gap-x-7 gap-y-3", compact && "max-sm:hidden")}>
+          {[[stats.total, "in the network"], [`+${stats.fresh}`, "added in 30 days"], ...(compact ? [] : [[stats.open, "open to work"], ...(openRoles != null ? [[openRoles, "open roles"]] : [])])].map(([v, l], k) => (
+            <div key={String(l)}>
+              <dd className="flex items-end gap-2.5 font-display num-grad text-[26px] leading-none">{v}
+                {k === 1 ? (
+                  // Where it has been growing: people added in each of the last six months.
+                  <span className="mb-[2px] flex h-[20px] items-end gap-[3px]" role="img" aria-label={`People added in each of the last six months, oldest first: ${growth.map((m) => `${m.label} ${m.n}`).join(", ")}`}>
+                    {growth.map((m, i) => { const top = Math.max(1, ...growth.map((x) => x.n)); return <span key={m.label + i} title={`${m.label}: ${m.n}`} className="w-[5px] rounded-full" style={{ height: m.n ? `${Math.max(22, (m.n / top) * 100)}%` : "3px", background: !m.n ? "rgba(255,255,255,0.16)" : i === 5 ? "#f2c46d" : "#7ee3bc" }} />; })}
+                  </span>
+                ) : null}
+              </dd>
+              <dt className="text-[11.5px] text-ink-muted mt-1.5">{l}</dt>
+            </div>
+          ))}
+        </dl>
 
-        {/* On the home page and on small screens the person opens as a floating card. */}
-        {card ? <div onClick={(e) => e.stopPropagation()} className={cn("absolute right-3 top-3 z-[80] w-[300px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[22px] bg-surface text-ink shadow-[var(--shadow-pop)]", compact ? "" : "lg:hidden")}>{card}</div> : null}
+        {/* The person you clicked opens as a card floating over the map, so the map keeps the whole width. */}
+        {card ? <div onClick={(e) => e.stopPropagation()} className="orbit-card absolute right-3 top-3 z-[80] w-[310px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[22px] text-ink">{card}</div> : null}
 
         <div className="pointer-events-none absolute inset-x-5 bottom-4 z-[65] flex items-end justify-between gap-3">
           <div className="pointer-events-auto flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
             {topCaps.length ? (
               <>
-                <button type="button" onClick={() => { setCap(null); setFresh(false); }} aria-pressed={cap === null && !fresh} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null && !fresh ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>Everyone</button>
-                {stats.fresh ? <button type="button" onClick={() => setFresh(!fresh)} aria-pressed={fresh} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", fresh ? "border-amber bg-amber text-[#2b1d00] font-semibold" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}><span className="orbit-bud-key" aria-hidden="true" /> New this month</button> : null}
+                <button type="button" onClick={() => { setCap(null); setFresh(false); }} aria-pressed={cap === null && !fresh} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === null && !fresh ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "border-transparent bg-white/[0.06] text-ink-muted hover:bg-white/[0.12] hover:text-ink")}>Everyone</button>
+                {stats.fresh ? <button type="button" onClick={() => setFresh(!fresh)} aria-pressed={fresh} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", fresh ? "border-amber bg-amber text-[#2b1d00] font-semibold" : "border-transparent bg-white/[0.06] text-ink-muted hover:bg-white/[0.12] hover:text-ink")}><span className="orbit-bud-key" aria-hidden="true" /> New this month</button> : null}
                 {topCaps.map((c) => (
-                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === c.key ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "bg-surface border-line text-ink-muted hover:border-line-strong hover:text-ink")}>{c.label}</button>
+                  <button key={c.key} type="button" onClick={() => setCap(cap === c.key ? null : c.key)} aria-pressed={cap === c.key} className={cn("rounded-full border px-3 py-1 text-[12px] cursor-pointer transition-colors duration-200", cap === c.key ? "bg-navy border-navy text-white font-semibold dark:text-canvas" : "border-transparent bg-white/[0.06] text-ink-muted hover:bg-white/[0.12] hover:text-ink")}>{c.label}</button>
                 ))}
               </>
             ) : null}
@@ -314,42 +319,12 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
             <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-mint h-3 w-3 rounded-full" /> worked together</span>
             <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-white h-3 w-3 rounded-full" /> known</span>
             <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-faint h-2 w-2 rounded-full" /> new</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-coral" /> open to work</span>
+            <span className="inline-flex items-center gap-1.5"><span className="orbit-open h-3 w-3 rounded-full" /> open to work</span>
             <span className="inline-flex items-center gap-1.5"><span className="orbit-bud-key" /> new this month</span>
           </div>
         </div>
       </div>
 
-      {!compact ? (
-        <aside className="hidden lg:block w-[320px] flex-none border-l border-line bg-surface overflow-y-auto text-ink">
-          {card ?? (
-            <div className="flex flex-col px-7 pt-8 pb-7">
-              <div className="label-caps text-ink-faint">How to read it</div>
-              <ul className="mt-4 space-y-4">
-                {RINGS.map((r, i) => (
-                  <li key={r.label} className="flex gap-3">
-                    <span className="mt-0.5 font-display text-[18px] leading-none text-ink w-6 flex-none">{layout?.counts[i] ?? 0}</span>
-                    <span><span className="block text-[13px] font-semibold text-ink">{r.label}</span><span className="block text-[12.5px] text-ink-muted leading-[1.45] mt-0.5">{r.hint}</span></span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 pt-5 border-t border-line">
-                <div className="flex items-baseline justify-between gap-3"><span className="label-caps text-ink-faint">Growth</span><span className="text-[12px] text-ink-muted"><b className="font-display text-[18px] font-normal text-ink">+{stats.fresh}</b> in 30 days</span></div>
-                <div className="mt-3 flex h-[58px] items-end gap-1.5" role="img" aria-label={`People added in each of the last six months, oldest first: ${growth.map((m) => `${m.label} ${m.n}`).join(", ")}`}>
-                  {growth.map((m, i) => { const top = Math.max(1, ...growth.map((x) => x.n)); return (
-                    <div key={m.label + i} className="flex h-full flex-1 flex-col justify-end" title={`${m.label}: ${m.n}`}>
-                      <span className="w-full rounded-t-[5px] rounded-b-[2px]" style={{ height: m.n ? `${Math.max(14, (m.n / top) * 100)}%` : "3px", background: !m.n ? "var(--color-line)" : i === 5 ? "var(--color-amber)" : "#7ee3bc" }} />
-                    </div>
-                  ); })}
-                </div>
-                <div className="mt-1.5 flex justify-between text-[11px] text-ink-faint">{growth.map((m, i) => <span key={m.label + i} className="flex-1 text-center">{m.label}</span>)}</div>
-                <p className="mt-2 text-[12px] leading-[1.45] text-ink-muted">People added each month. Anyone added in the last 30 days carries a gold ring on the map.</p>
-              </div>
-              <p className="text-[12.5px] text-ink-muted mt-5 pt-5 border-t border-line leading-[1.5]">Click anyone to see why you&apos;d trust them, whether they&apos;re free, and the open roles they fit. Hover to trace who introduced them.</p>
-            </div>
-          )}
-        </aside>
-      ) : null}
     </div>
   );
 }

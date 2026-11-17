@@ -5,9 +5,13 @@ const p = await session(b, "waqas@networkintelligence.local");
 const go = (u) => p.goto(BASE + u, { waitUntil: "networkidle" });
 let personId, briefId, oppId;
 
-await step("overview: invite link present", p, async () => {
+await step("home: four blocks, and the invite link is under Grow", p, async () => {
   await go("/overview");
-  const v = await p.locator('input[aria-label="Your invite link"]').inputValue();
+  // Home is the question box, the headline figures, the network and what needs you. Nothing else.
+  assert(await p.locator("#agent-ask").count(), "ask box"); assert((await p.locator(".figures .figure").count()) === 4, "four headline figures"); assert(await p.locator(".orbit-stage").count(), "the network"); assert(await p.getByText("Agent queue").count(), "what needs you");
+  assert(!(await p.locator('input[aria-label="Your invite link"]').count()), "the invite card is no longer on Home");
+  await go("/invite");
+  const v = await p.locator('input[aria-label="Invitation link"]').first().inputValue();
   assert(/\/join\?t=/.test(v), "invite link " + v);
 });
 await step("overview: ask the network agent", p, async () => {

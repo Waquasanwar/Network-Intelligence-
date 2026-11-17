@@ -359,16 +359,21 @@ kbd {
 @keyframes orbit-flow { to { stroke-dashoffset: -22; } }
 .orbit-flow { stroke-dasharray: 5 6; animation: orbit-flow 0.9s linear infinite; }
 
-/* People. Worked together: mint. Known: white. New: a small slate dot. */
-.orbit-dot { box-shadow: 0 0 0 2px #0b1a3a, 0 6px 14px -4px rgba(0, 0, 0, 0.6); color: #0c1b33; }
-.orbit-dot.is-mint { background: linear-gradient(140deg, #e3faf0, #8fe0c0); color: #0b3a2c; }
-.orbit-dot.is-white { background: linear-gradient(140deg, #ffffff, #dbe5f6); }
-.orbit-dot.is-faint { background: #7f92ba; }
-.orbit-dot.is-selected { box-shadow: 0 0 0 2px #0b1a3a, 0 0 0 4px #ffffff, 0 8px 18px -4px rgba(0, 0, 0, 0.7); }
+/* People, as glass beads (artwork in /public/orbs). Delivered with: mint. Known: pearl. New: indigo. */
+.orbit-dot { background: center / 100% 100% no-repeat; color: #0c1b33; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5); filter: drop-shadow(0 7px 9px rgba(2, 8, 24, 0.55)); }
+.orbit-dot.is-mint { background-image: url("/orbs/mint.png"); color: #06382a; }
+.orbit-dot.is-white { background-image: url("/orbs/pearl.png"); color: #1c2c50; }
+.orbit-dot.is-faint { background-image: url("/orbs/indigo.png"); }
+.orbit-dot.is-selected { box-shadow: 0 0 0 2px #0b1a3a, 0 0 0 4px #ffffff; }
+.orbit-open { background: url("/orbs/coral.png") center / 100% 100% no-repeat; filter: drop-shadow(0 2px 3px rgba(2, 8, 24, 0.6)); }
+/* A circle's name sits in a gap in its ring. */
+.orbit-tag { background: #0d1e43; border-radius: 999px; }
+/* The person card floats on glass. */
+.orbit-card { background: rgba(15, 32, 68, 0.86); border: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(18px) saturate(1.2); box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.8); }
 
 /* You, at the centre. */
 @keyframes orbit-beat { 0%, 34%, 100% { transform: scale(1); } 7% { transform: scale(1.06); } 15% { transform: scale(1); } 23% { transform: scale(1.03); } }
-.orbit-beat { background: linear-gradient(150deg, #ffffff, #cfe3ff); color: #0c1b33; box-shadow: 0 0 0 4px #0b1a3a, 0 0 0 5px rgba(126, 227, 188, 0.85), 0 0 34px 2px rgba(126, 227, 188, 0.35); animation: orbit-beat 2.4s ease-in-out infinite; }
+.orbit-beat { background: url("/orbs/core.png") center / 100% 100% no-repeat; color: #0c1b33; filter: drop-shadow(0 0 22px rgba(126, 227, 188, 0.55)) drop-shadow(0 10px 16px rgba(2, 8, 24, 0.6)); animation: orbit-beat 2.4s ease-in-out infinite; }
 .orbit-halo { display: none; }
 
 /* Growth: someone added in the last 30 days carries a slowly turning gold ring, like a bud opening. */
@@ -393,6 +398,14 @@ button[aria-pressed="true"] > .orbit-bud-key { border-color: #2b1d00; }
   .orbit-flow { animation: none; stroke-dasharray: none; }
   .orbit-ping::after { display: none; }
 }
+
+/* Headline figures as one quiet row: numbers and hairlines, no boxes. */
+.figures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); }
+.figure { display: block; min-width: 0; padding: 18px 20px 18px 0; transition: opacity 160ms ease; }
+.figure + .figure { padding-left: 20px; border-left: 1px solid var(--color-line); }
+a.figure:hover { opacity: 0.72; }
+@media (max-width: 1023px) { .figure:nth-child(2n + 1) { padding-left: 0; border-left: 0; } .figure:nth-child(n + 3) { border-top: 1px solid var(--color-line); } }
+@media (min-width: 1024px) { .figures { grid-template-columns: repeat(4, minmax(0, 1fr)); } .figures.is-five { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 
 /* ---------- Widgets ---------- */
 /* Every card, tile and panel is a widget: a clean face with a one-pixel gradient edge and a soft,
