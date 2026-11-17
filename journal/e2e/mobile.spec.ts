@@ -6,6 +6,7 @@ test("phone layout: bottom tabs navigate and new entry opens from the + button",
   await tabs.getByRole("link", { name: "Plan" }).click();
   await expect(page).toHaveURL(/\/plan/);
   await tabs.getByRole("link", { name: "Projects" }).click();
+  await expect(page).toHaveURL(/\/projects/);
   await expect(page.getByText("Data Migration")).toBeVisible();
   await page.getByRole("button", { name: "New entry" }).click();
   await expect(page.getByRole("dialog", { name: "New entry" })).toBeVisible();

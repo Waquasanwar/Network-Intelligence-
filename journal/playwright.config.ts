@@ -6,7 +6,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [["list"]],
-  use: { baseURL: "http://localhost:3101", timezoneId: "Europe/London", trace: "off" },
+  use: { baseURL: "http://localhost:3101", timezoneId: "Europe/London", trace: "off", contextOptions: { reducedMotion: "reduce" } },
   projects: [
     { name: "desktop", use: { viewport: { width: 1280, height: 900 } }, testIgnore: /mobile\.spec\.ts/ },
     { name: "mobile", use: { ...devices["iPhone 13"], defaultBrowserType: "chromium", browserName: "chromium" }, testMatch: /mobile\.spec\.ts/ },
