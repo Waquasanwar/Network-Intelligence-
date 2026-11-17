@@ -22,6 +22,9 @@ with the design you have seen, fed from your own systems:
 
 ## Build it in your own environment
 
+**On Claude Enterprise?** Follow [CLAUDE-ENTERPRISE.md](CLAUDE-ENTERPRISE.md): the same container becomes a custom connector, and the dashboard lives in Claude as a shared, live artifact.
+
+
 The recommended home is Azure, since Sentinel and Defender for Cloud already live there.
 
 1. **Container.** Build the image from this folder (`docker build -t secops-dashboard .`) and

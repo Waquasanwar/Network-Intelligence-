@@ -28,6 +28,7 @@ from typing import Any, Callable, Literal
 
 from mcp.server.fastmcp import FastMCP
 
+from .auth import from_env
 from .sources import defender_cloud, gitlab, mimecast, sentinel
 from .sources.base import NotConfigured
 from .sources.vendor_mcp import pointer
@@ -38,7 +39,8 @@ SNAPSHOTS = Path(os.environ.get("SECOPS_SNAPSHOT_DIR", HERE / "snapshots"))
 SAMPLE = json.loads((HERE / "sample_data.json").read_text())
 
 log = logging.getLogger("secops-mcp")
-mcp = FastMCP("secops-metrics")
+_verifier, _auth = from_env()
+mcp = FastMCP("secops-metrics", token_verifier=_verifier, auth=_auth)
 
 
 def _call(name: str, fn: Callable[[], Any]) -> Any:
@@ -160,6 +162,15 @@ def top_list(name: TopList, limit: int = 10) -> dict:
         return {"mode": "live", "list": name, **_call("sentinel", live[name])}
     return {"mode": "live", "list": name, "status": "not_implemented",
             "detail": "This list comes from a source served by its vendor's MCP server or not yet wired; see the README."}
+
+
+@mcp.tool()
+def dashboard_data() -> dict:
+    """Everything the Security Operations Dashboard draws, in one document: every section,
+    which source filled it (live, export or sample) and any added measures. A Claude
+    artifact can call this once and render the whole dashboard."""
+    from .dashboard_data import cached
+    return cached()
 
 
 def main() -> None:
