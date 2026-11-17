@@ -221,7 +221,7 @@ export function NetworkGlobe({ places, arcs, home, unplaced = 0, heightClass = "
           {[["+", "Zoom in", 1.35], ["\u2212", "Zoom out", 1 / 1.35]].map(([glyph, name, k]) => <button key={String(name)} type="button" aria-label={String(name)} onClick={() => zoomBy(Number(k))} className="grid h-9 w-9 cursor-pointer place-items-center text-[17px] leading-none text-ink-muted transition-colors duration-200 hover:bg-surface-muted hover:text-ink">{glyph}</button>)}
           <button type="button" aria-label="Fit the whole network" onClick={() => zoomBy(0)} className="grid h-9 w-9 cursor-pointer place-items-center border-t border-line text-ink-muted transition-colors duration-200 hover:bg-surface-muted hover:text-ink"><Maximize2 className="h-3.5 w-3.5" /></button>
         </div>
-        <div className={cn("pointer-events-none absolute inset-x-5 bottom-4 flex-wrap items-center gap-x-4 gap-y-1.5 text-[11.5px] text-ink-muted sm:inset-x-6", compact ? "hidden md:flex" : "flex")}>
+        <div className={cn("pointer-events-none absolute inset-x-5 bottom-4 flex-wrap items-center gap-x-4 gap-y-1.5 text-[11.5px] text-ink-muted sm:inset-x-6", compact ? "hidden lg:flex" : "hidden md:flex")}>
           <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#7ee3bc]" /> a city your people are in</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-coral" /> someone there is open to work</span>
           <span className="inline-flex items-center gap-1.5"><span className="h-[2px] w-4 rounded-full bg-coral" /> an introduction between cities</span>
