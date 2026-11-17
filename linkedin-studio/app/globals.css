@@ -790,3 +790,86 @@ input:focus, select:focus, textarea:focus { border-color: var(--coral); box-shad
 .person .why b { display: inline; margin-right: 6px; }
 @media (max-width: 1020px) { .person { grid-template-columns: 36px minmax(0, 1fr) 44px; grid-template-areas: "av who score" "av meters meters" "av why why" "av ctrl ctrl"; } .person .meters, .person .why, .person .ctrl { grid-column: auto; } }
 .person.compact { grid-template-areas: "av who ctrl"; grid-template-columns: 36px minmax(0, 1fr) auto; }
+
+/* ══ Web 4.0 layer: copilot, agent, adaptive layout, depth ══════════ */
+kbd { font-family: var(--mono); font-size: 10.5px; line-height: 1; border: 1px solid var(--line-strong); border-radius: 5px; padding: 3px 5px; background: var(--glass-strong); color: var(--muted); }
+.spark { color: var(--coral); }
+
+/* floating ask button */
+.copilot-fab { position: fixed; right: 22px; bottom: 22px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 14px; border-radius: 999px; border: 1px solid var(--glass-line); background: var(--glass-strong); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; box-shadow: 0 14px 40px -12px rgba(14, 26, 51, 0.35), 0 0 0 1px rgba(255, 74, 61, 0.15); transition: transform 240ms var(--spring), box-shadow 240ms var(--ease-out); }
+.copilot-fab:hover { transform: translateY(-2px); box-shadow: 0 18px 46px -12px rgba(14, 26, 51, 0.4), 0 0 0 1px rgba(255, 74, 61, 0.35), 0 0 24px rgba(255, 74, 61, 0.25); }
+.copilot-fab .spark { font-size: 16px; animation: twinkle 3s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: 0.55; transform: rotate(20deg) scale(0.9); } }
+
+/* command bar */
+.copilot-scrim { position: fixed; inset: 0; z-index: 100; display: grid; justify-items: center; align-items: start; padding: 12vh 16px 16px; background: rgba(10, 18, 34, 0.38); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fade-in 160ms ease-out; }
+@keyframes fade-in { from { opacity: 0; } }
+.copilot { width: min(680px, 100%); max-height: 74vh; display: flex; flex-direction: column; border-radius: 20px; border: 1px solid var(--glass-line); background: var(--glass-strong); backdrop-filter: blur(28px) saturate(170%); -webkit-backdrop-filter: blur(28px) saturate(170%); box-shadow: 0 40px 100px -30px rgba(10, 18, 34, 0.55), 0 0 0 1px rgba(255, 74, 61, 0.12); overflow: hidden; animation: pop 260ms var(--spring); }
+@keyframes pop { from { opacity: 0; transform: translateY(-8px) scale(0.98); } }
+@media (prefers-color-scheme: dark) { .copilot { background: rgba(15, 27, 51, 0.92); } }
+.copilot-input { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.copilot-input .spark { font-size: 18px; }
+.copilot-input input { border: 0; background: transparent; box-shadow: none; height: 32px; padding: 0; font-size: 16px; }
+.copilot-input input:focus { box-shadow: none; border: 0; }
+.copilot-thread { padding: 10px 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; max-height: 40vh; border-bottom: 1px solid var(--line); }
+.turn .q { font-weight: 600; font-size: 13.5px; margin-bottom: 6px; }
+.turn .a p { margin: 0 0 8px; white-space: pre-wrap; font-size: 13.5px; line-height: 1.55; }
+.turn .a ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.turn .a li button, .copilot-list button { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
+.turn .a li button:hover, .copilot-list button.on { background: var(--panel-muted); }
+.turn .a li b, .copilot-list b { font-size: 13.5px; font-weight: 500; }
+.turn .a li span, .copilot-list span { font-size: 12px; color: var(--faint); }
+.turn .src { font-size: 11px; color: var(--faint); margin-top: 6px; }
+.thinking { font-size: 13px; }
+.shimmer-text { background: linear-gradient(90deg, var(--faint) 0%, var(--ink) 45%, var(--coral) 55%, var(--faint) 100%) 0 0 / 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 1.6s linear infinite; }
+@keyframes shimmer { from { background-position: 120% 0; } to { background-position: -100% 0; } }
+.copilot-list { list-style: none; margin: 0; padding: 6px 8px; overflow-y: auto; flex: 1; }
+.copilot-list .group { padding: 10px 10px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+.copilot-list button.on b { color: var(--ink); }
+.copilot-list button.on { box-shadow: inset 2px 0 0 var(--coral); }
+.copilot-foot { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--faint); }
+.copilot-foot kbd { margin-right: 3px; }
+
+/* agent "Today" panel */
+.today { margin-bottom: var(--gap); }
+.today-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.today-head .ask-btn { margin-left: auto; }
+.today-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+@media (max-width: 1020px) { .today-cards { grid-template-columns: minmax(0, 1fr); } }
+.signal { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--glass-line); background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 1px 0 var(--glass-hi) inset; overflow: hidden; transition: transform 300ms var(--spring); }
+.signal:hover { transform: translateY(-2px); }
+.signal::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--line-strong); }
+.signal.good::before { background: var(--series); }
+.signal.warn::before { background: var(--coral); box-shadow: 0 0 10px rgba(255, 74, 61, 0.6); }
+.signal.info::before { background: var(--powder); }
+.signal b { font-size: 14px; font-weight: 600; }
+.signal p { margin: 0; font-size: 12.5px; color: var(--muted); flex: 1; }
+.signal .btn { align-self: flex-start; margin-top: 4px; }
+
+/* adaptive sections */
+.adaptive { display: flex; flex-direction: column; }
+.adaptive-reset { align-self: center; margin-top: 24px; border: 0; background: none; color: var(--faint); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.adaptive > div > .split, .adaptive > div > .grid { margin-bottom: 0; }
+
+/* depth: 3D tilt toward the pointer */
+.card { transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.card:hover { transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-2px); }
+.card.flush:hover, .card:has(textarea):hover, .card:has(form):hover { transform: none; }
+
+/* network constellation behind the hero */
+.hero > .constellation { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.75; mix-blend-mode: screen; }
+.hero > *:not(.constellation) { position: relative; z-index: 1; }
+
+/* dictation */
+.btn.recording { border-color: var(--coral); color: var(--coral-ink); }
+.mic-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); display: inline-block; }
+.btn.recording .mic-dot { animation: ping-dot 1s ease-in-out infinite; }
+@keyframes ping-dot { 50% { transform: scale(1.5); opacity: 0.5; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .copilot, .copilot-scrim, .copilot-fab .spark, .shimmer-text, .btn.recording .mic-dot { animation: none; }
+  .shimmer-text { color: var(--ink); background: none; }
+  .card, .card:hover { transform: none; }
+  .signal:hover, .copilot-fab:hover { transform: none; }
+}
+@media (max-width: 860px) { .copilot-fab { right: 14px; bottom: 14px; } .copilot-fab kbd { display: none; } }

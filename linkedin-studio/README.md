@@ -101,6 +101,13 @@ The **Audience & network** page turns your own LinkedIn data into audience and l
 
 Colours: ink blue and off-white with electric coral as the accent and powder blue as the third, interface-only colour. Charts only use the coral and ink-blue pair, which passes colour-blind and contrast checks.
 
+## Copilot, agent and adaptive layout
+
+- **Copilot (⌘K / Ctrl+K, or the Ask button).** Jump to any page, post or person, or ask in plain English: "what should I do today?", "who are my top leads?", "what was my best post?", "how am I doing this week?", "when should I post?", "who should see: <draft>". These are answered instantly from your data with no API key. With `ANTHROPIC_API_KEY` set, anything else (and follow-ups) goes to Claude, which uses tools that read your posts, metrics, network and leads, and can hand a draft straight to the editor.
+- **Agent ("Today").** Each visit, the agent checks your posts, daily metrics and network and surfaces the three things that matter most, each with one action: warm target leads who engaged this week, whether today is your best day, a post that's taking off, reach up or down week on week, cadence, missing numbers, unrated drafts, setup gaps. The top one becomes the dashboard's "Today's focus".
+- **Adaptive layout.** The greeting follows your local time. Dashboard sections you use most move up (usage fades over days, stored only in your browser, with a reset link).
+- **Depth.** Cards tilt slightly toward the pointer, your network drifts as a constellation behind the dashboard banner (coral nodes are people who engaged), and the editor has a Dictate button (browser speech recognition). All motion stops under reduced-motion settings.
+
 ## How ranking works
 
 Each published post with impressions gets a **performance score** from 0 to 100, relative to your other posts:
@@ -127,6 +134,6 @@ npm run typecheck
 npm run build
 ```
 
-The Playwright suite (`e2e/`) runs against a production build with Notion replaced by an in-memory mock (`e2e/support/mock-notion.mjs`), so it never touches your workspace, LinkedIn or Anthropic. It covers every page (one heading, no sideways scroll on desktop or a 390px phone, dark mode), the dashboard rankings and coaching charts, importing a LinkedIn analytics export, writing and saving a rated draft, importing connections, scoring leads, logging engagers, the watchlist, CSV export, the "Who will care" panel, the post page and the swipe file. Any uncaught browser error fails the test.
+The Playwright suite (`e2e/`) runs against a production build with Notion replaced by an in-memory mock (`e2e/support/mock-notion.mjs`), so it never touches your workspace, LinkedIn or Anthropic. It covers every page (one heading, no sideways scroll on desktop or a 390px phone, dark mode), the dashboard rankings and coaching charts, importing a LinkedIn analytics export, writing and saving a rated draft, importing connections, scoring leads, logging engagers, the watchlist, CSV export, the "Who will care" panel, the post page, the swipe file, the agent's Today panel, the ⌘K copilot (navigation, search and answers) and the adaptive section order. Any uncaught browser error fails the test.
 
 Code map: `lib/notion.ts` (all Notion reads/writes), `lib/schema.ts` (database columns), `lib/linkedin-export.ts` (xlsx parsers), `lib/linkedin-api.ts` (OAuth, publishing, analytics), `lib/sync.ts` (daily job), `lib/scoring.ts` (ranking and insights), `lib/ai.ts` (Claude), `app/` (pages and server actions).

@@ -16,12 +16,17 @@ export function Ambient() {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const card = (e.target as HTMLElement | null)?.closest?.(".card, .hero, .btn.primary") as HTMLElement | null;
-        if (last && last !== card) last.style.removeProperty("--lit");
+        if (last && last !== card) ["--lit", "--rx", "--ry"].forEach((v) => last!.style.removeProperty(v));
         if (!card) return;
         const r = card.getBoundingClientRect();
         card.style.setProperty("--mx", `${e.clientX - r.left}px`);
         card.style.setProperty("--my", `${e.clientY - r.top}px`);
         card.style.setProperty("--lit", "1");
+        // gentle 3D tilt toward the pointer (±3°), not on cards you type into
+        if (!card.matches(".flush, :has(textarea), :has(input)")) {
+          card.style.setProperty("--ry", `${((e.clientX - r.left) / r.width - 0.5) * 6}deg`);
+          card.style.setProperty("--rx", `${-((e.clientY - r.top) / r.height - 0.5) * 6}deg`);
+        }
         last = card;
       });
     };

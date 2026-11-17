@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Mona_Sans } from "next/font/google";
 import { Ambient } from "@/components/ambient";
+import { Copilot } from "@/components/copilot";
 import { Nav } from "@/components/nav";
 import "./globals.css";
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Nav />
           <main>{children}</main>
         </div>
+        <Copilot />
       </body>
     </html>
   );

@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { aiCritique, aiHooks, aiRewrite, audienceForDraft, publishNow, saveDraft } from "@/app/actions";
 import type { Critique } from "@/lib/ai";
 import { aboveTheFold, checks, firstLine, LINKEDIN_MAX_CHARS, stats } from "@/lib/text";
 import type { Post, Ratings, Status } from "@/lib/types";
 import { FORMATS, HOOK_TYPES } from "@/lib/types";
+import { Dictate } from "./dictate";
 import { Card, Chip } from "./kit";
 import { RATING_FIELDS, Scale, Stars } from "./rating";
 
@@ -187,11 +188,14 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
             <span className={s.chars > LINKEDIN_MAX_CHARS ? "error" : "muted"}>
               {s.chars.toLocaleString()} / {LINKEDIN_MAX_CHARS.toLocaleString()} characters · {s.words} words
             </span>
+            <span className="row" style={{ gap: 6 }}>
+            <Dictate onText={useCallbackText(setText)} />
             {undo != null ? (
               <button className="btn small ghost" onClick={() => (setText(undo), setUndo(null))}>
                 Undo last change
               </button>
             ) : null}
+            </span>
           </div>
           <div className="grid g3">
             <div className="field">
@@ -404,4 +408,9 @@ export function Editor({ post, pillars, aiEnabled, canPublish, initialText }: Pr
       </div>
     </div>
   );
+}
+
+/** Appends dictated speech to the draft, with a space or new line as needed. */
+function useCallbackText(setText: React.Dispatch<React.SetStateAction<string>>) {
+  return useCallback((t: string) => setText((cur) => (cur ? `${cur}${/\s$/.test(cur) ? "" : " "}${t}` : t)), [setText]);
 }

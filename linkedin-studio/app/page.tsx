@@ -3,7 +3,11 @@ import { AreaChart } from "@/components/area-chart";
 import { Legend, Scatter, TrendColumns } from "@/components/coach-charts";
 import { scoreTrend, splitWinners, trendDelta, winnersVsRest } from "@/lib/coach";
 import { Icon } from "@/components/icons";
+import { AdaptiveStack, Greeting } from "@/components/adaptive";
+import { AskButton } from "@/components/ask-button";
+import { Constellation } from "@/components/constellation";
 import { LivePill, Ticker, TimeAgo } from "@/components/live";
+import { signals as agentSignals, type Signal } from "@/lib/agent";
 import { PulseLine } from "@/components/pulse-line";
 import { postingPulse, recentActivity } from "@/lib/activity";
 import { Dumbbell, ScoreRing, Sparkline } from "@/components/mini-charts";
@@ -11,7 +15,7 @@ import { Card, CardLink, Chip, PageHeader, SectionTitle } from "@/components/kit
 import { Bars, Empty, fmt, fmtDate, SetupNeeded, TierBadge } from "@/components/ui";
 import { notionReady } from "@/lib/env";
 import { nextMoves, type Move } from "@/lib/insights";
-import { listDaily, listPosts } from "@/lib/notion";
+import { getIcp, listDaily, listPeople, listPosts } from "@/lib/notion";
 import { avg, calibration, groupBy, lengthBucket, WEEKDAYS, weekdayOf, type GroupInsight } from "@/lib/scoring";
 import type { Post } from "@/lib/types";
 
@@ -85,7 +89,8 @@ function Weekdays({ posts }: { posts: Post[] }) {
 
 export default async function Dashboard() {
   if (!notionReady()) return <SetupNeeded />;
-  const [posts, daily] = await Promise.all([listPosts(), listDaily(daysAgo(90))]);
+  const [posts, daily, people, icp] = await Promise.all([listPosts(), listDaily(daysAgo(90)), listPeople().catch(() => []), getIcp()]);
+  const today_ = agentSignals({ posts, daily, people, icp });
   const live = posts.filter((p) => p.status !== "Archived");
   const published = live.filter((p) => p.status === "Published");
   const ranked = published.filter((p) => p.performanceScore != null).sort((a, b) => a.rank! - b.rank!);
@@ -148,10 +153,10 @@ export default async function Dashboard() {
   return (
     <div className="reveal">
       <PageHeader
-        eyebrow={today}
+        eyebrow={<Greeting date={today} />}
         meta={<LivePill updatedAt={updatedAt} />}
         title="What’s working on LinkedIn"
-        description="Your reach, your best posts and what to write next, from the numbers in Notion."
+        description={today_[0] ? <>Today’s focus: <b>{today_[0].title}</b>. {today_[0].detail}</> : "Your reach, your best posts and what to write next, from the numbers in Notion."}
         actions={
           <>
             <Link className="btn" href="/metrics"><Icon.upload /> Import analytics</Link>
@@ -161,6 +166,7 @@ export default async function Dashboard() {
       />
 
       <section className="hero" aria-label="Last 30 days">
+        <Constellation nodes={Math.min(90, Math.max(40, Math.round(people.length / 4)))} warm={people.filter((p) => p.engagedCount > 0).length} />
         <div style={{ minWidth: 0 }}>
           <div className="eyebrow">Impressions · last 30 days</div>
           <div className="hero-figure">
@@ -218,7 +224,27 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <div className="split stretch">
+      {today_.length ? (
+        <section className="today" aria-label="Today">
+          <div className="today-head">
+            <span className="eyebrow">Today</span>
+            <span className="small faint">Your agent checked your posts, metrics and network.</span>
+            <AskButton />
+          </div>
+          <div className="today-cards">
+            {today_.slice(0, 3).map((s: Signal) => (
+              <article key={s.id} className={`signal ${s.tone}`}>
+                <b>{s.title}</b>
+                <p>{s.detail}</p>
+                {s.action ? <Link className="btn small" href={s.action.href}>{s.action.label} <Icon.arrow /></Link> : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <AdaptiveStack>
+      <div data-section="best" className="split stretch">
         <Card title="Your best post" description={best ? `#1 of ${ranked.length} · ${fmtDate(best.publishedAt)}` : undefined} action={best ? <CardLink href={`/posts/${best.id}`}>Open</CardLink> : null}>
           {best ? (
             <div className="best">
@@ -261,6 +287,7 @@ export default async function Dashboard() {
         </Card>
       </div>
 
+      <div data-section="improve">
       <SectionTitle eyebrow="Get better" title="Where to improve" note="Coral is your top 25% of posts, blue the rest. Click any mark to open the post." />
       <div className="grid g2">
         <Card
@@ -317,6 +344,9 @@ export default async function Dashboard() {
         </Card>
       </div>
 
+      </div>
+
+      <div data-section="rankings">
       <SectionTitle eyebrow="Rankings" title="Leaderboard and pipeline" />
       <div className="split">
         <Card flush title="Leaderboard" description="Every published post, ranked against your own history." action={<CardLink href="/posts?status=Published&sort=rank">All posts</CardLink>}>
@@ -374,6 +404,9 @@ export default async function Dashboard() {
         </div>
       </div>
 
+      </div>
+
+      <div data-section="patterns">
       <SectionTitle eyebrow="Patterns" title="What works for you" note="Hover a bar for post counts, impressions and engagement." />
       <div className="grid g3">
         <Insight title="Hook type" rows={groupBy(published, (p) => p.hookType)} empty="Tag hook types on your posts to see a pattern." />
@@ -383,6 +416,8 @@ export default async function Dashboard() {
         <Insight title="Length" rows={groupBy(published, (p) => lengthBucket(p.text))} empty="Paste post text in to compare lengths." />
         <Insight title="Your hook rating" rows={groupBy(published, (p) => (p.ratings.hook ? `${p.ratings.hook} ★` : null))} empty="Rate hooks before posting to see if you can spot a winner." />
       </div>
+      </div>
+      </AdaptiveStack>
     </div>
   );
 }

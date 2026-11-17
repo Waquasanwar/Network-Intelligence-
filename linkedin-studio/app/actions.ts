@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { readArchive, type ArchiveConnection, type ArchiveShare } from "@/lib/archive";
 import { draftAudience, matchEngagers, type Icp } from "@/lib/people";
+import { aiAnswer, localAnswer, type CopilotAnswer } from "@/lib/copilot";
+import { signals as agentSignals } from "@/lib/agent";
 import * as ai from "@/lib/ai";
 import { aiReady } from "@/lib/env";
 import { importExport } from "@/lib/importer";
@@ -364,6 +366,59 @@ export async function audienceForDraft(text: string) {
         segments: r.segments.filter((g) => g.people > 0).slice(0, 4),
         keywords: r.keywords.slice(0, 6),
         top: r.top.map((t) => ({ id: t.person.id, name: t.person.name, position: t.person.position, company: t.person.company, url: t.person.url, why: t.why.join(" · ") })),
+      },
+    };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ── copilot ──────────────────────────────────────────────────────────
+
+
+async function copilotData() {
+  const [posts, daily, people, icp] = await Promise.all([
+    db.listPosts(),
+    db.listDaily(new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10)).catch(() => []),
+    db.listPeople().catch(() => []),
+    db.getIcp(),
+  ]);
+  return { posts, daily, people, icp };
+}
+
+/** What the ⌘K bar needs to search instantly in the browser, plus today's signals as suggestions. */
+export async function copilotIndex() {
+  try {
+    const d = await copilotData();
+    return {
+      ok: true as const,
+      data: {
+        posts: d.posts.filter((p) => p.status !== "Archived").map((p) => ({ id: p.id, title: p.title, status: p.status, rank: p.rank })),
+        people: d.people.slice(0, 5000).map((p) => ({ id: p.id, name: p.name, sub: [p.position, p.company].filter(Boolean).join(" · "), url: p.url })),
+        signals: agentSignals(d).slice(0, 4).map((s) => ({ title: s.title, href: s.action?.href ?? "/" })),
+        ai: aiReady(),
+      },
+    };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function askCopilot(question: string, history: { role: "user" | "assistant"; content: string }[]): Promise<Result<CopilotAnswer>> {
+  try {
+    const d = await copilotData();
+    const local = localAnswer(question, d);
+    if (local && !aiReady()) return { ok: true, data: local };
+    if (aiReady()) {
+      // Local answers are instant and exact; Claude handles everything else and follow-ups.
+      if (local && history.length === 0) return { ok: true, data: local };
+      return { ok: true, data: await aiAnswer(question, history, d) };
+    }
+    return {
+      ok: true,
+      data: {
+        source: "local",
+        text: "I can answer questions about your leads, best posts, best day to post, this week’s reach, what to do today, and who a draft is for. Add ANTHROPIC_API_KEY to ask anything else.",
       },
     };
   } catch (e) {
