@@ -18,7 +18,7 @@ function Swatch({ hex, name, active, onClick, size = "lg" }: { hex: string; name
     >
       <span
         className={`${dim} rounded-full ring-offset-2 ring-offset-[var(--surface)] transition ${active ? "ring-2 ring-[var(--ink)]" : "group-hover:scale-110"}`}
-        style={{ background: `linear-gradient(135deg, ${hex}, color-mix(in oklch, ${hex} 70%, white))` }}
+        style={{ background: `linear-gradient(135deg, ${hex}, color-mix(in oklab, ${hex} 70%, white))` }}
       />
       {size === "lg" && <span className={`text-xs ${active ? "font-medium text-ink" : "text-ink-3"}`}>{name}</span>}
     </button>

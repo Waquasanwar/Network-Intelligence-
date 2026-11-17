@@ -220,7 +220,7 @@ function MonthView({ entries, today }: { entries: Entry[]; today: string }) {
             const due = entries.filter((e) => e.due && e.due.slice(0, 10) === d && !isClosed(e));
             const c = counts.get(d) ?? 0;
             return (
-              <div key={d} className={`min-h-24 bg-surface p-1.5 ${inMonth(d) ? "" : "opacity-40"}`} style={c ? { backgroundImage: `linear-gradient(color-mix(in oklch, var(--accent) ${Math.round((c / max) * 22)}%, transparent), color-mix(in oklch, var(--accent) ${Math.round((c / max) * 22)}%, transparent))` } : undefined}>
+              <div key={d} className={`min-h-24 bg-surface p-1.5 ${inMonth(d) ? "" : "opacity-40"}`} style={c ? { backgroundImage: `linear-gradient(color-mix(in oklab, var(--accent) ${Math.round((c / max) * 22)}%, transparent), color-mix(in oklab, var(--accent) ${Math.round((c / max) * 22)}%, transparent))` } : undefined}>
                 <div className="flex items-center justify-between">
                   <span className={`num text-xs ${d === today ? "rounded bg-accent px-1 text-accent-ink" : "text-ink-2"}`}>{fmt(d, { day: "numeric" })}</span>
                   {c > 0 && <span className="num text-[0.65rem] text-ink-3">{c}</span>}

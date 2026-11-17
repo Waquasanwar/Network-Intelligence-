@@ -24,7 +24,8 @@
   --brand: #1c6fd6;
   --brand-ink: #ffffff;
   --tint: 0%;
-  --radius: 0.375rem;
+  --radius: 0.75rem;
+  --section: var(--brand); /* colour of the current binder section, set per page */
   --font: var(--font-plex), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-plex-cond), "IBM Plex Sans Condensed", var(--font);
   --mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -47,7 +48,8 @@
   --danger: #c8372d;
   --ok: #1b8a5a;
   --warn: #b86e00;
-  --shadow: 0 1px 0 rgb(31 36 41 / 4%);
+  --shadow: 0 1px 2px rgb(31 36 41 / 5%), 0 8px 20px -14px rgb(31 36 41 / 22%);
+  --shadow-lift: 0 2px 4px rgb(31 36 41 / 6%), 0 16px 32px -18px rgb(31 36 41 / 30%);
 
   --accent: var(--brand);
   --accent-ink: var(--brand-ink);
@@ -67,8 +69,9 @@
   --danger: #ff7a6e;
   --ok: #48c98c;
   --warn: #f0a63a;
-  --shadow: 0 1px 0 rgb(0 0 0 / 25%);
-  --accent: color-mix(in oklch, var(--brand) 82%, white);
+  --shadow: 0 1px 2px rgb(0 0 0 / 25%), 0 10px 24px -16px rgb(0 0 0 / 60%);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 36px -18px rgb(0 0 0 / 70%);
+  --accent: color-mix(in oklab, var(--brand) 82%, white);
   --accent-ink: #0e1116;
   color-scheme: dark;
 }
@@ -86,8 +89,9 @@
     --danger: #ff7a6e;
     --ok: #48c98c;
     --warn: #f0a63a;
-    --shadow: 0 1px 0 rgb(0 0 0 / 25%);
-    --accent: color-mix(in oklch, var(--brand) 82%, white);
+    --shadow: 0 1px 2px rgb(0 0 0 / 25%), 0 10px 24px -16px rgb(0 0 0 / 60%);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 30%), 0 18px 36px -18px rgb(0 0 0 / 70%);
+    --accent: color-mix(in oklab, var(--brand) 82%, white);
     --accent-ink: #0e1116;
     color-scheme: dark;
   }
@@ -95,21 +99,21 @@
 
 /* Derived palette */
 :root {
-  --bg: color-mix(in oklch, var(--brand) var(--tint), var(--n-bg));
-  --surface: color-mix(in oklch, var(--brand) calc(var(--tint) * 0.4), var(--n-surface));
-  --surface-2: color-mix(in oklch, var(--brand) var(--tint), var(--n-surface-2));
-  --line: color-mix(in oklch, var(--brand) var(--tint), var(--n-line));
-  --accent-soft: color-mix(in oklch, var(--accent) 11%, var(--surface));
-  --accent-text: color-mix(in oklch, var(--accent), var(--ink) 20%);
+  --bg: color-mix(in oklab, var(--brand) var(--tint), var(--n-bg));
+  --surface: color-mix(in oklab, var(--brand) calc(var(--tint) * 0.4), var(--n-surface));
+  --surface-2: color-mix(in oklab, var(--brand) var(--tint), var(--n-surface-2));
+  --line: color-mix(in oklab, var(--brand) var(--tint), var(--n-line));
+  --accent-soft: color-mix(in oklab, var(--accent) 11%, var(--surface));
+  --accent-text: color-mix(in oklab, var(--accent), var(--ink) 20%);
   --accent-2: var(--accent);
-  --ring: color-mix(in oklch, var(--accent) 28%, transparent);
+  --ring: color-mix(in oklab, var(--accent) 28%, transparent);
 
   /* Charts: single series in the accent; energy is an ordinal ramp of it; sentiment keeps a
      fixed colour-blind-safe diverging pair so its meaning never changes with the theme. */
   --series-1: var(--accent);
-  --seq-strong: color-mix(in oklch, var(--accent), var(--ink) 35%);
+  --seq-strong: color-mix(in oklab, var(--accent), var(--ink) 35%);
   --seq-mid: var(--accent);
-  --seq-light: color-mix(in oklch, var(--accent) 38%, var(--surface));
+  --seq-light: color-mix(in oklab, var(--accent) 38%, var(--surface));
   --pos: #2a78d6;
   --neg: #eb6834;
   --mid: #a3a29c;
@@ -198,7 +202,7 @@
   }
 
   ::selection {
-    background: color-mix(in oklch, var(--accent) 25%, transparent);
+    background: color-mix(in oklab, var(--accent) 25%, transparent);
   }
 
   :focus-visible {
@@ -209,7 +213,7 @@
   kbd {
     font-family: var(--mono);
     font-size: 0.68rem;
-    border: 1px solid color-mix(in oklch, currentColor 35%, transparent);
+    border: 1px solid color-mix(in oklab, currentColor 35%, transparent);
     border-bottom-width: 2px;
     border-radius: 0.25rem;
     padding: 0 0.3rem;
@@ -276,7 +280,7 @@
   }
   .btn:hover {
     background: var(--surface-2);
-    border-color: color-mix(in oklch, var(--ink) 20%, var(--line));
+    border-color: color-mix(in oklab, var(--ink) 20%, var(--line));
   }
   .btn:active {
     transform: translateY(1px);
@@ -287,8 +291,8 @@
     color: var(--accent-ink);
   }
   .btn-primary:hover {
-    background: color-mix(in oklch, var(--accent), black 10%);
-    border-color: color-mix(in oklch, var(--accent), black 10%);
+    background: color-mix(in oklab, var(--accent), black 10%);
+    border-color: color-mix(in oklab, var(--accent), black 10%);
   }
   .btn:disabled {
     opacity: 0.45;
@@ -312,7 +316,7 @@
 
   /* Guessed values: dashed outline says "suggestion, not fact". */
   .guess {
-    border: 1px dashed color-mix(in oklch, var(--ink) 30%, transparent);
+    border: 1px dashed color-mix(in oklab, var(--ink) 30%, transparent);
     background: transparent;
   }
 
@@ -354,4 +358,80 @@
     border-radius: 0 2px 2px 0;
     background: var(--accent);
   }
+
+  .card {
+    animation: rise 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  a.card,
+  .card.lift {
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  }
+  a.card:hover,
+  .card.lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+    border-color: color-mix(in oklab, var(--section) 35%, var(--line));
+  }
+
+  /* The current section's colour washes the top of the page, like a coloured divider sheet. */
+  .section-wash {
+    background-image: linear-gradient(to bottom, color-mix(in oklab, var(--section) 12%, transparent), transparent 300px);
+    background-repeat: no-repeat;
+  }
+
+  /* Page titles carry the section's index-tab colour. */
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .page-title::before {
+    content: "";
+    width: 0.7rem;
+    height: 1.35rem;
+    border-radius: 0.2rem;
+    background: var(--section);
+    flex-shrink: 0;
+  }
+
+  /* Tinted figure tiles: the tint says what the number means. */
+  .kpi {
+    background: color-mix(in oklab, var(--hue) 10%, var(--surface));
+    border-color: color-mix(in oklab, var(--hue) 24%, var(--line));
+  }
+  .kpi .kpi-value {
+    color: color-mix(in oklab, var(--hue), var(--ink) 30%);
+  }
+
+  /* Index-tab colour marker on the spine. */
+  .tab-mark {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 0.15rem;
+    background: var(--tab);
+    opacity: 0.9;
+  }
+  .tab[aria-current="page"]::before {
+    background: var(--tab, var(--accent));
+  }
 }
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Stagger the first few sheets on a page so it assembles rather than pops. */
+main .card:nth-child(2) { animation-delay: 40ms; }
+main .card:nth-child(3) { animation-delay: 80ms; }
+main .card:nth-child(4) { animation-delay: 120ms; }
+main .card:nth-child(5) { animation-delay: 160ms; }
+main .card:nth-child(6) { animation-delay: 200ms; }
+main .card:nth-child(n + 7) { animation-delay: 240ms; }
+

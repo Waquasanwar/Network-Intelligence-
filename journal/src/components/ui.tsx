@@ -3,18 +3,18 @@ import type { EntryType } from "@/lib/schema";
 
 // One crisp colour per type, shown as a small dot on a neutral chip so screens stay calm.
 export const TYPE_HEX: Record<EntryType, string> = {
-  Note: "#8b93a1",
-  Decision: "#8b7bff",
-  Request: "#ff9f0a",
-  "Purchase Request": "#e5b54a",
-  "Service Request": "#5e9eff",
-  "Comment / Feedback": "#0a84ff",
-  Idea: "#ffd60a",
-  Meeting: "#a2845e",
-  "Blocker / Risk": "#ff453a",
-  Win: "#30d158",
-  Question: "#64d2ff",
-  Learning: "#5ac8c8",
+  Note: "#6b7480",
+  Decision: "#b2449c",
+  Request: "#e8573a",
+  "Purchase Request": "#3a9d4a",
+  "Service Request": "#0f9a86",
+  "Comment / Feedback": "#2196c9",
+  Idea: "#e5b30f",
+  Meeting: "#8a6d52",
+  "Blocker / Risk": "#d63a3a",
+  Win: "#c27c0e",
+  Question: "#5458dc",
+  Learning: "#7b52e8",
 };
 
 export function TypeDot({ type, className = "size-1.5" }: { type?: EntryType; className?: string }) {
@@ -24,8 +24,12 @@ export function TypeDot({ type, className = "size-1.5" }: { type?: EntryType; cl
 
 export function TypeBadge({ type, short }: { type?: EntryType; short?: boolean }) {
   const t = type ?? "Note";
+  const c = TYPE_HEX[t];
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-line px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-ink-2">
+    <span
+      className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)*0.6)] px-1.5 py-0.5 text-xs font-medium whitespace-nowrap"
+      style={{ background: `color-mix(in oklab, ${c} 15%, var(--surface))`, color: `color-mix(in oklab, ${c}, var(--ink) 45%)` }}
+    >
       <TypeDot type={t} />
       {short ? t.split(" ")[0] : t}
     </span>
@@ -52,7 +56,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-[1.85rem] text-ink">{title}</h1>
+        <h1 className="page-title text-[1.95rem] text-ink">{title}</h1>
         {subtitle && <p className="mt-0.5 text-sm text-ink-3">{subtitle}</p>}
       </div>
       {actions}
@@ -64,11 +68,12 @@ export function Empty({ children }: { children: ReactNode }) {
   return <div className="card px-4 py-8 text-center text-sm text-ink-3">{children}</div>;
 }
 
-export function Stat({ label, value, tone }: { label: string; value: ReactNode; tone?: "danger" | "accent" }) {
+export function Stat({ label, value, tone, hue }: { label: string; value: ReactNode; tone?: "danger" | "accent"; hue?: string }) {
+  const h = hue ?? (tone === "danger" ? "var(--danger)" : tone === "accent" ? "var(--accent)" : "var(--ink-3)");
   return (
-    <div className="card px-3.5 py-3">
-      <div className={`num text-2xl font-medium ${tone === "danger" ? "text-danger" : tone === "accent" ? "text-accent-fg" : ""}`}>{value}</div>
-      <div className="label mt-1">{label}</div>
+    <div className="card kpi lift px-4 py-3.5" style={{ ["--hue" as string]: h }}>
+      <div className="kpi-value num text-[1.75rem] leading-none font-medium">{value}</div>
+      <div className="label mt-2">{label}</div>
     </div>
   );
 }

@@ -9,18 +9,25 @@ import { logoutAction } from "@/app/actions";
 import { QuickTheme } from "./Appearance";
 import { Icon, type IconName } from "./Icon";
 
-const NAV: Array<{ href: string; label: string; icon: IconName }> = [
-  { href: "/", label: "Today", icon: "today" },
-  { href: "/plan", label: "Plan", icon: "plan" },
-  { href: "/projects", label: "Projects", icon: "projects" },
-  { href: "/review", label: "Review", icon: "review" },
-  { href: "/requests", label: "Requests", icon: "requests" },
-  { href: "/procurement", label: "Procurement", icon: "procurement" },
-  { href: "/decisions", label: "Decisions", icon: "decisions" },
-  { href: "/timeline", label: "Timeline", icon: "timeline" },
-  { href: "/insights", label: "Insights", icon: "insights" },
-  { href: "/settings", label: "Appearance", icon: "settings" },
+// Each binder section has its own index-tab colour; the page you are on takes that colour.
+const NAV: Array<{ href: string; label: string; icon: IconName; color: string }> = [
+  { href: "/", label: "Today", icon: "today", color: "#1c6fd6" },
+  { href: "/plan", label: "Plan", icon: "plan", color: "#7b52e8" },
+  { href: "/projects", label: "Projects", icon: "projects", color: "#0f9a86" },
+  { href: "/review", label: "Review", icon: "review", color: "#e09a12" },
+  { href: "/requests", label: "Requests", icon: "requests", color: "#e8573a" },
+  { href: "/procurement", label: "Procurement", icon: "procurement", color: "#3a9d4a" },
+  { href: "/decisions", label: "Decisions", icon: "decisions", color: "#b2449c" },
+  { href: "/timeline", label: "Timeline", icon: "timeline", color: "#2196c9" },
+  { href: "/insights", label: "Insights", icon: "insights", color: "#5458dc" },
+  { href: "/settings", label: "Appearance", icon: "settings", color: "#6b7480" },
 ];
+
+export function sectionColor(path: string): string {
+  const hit = [...NAV].reverse().find((n) => (n.href === "/" ? path === "/" : path.startsWith(n.href)));
+  if (path.startsWith("/entry")) return "#1c6fd6";
+  return hit?.color ?? "#1c6fd6";
+}
 
 interface Props {
   children: ReactNode;
@@ -74,9 +81,10 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
         </div>
         <nav aria-label="Main" className="flex flex-col gap-0.5">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined} className="tab">
+            <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined} className="tab" style={{ ["--tab" as string]: n.color }}>
               <Icon name={n.icon} className="size-[1.05rem] shrink-0" />
               {n.label}
+              {!(n.href === "/review" && inboxCount > 0) && <span className="tab-mark ml-auto" />}
               {n.href === "/review" && inboxCount > 0 && <span className="num ml-auto text-[0.72rem] opacity-80">{inboxCount}</span>}
             </Link>
           ))}
@@ -95,7 +103,8 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
         </div>
       </aside>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-4 pb-28 md:px-10 md:pt-9 md:pb-12">
+      <main className="section-wash w-full flex-1" style={{ ["--section" as string]: sectionColor(path) }}>
+       <div className="mx-auto w-full max-w-5xl px-4 pt-4 pb-28 md:px-10 md:pt-9 md:pb-12">
         <div className="-mx-4 -mt-4 mb-5 flex items-center justify-between bg-spine px-4 py-3 text-spine-ink md:hidden">
           <Link href="/" className="flex items-center gap-2">
             <span aria-hidden className="grid size-7 place-items-center rounded-[var(--radius)] bg-accent text-accent-ink">
@@ -109,6 +118,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
         </div>
         {mode === "demo" && <p className="mb-4 text-xs text-ink-3 md:hidden">Sample data, not saved to Notion.</p>}
         {children}
+       </div>
       </main>
 
       {/* Phone: bottom tabs and a new-entry button */}
@@ -120,7 +130,7 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
             aria-current={active(n.href) ? "page" : undefined}
             className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.68rem] ${active(n.href) ? "text-accent-fg" : "text-ink-3"}`}
           >
-            {active(n.href) && <span className="absolute top-0 h-0.5 w-8 rounded-b bg-accent" />}
+            {active(n.href) && <span className="absolute top-0 h-0.5 w-8 rounded-b" style={{ background: n.color }} />}
             <Icon name={n.icon} className="size-5" />
             {n.label}
           </Link>

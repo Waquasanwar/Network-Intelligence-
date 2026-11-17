@@ -26,12 +26,12 @@ export const PRESETS: Array<{ name: string; hex: string }> = [
   { name: "Plum", hex: "#7a3f8f" },
 ];
 
-export const DEFAULT_THEME: Theme = { mode: "light", accent: "#1c6fd6", tint: "off", corners: "soft", font: "sans", headings: "condensed" };
+export const DEFAULT_THEME: Theme = { mode: "light", accent: "#1c6fd6", tint: "off", corners: "round", font: "sans", headings: "condensed" };
 
 export const THEME_COOKIE = "journal_theme";
 
 const TINT: Record<Tint, string> = { off: "0%", subtle: "3%", vivid: "7%" };
-const RADIUS: Record<Corners, string> = { sharp: "0.125rem", soft: "0.375rem", round: "0.75rem" };
+const RADIUS: Record<Corners, string> = { sharp: "0.25rem", soft: "0.5rem", round: "0.75rem" };
 export const FONTS: Record<Font, { label: string; stack: string }> = {
   sans: { label: "Plex Sans", stack: 'var(--font-plex), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif' },
   rounded: { label: "Rounded", stack: 'ui-rounded, "SF Pro Rounded", "Nunito", "Quicksand", "Varela Round", system-ui, sans-serif' },

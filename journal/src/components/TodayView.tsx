@@ -41,16 +41,16 @@ export function TodayView({ entries, people, projects, tags }: { entries: Entry[
     <div className="space-y-6">
       <header suppressHydrationWarning>
         <p className="label">{mounted ? `Week ${isoWeek(new Date())} · ${new Date().toLocaleDateString("en-GB", { weekday: "long" })}` : "Today"}</p>
-        <h1 className="mt-1 text-[2.25rem] text-ink">{mounted ? new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long" }) : " "}</h1>
+        <h1 className="page-title mt-1 text-[2.25rem] text-ink">{mounted ? new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long" }) : " "}</h1>
       </header>
 
       <CaptureBox people={people} projects={projects} tags={tags} />
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Link href="/review"><Stat label="To review" value={inbox.length} tone={inbox.length ? "accent" : undefined} /></Link>
-        <Stat label="Captured today" value={todays.length} />
-        <Link href="/plan?view=day"><Stat label="To chase" value={chaseCount} tone={chaseCount ? "accent" : undefined} /></Link>
-        <Link href="/timeline?filter=overdue"><Stat label="Overdue" value={overdue} tone={overdue ? "danger" : undefined} /></Link>
+        <Link href="/review"><Stat label="To review" value={inbox.length} hue="#e09a12" /></Link>
+        <Stat label="Captured today" value={todays.length} hue="#0f9a86" />
+        <Link href="/plan?view=day"><Stat label="To chase" value={chaseCount} hue="#7b52e8" /></Link>
+        <Link href="/timeline?filter=overdue"><Stat label="Overdue" value={overdue} hue={overdue ? "var(--danger)" : "var(--ok)"} /></Link>
       </div>
 
       {mounted && (
