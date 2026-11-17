@@ -1,3 +1,5 @@
 snapshots/
 __pycache__/
 .env
+data/
+metrics.json

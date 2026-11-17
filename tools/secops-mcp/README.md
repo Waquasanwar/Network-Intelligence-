@@ -1,4 +1,103 @@
-# SecOps metrics MCP server
+# Security Operations Dashboard and SecOps metrics server
+
+Everything needed to run the Security Operations Dashboard inside your own environment,
+with the design you have seen, fed from your own systems:
+
+```
+ Your systems ──read only──▶  this app (one container, in your tenant)  ──▶  browser, behind single sign-on
+ Sentinel, Defender,           /api/dashboard  the figures as JSON              /      the dashboard
+ GitLab, Mimecast …            /mcp            the same figures for Claude
+ weekly exports (CSV)          metrics.json    measures you add
+```
+
+| Folder or file | What it is |
+|---|---|
+| `dashboard/` | The dashboard exactly as designed: `index.html`, `styles.css`, `app.js`. It loads its figures from `/api/dashboard`. |
+| `secops_mcp/web.py` | One web process serving the dashboard, its data API and the MCP server. |
+| `secops_mcp/dashboard_data.py` | Fills each section from a live connector, a CSV export, or sample data, in that order. |
+| `secops_mcp/server.py`, `sources/` | The read-only MCP tools and the connectors to each system. |
+| `metrics.example.json` | How to add any new measure without touching code. |
+| `exports-example/` | The CSV layouts for the weekly-export route. |
+| `Dockerfile` | The container you deploy. |
+
+## Build it in your own environment
+
+The recommended home is Azure, since Sentinel and Defender for Cloud already live there.
+
+1. **Container.** Build the image from this folder (`docker build -t secops-dashboard .`) and
+   push it to your Azure Container Registry.
+2. **Host.** Run it on Azure Container Apps (or App Service) in your security subscription,
+   with ingress limited to your network or Front Door.
+3. **Sign-in.** Turn on the platform's built-in authentication with Microsoft Entra ID and
+   restrict it to a security group, for example "SecOps Dashboard Viewers". The app has no
+   login of its own, so never expose it without this.
+4. **Identity for the data.** Give the container a managed identity. Grant it Microsoft
+   Sentinel Reader on the workspace and Security Reader on the subscriptions in scope. The
+   server picks up the managed identity automatically, so no Azure secret is stored.
+5. **Other secrets.** Put the GitLab token and Mimecast client secret in Azure Key Vault and
+   reference them as Container Apps secrets. Each is read-only (see the access table below).
+6. **Settings.** Set `SECOPS_MODE=live`, `SENTINEL_WORKSPACE_ID`, `DEFENDER_SUBSCRIPTION_IDS`,
+   `GITLAB_GROUPS` and so on (all listed in `.env.example`).
+7. **Storage.** Mount an Azure Files share at `/app/data` (weekly exports, `metrics.json`) and
+   another at `/app/snapshots` (the weekly history the server builds up).
+8. **Weekly refresh.** Figures are rebuilt at most once an hour (`SECOPS_CACHE_MINUTES`). For
+   the export route, a scheduled job or Power Automate flow drops each week's CSVs on the share.
+
+Elsewhere (on-premises, another cloud) the steps are the same: run the container behind
+your single sign-on proxy, give it read-only credentials from your vault, mount the two folders.
+
+Try it locally first, with no credentials:
+
+```bash
+pip install -r requirements.txt
+SECOPS_DATA_DIR=./exports-example uvicorn secops_mcp.web:app --port 8080
+# open http://localhost:8080
+```
+
+## Getting data in
+
+Each section of the dashboard uses the best source it has, and the sidebar says how many
+sections are still on sample data.
+
+| Route | What to do | Fills |
+|---|---|---|
+| **Weekly exports** (works today) | Save each tool's weekly figures as CSV, using the columns in `exports-example/`, into the data folder. Excel works: save as CSV. | Weekly trend, findings by scanner, teams, systems and their 12-week trends |
+| **Live connectors** | Set the credentials for a source and `SECOPS_MODE=live`. | SOC section from Sentinel today; vulnerability and phishing figures through the MCP tools |
+| **Through Sentinel** | Turn on each product's Sentinel data connector, then add a KQL measure. | Anything that lands in the workspace |
+
+## Adding a data point
+
+Copy `metrics.example.json` to `metrics.json` in the data folder and add an entry. No code
+change and no redeploy: the next refresh shows it.
+
+```json
+{
+  "id": "patch_compliance_servers",
+  "label": "Servers fully patched",
+  "view": "vulnerabilities",
+  "unit": "%",
+  "better": "higher",
+  "source": { "type": "csv", "file": "patching.csv", "column": "servers_patched_pct" }
+}
+```
+
+- `view` is the page it appears on: `overview`, `detection` (SOC operations), `vulnerabilities`,
+  `remediation`, `email`, `people` (users and apps) or `controls`.
+- `source.type` is `csv` (a column in a file with a `week_ending` column), `kql` (a Sentinel
+  query returning `week_ending` and `value`) or `static` (values written in the file).
+- `better` decides whether a rise shows green or red.
+
+Each measure appears under "More measures" on its view, as a headline figure with its change
+on last week and a 12-week chart with "View data". The API reports any measure that failed in
+`_custom_status`.
+
+A measure that needs a new kind of chart or a new page is a code change in `dashboard/app.js`;
+the views there are built from the same small set of parts (headline tiles, trend charts, ranked
+lists, bar lists), so a new section is usually a few lines.
+
+---
+
+# The MCP server
 
 A read-only MCP server that serves the weekly figures behind the Security Operations
 Dashboard: SOC activity, vulnerabilities, remediation, phishing, user and app risk,

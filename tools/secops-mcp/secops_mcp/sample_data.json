@@ -507,6 +507,138 @@
    12
   ]
  },
+ "notes": [
+  {
+   "order": 1,
+   "title": "Three systems spiked in the same week",
+   "confidence": "High",
+   "systems": "Microsoft Sentinel, Mimecast, scanners",
+   "pattern": "In the week ending 11 Oct, new findings jumped to 186 against a usual 100 to 140, Sentinel incidents hit 63, the highest of the 12 weeks, and phishing that reached inboxes rose to 133. Time to detect and fix times both slipped the same week.",
+   "look": "One cause across three systems is more likely than three coincidences. Check whether a phishing campaign or a newly disclosed vulnerability explains that week, and whether the response was joined up.",
+   "based_on_week": "2026-11-15",
+   "areas": [
+    "detection",
+    "email",
+    "vulnerabilities"
+   ]
+  },
+  {
+   "order": 2,
+   "title": "The backlog is falling because less is arriving, not because more is being fixed",
+   "confidence": "High",
+   "systems": "Orca, Defender for Cloud, GitLab, SentinelOne",
+   "pattern": "Findings closed have fallen four weeks running, from 158 to 121. The backlog still shrank because new findings were also low, averaging 106 a week over the last four weeks against 122 over the whole period.",
+   "look": "If intake returns to its average, the weekly reduction drops to almost nothing. Ask why closure is slowing before relying on the 17-week clearance estimate.",
+   "based_on_week": "2026-11-15",
+   "areas": [
+    "vulnerabilities",
+    "remediation"
+   ]
+  },
+  {
+   "order": 3,
+   "title": "Code findings go overdue twice as often as cloud findings",
+   "confidence": "Medium",
+   "systems": "GitLab, Orca",
+   "pattern": "30% of GitLab's open critical and high findings are overdue (32 of 106), against 16% for Orca (21 of 128) and 12% for Defender for Cloud (11 of 91).",
+   "look": "This points at the fix path for code, not at scanning. Check whether findings reach developers as tickets with a deadline, and whether the Customer Apps backlog below is the same set of findings.",
+   "based_on_week": "2026-11-15",
+   "areas": [
+    "vulnerabilities",
+    "remediation"
+   ]
+  },
+  {
+   "order": 4,
+   "title": "Two teams hold more than half of everything overdue",
+   "confidence": "High",
+   "systems": "All scanners",
+   "pattern": "Customer Apps and Data and Analytics hold 38 of the 68 overdue critical and high findings (56%), with 38% of the open ones. They are also the two slowest to fix a critical, at 17.9 and 14.6 days.",
+   "look": "Payments fixes a critical in 6.8 days. Find out what Payments does that these two teams do not, before adding people.",
+   "based_on_week": "2026-11-15",
+   "areas": [
+    "remediation"
+   ]
+  },
+  {
+   "order": 5,
+   "title": "Privileged access is the least visible area and its data is late",
+   "confidence": "Medium",
+   "systems": "CyberArk",
+   "pattern": "CyberArk covers 86% of in-scope assets, the lowest of the eight systems, and its last extract is a week older than the rest. 39 privileged accounts were not vaulted at that point.",
+   "look": "The 14% not covered may hold more unvaulted accounts than the figure shows. Confirm what is outside coverage and why the extract was missed.",
+   "based_on_week": "2026-11-15",
+   "areas": [
+    "controls"
+   ]
+  },
+  {
+   "order": 6,
+   "title": "Fewer phishing emails arrive, but a larger share is clicked",
+   "confidence": "Low",
+   "systems": "Mimecast",
+   "pattern": "Phishing that reached inboxes fell from 92 to 88 this week while clicks rose from 5 to 6, so the click rate moved from 5.4% to 6.8%. Over 12 weeks it has ranged from 5.4% to 9.3%.",
+   "look": "One week is not a trend. Watch next week, and check whether the messages getting through are better targeted than before.",
+   "based_on_week": "2026-11-15",
+   "areas": [
+    "email"
+   ]
+  }
+ ],
+ "hot": {
+  "teams": [
+   "Customer Apps",
+   "Data and Analytics",
+   "Platform Engineering",
+   "Infrastructure",
+   "Corporate IT",
+   "Payments"
+  ],
+  "scanners": [
+   "Orca",
+   "Defender for Cloud",
+   "GitLab",
+   "SentinelOne"
+  ],
+  "cells": [
+   [
+    4,
+    2,
+    16,
+    1
+   ],
+   [
+    6,
+    2,
+    7,
+    0
+   ],
+   [
+    7,
+    2,
+    4,
+    0
+   ],
+   [
+    3,
+    4,
+    1,
+    0
+   ],
+   [
+    0,
+    1,
+    1,
+    3
+   ],
+   [
+    1,
+    0,
+    3,
+    0
+   ]
+  ]
+ },
  "soc": {
   "alerts": [
    5120,
@@ -1543,5 +1675,6 @@
    }
   ]
  },
- "_note": "Sample data written to show the dashboard design. Not taken from any system."
+ "_note": "Sample data written to show the dashboard design. Not taken from any system.",
+ "custom": []
 }

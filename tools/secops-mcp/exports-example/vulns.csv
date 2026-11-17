@@ -1,0 +1,13 @@
+source,severity,open,overdue
+Orca,Critical,21,5
+Orca,High,107,16
+Orca,Medium,612,37
+Defender for Cloud,Critical,12,2
+Defender for Cloud,High,79,9
+Defender for Cloud,Medium,431,22
+GitLab,Critical,15,6
+GitLab,High,91,26
+GitLab,Medium,388,47
+SentinelOne,Critical,7,1
+SentinelOne,High,38,3
+SentinelOne,Medium,204,6

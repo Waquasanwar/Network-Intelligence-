@@ -1,0 +1,97 @@
+system,week_ending,value
+Microsoft Sentinel,2026-08-30,52
+Microsoft Sentinel,2026-09-06,47
+Microsoft Sentinel,2026-09-13,58
+Microsoft Sentinel,2026-09-20,44
+Microsoft Sentinel,2026-09-27,49
+Microsoft Sentinel,2026-10-04,41
+Microsoft Sentinel,2026-10-11,63
+Microsoft Sentinel,2026-10-18,46
+Microsoft Sentinel,2026-10-25,39
+Microsoft Sentinel,2026-11-01,42
+Microsoft Sentinel,2026-11-08,37
+Microsoft Sentinel,2026-11-15,35
+Mimecast,2026-08-30,142
+Mimecast,2026-09-06,128
+Mimecast,2026-09-13,151
+Mimecast,2026-09-20,119
+Mimecast,2026-09-27,124
+Mimecast,2026-10-04,108
+Mimecast,2026-10-11,133
+Mimecast,2026-10-18,101
+Mimecast,2026-10-25,96
+Mimecast,2026-11-01,104
+Mimecast,2026-11-08,92
+Mimecast,2026-11-15,88
+GitLab,2026-08-30,141
+GitLab,2026-09-06,139
+GitLab,2026-09-13,136
+GitLab,2026-09-20,138
+GitLab,2026-09-27,133
+GitLab,2026-10-04,129
+GitLab,2026-10-11,134
+GitLab,2026-10-18,127
+GitLab,2026-10-25,122
+GitLab,2026-11-01,119
+GitLab,2026-11-08,115
+GitLab,2026-11-15,106
+Orca,2026-08-30,176
+Orca,2026-09-06,171
+Orca,2026-09-13,168
+Orca,2026-09-20,163
+Orca,2026-09-27,160
+Orca,2026-10-04,154
+Orca,2026-10-11,159
+Orca,2026-10-18,151
+Orca,2026-10-25,147
+Orca,2026-11-01,143
+Orca,2026-11-08,139
+Orca,2026-11-15,128
+Defender for Cloud,2026-08-30,64
+Defender for Cloud,2026-09-06,64
+Defender for Cloud,2026-09-13,65
+Defender for Cloud,2026-09-20,66
+Defender for Cloud,2026-09-27,66
+Defender for Cloud,2026-10-04,67
+Defender for Cloud,2026-10-11,67
+Defender for Cloud,2026-10-18,68
+Defender for Cloud,2026-10-25,69
+Defender for Cloud,2026-11-01,70
+Defender for Cloud,2026-11-08,71
+Defender for Cloud,2026-11-15,73
+Netskope,2026-08-30,262
+Netskope,2026-09-06,248
+Netskope,2026-09-13,255
+Netskope,2026-09-20,239
+Netskope,2026-09-27,231
+Netskope,2026-10-04,244
+Netskope,2026-10-11,268
+Netskope,2026-10-18,236
+Netskope,2026-10-25,229
+Netskope,2026-11-01,221
+Netskope,2026-11-08,214
+Netskope,2026-11-15,187
+CyberArk,2026-08-30,71
+CyberArk,2026-09-06,68
+CyberArk,2026-09-13,66
+CyberArk,2026-09-20,63
+CyberArk,2026-09-27,60
+CyberArk,2026-10-04,58
+CyberArk,2026-10-11,55
+CyberArk,2026-10-18,52
+CyberArk,2026-10-25,50
+CyberArk,2026-11-01,48
+CyberArk,2026-11-08,46
+CyberArk,2026-11-15,39
+SentinelOne,2026-08-30,31
+SentinelOne,2026-09-06,28
+SentinelOne,2026-09-13,29
+SentinelOne,2026-09-20,25
+SentinelOne,2026-09-27,24
+SentinelOne,2026-10-04,22
+SentinelOne,2026-10-11,27
+SentinelOne,2026-10-18,21
+SentinelOne,2026-10-25,19
+SentinelOne,2026-11-01,18
+SentinelOne,2026-11-08,17
+SentinelOne,2026-11-15,12

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Security Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500..800&family=Inter:wght@400..700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}.loading{padding:48px;font:15px Inter,system-ui,sans-serif;color:#45527c}</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.800 4.500 5.600v5.900c0 4.600 3 8.100 7.500 9.700 4.500-1.600 7.500-5.100 7.500-9.700V5.600L12 2.800Z"/><path d="m8.800 12.200 2.300 2.300 4.200-4.600"/></svg></div><span>Security Operations<small>Information Security</small></span></div>
+    <nav id="nav" aria-label="Sections"></nav>
+    <div class="meta" id="meta"></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<template id="build-tpl">
+  <section class="flow">
+    <div class="card stage"><h3 class="h">Your security systems</h3><ul class="chips" id="sys-chips"></ul><p>Each one gets its own read-only service identity. Nobody's personal account is used.</p></div>
+    <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>read only<br>encrypted</div>
+    <div class="card edge stage"><h3 class="h">Inside your own tenant</h3><ul class="chips"><li>Connector (MCP server)</li><li>Secrets vault</li><li>Audit log</li></ul><p>A connector is a small service that offers a fixed set of read queries. It fetches each credential from the vault at the moment it needs it, turns raw records into weekly counts and logs every call. Credentials never leave this box.</p></div>
+    <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>counts<br>only</div>
+    <div class="card stage"><h3 class="h">This dashboard</h3><ul class="chips"><li>Single sign-on</li><li>Named viewers</li><li>AI analyst</li></ul><p>Receives totals and trends. No alerts, hostnames, user names or email content. The AI reads the same counts and nothing more.</p></div>
+  </section>
+
+  <details class="card" open><summary>Three ways to feed it</summary><div class="body"><div class="scroll"><table>
+    <thead><tr><th>Route</th><th>How it works</th><th>Freshness</th><th>Fits when</th></tr></thead><tbody>
+    <tr><td>Weekly exports</td><td>Each team exports a CSV or Excel sheet into a SharePoint folder. The page is rebuilt from those files.</td><td>Weekly snapshot</td><td>You want it running this week with no integration work.</td></tr>
+    <tr><td>One connection through Sentinel</td><td>Most of these products can send data into Microsoft Sentinel. Land it in the workspace and give the dashboard one read-only connection that runs saved queries there.</td><td>Live</td><td>Recommended. One identity to govern, one audit trail, no new copies of the data.</td></tr>
+    <tr><td>A connector per system</td><td>A separate MCP connector for a product's own API, where it has no route into Sentinel or you need a figure Sentinel does not hold.</td><td>Live</td><td>Filling the gaps the Sentinel route leaves.</td></tr>
+  </tbody></table></div></div></details>
+
+  <details class="card"><summary>Connecting securely</summary><div class="body"><ul class="list">
+    <li><b>Read only, always.</b> Every identity gets a viewer or reader role. The dashboard never needs to change, close or delete anything.</li>
+    <li><b>Service identities, not people.</b> One named identity per system, owned by the security team.</li>
+    <li><b>Least scope.</b> Limit each identity to the workspace, subscription, group or site being reported on, and to reporting endpoints only.</li>
+    <li><b>No stored secrets where there is a choice.</b> Prefer a managed identity or OAuth client credentials with short-lived tokens. Where a product only offers an API key, keep it in the vault and rotate it on a schedule.</li>
+    <li><b>Keep the connector on your side.</b> Run it in your own cloud tenant, reach each product over TLS and allow-list its outbound address where the product supports it.</li>
+    <li><b>Fixed queries.</b> The connector offers a short list of approved queries with no free-form search.</li>
+    <li><b>Counts out, detail stays.</b> Aggregate before anything leaves. A director needs the number of open findings, not the hostnames.</li>
+    <li><b>Log and review.</b> Record every connector call, send the log to Sentinel and alert on anything outside the weekly pattern.</li>
+    <li><b>Control who sees the page.</b> Share it with named people behind single sign-on.</li>
+  </ul></div></details>
+
+  <details class="card"><summary>Access to request in each system</summary><div class="body"><p class="cap">A starting point. Role and scope names change between product versions, so confirm each against the vendor's current documentation.</p><div class="scroll"><table>
+    <thead><tr><th>System</th><th>Identity</th><th>Least access</th><th>What the page pulls</th></tr></thead><tbody>
+    <tr><td>Microsoft Sentinel</td><td>Entra ID managed identity or app registration</td><td>Microsoft Sentinel Reader on the one workspace</td><td>Incident counts, time to detect, and anything other products send to the workspace</td></tr>
+    <tr><td>Defender for Cloud</td><td>The same Entra ID identity</td><td>Security Reader on the subscriptions in scope</td><td>Secure score, open recommendations by severity</td></tr>
+    <tr><td>GitLab</td><td>Service account with a group access token</td><td>Read-only API scope on the groups in scope, with permission to read vulnerabilities</td><td>Open code, dependency and secret findings by severity and project</td></tr>
+    <tr><td>Orca</td><td>API token for a service user</td><td>Viewer role, limited to the business units in scope</td><td>Open cloud findings by severity and age</td></tr>
+    <tr><td>Netskope</td><td>REST API token</td><td>Read access to the alerts and events endpoints only</td><td>Data loss policy violations, risky app use</td></tr>
+    <tr><td>CyberArk</td><td>Dedicated API user</td><td>Auditor-style, list-only rights. No right to retrieve any password</td><td>Counts of privileged accounts vaulted and not vaulted</td></tr>
+    <tr><td>Mimecast</td><td>API application with OAuth client credentials</td><td>A role limited to reading threat and message reports</td><td>Phishing delivered, blocked and clicked</td></tr>
+    <tr><td>SentinelOne</td><td>Service user with an expiring API token</td><td>Viewer role on the sites in scope</td><td>Unresolved threats, agent coverage, application vulnerabilities</td></tr>
+  </tbody></table></div></div></details>
+
+  <details class="card"><summary>How the AI signals work</summary><div class="body"><ul class="list">
+    <li><b>Two layers.</b> The decision list is fixed rules that recalculate on their own. The AI signals are Claude reading the same figures for patterns no rule covers, such as several systems moving in the same week.</li>
+    <li><b>Flags on the charts.</b> A week that sits far outside the usual range is marked on its chart automatically, so the signal and the evidence sit together.</li>
+    <li><b>Written weekly, dated.</b> Each set of signals is written for one week's data. A scheduled weekly run can rewrite them after every refresh.</li>
+    <li><b>Same guardrails.</b> Claude reads the weekly counts the dashboard already holds, not raw alerts, hostnames or mail.</li>
+    <li><b>A person decides.</b> Every signal states the figures it rests on and how confident it is. Someone checks it before anyone acts.</li>
+  </ul></div></details>
+
+
+<p class="note">Sample data throughout: every figure and every AI signal in this system was written to show the design. Nothing here comes from a live system.</p>
+</template>
+<p class="loading" id="loading">Loading the latest figures…</p>
+<script>
+/* Loads the figures from the server, then starts the dashboard. */
+fetch('api/dashboard', {credentials: 'same-origin'})
+  .then((r) => { if (!r.ok) throw new Error('The server answered ' + r.status); return r.json(); })
+  .then((data) => {
+    window.DATA = data;
+    document.getElementById('loading').remove();
+    const s = document.createElement('script'); s.src = 'app.js'; document.body.append(s);
+  })
+  .catch((e) => { document.getElementById('loading').textContent = 'Could not load the figures. ' + e.message; });
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+system,watches,measure,value,previous,unit,better,coverage_pct,extracted,in_scope,scope_unit
+Microsoft Sentinel,Security events and incidents,Incidents raised,35,37,,lower,97,2026-11-15,12400,log sources
+GitLab,Code and pipelines,Critical and high code findings open,106,115,,lower,88,2026-11-15,640,projects
+Orca,Cloud workloads,Critical and high cloud findings open,128,139,,lower,94,2026-11-15,3400,cloud workloads
+Defender for Cloud,Cloud configuration,Secure score,73,71,%,higher,100,2026-11-15,3400,cloud resources
+Netskope,Web and SaaS traffic,Data loss policy violations,187,214,,lower,91,2026-11-15,9100,users
+CyberArk,Privileged access,Privileged accounts not vaulted,39,46,,lower,86,2026-11-08,1850,privileged accounts
+Mimecast,Email,Phishing emails delivered,88,92,,lower,100,2026-11-15,9100,mailboxes
+SentinelOne,Endpoint detection and response,Unresolved endpoint threats,12,17,,lower,96,2026-11-15,9100,endpoints

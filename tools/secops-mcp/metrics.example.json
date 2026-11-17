@@ -1,0 +1,33 @@
+{
+  "_how": "Copy to metrics.json. Each measure appears on the view named in 'view' (overview, detection, vulnerabilities, remediation, email, people, controls) as a headline tile and a 12-week chart. Sources: 'csv' reads a column from a file in the data folder, 'kql' runs a Sentinel query that returns week_ending and value, 'static' takes the values as written.",
+  "metrics": [
+    {
+      "id": "patch_compliance_servers",
+      "label": "Servers fully patched",
+      "view": "vulnerabilities",
+      "unit": "%",
+      "decimals": true,
+      "better": "higher",
+      "source": { "type": "csv", "file": "patching.csv", "column": "servers_patched_pct" }
+    },
+    {
+      "id": "ransomware_alerts",
+      "label": "Ransomware alerts",
+      "view": "detection",
+      "better": "lower",
+      "source": {
+        "type": "kql",
+        "query": "SecurityAlert | where TimeGenerated > ago(84d) and AlertName has 'ransom' | summarize value = dcount(SystemAlertId) by week_ending = startofweek(TimeGenerated) + 6d | order by week_ending asc"
+      }
+    },
+    {
+      "id": "training_completion",
+      "label": "Security training completed",
+      "view": "email",
+      "unit": "%",
+      "better": "higher",
+      "note": "Example only: replace with your learning platform's export.",
+      "source": { "type": "static", "values": [71, 72, 74, 74, 76, 77, 79, 80, 81, 83, 84, 86] }
+    }
+  ]
+}
