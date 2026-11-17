@@ -32,6 +32,27 @@ Granting Microsoft application permissions to a managed identity is done with Po
 the Graph API (the portal does not offer it for managed identities); your Entra admin will
 know the routine. Admin consent is required.
 
+## Cloud risks, DevSecOps and SAP: straight from Sentinel
+
+These three pages read only from the Sentinel workspace, so they fill as each feed arrives in
+the SIEM. Every figure is a query in `secops_mcp/domains.default.json`; copy it to the data
+folder as `domains.json` to change a query, a label, or to add a page.
+
+| Page | Feed into Sentinel | Tables and functions queried |
+|---|---|---|
+| Cloud risks | Defender for Cloud continuous export (recommendations, secure score); Orca Security Alerts connector; Defender for Cloud alerts | `SecurityRecommendation`, `SecureScores`, `OrcaAlerts_CL`, `SecurityAlert` |
+| DevSecOps | Defender for Cloud DevOps security connected to GitLab or GitHub, exported to Sentinel | `SecurityRecommendation` (code, secrets, dependencies, infrastructure templates, container images) |
+| SAP (planned) | Microsoft Sentinel solution for SAP applications and its data connector agent | `SecurityAlert` (alerts named "SAP - ..."), `SAPAuditLog` function |
+
+- Each page shows "Some figures on this page are sample data" until its queries return rows,
+  and the sidebar counts it among the sample sections.
+- SAP stays "Planned" with a list of what it will show. When data arrives, set its `status` to
+  `live` in `domains.json`; the page, its area card on the Overview and its sidebar dot appear.
+- Table and column names follow Microsoft's connector documentation. Run each query once in
+  the Sentinel Logs blade before relying on it; Orca's columns carry `_s` and `_d` suffixes.
+- To add another page (for example OT, identity governance, or a business unit): add a domain
+  with an id, title, icon and its queries. No code.
+
 ## How the figures get into the dashboard
 
 - Systems that report events (Sentinel, Defender XDR, SentinelOne threats, Netskope, Mimecast)

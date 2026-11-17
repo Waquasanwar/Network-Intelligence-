@@ -10,7 +10,7 @@ async def main(mode):
         tools = (await s.list_tools()).tools
         print(mode, "tools:", [t.name for t in tools])
         calls = [("soc_weekly", {"weeks": 4}), ("vulnerability_summary", {}), ("remediation_weekly", {"weeks": 4}), ("phishing_summary", {}),
-                 ("user_and_app_risk", {}), ("coverage", {}), ("top_list", {"name": "phishing_targets", "limit": 3}), ("top_list", {"name": "alert_hosts", "limit": 3}), ("dashboard_data", {})]
+                 ("user_and_app_risk", {}), ("coverage", {}), ("top_list", {"name": "phishing_targets", "limit": 3}), ("top_list", {"name": "alert_hosts", "limit": 3}), ("dashboard_data", {}), ("outcomes", {}), ("period_summary", {"start": "2026-10-01", "end": "2026-10-31"}), ("risk_domain", {"name": "cloud"})]
         for name, args in calls:
             res = await s.call_tool(name, args)
             body = json.loads(res.content[0].text) if res.content else {}

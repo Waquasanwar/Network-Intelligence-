@@ -1,0 +1,440 @@
+{
+ "_how": "Each page is one domain. Queries run in Sentinel: measures return week_ending and value (12 completed weeks, {weeks} is filled in), breakdowns return name and value, ranked lists return the named columns plus an optional detail column. 'sample' is shown until the query returns data. Table and column names follow Microsoft's connector documentation; check them in your workspace. Copy this file to the data folder as domains.json to change it.",
+ "domains": [
+  {
+   "id": "cloud",
+   "title": "Cloud risks",
+   "nav": "Cloud risks",
+   "status": "live",
+   "better": "lower",
+   "icon": "M7 18h10a4 4 0 0 0 .5-7.970A6 6 0 0 0 6.100 9.100 4.500 4.500 0 0 0 7 18Z",
+   "intro": "Misconfigurations and threats in Azure and other clouds, from Defender for Cloud and Orca as they arrive in Sentinel.",
+   "needs": "Defender for Cloud continuous export to the Sentinel workspace (SecurityRecommendation, SecureScores) and the Orca Security Alerts connector (OrcaAlerts_CL).",
+   "measures": [
+    {
+     "id": "cloud_high_unhealthy",
+     "label": "High-severity cloud misconfigurations",
+     "better": "lower",
+     "query": "SecurityRecommendation | where TimeGenerated > ago({weeks} * 7d) | where RecommendationState == 'Unhealthy' | where RecommendationSeverity == 'High' | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = dcount(strcat(AssessedResourceId, '|', RecommendationName)) by week_ending | order by week_ending asc",
+     "sample": [
+      412,
+      405,
+      398,
+      401,
+      388,
+      379,
+      392,
+      371,
+      362,
+      355,
+      344,
+      331
+     ]
+    },
+    {
+     "id": "cloud_secure_score",
+     "label": "Cloud secure score",
+     "unit": "%",
+     "better": "higher",
+     "query": "SecureScores | where TimeGenerated > ago({weeks} * 7d)  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = round(avg(PercentageScore) * 100, 0) by week_ending | order by week_ending asc",
+     "sample": [
+      64,
+      64,
+      65,
+      66,
+      66,
+      67,
+      67,
+      68,
+      69,
+      70,
+      71,
+      73
+     ]
+    },
+    {
+     "id": "cloud_orca_alerts",
+     "label": "Orca cloud alerts raised",
+     "better": "lower",
+     "query": "OrcaAlerts_CL | where TimeGenerated > ago({weeks} * 7d)  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = count() by week_ending | order by week_ending asc",
+     "sample": [
+      188,
+      176,
+      181,
+      169,
+      172,
+      160,
+      201,
+      158,
+      149,
+      151,
+      143,
+      139
+     ]
+    },
+    {
+     "id": "cloud_threat_alerts",
+     "label": "Cloud threat alerts",
+     "better": "lower",
+     "query": "SecurityAlert | where TimeGenerated > ago({weeks} * 7d) | where ProductName in ('Azure Security Center', 'Microsoft Defender for Cloud')  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = dcount(SystemAlertId) by week_ending | order by week_ending asc",
+     "sample": [
+      21,
+      18,
+      24,
+      17,
+      19,
+      15,
+      29,
+      16,
+      14,
+      15,
+      12,
+      11
+     ]
+    }
+   ],
+   "breakdowns": [
+    {
+     "id": "cloud_by_severity",
+     "title": "Open misconfigurations by severity",
+     "sub": "This week",
+     "query": "SecurityRecommendation | where TimeGenerated > ago(7d) | where RecommendationState == 'Unhealthy' | summarize value = dcount(strcat(AssessedResourceId, '|', RecommendationName)) by name = RecommendationSeverity | order by value desc",
+     "sample": [
+      [
+       "High",
+       331
+      ],
+      [
+       "Medium",
+       1204
+      ],
+      [
+       "Low",
+       866
+      ]
+     ]
+    },
+    {
+     "id": "cloud_orca_types",
+     "title": "Orca alerts by type",
+     "sub": "Last four weeks",
+     "query": "OrcaAlerts_CL | where TimeGenerated > ago(28d) | summarize value = count() by name = alert_type_s | top 8 by value",
+     "sample": [
+      [
+       "Vulnerable service on a running asset",
+       142
+      ],
+      [
+       "Publicly exposed storage",
+       61
+      ],
+      [
+       "Over-privileged identity",
+       58
+      ],
+      [
+       "Unencrypted data store",
+       44
+      ],
+      [
+       "Exposed secret on a workload",
+       23
+      ],
+      [
+       "Remote code execution label",
+       11
+      ]
+     ]
+    }
+   ],
+   "ranked": [
+    {
+     "id": "cloud_top_resources",
+     "title": "Resources with the most high-severity issues",
+     "sub": "This week",
+     "columns": [
+      "Resource",
+      "Issues"
+     ],
+     "query": "SecurityRecommendation | where TimeGenerated > ago(7d) | where RecommendationState == 'Unhealthy' | where RecommendationSeverity == 'High' | extend resource = tostring(split(AssessedResourceId, '/')[-1]), rtype = tostring(split(AssessedResourceId, '/')[-2]) | summarize Issues = dcount(RecommendationName) by Resource = resource, detail = rtype | top 10 by Issues",
+     "sample": [
+      [
+       "prod-sql-01",
+       "servers",
+       9
+      ],
+      [
+       "aks-payments",
+       "managedClusters",
+       8
+      ],
+      [
+       "stcustomerdata",
+       "storageAccounts",
+       7
+      ],
+      [
+       "vm-jump-02",
+       "virtualMachines",
+       6
+      ],
+      [
+       "kv-shared",
+       "vaults",
+       5
+      ],
+      [
+       "app-portal-prd",
+       "sites",
+       5
+      ],
+      [
+       "vm-legacy-ftp",
+       "virtualMachines",
+       4
+      ]
+     ]
+    },
+    {
+     "id": "cloud_top_recs",
+     "title": "Most widespread misconfigurations",
+     "sub": "Resources affected",
+     "columns": [
+      "Recommendation",
+      "Resources"
+     ],
+     "query": "SecurityRecommendation | where TimeGenerated > ago(7d) | where RecommendationState == 'Unhealthy' | summarize Resources = dcount(AssessedResourceId) by Recommendation = RecommendationName, detail = RecommendationSeverity | top 10 by Resources",
+     "sample": [
+      [
+       "Machines should have vulnerability findings resolved",
+       "High",
+       128
+      ],
+      [
+       "Storage accounts should restrict network access",
+       "Medium",
+       96
+      ],
+      [
+       "Management ports should be closed on virtual machines",
+       "High",
+       41
+      ],
+      [
+       "MFA should be enabled for accounts with owner permissions",
+       "High",
+       12
+      ],
+      [
+       "Diagnostic logs should be enabled",
+       "Low",
+       210
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "devsecops",
+   "title": "DevSecOps risks",
+   "nav": "DevSecOps",
+   "status": "live",
+   "better": "lower",
+   "icon": "m8 8-4 4 4 4m8-8 4 4-4 4m-3-10-2 12",
+   "intro": "Security issues found in code, dependencies, infrastructure templates and container images before they reach production.",
+   "needs": "Defender for Cloud DevOps security connected to your GitLab or GitHub organisations, with continuous export to Sentinel. GitLab's own findings can be added through the GitLab connector or a CSV measure.",
+   "measures": [
+    {
+     "id": "dso_findings",
+     "label": "Open code and pipeline findings",
+     "better": "lower",
+     "query": "SecurityRecommendation | where TimeGenerated > ago({weeks} * 7d) | where RecommendationState == 'Unhealthy' | where RecommendationName has_any ('secret', 'dependenc', 'code', 'IaC', 'infrastructure as code', 'container image', 'repository')  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = dcount(strcat(AssessedResourceId, '|', RecommendationName)) by week_ending | order by week_ending asc",
+     "sample": [
+      318,
+      311,
+      305,
+      309,
+      297,
+      288,
+      301,
+      276,
+      268,
+      259,
+      251,
+      238
+     ]
+    },
+    {
+     "id": "dso_secrets",
+     "label": "Secrets found in code",
+     "better": "lower",
+     "query": "SecurityRecommendation | where TimeGenerated > ago({weeks} * 7d) | where RecommendationState == 'Unhealthy' | where RecommendationName has 'secret'  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = dcount(AssessedResourceId) by week_ending | order by week_ending asc",
+     "sample": [
+      34,
+      33,
+      31,
+      32,
+      30,
+      28,
+      27,
+      25,
+      24,
+      22,
+      21,
+      19
+     ]
+    },
+    {
+     "id": "dso_dependencies",
+     "label": "Vulnerable dependencies",
+     "better": "lower",
+     "query": "SecurityRecommendation | where TimeGenerated > ago({weeks} * 7d) | where RecommendationState == 'Unhealthy' | where RecommendationName has 'dependenc'  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = dcount(AssessedResourceId) by week_ending | order by week_ending asc",
+     "sample": [
+      141,
+      139,
+      137,
+      138,
+      134,
+      130,
+      133,
+      126,
+      121,
+      118,
+      115,
+      108
+     ]
+    },
+    {
+     "id": "dso_images",
+     "label": "Container images with critical issues",
+     "better": "lower",
+     "query": "SecurityRecommendation | where TimeGenerated > ago({weeks} * 7d) | where RecommendationState == 'Unhealthy' | where RecommendationName has 'container image'  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = dcount(AssessedResourceId) by week_ending | order by week_ending asc",
+     "sample": [
+      57,
+      55,
+      56,
+      54,
+      51,
+      49,
+      52,
+      47,
+      45,
+      44,
+      42,
+      40
+     ]
+    }
+   ],
+   "breakdowns": [
+    {
+     "id": "dso_by_type",
+     "title": "Open findings by kind",
+     "sub": "This week",
+     "query": "SecurityRecommendation | where TimeGenerated > ago(7d) | where RecommendationState == 'Unhealthy' | where RecommendationName has_any ('secret', 'dependenc', 'code', 'IaC', 'infrastructure as code', 'container image', 'repository') | extend name = case(RecommendationName has 'secret', 'Secrets in code', RecommendationName has 'dependenc', 'Vulnerable dependencies', RecommendationName has_any ('IaC', 'infrastructure as code'), 'Infrastructure templates', RecommendationName has 'container image', 'Container images', 'Code weaknesses') | summarize value = dcount(strcat(AssessedResourceId, '|', RecommendationName)) by name | order by value desc",
+     "sample": [
+      [
+       "Vulnerable dependencies",
+       108
+      ],
+      [
+       "Code weaknesses",
+       52
+      ],
+      [
+       "Container images",
+       40
+      ],
+      [
+       "Infrastructure templates",
+       19
+      ],
+      [
+       "Secrets in code",
+       19
+      ]
+     ]
+    }
+   ],
+   "ranked": [
+    {
+     "id": "dso_top_repos",
+     "title": "Repositories with the most open findings",
+     "sub": "This week",
+     "columns": [
+      "Repository",
+      "Findings"
+     ],
+     "query": "SecurityRecommendation | where TimeGenerated > ago(7d) | where RecommendationState == 'Unhealthy' | where RecommendationName has_any ('secret', 'dependenc', 'code', 'IaC', 'infrastructure as code', 'container image', 'repository') | extend repo = tostring(split(AssessedResourceId, '/')[-1]) | summarize Findings = dcount(RecommendationName) by Repository = repo, detail = '' | top 10 by Findings",
+     "sample": [
+      [
+       "customer-portal",
+       "",
+       31
+      ],
+      [
+       "payments-api",
+       "",
+       24
+      ],
+      [
+       "data-pipeline",
+       "",
+       19
+      ],
+      [
+       "mobile-app",
+       "",
+       17
+      ],
+      [
+       "infra-terraform",
+       "",
+       14
+      ],
+      [
+       "auth-service",
+       "",
+       12
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sap",
+   "title": "SAP",
+   "nav": "SAP",
+   "status": "planned",
+   "better": "lower",
+   "icon": "M4 7l8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7m-8 4v10",
+   "intro": "Threats and risky activity in SAP, from the Microsoft Sentinel solution for SAP applications.",
+   "needs": "Deploy the Microsoft Sentinel solution for SAP applications and its data connector agent. Its built-in rules then raise alerts named 'SAP - ...', and the audit log is queried through the SAPAuditLog function. Set this page's status to live in domains.json once data arrives.",
+   "will_show": [
+    "SAP security alerts per week, by rule, from the built-in analytics rules",
+    "Activity by privileged and emergency (firefighter) users",
+    "Sensitive transactions and changes to critical system parameters",
+    "Failed and unusual logons, and data downloads from production",
+    "Which SAP systems are sending data, and which are late"
+   ],
+   "measures": [
+    {
+     "id": "sap_alerts",
+     "label": "SAP security alerts",
+     "better": "lower",
+     "query": "SecurityAlert | where TimeGenerated > ago({weeks} * 7d) | where AlertName startswith 'SAP - '  | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = dcount(SystemAlertId) by week_ending | order by week_ending asc",
+     "sample": []
+    }
+   ],
+   "breakdowns": [
+    {
+     "id": "sap_by_rule",
+     "title": "SAP alerts by rule",
+     "sub": "Last four weeks",
+     "query": "SecurityAlert | where TimeGenerated > ago(28d) and AlertName startswith 'SAP - ' | summarize value = dcount(SystemAlertId) by name = AlertName | top 10 by value",
+     "sample": []
+    }
+   ],
+   "ranked": []
+  }
+ ]
+}

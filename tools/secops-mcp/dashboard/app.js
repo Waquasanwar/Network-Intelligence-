@@ -54,7 +54,7 @@ function chart(box,cfg){
     for(let i=N-1;i>=0;i-=every)s.append(sv('text',{x:x(i),y:h-6,'text-anchor':'middle',class:'tick'},date(i)));
     if(fc){s.append(sv('rect',{x:x(n-1),y:m.t,width:x(N-1)-x(n-1),height:h-m.b-m.t,fill:'var(--glass)'}),sv('line',{x1:x(n-1),x2:x(n-1),y1:m.t-6,y2:h-m.b,stroke:'var(--line2)'}),sv('text',{x:x(n-1)+6,y:m.t-8,class:'nowl'},'projection →'))}
     if(cfg.target){s.append(sv('line',{x1:m.l,x2:w-m.r,y1:y(cfg.target.value),y2:y(cfg.target.value),stroke:'var(--ok)','stroke-dasharray':'2 5','stroke-width':1.5}),sv('text',{x:m.l+6,y:y(cfg.target.value)-6,class:'nowl'},cfg.target.label))}
-    if(cfg.flag>=0){s.append(sv('line',{x1:x(cfg.flag),x2:x(cfg.flag),y1:m.t-4,y2:h-m.b,stroke:'var(--a2)','stroke-dasharray':'3 4'}),sv('text',{x:x(cfg.flag),y:m.t-8,'text-anchor':'middle',class:'flagl'},'AI flag'))}
+    if(cfg.flag>=0){s.append(sv('line',{x1:x(cfg.flag),x2:x(cfg.flag),y1:m.t-4,y2:h-m.b,stroke:'var(--a2)','stroke-dasharray':'3 4'}),sv('text',{x:x(cfg.flag),y:m.t-8,'text-anchor':'middle',class:'flagl'},'Unusual week'))}
     if(bars){const bw=Math.min(13,(w-m.l-m.r)/N/2.6),g=sv('linearGradient',{id,x1:0,y1:0,x2:0,y2:1});g.append(sv('stop',{offset:'0','stop-color':'var(--a2)'}),sv('stop',{offset:'1','stop-color':'var(--a1)'}));defs.append(g);
       cfg.series.forEach((q,k)=>q.vals.forEach((v,i)=>s.append(sv('rect',{x:x(i)+(k?1.5:-bw-1.5),y:y(v),width:bw,height:Math.max(0,y(min)-y(v)),rx:Math.min(4,bw/2),fill:q.grad?`url(#${id})`:q.color}))));
     }else{
@@ -101,12 +101,18 @@ function stat(label,value,unit,dec,c,betterDir,vals,color,go){
   const card=el(go?'button':'div','card kpi'+(go?' lift':''),el('div','cap',label),num,c===null?el('div','cap',' '):el('div','',deltaEl(c,betterDir,dec),' ',el('span','cap','on last week')),sp);
   if(go){card.type='button';card.addEventListener('click',()=>show(go,true))}
   after.push(()=>{count(v,value,dec);if(sp)spark(sp,vals,color||'var(--a1)')});return card}
-function signal(r){return el('article','card sig lift',el('h3','',r.title),el('p','meta',`${r.systems} · ${r.confidence} confidence`),el('p','',r.pattern),el('div','look',el('strong','','Where to look'),el('span','',r.look)))}
+const AREA_NAMES={detection:'SOC operations',vulnerabilities:'Vulnerabilities',remediation:'Remediation',email:'Email and phishing',people:'Users and apps',controls:'Control areas'};
+function areaLinks(r){const f=el('div','sig-go');(r.areas||[]).forEach((a)=>{const nm=AREA_NAMES[a]||(AREAS[a]&&AREAS[a].name);if(!nm)return;const b=el('button','link sm','Open '+nm);b.type='button';b.addEventListener('click',()=>show(a,true));f.append(b)});return f}
+function signal(r,compact){
+  const conf=el('span','pill '+({High:'bad',Medium:'warn'}[r.confidence]||''),r.confidence+' confidence');
+  if(compact){const b=el('button','sig-row',el('span','sig-t',el('b','',r.title),el('small','',r.systems)),conf);b.type='button';b.addEventListener('click',()=>show('signals',true));return el('li','',b)}
+  return el('article','card signal',el('div','sig-head',el('h3','',r.title),conf),el('p','sig-sys',r.systems),
+    el('div','sig-body',el('div','',el('h4','','What we see'),el('p','',r.pattern)),el('div','',el('h4','','Where to look'),el('p','',r.look))),areaLinks(r))}
 const signalsFor=(area)=>DATA.notes.filter((r)=>r.areas.includes(area));
 function heading(title,cfg,points,note){const box=el('div','chart'),ul=el('ul','proj');points.forEach(([a,b])=>ul.append(el('li','',el('b','',a),el('span','',b))));after.push(()=>chart(box,cfg));
   return el('div','head',el('section','card',el('div','ph',el('h2','h',title),legend(cfg.series.map((q)=>[q.label,q.color]))),box,...dataPanel(cfg)),el('section','card edge',el('h2','h','Where it is heading'),el('div','',''),ul,el('p','note',note||`A straight line through the last six weeks, carried forward to ${ahead(FC)}. A guide to direction, not a forecast.`)))}
 function vhead(title,text,tone,state){const p=el('p');text.forEach((t)=>p.append(typeof t==='string'?t:el('b','',t[0])));return el('header','vh',el('div','vtitle',el('h1','',title),state?el('span','pill '+tone,state):null),p)}
-function aiBlock(area){const s=signalsFor(area);if(!s.length)return[];const g=el('section','ai');s.forEach((r)=>g.append(signal(r)));return[band('AI signals for this area'),g]}
+function aiBlock(area){const s=signalsFor(area);if(!s.length)return[];const g=el('section','signals');s.forEach((r)=>g.append(signal(r)));return[band('Signals for this area'),g]}
 
 
 const bigNum=(v,dec,unit)=>{const s=el('span');after.push(()=>count(s,v,dec));return el('div','num',s,unit?el('span','unit',unit):null)};
@@ -218,7 +224,7 @@ V.overview=()=>{
   [['Most targeted by phishing',t1.id,`${t1.role}, ${t1.dept}`,`${t1.received} emails`,'email'],['Most risky app use',t2.id,t2.dept,`${t2.violations} violations`,'people'],['Most exposed host',t3.host,`${t3.type}, ${t3.team}`,`${t3.critical+t3.high} findings`,'vulnerabilities'],['Noisiest detection rule',t4.rule,t4.source,`${t4.false_pct}% false`,'detection']]
    .forEach(([k,n,s,v,go])=>{const b=el('button','xrow',el('span','',el('b','',n),el('small','',`${k} · ${s}`)),el('span','big',v));b.type='button';b.addEventListener('click',()=>show(go,true));tl.append(el('li','',b))});
   const tops=el('div','two',el('section','card',el('div','ph',el('h2','h','On more than one list'),el('span','cap','The same name in several places is rarely chance')),xl),el('section','card',el('div','ph',el('h2','h','Top of each list'),el('span','cap','Select one to open it')),tl));
-  const areas=el('section','areas');['detection','vulnerabilities','remediation','email','people','controls'].map((k)=>[k,AREAS[k]]).forEach(([k,a])=>{const b=el('button','card areac lift',el('div','rhead',el('span','name',a.name),el('span','pill '+a.tone,a.state)),el('p','',a.what),el('div','go',el('b','','Heading: '),a.go));b.type='button';b.addEventListener('click',()=>show(k,true));areas.append(b)});
+  const areas=el('section','areas');['detection','vulnerabilities','remediation','email','people','controls',...DOMS.map((d)=>d.id)].map((k)=>[k,AREAS[k]]).forEach(([k,a])=>{const b=el('button','card areac lift',el('div','rhead',el('span','name',a.name),el('span','pill '+a.tone,a.state)),el('p','',a.what),el('div','go',el('b','','Heading: '),a.go));b.type='button';b.addEventListener('click',()=>show(k,true));areas.append(b)});
   return[head,band('Security operations centre this week'),funnel(),socTiles(),band('Vulnerabilities and remediation'),answers,band('Hotspots and risk areas'),hot,band('People and hosts that keep coming up'),tops,band('Area by area: what happened and where it is heading'),areas]};
 
 V.vulnerabilities=()=>{const A=AREAS.vulnerabilities,cs=streak(S.closed),m=new Map();
@@ -330,15 +336,156 @@ V.controls=()=>{const A=AREAS.controls,grid=el('section','sys-grid');
   return[vhead('Control areas',[A.what],A.tone,A.state),band('What happened, the 12-week pattern and where each is heading'),grid,el('p','note',`Each projection is a straight line through that system's last six weeks, carried forward to ${ahead(FC)}.`),
    band('Blind spots: what each system cannot see'),covCard,...aiBlock('controls')]};
 
-V.signals=()=>{const g=el('section','ai');DATA.notes.forEach((r)=>g.append(signal(r)));
-  return[vhead('AI signals',['Patterns across systems that no fixed rule was written for, each with the figures behind it and where to look next. Written by Claude from the data for the week ending '+day(DATA.notes[0].based_on_week)+'. Leads to check, not verdicts.'],'','' ),g]};
+V.signals=()=>{const g=el('section','signals');const order={High:0,Medium:1,Low:2};[...DATA.notes].sort((a,b)=>(order[a.confidence]??3)-(order[b.confidence]??3)).forEach((r)=>g.append(signal(r)));
+  return[vhead('Signals',['Patterns across systems that no single rule or report would show, with the figures behind each and where to look next. Prepared each week from the latest figures; treat them as leads to check, not conclusions. Week ending '+day(DATA.notes[0].based_on_week)+'.'],'',''),g]};
 V.build=()=>{const t=$('#build-tpl').content.cloneNode(true),ch=t.querySelector('#sys-chips');DATA.tools.forEach((x)=>ch.append(el('li','',x.system)));
   return[vhead('How it is built and secured',['None of the systems is connected yet. This is the route from sample data to live.'],'',''),t]};
 
 /* shell */
-const NAV=[['overview','Overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','AI signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
+/* Pages fed from Sentinel queries (domains.json): cloud, DevSecOps, SAP and any added later. */
+const DOMS=DATA.domains||[];
+DOMS.forEach((d)=>{
+  const ms=d.measures.filter((m)=>m.values&&m.values.length>1);
+  if(d.status!=='live'){AREAS[d.id]={name:d.title,tone:'',state:'Planned',what:'Not connected yet.',go:d.intro}}
+  else if(ms.length){const m=ms[0],v=m.values.map(Number),c=r1(last(v)-prev(v)),b=slope(v),up=(m.better||'lower')==='higher',good=up?c>=0:c<=0,u=m.unit||'';
+    AREAS[d.id]={name:d.title,tone:good?'ok':'bad',state:good?'Improving':'Worsening',what:`${m.label}: ${f0(last(v))}${u}, ${sgn(c)} on last week.`,go:`Moving ${sgn(b,1)} a week. Near ${f0(Math.max(0,last(v)+b*FC))}${u} by ${ahead(FC)}.`}}
+  V[d.id]=()=>domainView(d)});
+function domainView(d){
+  const A=AREAS[d.id]||{};
+  if(d.status!=='live'){const ul=el('ul','list');(d.will_show||[]).forEach((t)=>ul.append(el('li','',t)));
+    return[vhead(d.title,[d.intro],'warn','Planned'),el('section','card',el('h2','h','Not connected yet'),el('p','sub',d.needs),el('h3','h','What this page will show'),ul)]}
+  const ms=d.measures.filter((m)=>m.values&&m.values.length>1),tiles=el('section','stats'),charts=el('div','two'),from=el('div','two');
+  ms.slice(0,4).forEach((m)=>{const v=m.values.map(Number);tiles.append(stat(m.label,last(v),m.unit||'',m.decimals?1:0,r1(last(v)-prev(v)),m.better||'lower',v,'var(--a1)'))});
+  ms.forEach((m)=>charts.append(chartCard(m.label,{label:`${m.label} by week`,end:true,flag:(m.better||'lower')==='lower'?outlier(m.values.map(Number)):-1,unit:m.unit==='%'?'%':'',series:[{vals:m.values.map(Number),color:'var(--a1)',label:m.label}]})));
+  d.breakdowns.filter((b)=>b.rows.length).forEach((b)=>{const max=Math.max(...b.rows.map((r)=>Number(r[1])));from.append(el('section','card',el('div','ph',el('h2','h',b.title),el('span','cap',b.sub)),rowsBars(b.rows.map((r)=>[r[0],Number(r[1]),f0(Number(r[1]))]),max,'linear-gradient(90deg,var(--a2),var(--a1))')))});
+  d.ranked.filter((r)=>r.rows.length).forEach((r)=>from.append(rank(r.title,r.sub,r.columns,r.rows.map((x)=>[[x[0],x[1]],...x.slice(2).map(Number)]))));
+  const out=[vhead(d.title,[d.intro],A.tone,A.state)];
+  if(d.state!=='live')out.push(el('p','sample',`Some figures on this page are sample data until the matching feed reaches Sentinel. Needed: ${d.needs}`));
+  out.push(band('What happened this week'),tiles,band('Pattern over 12 weeks'),charts);
+  if(from.children.length)out.push(band('Where it comes from'),from);
+  if(ms.length){const m=ms[0],v=m.values.map(Number),b=slope(v),u=m.unit||'';
+    out.push(band('Where it is heading'),heading(`${m.label}, carried forward`,{label:`${m.label} with a six-week projection`,fc:FC,clamp:u==='%'?[0,100]:[0,1e9],unit:u==='%'?'%':'',series:[{vals:v,color:'var(--a1)',label:m.label}]},
+      [[`About ${f0(Math.max(0,last(v)+b*FC))}${u} by ${ahead(FC)}`,`Moving ${sgn(b,1)} a week over the last six weeks.`],...ms.slice(1,3).map((x)=>{const w=x.values.map(Number),bb=slope(w);return[`${x.label}: about ${f0(Math.max(0,last(w)+bb*FC))}${x.unit||''}`,`Moving ${sgn(bb,1)} a week.`]})]))}
+  return[...out,...aiBlock(d.id)]}
+
+/* Executive view: outcomes against targets, the week in brief, top risks and signals. */
+const OC=(DATA.outcomes&&DATA.outcomes.outcomes)||[];
+const lcFirst=(t)=>/^[A-Z][a-z]/.test(t)?t[0].toLowerCase()+t.slice(1):t;
+const fmtNow=(m)=>typeof m.now==='number'?(Number.isInteger(m.now)?f0(m.now):f1(m.now))+(m.unit==='%'?'%':m.unit?' '+m.unit:''):(m.now??'—');
+const fmtTarget=(m)=>m.text?'—':m.target==null?'To be agreed':(m.better==='higher'?'≥ ':'≤ ')+(m.unit==='%'?m.target+'%':m.target+(m.unit?' '+m.unit:''));
+function against(m){if(m.text)return el('span','pill ok','In place');if(m.target==null)return el('span','pill','Target to be set');if(m.meets==null)return el('span','pill','No data yet');
+  if(m.meets)return el('span','pill ok','Met');const gap=Math.abs(m.now-m.target),u=m.unit==='%'?' pts':m.unit?' '+m.unit:'';return el('span','pill bad',`${Number.isInteger(gap)?gap:f1(gap)}${u} to go`)}
+function scorecard(){const tb=el('tbody');
+  ['Business','Technical'].forEach((type)=>{const rows=OC.filter((o)=>o.type===type);if(!rows.length)return;
+    const gh=el('tr','grp');const th=el('th','',type+' outcomes');th.colSpan=7;th.scope='colgroup';gh.append(th);tb.append(gh);
+    rows.forEach((o)=>o.measures.forEach((m,i)=>{const tr=el('tr',i?'cont':'');
+      if(!i){const td=el('td','oc',el('b','',o.outcome));td.rowSpan=o.measures.length;tr.append(td)}
+      const now=el('td','num',fmtNow(m));if(m.source==='sample')now.append(el('small','smp',' sample'));
+      tr.append(el('td','',m.label),el('td','num',fmtTarget(m)),now,el('td','',against(m)));
+      if(!i){const st=el('td','',el('span','pill '+(o.status==='Realised'?'ok':''),o.status));st.rowSpan=o.measures.length;const ev=el('td','ev',o.evidence);ev.rowSpan=o.measures.length;tr.append(st,ev)}
+      if(m.note)tr.title=m.note;tb.append(tr)}))});
+  const hr=el('tr');['Outcome','Measure','Target','Now','Against target','Status','Evidence'].forEach((h)=>{const t=el('th','',h);t.scope='col';hr.append(t)});
+  return el('section','card',el('div','ph',el('h2','h',(DATA.outcomes&&DATA.outcomes.title)||'Outcomes'),el('span','cap','Hover a measure to see how it is calculated')),el('div','scroll',el('table','score',el('thead','',hr),tb)))}
+/* Any period, against the period before: totals, verdicts and the actions they lead to. */
+const DY=DATA.daily||[],DYS=DATA.daily_sources||{};
+const addDays=(iso,n)=>{const d=new Date(iso+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const spanDays=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5)+1;
+const ocTarget=(label,dflt)=>{for(const o of OC)for(const m of o.measures)if(m.label===label&&m.target!=null)return m.target;return dflt};
+function agg(rows){const s=(k)=>rows.reduce((a,r)=>a+(Number(r[k])||0),0),inc=s('incidents'),cl=s('closed'),del=s('phish_delivered');
+  return{incidents:inc,high:s('high'),alerts:s('alerts'),mtta:inc?s('mtta_sum')/inc:null,contain:cl?s('contain_sum_h')/cl:null,sla:cl?100*s('within_sla')/cl:null,
+    missed:cl-s('within_sla'),fp:inc?100*s('false_positive')/inc:null,blocked:s('phish_blocked'),clickrate:del?100*s('phish_clicked')/del:null,dlp:s('dlp_violations'),net:s('findings_closed')-s('findings_opened')}}
+const PM=[['incidents','Incidents','', 'lower',null,0],['high','High-severity incidents','','lower',null,0],['mtta','Average time to acknowledge',' min','lower',ocTarget('Acknowledge an alert',15),0],
+  ['contain','Average time to contain',' h','lower',ocTarget('Median containment',24),1],['sla','Closed inside the agreed time','%','higher',ocTarget('Adherence to SOC service levels',98),1],
+  ['fp','Incidents that were false alarms','%','lower',null,0],['clickrate','Phishing click rate','%','lower',null,1],['dlp','Data loss violations','','lower',null,0],
+  ['net','Findings closed minus opened','','higher',0,0],['blocked','Phishing emails blocked','','neutral',null,0]];
+function verdict(v,pv,better,target){
+  if(v==null)return['No data','',''];
+  if(target!=null){const ok=better==='lower'?v<=target:v>=target;return ok?['On target','ok',`target ${better==='lower'?'≤':'≥'} ${target}`]:['Off target','bad',`target ${better==='lower'?'≤':'≥'} ${target}`]}
+  if(better==='neutral'||pv==null||pv===0)return['','',''];
+  const ch=(v-pv)/Math.abs(pv);if(Math.abs(ch)<0.03)return['Steady','',''];
+  return(better==='lower'?ch<0:ch>0)?['Better than before','ok','']:['Worse than before','warn','']}
+function periodActions(c,p,from,to){const out=[],worstT=[...DATA.owners].sort((a,b)=>b.overdue-a.overdue)[0];
+  const t=(k)=>PM.find((m)=>m[0]===k)[4];
+  if(c.sla!=null&&c.sla<t('sla'))out.push({d:true,t:'Raise the service-level shortfall with the managed SOC provider',w:`${f1(c.sla)}% of incidents closed inside the agreed time against ${t('sla')}%; ${c.missed} missed it.`,o:'SOC service owner',go:'detection'});
+  if(c.mtta!=null&&c.mtta>t('mtta'))out.push({t:'Review alert routing and out-of-hours cover',w:`Alerts took ${f0(c.mtta)} minutes on average to acknowledge against ${t('mtta')}.`,o:'SOC lead',go:'detection'});
+  if(c.contain!=null&&c.contain>t('contain'))out.push({t:'Review containment playbooks for the slowest incident types',w:`Containment averaged ${f1(c.contain)} hours against ${t('contain')}.`,o:'Incident response lead',go:'detection'});
+  if(c.net<0)out.push({d:true,t:`Agree extra remediation capacity, starting with ${worstT.team}`,w:`${-c.net} more findings were opened than closed. ${worstT.team} holds ${worstT.overdue} overdue findings.`,o:'Heads of the owning teams',go:'remediation'});
+  if(p.high&&c.high>p.high*1.2&&c.high-p.high>=3)out.push({t:'Brief leadership on the rise in high-severity incidents',w:`${c.high} high-severity incidents against ${p.high} in the period before.`,o:'Head of security operations',go:'detection'});
+  if(c.clickrate!=null&&p.clickrate!=null&&c.clickrate>p.clickrate+0.5){const sim=DATA.mail.simulation,hi=sim.departments.filter((x)=>x.click_pct>sim.target_pct).map((x)=>x.name);
+    out.push({t:'Run a targeted phishing simulation'+(hi.length?' for '+hi.join(', '):''),w:`Click rate rose to ${f1(c.clickrate)}% from ${f1(p.clickrate)}%.`,o:'Security awareness lead',go:'email'})}
+  if(p.dlp&&c.dlp>p.dlp*1.1)out.push({t:'Review the top data loss policies with data owners',w:`${f0(c.dlp)} violations against ${f0(p.dlp)} in the period before.`,o:'Data protection lead',go:'people'});
+  if(c.fp!=null&&c.fp>35)out.push({t:'Tune the noisiest detection rules',w:`${f0(c.fp)}% of incidents were false alarms, taking analyst time from real ones.`,o:'Detection engineering',go:'detection'});
+  OC.forEach((o)=>o.measures.forEach((m)=>{if(m.meets===false&&!['Acknowledge an alert','Median containment','Adherence to SOC service levels'].includes(m.label))
+    out.push({d:true,t:`Close the gap on ${lcFirst(m.label)}`,w:`${fmtNow(m)} against ${fmtTarget(m).replace('≥ ','').replace('≤ ','')} (${o.outcome}).`,o:'Programme sponsor',go:'exec'})}));
+  return out.sort((a,b)=>(b.d?1:0)-(a.d?1:0))}
+function periodChart(box,cur,prev,labels){
+  const draw=()=>{box.replaceChildren();const w=Math.max(280,box.clientWidth),h=220,m={l:36,r:10,t:14,b:26},n=cur.length,max=nice(Math.max(1,...cur,...prev.filter((v)=>v!=null)));
+    const bw=(w-m.l-m.r)/n,x=(i)=>m.l+i*bw+bw/2,y=(v)=>h-m.b-v/max*(h-m.t-m.b),svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%',height:h,role:'img','aria-label':`Incidents per ${labels.unit} in the period, with the period before as a dashed line`});
+    for(let k=0;k<=4;k++){const v=max*k/4;svg.append(sv('line',{x1:m.l,x2:w-m.r,y1:y(v),y2:y(v),stroke:'var(--grid)'}),sv('text',{x:m.l-6,y:y(v)+3.5,'text-anchor':'end',class:'tick'},f0(v)))}
+    cur.forEach((v,i)=>svg.append(sv('rect',{x:x(i)-Math.max(1,bw*0.32),y:y(v),width:Math.max(2,bw*0.64),height:Math.max(0,y(0)-y(v)),rx:Math.min(3,bw*0.2),fill:'var(--a1)'})));
+    const pts=prev.map((v,i)=>v==null?null:`${x(i).toFixed(1)},${y(v).toFixed(1)}`).filter(Boolean);if(pts.length>1)svg.append(sv('path',{d:'M'+pts.join('L'),fill:'none',stroke:'var(--dim)','stroke-width':1.6,'stroke-dasharray':'4 4'}));
+    const every=Math.max(1,Math.ceil(n/Math.max(2,Math.floor((w-m.l-m.r)/64))));for(let i=n-1;i>=0;i-=every)svg.append(sv('text',{x:x(i),y:h-7,'text-anchor':'middle',class:'tick'},labels.at[i]));
+    const tip=el('div','tip');tip.hidden=true;const hit=sv('rect',{x:m.l,y:0,width:w-m.l-m.r,height:h,fill:'transparent'});svg.append(hit);box.append(svg,tip);
+    const mv=(ev)=>{const b=svg.getBoundingClientRect(),i=Math.max(0,Math.min(n-1,Math.floor(((ev.clientX-b.left)*w/b.width-m.l)/bw)));tip.replaceChildren(el('div','',labels.at[i]),el('div','',el('span','','Incidents'),el('b','',f0(cur[i]))),el('div','',el('span','','Period before'),el('b','',prev[i]==null?'—':f0(prev[i]))));
+      tip.hidden=false;const k=b.width/w,tw=tip.offsetWidth;let left=x(i)*k+12;if(left+tw>box.clientWidth)left=x(i)*k-tw-12;tip.style.left=Math.max(0,left)+'px'};
+    hit.addEventListener('pointermove',mv);hit.addEventListener('pointerdown',mv);hit.addEventListener('pointerleave',()=>{tip.hidden=true})};
+  draw();watch(box,draw)}
+function bucket(rows,size){const out=[];for(let i=0;i<rows.length;i+=size)out.push(rows.slice(i,i+size));return out}
+function periodSection(){
+  const wrap=el('section','period'),body=el('div','pbody'),bar=el('div','periods');bar.setAttribute('role','group');bar.setAttribute('aria-label','Period');
+  const lastDay=DY.length?DY[DY.length-1].date:null,firstDay=DY.length?DY[0].date:null;
+  const fromI=el('input');fromI.type='date';fromI.id='p-from';fromI.min=firstDay;fromI.max=lastDay;const toI=el('input');toI.type='date';toI.id='p-to';toI.min=firstDay;toI.max=lastDay;
+  const custom=el('div','pcustom',el('label','',el('span','','From'),fromI),el('label','',el('span','','To'),toI));custom.hidden=true;
+  const P={day:1,week:7,month:30,quarter:90,year:365};let cur='month';
+  const render=()=>{body.replaceChildren();if(!DY.length){body.append(el('p','note','No daily figures yet.'));return}
+    let to=lastDay,from;if(cur==='custom'){from=fromI.value;to=toI.value;if(!from||!to||from>to||!fromI.validity.valid||!toI.validity.valid){body.append(el('p','note','Choose a start and end date.'));return}}else from=addDays(to,-(P[cur]-1));
+    const len=spanDays(from,to),pf=addDays(from,-len),pt=addDays(from,-1),rows=DY.filter((r)=>r.date>=from&&r.date<=to),prow=DY.filter((r)=>r.date>=pf&&r.date<=pt),c=agg(rows),p=agg(prow),hasPrev=prow.length===len;
+    const yr=from.slice(0,4)!==to.slice(0,4),dfmt=(iso)=>new Date(iso+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC',...(yr?{year:'numeric'}:{})});
+    const withT=PM.filter((m)=>m[4]!=null&&c[m[0]]!=null),onT=withT.filter((m)=>(m[3]==='lower'?c[m[0]]<=m[4]:c[m[0]]>=m[4])).length,acts=periodActions(c,hasPrev?p:{},from,to);
+    const lead=el('p','plead');const before=len===1?'the day before':len===365?'the 12 months before':`the ${len} days before`;
+    lead.append(el('b','',len===1?dfmt(to):`${dfmt(from)} to ${dfmt(to)}`),` (${len===1?'1 day':len+' days'}). `,el('b','',f0(c.incidents)),` incidents`,hasPrev&&p.incidents?` (${sgn(Math.round((c.incidents-p.incidents)/p.incidents*100))}% on ${before})`:'',
+      `, contained in ${c.contain==null?'—':f1(c.contain)} hours on average. `,el('b','',`${onT} of ${withT.length}`),' measures with a target are on target. ',el('b','',`${acts.length} action${acts.length===1?'':'s'}`),acts.filter((a)=>a.d).length?`, ${acts.filter((a)=>a.d).length} needing a decision.`:'.');
+    const tiles=el('div','ptiles');
+    const bsize=len<=92?1:7,src=len<=1?DY.filter((r)=>r.date>addDays(to,-14)&&r.date<=to):rows,bk=bucket(src,len<=1?1:bsize);
+    PM.forEach(([k,label,u,better,target,dec])=>{const v=c[k],pv=hasPrev?p[k]:null,[vt,tone,tn]=verdict(v,pv,better,target),sp=el('div','spark');
+      const val=v==null?'—':(dec?f1(v):f0(v))+u,cmp=pv==null||v==null?'':`${dec?f1(pv):f0(pv)}${u} in the period before`;
+      tiles.append(el('div','card ptile',el('span','cap',label),el('div','num',val),el('div','pcmp',cmp),el('div','pv',vt?el('span','pill '+tone,vt):null,tn?el('span','cap',' '+tn):null),sp));
+      const series=bk.map((g)=>{const a=agg(g);return a[k]==null?0:a[k]});if(series.length>1)after.push(()=>spark(sp,series,better==='neutral'?'var(--dim)':'var(--a1)'))});
+    const cbox=el('div','chart'),curV=bk.map((g)=>agg(g).incidents),prevRows=len<=1?[]:prow,pv=bucket(prevRows,bsize).map((g)=>agg(g).incidents);
+    const labels={unit:len<=1||bsize===1?'day':'week',at:bk.map((g)=>bsize===1||len<=1?dfmt(g[0].date):'w/c '+dfmt(g[0].date))};after.push(()=>periodChart(cbox,curV,curV.map((_,i)=>pv[i]??null),labels));
+    const al=el('ul','actions');if(!acts.length)al.append(el('li','',el('span','pill ok','No action'),el('div','',el('b','','Every measure is on target or improving.'))));
+    acts.forEach((a)=>{const go=el('button','link sm','Open');go.type='button';go.addEventListener('click',()=>show(a.go,true));al.append(el('li','',el('span','pill '+(a.d?'bad':'warn'),a.d?'Decision needed':'Action'),el('div','',el('b','',a.t),el('p','',a.w)),el('div','aowner',el('span','cap',a.o),go)))});
+    body.append(lead,tiles,el('div','two wide',el('section','card',el('div','ph',el('h2','h',`Incidents per ${labels.unit}`),el('span','cap','Bars: this period. Dashed: the period before.')),cbox),
+      el('section','card',el('div','ph',el('h2','h','Decisions and actions'),el('span','cap','From the figures above')),al)));
+    if(Object.values(DYS).includes('sample'))body.append(el('p','note',`Sample figures: ${Object.keys(DYS).filter((k)=>DYS[k]==='sample').length} of ${Object.keys(DYS).length} daily measures are sample data until their source is connected.`));
+    if(wrap.isConnected)after.splice(0).forEach((f)=>f())};
+  [['day','Yesterday'],['week','7 days'],['month','30 days'],['quarter','90 days'],['year','12 months'],['custom','Custom']].forEach(([k,lab])=>{const b=el('button','pchip',lab);b.type='button';b.setAttribute('aria-pressed',k===cur?'true':'false');
+    b.addEventListener('click',()=>{cur=k;bar.querySelectorAll('.pchip').forEach((x)=>x.setAttribute('aria-pressed',x===b?'true':'false'));custom.hidden=k!=='custom';if(k==='custom'&&!fromI.value){fromI.value=addDays(lastDay,-59);toI.value=lastDay}render()});bar.append(b)});
+  [fromI,toI].forEach((i)=>i.addEventListener('change',()=>{if(cur==='custom')render()}));
+  wrap.append(el('div','phead',bar,custom),body);render();return wrap}
+
+V.exec=()=>{
+  const ms=OC.flatMap((o)=>o.measures.map((m)=>({...m,outcome:o.outcome}))),measured=ms.filter((m)=>m.meets!=null),met=measured.filter((m)=>m.meets),gaps=measured.filter((m)=>!m.meets),realised=OC.filter((o)=>o.status==='Realised');
+  const h1=el('h1','','Phase 2: ',el('em','',`${met.length} of ${measured.length}`),' measured targets met. ',el('em','',String(realised.length)),' outcomes realised.');
+  const row=(k,t)=>el('li','',el('b','',k+'. '),el('span','',t));
+  const rk=risks();
+  const head=el('header','heroband rise',h1,el('ul','sum',
+    row('Not yet met',gaps.length?gaps.map((m)=>`${lcFirst(m.label)} (${fmtNow(m)} against ${fmtTarget(m).replace('≥ ','').replace('≤ ','')})`).join('; ')+'.':'Every measured target is met.'),
+    row('Realised',realised.map((o)=>o.outcome).join('; ')+'.'),
+    row('This week',`${L.incidents} incidents, contained in ${f1(last(S.cont))} hours. Critical and high findings ${pct12<=0?'down':'up'} ${Math.abs(pct12)}% in 12 weeks to ${f0(last(S.open))}.`),
+    row('Top risk',rk.length?`${rk[0][0]}. ${rk[0][1]}`:'None flagged.')));
+  const rl=el('ul','risks');rk.slice(0,5).forEach(([t,d,lvl,tone,go],i)=>{const b=el('button','risk',el('span','n',String(i+1)),el('span','',el('b','',t),el('span','d',d)),el('span','pill '+tone,lvl));b.type='button';b.addEventListener('click',()=>show(go,true));rl.append(el('li','',b))});
+  const sl=el('ul','sig-list');[...DATA.notes].filter((r)=>r.confidence==='High').slice(0,4).forEach((r)=>sl.append(signal(r,true)));
+  const all=el('button','link sm','All signals');all.type='button';all.addEventListener('click',()=>show('signals',true));
+  const ar=el('ul','arealist');Object.keys(AREAS).forEach((k)=>{const a=AREAS[k];const b=el('button','xrow',el('span','',el('b','',a.name),el('small','',a.what)),el('span','pill '+a.tone,a.state));b.type='button';b.addEventListener('click',()=>show(k,true));ar.append(el('li','',b))});
+  return[head,band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
+    el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl)),
+    band('Every area'),el('section','card',ar)]};
+
+const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['overview','Operations overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','Signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
 const nav=$('#nav'),main=$('#main'),built={};
-NAV.forEach(([k,label,d],i)=>{if(i===1||i===7)nav.append(el('div','gap'));
+NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
+NAV.forEach(([k,label,d],i)=>{if(k==='detection'||k===(DOMS[0]&&DOMS[0].id)||k==='signals')nav.append(el('div','gap'));
   const ic=sv('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'});ic.append(sv('path',{d}));
   const b=el('button','nv',ic,el('span','',label),AREAS[k]?el('span','st '+AREAS[k].tone):null);b.type='button';b.dataset.v=k;b.addEventListener('click',()=>show(k,true));nav.append(b);
   const v=el('section','view');v.id=k;v.hidden=true;v.setAttribute('aria-label',label);main.append(v)});
@@ -353,10 +500,10 @@ function customFor(k){const list=(DATA.custom||[]).filter((m)=>m.view===k&&Array
     if(m.chart!==false)charts.append(chartCard(m.label,{label:`${m.label} by week`,end:true,dec,unit:m.unit==='%'?'%':'',series:[{vals,color:'var(--a1)',label:m.label}]}));
     if(m.note)tiles.title=m.note});
   return[band('More measures'),tiles,charts.children.length?charts:null].filter(Boolean)}
-function show(k,push){if(!V[k])k='overview';
+function show(k,push){if(!V[k])k='exec';
   NAV.forEach(([id])=>{$('#'+id).hidden=id!==k});nav.querySelectorAll('.nv').forEach((b)=>{if(b.dataset.v===k){b.setAttribute('aria-current','page');if(b.scrollIntoView&&innerWidth<1000)b.scrollIntoView({block:'nearest',inline:'center'})}else b.removeAttribute('aria-current')});
   if(!built[k]){built[k]=true;const v=$('#'+k);V[k]().forEach((x)=>v.append(x));customFor(k).forEach((x)=>v.append(x));after.splice(0).forEach((f)=>f())}
   if(push){if(location.hash!=='#'+k)location.hash=k;scrollTo(0,0)}}
 addEventListener('hashchange',()=>show(location.hash.slice(1),false));
-show(location.hash.slice(1)||'overview',false);
+show(location.hash.slice(1)||'exec',false);
 })();

@@ -1,0 +1,183 @@
+{
+ "_how": "Each outcome has one or more measures. 'target' is the number to meet ('better' says whether lower or higher meets it); leave it null where the target is still to be agreed. A measure's 'from' is a dashboard figure (for example soc.mtta_minutes), 'kql' is a Sentinel query returning one row with a 'value' column, and 'manual' is a value you type. 'status' is the declared programme status (Projected or Realised). 'sample' is shown until a live value exists. Copy to the data folder as outcomes.json to edit.",
+ "title": "SOC, SIEM and SOAR Phase 2 outcomes",
+ "outcomes": [
+  {
+   "type": "Business",
+   "outcome": "Faster protection",
+   "status": "Projected",
+   "evidence": "SOC monthly report",
+   "measures": [
+    {
+     "label": "Acknowledge an alert",
+     "target": 15,
+     "unit": "min",
+     "better": "lower",
+     "from": "soc.mtta_minutes",
+     "sample": 10
+    },
+    {
+     "label": "Resolve a P1",
+     "target": 4,
+     "unit": "h",
+     "better": "lower",
+     "kql": "SecurityIncident | where TimeGenerated > ago(30d) | summarize arg_max(TimeGenerated, *) by IncidentNumber | where Status == 'Closed' and Severity == 'High' | summarize value = round(percentile(datetime_diff('minute', ClosedTime, CreatedTime), 50) / 60.0, 1)",
+     "sample": 3.1,
+     "note": "P1 is taken as a closed High-severity incident; change the query if your priorities are tagged differently."
+    },
+    {
+     "label": "Resolve a P2",
+     "target": 24,
+     "unit": "h",
+     "better": "lower",
+     "kql": "SecurityIncident | where TimeGenerated > ago(30d) | summarize arg_max(TimeGenerated, *) by IncidentNumber | where Status == 'Closed' and Severity == 'Medium' | summarize value = round(percentile(datetime_diff('minute', ClosedTime, CreatedTime), 50) / 60.0, 1)",
+     "sample": 18.5
+    }
+   ]
+  },
+  {
+   "type": "Business",
+   "outcome": "Reduced attacker dwell time",
+   "status": "Projected",
+   "evidence": "SOC monthly report",
+   "measures": [
+    {
+     "label": "Median containment",
+     "target": 24,
+     "unit": "h",
+     "better": "lower",
+     "kql": "SecurityIncident | where TimeGenerated > ago(30d) | summarize arg_max(TimeGenerated, *) by IncidentNumber | where Status == 'Closed' | summarize value = round(percentile(datetime_diff('minute', ClosedTime, CreatedTime), 50) / 60.0, 1)",
+     "sample": 6.2,
+     "note": "Uses time to close until the SOC records a containment time."
+    }
+   ]
+  },
+  {
+   "type": "Business",
+   "outcome": "Protection of critical operations",
+   "status": "Projected",
+   "evidence": "SOC monthly report",
+   "measures": [
+    {
+     "label": "Tier-1 systems monitored",
+     "target": 100,
+     "unit": "%",
+     "better": "higher",
+     "manual": null,
+     "sample": 92,
+     "note": "Enter from the Tier-1 asset register until it is tagged in Sentinel."
+    },
+    {
+     "label": "Telemetry coverage",
+     "target": 85,
+     "unit": "%",
+     "better": "higher",
+     "from": "tools.coverage_avg",
+     "sample": 94
+    }
+   ]
+  },
+  {
+   "type": "Business",
+   "outcome": "Consistent service delivery",
+   "status": "Projected",
+   "evidence": "SOC monthly report",
+   "measures": [
+    {
+     "label": "Adherence to SOC service levels",
+     "target": 98,
+     "unit": "%",
+     "better": "higher",
+     "from": "soc.response_sla_pct",
+     "sample": 93
+    }
+   ]
+  },
+  {
+   "type": "Business",
+   "outcome": "Managed service runs EDR and email security, freeing internal teams",
+   "status": "Realised",
+   "evidence": "Service contract",
+   "measures": [
+    {
+     "label": "Managed service hours",
+     "text": "24x7"
+    }
+   ]
+  },
+  {
+   "type": "Technical",
+   "outcome": "Controlled SIEM cost",
+   "status": "Projected",
+   "evidence": "SIEM ingestion report",
+   "measures": [
+    {
+     "label": "Log ingestion per day",
+     "target": 200,
+     "unit": "GB",
+     "better": "lower",
+     "kql": "Usage | where TimeGenerated > ago(7d) and IsBillable == true | summarize value = round(sum(Quantity) / 1024 / 7, 0)",
+     "sample": 176
+    }
+   ]
+  },
+  {
+   "type": "Technical",
+   "outcome": "Expanded telemetry",
+   "status": "Projected",
+   "evidence": "SIEM source list",
+   "measures": [
+    {
+     "label": "High-value log sources in the SIEM",
+     "target": null,
+     "unit": "sources",
+     "better": "higher",
+     "kql": "Usage | where TimeGenerated > ago(7d) and IsBillable == true | summarize value = dcount(DataType)",
+     "sample": 64,
+     "note": "Counts billable data types in the workspace. Set the target once agreed."
+    }
+   ]
+  },
+  {
+   "type": "Technical",
+   "outcome": "Enhanced endpoint detection",
+   "status": "Projected",
+   "evidence": "SOC change records",
+   "measures": [
+    {
+     "label": "Advanced EDR rules developed and tuned",
+     "target": null,
+     "unit": "rules",
+     "better": "higher",
+     "manual": null,
+     "sample": 18,
+     "note": "Enter from SOC change records. Set the target once agreed."
+    }
+   ]
+  },
+  {
+   "type": "Technical",
+   "outcome": "Clear operating model",
+   "status": "Realised",
+   "evidence": "Operating model",
+   "measures": [
+    {
+     "label": "Roles defined with the managed SOC provider",
+     "text": "Agreed"
+    }
+   ]
+  },
+  {
+   "type": "Technical",
+   "outcome": "Major incident decision velocity",
+   "status": "Realised",
+   "evidence": "Incident playbooks",
+   "measures": [
+    {
+     "label": "Telemetry, roles and workflows",
+     "text": "Defined"
+    }
+   ]
+  }
+ ]
+}

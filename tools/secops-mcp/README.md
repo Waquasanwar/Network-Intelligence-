@@ -68,6 +68,25 @@ sections are still on sample data.
 | **Live connectors** | Set the credentials for a source and `SECOPS_MODE=live`. | SOC section from Sentinel today; vulnerability and phishing figures through the MCP tools |
 | **Through Sentinel** | Turn on each product's Sentinel data connector, then add a KQL measure. | Anything that lands in the workspace |
 
+## Executive view, outcomes and periods
+
+The landing page is the **Executive view**:
+
+- **Performance over the period.** Choose yesterday, 7, 30 or 90 days, 12 months, or a custom
+  range. Every figure is totalled or averaged over that period and compared with the period of
+  the same length just before. Each figure says whether it is on target (where a target exists)
+  or better or worse than before, and the page lists the **decisions and actions** that follow,
+  with an owner for each and a link to the page that explains it. The daily figures behind this
+  come from Sentinel (`secops_mcp/daily.py`); fields Sentinel cannot supply are marked sample.
+- **Phase 2 outcomes.** Your outcome table, with each measure's target, its value now, whether it
+  meets the target, the declared status (Projected or Realised) and the evidence. Edit
+  `outcomes.json` (copy `secops_mcp/outcomes.default.json` to the data folder): each measure takes
+  its value from a live dashboard figure, a Sentinel query, or a value you type in. Targets still
+  to be agreed show as "To be agreed".
+- **Top risks, signals and every area** in one place, each opening its page.
+
+In Claude, `outcomes` and `period_summary(start, end)` answer the same questions in a chat.
+
 ## Adding a data point
 
 Copy `metrics.example.json` to `metrics.json` in the data folder and add an entry. No code

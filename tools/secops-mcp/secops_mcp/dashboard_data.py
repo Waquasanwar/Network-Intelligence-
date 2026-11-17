@@ -135,7 +135,17 @@ def build() -> dict:
 
         _apply_sentinel(data, sources)
         data["_systems"] = apply_all(data, sources)
+    from .domains import build as build_domains
+
+    data["domains"], domain_status = build_domains(folder, os.environ.get("SECOPS_MODE", "sample").lower() == "live")
+    sources.update({k: v for k, v in domain_status.items() if v != "planned"})
     data["custom"], data["_custom_status"] = _custom_metrics(folder)
+    from .daily import build as build_daily
+    from .outcomes import build as build_outcomes
+
+    data["daily"], data["daily_sources"] = build_daily(os.environ.get("SECOPS_MODE", "sample").lower() == "live")
+
+    data["outcomes"] = build_outcomes(data, folder, os.environ.get("SECOPS_MODE", "sample").lower() == "live", sources)
     data["_sources"] = sources
     data["_built_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     return data

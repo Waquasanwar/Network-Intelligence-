@@ -25,7 +25,7 @@
     <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>read only<br>encrypted</div>
     <div class="card edge stage"><h3 class="h">Inside your own tenant</h3><ul class="chips"><li>Connector (MCP server)</li><li>Secrets vault</li><li>Audit log</li></ul><p>A connector is a small service that offers a fixed set of read queries. It fetches each credential from the vault at the moment it needs it, turns raw records into weekly counts and logs every call. Credentials never leave this box.</p></div>
     <div class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>counts<br>only</div>
-    <div class="card stage"><h3 class="h">This dashboard</h3><ul class="chips"><li>Single sign-on</li><li>Named viewers</li><li>AI analyst</li></ul><p>Receives totals and trends. No alerts, hostnames, user names or email content. The AI reads the same counts and nothing more.</p></div>
+    <div class="card stage"><h3 class="h">This dashboard</h3><ul class="chips"><li>Single sign-on</li><li>Named viewers</li><li>Signals</li></ul><p>Receives totals and trends. No alerts, hostnames, user names or email content. The AI reads the same counts and nothing more.</p></div>
   </section>
 
   <details class="card" open><summary>Three ways to feed it</summary><div class="body"><div class="scroll"><table>
@@ -59,8 +59,8 @@
     <tr><td>SentinelOne</td><td>Service user with an expiring API token</td><td>Viewer role on the sites in scope</td><td>Unresolved threats, agent coverage, application vulnerabilities</td></tr>
   </tbody></table></div></div></details>
 
-  <details class="card"><summary>How the AI signals work</summary><div class="body"><ul class="list">
-    <li><b>Two layers.</b> The decision list is fixed rules that recalculate on their own. The AI signals are Claude reading the same figures for patterns no rule covers, such as several systems moving in the same week.</li>
+  <details class="card"><summary>How signals are produced</summary><div class="body"><ul class="list">
+    <li><b>Two layers.</b> The decision list is fixed rules that recalculate on their own. Signals are Claude reading the same figures for patterns no rule covers, such as several systems moving in the same week.</li>
     <li><b>Flags on the charts.</b> A week that sits far outside the usual range is marked on its chart automatically, so the signal and the evidence sit together.</li>
     <li><b>Written weekly, dated.</b> Each set of signals is written for one week's data. A scheduled weekly run can rewrite them after every refresh.</li>
     <li><b>Same guardrails.</b> Claude reads the weekly counts the dashboard already holds, not raw alerts, hostnames or mail.</li>
@@ -68,7 +68,7 @@
   </ul></div></details>
 
 
-<p class="note">Sample data throughout: every figure and every AI signal in this system was written to show the design. Nothing here comes from a live system.</p>
+<p class="note">Sample data throughout: every figure and every signal in this system was written to show the design. Nothing here comes from a live system.</p>
 </template>
 <p class="loading" id="loading">Loading the latest figures…</p>
 <script>

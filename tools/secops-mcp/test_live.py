@@ -40,6 +40,14 @@ def handler(req: httpx.Request) -> httpx.Response:
         return j({"access_token": "mi-token", "expires_on": str(int(now.timestamp()) + 3600)})
     if h == "api.loganalytics.io":
         q = json.loads(req.content)["query"]
+        if "summarize value" in q and "by week_ending" in q:  # a domain measure
+            return j({"tables": [{"columns": [{"name": "week_ending"}, {"name": "value"}], "rows": [[iso(7 * i + 2), 100 + 3 * i] for i in range(12, 0, -1)]}]})
+        if "by name" in q:  # a domain breakdown
+            return j({"tables": [{"columns": [{"name": "name"}, {"name": "value"}], "rows": [["High", 40], ["Medium", 120], ["Low", 80]]}]})
+        for col in ("Issues", "Resources", "Findings"):  # a domain ranked list
+            if f" {col} = " in q:
+                first = {"Issues": "Resource", "Resources": "Recommendation", "Findings": "Repository"}[col]
+                return j({"tables": [{"columns": [{"name": first}, {"name": "detail"}, {"name": col}], "rows": [[f"item-{k}", "x", 20 - k] for k in range(6)]}]})
         if "SecurityAlert" in q and "week_ending" in q:
             return j({"tables": [{"columns": [{"name": "week_ending"}, {"name": "alerts"}], "rows": [[iso(7 * i), 4000 + i * 50] for i in range(11, -1, -1)]}]})
         cols = ["week_ending", "incidents", "high", "medium", "low_info", "false_positive_pct", "mttd_minutes", "mtta_minutes", "contain_hours", "still_open"]
@@ -116,6 +124,8 @@ print("mail blocked last 3 weeks:", data["mail"]["phish_blocked"][-3:], "clicked
 assert all(v["status"] == "connected" for k, v in checks.items() if k != "GitLab"), checks
 assert data["_sources"]["assets"] == data["_sources"]["soc"] == data["_sources"]["mail"] == "live"
 assert all(len(v) == 12 and None not in v for v in data["trend"].values())
+print("domains:", [(d["id"], d["state"]) for d in data["domains"]])
+assert [d["state"] for d in data["domains"]] == ["live", "live", "planned"]
 if len(sys.argv) > 1:
     json.dump(data, open(sys.argv[1], "w"))
 print("OK,", len(calls), "simulated API calls")

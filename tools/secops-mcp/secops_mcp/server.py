@@ -169,6 +169,60 @@ def top_list(name: TopList, limit: int = 10) -> dict:
 
 
 @mcp.tool()
+def risk_domain(name: str) -> dict:
+    """One SIEM-fed risk page: "cloud", "devsecops", "sap" or any page added in domains.json.
+    Returns its weekly measures, breakdowns, ranked lists, and whether each is live or sample."""
+    from .dashboard_data import cached
+    pages = {d["id"]: d for d in cached().get("domains", [])}
+    return pages.get(name) or {"status": "unknown_page", "available": sorted(pages)}
+
+
+@mcp.tool()
+def outcomes() -> dict:
+    """Programme outcomes (SOC, SIEM and SOAR Phase 2) against their targets: each measure's
+    target, value now, whether it meets the target, declared status and evidence."""
+    from .dashboard_data import cached
+    return cached().get("outcomes", {})
+
+
+@mcp.tool()
+def period_summary(start: str, end: str) -> dict:
+    """Totals and averages for any period (dates as YYYY-MM-DD), against the period of the
+    same length just before: incidents, high-severity incidents, time to acknowledge and to
+    contain, share closed inside the agreed time, false alarms, phishing and data loss."""
+    import datetime as dt
+
+    from .dashboard_data import cached
+
+    data = cached()
+    rows = data.get("daily", [])
+    try:
+        s, e = dt.date.fromisoformat(start), dt.date.fromisoformat(end)
+    except ValueError:
+        return {"status": "invalid_dates", "detail": "Use YYYY-MM-DD for start and end."}
+    if s > e or (e - s).days > 731:
+        return {"status": "invalid_range", "detail": "Start must be on or before end, within two years."}
+    n = (e - s).days + 1
+    ps, pe = s - dt.timedelta(days=n), s - dt.timedelta(days=1)
+
+    def agg(a: dt.date, b: dt.date) -> dict:
+        sel = [r for r in rows if a.isoformat() <= r["date"] <= b.isoformat()]
+        tot = lambda k: sum(float(r.get(k) or 0) for r in sel)  # noqa: E731
+        inc, cl, dl = tot("incidents"), tot("closed"), tot("phish_delivered")
+        return {"days_with_data": len(sel), "incidents": int(inc), "high_severity": int(tot("high")), "alerts": int(tot("alerts")),
+                "avg_minutes_to_acknowledge": round(tot("mtta_sum") / inc, 1) if inc else None,
+                "avg_hours_to_contain": round(tot("contain_sum_h") / cl, 1) if cl else None,
+                "closed_inside_agreed_time_pct": round(100 * tot("within_sla") / cl, 1) if cl else None,
+                "false_alarm_pct": round(100 * tot("false_positive") / inc, 1) if inc else None,
+                "phishing_blocked": int(tot("phish_blocked")), "phishing_click_rate_pct": round(100 * tot("phish_clicked") / dl, 1) if dl else None,
+                "data_loss_violations": int(tot("dlp_violations")), "findings_closed_minus_opened": int(tot("findings_closed") - tot("findings_opened"))}
+
+    return {"period": {"start": s.isoformat(), "end": e.isoformat(), **agg(s, e)},
+            "period_before": {"start": ps.isoformat(), "end": pe.isoformat(), **agg(ps, pe)},
+            "sources": data.get("daily_sources", {})}
+
+
+@mcp.tool()
 def connection_check() -> dict:
     """Which source systems are connected, not configured, or failing, with a hint for each failure."""
     return check_all()
