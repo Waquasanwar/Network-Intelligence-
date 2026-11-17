@@ -4,6 +4,18 @@ A quick-capture work journal with its own front end and **Notion as the database
 
 Everything is stored in the **Work Journal** page in your Notion workspace (Journal Entries, Projects & Areas, People), so you can still use Notion views, mobile and search alongside the app.
 
+## Start using it (about 15 minutes)
+
+The app has a **Get started** page (bottom of the sidebar) that checks each step, generates the secrets you need and tests your Notion connection. In short:
+
+1. **Connect Notion.** Create an internal integration at notion.so/profile/integrations, copy its secret (`NOTION_TOKEN`), then on the **Work Journal** page in Notion choose **••• → Connections** and add the integration.
+2. **Deploy on Vercel.** At vercel.com/new import `Waquasanwar/Network-Intelligence-`, set **Root Directory** to `journal`, and add these environment variables (Get started generates the random ones):
+   `NOTION_TOKEN`, `APP_PASSCODE`, `AUTH_SECRET`, `JOURNAL_TIMEZONE`, `CRON_SECRET`, `CAPTURE_TOKEN`.
+   The journal lives on branch `claude/busy-faraday-i3f7cl`: merge it into `main`, or set it as the Production Branch in Vercel → Settings → Git.
+3. **Sign in and install.** Open your `.vercel.app` address, sign in with your passcode, then Add to Home Screen (iPhone) or Install app (Android, Chrome).
+4. **Capture from anywhere.** Make an iPhone Shortcut that POSTs `{"text": …}` to `/api/capture` with `Authorization: Bearer <CAPTURE_TOKEN>`.
+5. **Use it.** Capture through the day, press **Chased** when you nudge someone, review for five minutes at the end of the day, read the Monday 9am brief, check Insights on Friday.
+
 ## What it does
 
 | Page | Purpose |

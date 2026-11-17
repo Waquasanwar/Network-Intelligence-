@@ -104,6 +104,18 @@ export async function publishBriefAction(): Promise<Result<{ url: string }>> {
   }
 }
 
+/** Try a real read from Notion and report what happened in plain words. */
+export async function testNotionAction(): Promise<Result<{ entries: number; projects: number; people: number }>> {
+  if (!process.env.NOTION_TOKEN) return { ok: false, error: "NOTION_TOKEN is not set yet, so the app is using sample data." };
+  try {
+    const repo = journal.getRepo();
+    const [entries, projects, people] = await Promise.all([repo.listEntries(), repo.listProjects(), repo.listPeople()]);
+    return { ok: true, data: { entries: entries.length, projects: projects.length, people: people.length } };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
 export async function loginAction(_prev: { error?: string } | undefined, form: FormData): Promise<{ error?: string }> {
   const passcode = String(form.get("passcode") ?? "");
   const expected = process.env.APP_PASSCODE ?? "";

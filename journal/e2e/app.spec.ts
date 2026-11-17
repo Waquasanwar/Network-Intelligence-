@@ -23,6 +23,7 @@ const PAGES: Array<[string, RegExp]> = [
   ["/timeline", /Timeline/],
   ["/insights", /Who is holding things up/],
   ["/settings", /Appearance/],
+  ["/start", /Connect your Notion/],
 ];
 
 test.describe("every page renders cleanly", () => {
@@ -138,4 +139,13 @@ test("no page scrolls sideways on desktop", async ({ page }) => {
     const [scroll, width] = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
     expect(scroll, `${path} overflows`).toBeLessThanOrEqual(width);
   }
+});
+
+test("Get started shows setup progress, generates secrets and tests the Notion connection", async ({ page }) => {
+  await page.goto("/start");
+  await expect(page.getByText(/\d\/6/).first()).toBeVisible();
+  const secret = page.locator("code", { hasText: /^[A-Za-z0-9_-]{40,}$/ }).first();
+  await expect(secret).toBeVisible();
+  await page.getByRole("button", { name: "Test Notion connection" }).click();
+  await expect(page.getByText(/NOTION_TOKEN is not set yet/)).toBeVisible();
 });

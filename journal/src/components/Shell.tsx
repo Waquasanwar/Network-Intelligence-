@@ -26,6 +26,7 @@ const NAV: Array<{ href: string; label: string; icon: IconName; color: string }>
 export function sectionColor(path: string): string {
   const hit = [...NAV].reverse().find((n) => (n.href === "/" ? path === "/" : path.startsWith(n.href)));
   if (path.startsWith("/entry")) return "#1c6fd6";
+  if (path.startsWith("/start")) return "#0f9a86";
   return hit?.color ?? "#1c6fd6";
 }
 
@@ -37,9 +38,11 @@ interface Props {
   inboxCount: number;
   mode: "notion" | "demo";
   authed: boolean;
+  setupDone: number;
+  setupTotal: number;
 }
 
-export function Shell({ children, people, projects, tags, inboxCount, mode, authed }: Props) {
+export function Shell({ children, people, projects, tags, inboxCount, mode, authed, setupDone, setupTotal }: Props) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -66,9 +69,9 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
   return (
     <div className="min-h-dvh md:flex">
       {/* The binder spine: graphite, with index tabs. The current page's tab is cut from the page. */}
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col bg-spine py-5 pl-3 text-spine-ink md:flex">
+      <aside className="spine sticky top-0 z-10 hidden h-dvh w-60 shrink-0 flex-col py-5 pl-3 text-spine-ink md:flex">
         <Link href="/" className="mb-5 flex items-center gap-2.5 px-2.5">
-          <span aria-hidden className="grid size-7 place-items-center rounded-[var(--radius)] bg-accent text-accent-ink">
+          <span aria-hidden className="spine-logo grid size-7 place-items-center rounded-[var(--radius)]">
             <Icon name="logo" className="size-4" />
           </span>
           <span className="font-display text-[1.05rem] tracking-wide uppercase">Work Journal</span>
@@ -90,6 +93,11 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
           ))}
         </nav>
         <div className="mt-auto space-y-3 pr-3 pl-2.5 text-xs text-spine-ink-2">
+          <div className="spine-divider" />
+          <Link href="/start" aria-current={active("/start") ? "page" : undefined} className="flex items-center justify-between rounded-[var(--radius)] px-1 py-1 text-spine-ink hover:text-white">
+            <span className="flex items-center gap-2"><Icon name="rocket" className="size-4" /> Get started</span>
+            <span className={`num text-[0.7rem] ${setupDone === setupTotal ? "text-ok" : "text-warn"}`}>{setupDone}/{setupTotal}</span>
+          </Link>
           <QuickTheme />
           <p className="flex items-start gap-2 leading-snug">
             <span className={`mt-1 size-1.5 shrink-0 rounded-full ${mode === "demo" ? "bg-warn" : "bg-ok"}`} />
@@ -105,9 +113,9 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
 
       <main className="section-wash w-full flex-1" style={{ ["--section" as string]: sectionColor(path) }}>
        <div className="mx-auto w-full max-w-5xl px-4 pt-4 pb-28 md:px-10 md:pt-9 md:pb-12">
-        <div className="-mx-4 -mt-4 mb-5 flex items-center justify-between bg-spine px-4 py-3 text-spine-ink md:hidden">
+        <div className="spine -mx-4 -mt-4 mb-5 flex items-center justify-between px-4 py-3 text-spine-ink md:hidden">
           <Link href="/" className="flex items-center gap-2">
-            <span aria-hidden className="grid size-7 place-items-center rounded-[var(--radius)] bg-accent text-accent-ink">
+            <span aria-hidden className="spine-logo grid size-7 place-items-center rounded-[var(--radius)]">
               <Icon name="logo" className="size-4" />
             </span>
             <span className="font-display tracking-wide uppercase">Work Journal</span>
@@ -116,7 +124,12 @@ export function Shell({ children, people, projects, tags, inboxCount, mode, auth
             <Icon name="settings" className="size-5" />
           </Link>
         </div>
-        {mode === "demo" && <p className="mb-4 text-xs text-ink-3 md:hidden">Sample data, not saved to Notion.</p>}
+        {setupDone < setupTotal && path !== "/start" && (
+          <Link href="/start" className="mb-4 flex items-center justify-between rounded-[var(--radius)] border border-line bg-surface px-3 py-2 text-xs text-ink-2 md:hidden">
+            <span>{mode === "demo" ? "Sample data. Finish setting up to use your Notion." : "Finish setting up"}</span>
+            <span className="num text-warn">{setupDone}/{setupTotal} →</span>
+          </Link>
+        )}
         {children}
        </div>
       </main>

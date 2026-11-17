@@ -7,6 +7,7 @@ import { loadAll } from "@/lib/journal";
 import { SESSION_COOKIE, authEnabled, safeEqual, sessionToken } from "@/lib/auth";
 import { THEME_COOKIE, parseTheme, themeVars } from "@/lib/theme";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { setupChecks } from "@/lib/setup";
 
 // IBM Plex: an industrial, forms-and-ledgers family. Self-hosted at build time.
 const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex", display: "swap" });
@@ -55,6 +56,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           inboxCount={data ? data.entries.filter((e) => !e.reviewed).length : 0}
           mode={data?.mode ?? "notion"}
           authed={authed}
+          setupDone={setupChecks().filter((c) => c.done).length}
+          setupTotal={setupChecks().length}
         >
           {children}
         </Shell>
