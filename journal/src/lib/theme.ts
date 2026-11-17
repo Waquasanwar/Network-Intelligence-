@@ -16,8 +16,9 @@ export interface Theme {
   headings: Headings;
 }
 
-// Snow grey paper, graphite ink, azure for action. Set in IBM Plex.
+// Snow grey paper, graphite, and ink blue for action. Set in IBM Plex.
 export const PRESETS: Array<{ name: string; hex: string }> = [
+  { name: "Ink blue", hex: "#2747a5" },
   { name: "Azure", hex: "#1c6fd6" },
   { name: "Graphite", hex: "#3d4550" },
   { name: "Teal", hex: "#0f7d74" },
@@ -26,7 +27,7 @@ export const PRESETS: Array<{ name: string; hex: string }> = [
   { name: "Plum", hex: "#7a3f8f" },
 ];
 
-export const DEFAULT_THEME: Theme = { mode: "light", accent: "#1c6fd6", tint: "off", corners: "round", font: "sans", headings: "condensed" };
+export const DEFAULT_THEME: Theme = { mode: "light", accent: "#2747a5", tint: "off", corners: "round", font: "sans", headings: "condensed" };
 
 export const THEME_COOKIE = "journal_theme";
 

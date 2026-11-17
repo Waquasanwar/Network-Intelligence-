@@ -11,7 +11,7 @@ import { Icon, type IconName } from "./Icon";
 
 // Each binder section has its own index-tab colour; the page you are on takes that colour.
 const NAV: Array<{ href: string; label: string; icon: IconName; color: string }> = [
-  { href: "/", label: "Today", icon: "today", color: "#1c6fd6" },
+  { href: "/", label: "Today", icon: "today", color: "#2747a5" },
   { href: "/plan", label: "Plan", icon: "plan", color: "#7b52e8" },
   { href: "/projects", label: "Projects", icon: "projects", color: "#0f9a86" },
   { href: "/review", label: "Review", icon: "review", color: "#e09a12" },
@@ -25,9 +25,9 @@ const NAV: Array<{ href: string; label: string; icon: IconName; color: string }>
 
 export function sectionColor(path: string): string {
   const hit = [...NAV].reverse().find((n) => (n.href === "/" ? path === "/" : path.startsWith(n.href)));
-  if (path.startsWith("/entry")) return "#1c6fd6";
+  if (path.startsWith("/entry")) return "#2747a5";
   if (path.startsWith("/start")) return "#0f9a86";
-  return hit?.color ?? "#1c6fd6";
+  return hit?.color ?? "#2747a5";
 }
 
 interface Props {
