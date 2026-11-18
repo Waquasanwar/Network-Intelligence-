@@ -84,7 +84,7 @@ await stepIf("MFA: enrol, sign in with a code, replay refused, device cannot be 
   const rec = (await p.locator(".font-mono.tabular span, .tabular span").first().innerText()).trim(); assert(/^[0-9A-F]{5}(-[0-9A-F]{5}){3}$/.test(rec), "long recovery code: " + rec);
   assert(sql(`select "mfaEnabled", "mfaSecret" like 'enc:v1:%' from "User" where email='${email}'`) === "t|t", "enabled, secret encrypted at rest");
   await p.context().close();
-  const q = await (await b.newContext()).newPage(); const attempt = async (c) => { await q.goto(`${BASE}/login`, { waitUntil: "networkidle" }); await q.fill('input[name="email"]', email); await q.fill('input[name="password"]', PW); const ci = q.locator('input[name="code"]'); if (c && await ci.count()) await ci.fill(c); await q.click('button[type="submit"]'); await q.waitForTimeout(2500); return !/\/login/.test(q.url()); };
+  const q = await (await b.newContext()).newPage(); const attempt = async (c) => { await q.goto(`${BASE}/login`, { waitUntil: "networkidle" }); await q.fill('input[name="email"]', email); await q.fill('input[name="password"]', PW); const ci = q.locator('input[name="code"]'); if (c && await ci.count()) { await q.getByText("I use an authenticator app").click(); await ci.fill(c); } await q.click('button[type="submit"]'); await q.waitForTimeout(2500); return !/\/login/.test(q.url()); };
   assert(!(await attempt("")), "password alone is not enough");
   assert(!(await attempt(code)), "the code used to enrol cannot be replayed");
   assert(await attempt(rec), "a recovery code signs in");

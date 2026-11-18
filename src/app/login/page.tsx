@@ -77,7 +77,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <input type="hidden" name="callbackUrl" value={sp.callbackUrl ?? "/"} />
             <Field label="Email" required><Input name="email" type="email" autoComplete="email" required placeholder="you@company.com" className="h-10" /></Field>
             <Field label="Password" required><Input name="password" type="password" autoComplete="current-password" required minLength={8} className="h-10" /></Field>
-            <Field label="Authentication code" hint="Only if you've set up MFA — the 6-digit code from your authenticator."><Input name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="123 456" className="h-10" /></Field>
+            <details className="group"><summary className="cursor-pointer list-none text-[12.5px] font-medium text-ink-muted hover:text-ink [&::-webkit-details-marker]:hidden">I use an authenticator app</summary><div className="mt-2"><Field label="Authentication code" hint="The 6-digit code from your authenticator app, or a recovery code."><Input name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="123 456" className="h-10" /></Field></div></details>
             <Button type="submit" size="lg" className="w-full mt-2">Sign in <ArrowBadge /></Button>
           </form>
           {hasEntra ? (

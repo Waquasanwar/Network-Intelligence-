@@ -36,8 +36,13 @@ await step("invitee: opens personal link, weak password refused, then joins", nu
   assert(sql(`select status from "Invite" where email='${a1}'`) === "OPENED", "marked opened");
   await p.screenshot({ path: `${DIR}/join-invited.png`, fullPage: true });
   await register(p, { pw: "password123" }); await p.waitForURL(/error=password-weak/, { timeout: 15000 }); await p.getByText(/too easy to guess/).waitFor({ timeout: 15000 }); await p.waitForLoadState("networkidle");
-  await register(p, { first: "Ana", last: "Costa" + stamp, email: a1 }); await p.waitForURL(/\/login\?registered/, { timeout: 20000 });
-  await login(p, a1, NEWPW); assert(/\/member/.test(p.url()), "lands on member home " + p.url());
+  // Creating the account signs them straight in: no second password prompt.
+  await register(p, { first: "Ana", last: "Costa" + stamp, email: a1 }); await p.waitForURL((u) => u.pathname === "/member", { timeout: 30000 }); await p.waitForLoadState("networkidle");
+  assert(/Welcome, Ana/.test(await p.locator("h1").innerText()), "greeted on member home");
+  const steps = await p.locator("[data-checklist] [data-step]").count(); assert(steps === 3, "three things to do, got " + steps);
+  assert(!(await p.locator("[data-standard]").count()), "no trust panel before the screening");
+  const known = sql(`select r."sourceType" from "Relationship" r join "Person" p on p.id=r."personId" where p.email='${a1}'`);
+  assert(known === "PERSONAL_NETWORK", "invited by name, so known first hand: " + known);
   m1 = p; assert(sql(`select status from "Invite" where email='${a1}'`) === "JOINED", "invite joined");
   assert(sql(`select role from "User" where email='${a1}'`) === "MEMBER", "member user");
   await p.screenshot({ path: `${DIR}/member-home.png`, fullPage: true });
@@ -85,7 +90,7 @@ await step("member (approved): own link + invites someone by name", m1, async ()
 await step("second person joins on the member's link and is linked to them", null, async () => {
   const p = await fresh(); await p.goto(memberLink, { waitUntil: "networkidle" });
   assert(await p.getByText(new RegExp("Invited by Ana Costa" + stamp)).count(), "shows inviter");
-  await register(p, { first: "Cy", last: "Okafor" + stamp, email: `cy${stamp}@example.com` }); await p.waitForURL(/\/login\?registered/, { timeout: 20000 });
+  await register(p, { first: "Cy", last: "Okafor" + stamp, email: `cy${stamp}@example.com` }); await p.waitForURL((u) => u.pathname === "/member", { timeout: 30000 });
   const intro = sql(`select ip.email from "Relationship" r join "Person" p on p.id=r."personId" join "Person" ip on ip.id=r."introducedById" where p.email='cy${stamp}@example.com'`);
   assert(intro === a1, "introducedBy = inviting member, got " + intro); await p.context().close();
 });
@@ -96,14 +101,14 @@ await step("owner: invite an existing contact to claim their profile", o, async 
   const d = dialog(o); await d.waitFor(); await d.getByRole("button", { name: /Create their invitation/ }).click(); await d.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
   const link = await d.locator('input[aria-label="Invitation link"]').inputValue(); await o.keyboard.press("Escape");
   const p = await fresh(); await p.goto(link, { waitUntil: "networkidle" }); assert(await p.getByText(/We already know you a little/).count(), "claim wording");
-  const email = await p.inputValue('input[name="email"]'); await register(p, {}); await p.waitForURL(/\/login\?registered/, { timeout: 20000 });
+  const email = await p.inputValue('input[name="email"]'); await register(p, {}); await p.waitForURL((u) => u.pathname === "/member", { timeout: 30000 });
   assert(sql(`select "personId" from "User" where email='${email}'`) === pid, "login attached to the existing profile");
   assert(sql(`select count(*) from "Person"`) === before, "no duplicate person created"); await p.context().close();
 });
 await step("duplicate registration can be joined up by the owner", o, async () => {
   const existing = sql(`select id||'|'||"firstName"||'|'||"lastName" from "Person" where "lastName" like 'Row%' and id not in (select "personId" from "User" where "personId" is not null) order by "createdAt" desc limit 1`).split("|"); assert(existing[0], "an imported contact exists");
   const p = await fresh(); await p.goto(networkLink, { waitUntil: "networkidle" }); const em = `dup${stamp}@example.com`;
-  await register(p, { first: existing[1], last: existing[2], email: em }); await p.waitForURL(/\/login\?registered/, { timeout: 20000 }); await p.context().close();
+  await register(p, { first: existing[1], last: existing[2], email: em }); await p.waitForURL((u) => u.pathname === "/member", { timeout: 30000 }); await p.context().close();
   const newId = sql(`select "personId" from "User" where email='${em}'`); assert(newId && newId !== existing[0], "registered as a new profile");
   await og(`/network/${newId}`); assert(await o.getByText(/you already had/).count(), "duplicate banner"); await o.screenshot({ path: `${DIR}/merge-banner.png` });
   await o.getByRole("button", { name: /Same person: join them up/ }).click(); await o.waitForURL(new RegExp(`/network/${existing[0]}`), { timeout: 20000 });

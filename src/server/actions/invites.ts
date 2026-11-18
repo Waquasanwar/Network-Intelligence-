@@ -1,5 +1,7 @@
 "use server";
 import { z } from "zod";
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -167,8 +169,20 @@ export async function registerMember(formData: FormData) {
   const passwordHash = await hash(d.password, 12);
   const now = new Date();
   const privacy = { ...DEFAULT_PRIVACY, reviewedAt: now.toISOString() } as unknown as Prisma.InputJsonValue;
+  // Who knows this person. A member's link: that member introduced them. A personal invitation the
+  // team wrote by name: whoever sent it knows them first hand. The general link, or an application
+  // that came in through the public page: nobody here knows them yet, and the record says so.
+  const sent = inv.inviteId && !inv.inviter ? await prisma.invite.findUnique({ where: { id: inv.inviteId }, select: { createdById: true, createdBy: { select: { name: true } } } }) : null;
+  const applied = inv.inviteId ? await prisma.publicRequest.count({ where: { inviteId: inv.inviteId } }) : 0;
+  const knownBy = sent?.createdById && !applied ? sent : null;
   const relationship = owner
-    ? { networkOwnerId: owner.id, sourceType: "INBOUND" as const, relationshipType: inv.inviter ? ("INTRODUCED" as const) : ("DIRECT" as const), introducedById: inv.inviter?.id ?? null, relationshipNotes: inv.inviter ? `Registered through ${inv.inviter.firstName} ${inv.inviter.lastName}'s invitation.` : "Registered through the network's invitation.", lastContactDate: now }
+    ? {
+        networkOwnerId: knownBy?.createdById ?? owner.id,
+        sourceType: knownBy ? ("PERSONAL_NETWORK" as const) : ("INBOUND" as const),
+        relationshipType: inv.inviter ? ("INTRODUCED" as const) : ("DIRECT" as const),
+        introducedById: inv.inviter?.id ?? null,
+        relationshipNotes: inv.inviter ? `Registered through ${inv.inviter.firstName} ${inv.inviter.lastName}'s invitation.` : knownBy ? `Invited by name by ${knownBy.createdBy?.name ?? "the team"}.` : applied ? "Applied through the public page, then invited." : "Registered through the network's general link.",
+      }
     : null;
 
   let personId: string;
@@ -201,7 +215,13 @@ export async function registerMember(formData: FormData) {
     throw e;
   }
   await audit({ tenantId: inv.tenantId, actorId: null, action: "member.register", entityType: "Person", entityId: personId, metadata: { via: inv.kind, referrerId: inv.inviter?.id ?? null, inviteId: inv.inviteId, claimed: !!inv.claimPersonId } });
-  redirect(`/login?registered=1&callbackUrl=${encodeURIComponent("/member?welcome=1")}`);
+  // Straight in: they have just chosen their password, so asking for it again is only friction.
+  try {
+    await signIn("credentials", { email: d.email, password: d.password, code: "", redirectTo: "/member?welcome=1" });
+  } catch (err) {
+    if (err instanceof AuthError) redirect(`/login?registered=1&callbackUrl=${encodeURIComponent("/member?welcome=1")}`);
+    throw err;
+  }
 }
 
 // ---------- joining up duplicates ----------

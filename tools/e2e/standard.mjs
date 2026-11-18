@@ -163,12 +163,13 @@ await step("Grow shows where the network is thin, and each count opens the peopl
 });
 
 await step("member: sees their own proofs, confirms availability in one tap, and can ask for a reference", null, async () => {
-  const email = sql(`select u.email from "User" u where u.role='MEMBER' order by u."createdAt" desc limit 1`);
+  // A member who is on the radar: the proofs panel only appears once the screening is done.
+  const email = sql(`select u.email from "User" u join "Person" p on p.id=u."personId" where u.role='MEMBER' and p."screeningStatus"='APPROVED' order by u."createdAt" desc limit 1`);
   const m = await session(b, email, NEWPW);
   await m.goto(`${BASE}/member`, { waitUntil: "networkidle" });
   const s = m.locator("[data-standard]").first(); assert((await s.locator("[data-proof]").count()) === 6, "six proofs for the member");
   assert(!/Waqas Anwar has delivered/.test(await s.innerText()), "the member is not shown who on the team said what");
-  await m.getByRole("button", { name: "Confirm availability" }).click(); await m.waitForLoadState("networkidle"); await m.waitForTimeout(800);
+  await m.locator('[data-step="availability"]').getByRole("button", { name: /^(Confirm|Update)$/ }).click(); await m.waitForLoadState("networkidle"); await m.waitForTimeout(800);
   assert(/confirmed today/.test(await m.locator('[data-proof="current"]').first().innerText()), "availability confirmed by the member themselves");
   assert(await m.getByRole("button", { name: "Ask for a reference" }).first().isVisible(), "member can ask for a reference");
   await m.screenshot({ path: `${DIR}/member-proofs.png`, fullPage: true });

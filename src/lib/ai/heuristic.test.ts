@@ -47,6 +47,14 @@ describe("HeuristicAIProvider.parseSearch", () => {
   });
 });
 
+describe("HeuristicAIProvider.parseSearch, whole words", () => {
+  it("does not read availability into a question that never asked for it", async () => {
+    expect((await ai.parseSearch("Who do I know in Dubai with banking experience?")).availableSoon).toBe(false);
+    expect((await ai.parseSearch("freelance designers in London")).availableSoon).toBe(false);
+    expect((await ai.parseSearch("Who is free now for an interim programme director?")).availableSoon).toBe(true);
+  });
+});
+
 describe("HeuristicAIProvider.enrichProfile", () => {
   it("drafts a reviewable profile from a pasted bio", async () => {
     const d = await ai.enrichProfile({ text: "Priya Natarajan is a programme director at Majid Al Futtaim in Dubai. Strong in transformation and PMO across retail. Open to advisory and fractional work." });

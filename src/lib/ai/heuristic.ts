@@ -257,7 +257,8 @@ export class HeuristicAIProvider implements AIProvider {
       capabilities: findAll(q, CAPABILITY_LEXICON),
       locations: findAll(q, LOCATION_LEXICON),
       routes,
-      availableSoon: /available|free|soon|now|next month|finishing/.test(q),
+      // Whole words only: "know" is not "now", and "freelance" is not "free".
+      availableSoon: /\b(available|free|soon|now|next month|finishing)\b/.test(q),
       workedWithOnly: /worked with|we know|trusted|seen deliver|proven/.test(q),
       sectors: findAll(q, SECTOR_LEXICON),
     };

@@ -12,11 +12,8 @@ import { Badge, Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea, Field, Checkbox } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { EmptyState, Tabs } from "@/components/ui/page";
-import { Steps } from "@/components/ui/steps";
-import { AvailabilityBadge } from "@/components/domain/badges";
-import { DateText } from "@/components/domain/date";
-import { TrustCard, FitCard, ScreeningBadge } from "@/components/domain/trust";
+import { EmptyState } from "@/components/ui/page";
+import { TrustCard, FitCard } from "@/components/domain/trust";
 import { BookScreeningDrawer, PitchDrawer } from "@/components/domain/member-drawers";
 import { startScreening, setConsent, submitReferral, confirmMyAvailability } from "@/server/actions/members";
 import type { AvailabilityStatus } from "@prisma/client";
@@ -32,7 +29,7 @@ import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
 import { fitHighlights, ATTRIBUTES } from "@/lib/fit";
 import { rateBand } from "@/lib/demand";
-import { SCREENING_MINUTES, SCREENING_SCRIPT } from "@/lib/screening";
+import { SCREENING_MINUTES } from "@/lib/screening";
 import { ROUTE_LABELS, AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 
@@ -68,6 +65,25 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const privacy = privacyOf(p);
   const accepted = p.referralsMade.filter((r) => r.status === "ACCEPTED").length;
 
+  // What the member is told about where they stand, in one plain line.
+  const status = screened ? (p.referralConsent === "no" ? "Not being put forward for now" : p.referralConsent === "yes" ? "On the radar. We come to you when work fits" : "On the radar. We ask you before putting you forward")
+    : submitted ? "Screening sent. We will confirm it shortly" : "Not on the radar yet";
+  // The three things a member can do for themselves. Everything else is earned with the network.
+  const mine = standardFor(p, "self");
+  const has = (k: string) => mine.proofs.find((x) => x.key === k)?.held ?? false;
+  const checklist = [
+    { key: "screening", done: screened, waiting: submitted && !screened, title: `Your ${SCREENING_MINUTES}-minute screening`,
+      detail: screened ? "Done." : submitted ? "Sent. We will confirm it shortly." : "A short, structured conversation about what you do and how you work. In your own time, by voice or in writing.",
+      action: screened || submitted ? null : <div className="flex flex-wrap gap-2"><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><SubmitButton pendingText="Starting…">Start my screening</SubmitButton></form><BookScreeningDrawer personId={p.id} label="Book a call instead" /></div> },
+    { key: "reference", done: has("vouched"), waiting: !has("vouched") && openRefs.length > 0, title: "A reference from someone who has seen your work",
+      detail: has("vouched") ? "Done. Thank you." : openRefs.length ? `Sent to ${openRefs.map((r) => r.refereeName.split(/\s+/)[0]).join(" and ")}. It counts as soon as they answer.` : "They answer from a link in about a minute. No account needed.",
+      action: has("vouched") ? null : <ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} variant={screened || submitted ? "primary" : "secondary"} /> },
+    { key: "availability", done: has("current"), waiting: false, title: "When you are free",
+      detail: has("current") ? `${AVAILABILITY_LABELS[p.availabilityStatus]}. You can change it any time.` : "One tap. You can change it any time.",
+      action: <form action={confirmMyAvailability} className="flex flex-wrap items-center gap-2"><input type="hidden" name="personId" value={p.id} /><Select name="status" aria-label="When you are free" defaultValue={SELF_STATUSES.includes(p.availabilityStatus) ? p.availabilityStatus : "OPEN_TO_CONVERSATIONS"} className="h-9 w-[230px] text-[13px]">{SELF_STATUSES.map((k) => <option key={k} value={k}>{AVAILABILITY_LABELS[k]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="Saving…">{has("current") ? "Update" : "Confirm"}</SubmitButton></form> },
+  ];
+  const todo = checklist.filter((c) => !c.done).length;
+
   const OppCard = ({ b }: { b: (typeof open)[number] }) => { const pitched = p.pitches.find((x) => x.briefId === b.id); const refd = p.referralsMade.filter((r) => r.briefId === b.id).length; const summary = `${b.roles[0] ?? "Requirement"}${b.headcount > 1 ? ` × ${b.headcount}` : ""} · ${b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"} · ${b.locations.join(" / ") || "location flexible"}`; return (
     <Card key={b.id}>
       <CardBody className="pt-4">
@@ -82,28 +98,21 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   return (
     <>
       {internal ? <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mb-3 text-[12px] text-ink-faint"><span>Internal preview of the member portal. Viewing as</span> <form method="get" action="/member" className="inline-flex items-center gap-1.5"><Select name="person" defaultValue={p.id} className="h-7 text-xs w-[200px] max-w-[60vw]">{members.map((m) => <option key={m.id} value={m.id}>{fullName(m)}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Switch</SubmitButton></form></div> : null}
-      {sp.welcome ? <div className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Welcome. {p.firstName}, your registration has reached the network owner. Your screening is the next step, and it is what puts you on the radar.</div> : null}
-      {sp.screened ? <div className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. A person will review your screening and confirm your profile.</div> : null}
+      {sp.screened ? <div className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. Your screening is with us.</div> : null}
       {sp.sent ? <div className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. Your referral is with us to review.</div> : null}
 
-      <div className="rounded-[28px] px-5 py-6 sm:px-9 sm:py-8 mb-5 bg-surface border border-line shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
-        <div className="flex items-center gap-4"><Avatar person={p} size="xl" ring /><div><div className="eyebrow text-ink-faint">Network member{p.memberSince ? ` since ${p.memberSince.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}` : ""}</div><h1 className="font-display text-[26px] sm:text-[34px] leading-[1.1] mt-2.5">{fullName(p)}</h1><p className="text-ink-muted text-[15px] mt-2">{p.headline ?? "Add a headline in your screening"}</p><div className="flex flex-wrap gap-2 mt-2.5"><ScreeningBadge status={p.screeningStatus} /><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} />{p.referralConsent === "yes" ? <Badge tone="teal" filled>on the radar</Badge> : p.referralConsent === "no" ? <Badge filled>not being referred</Badge> : <Badge tone="amber" filled>asked each time</Badge>}</div>
-          <form action={confirmMyAvailability} className="mt-3.5 flex flex-wrap items-center gap-2"><input type="hidden" name="personId" value={p.id} /><Select name="status" aria-label="Your availability" defaultValue={SELF_STATUSES.includes(p.availabilityStatus) ? p.availabilityStatus : "OPEN_TO_CONVERSATIONS"} className="h-9 w-[230px] text-[13px]">{SELF_STATUSES.map((k) => <option key={k} value={k}>{AVAILABILITY_LABELS[k]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="Saving…">Confirm availability</SubmitButton></form></div></div>
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)} className="min-w-[96px] border-l border-line pl-4 first:border-l-0 first:pl-0"><div className="text-[12px] font-medium text-ink-muted">{l}</div><div className="font-display num-grad text-[28px] tabular leading-[1.05] mt-1.5">{v}</div><div className="text-[12px] text-ink-faint">{h}</div></div>)}</div>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+        <div className="flex items-center gap-4 min-w-0">
+          <Avatar person={p} size="xl" ring />
+          <div className="min-w-0">
+            <h1 className="font-display text-[26px] sm:text-[32px] leading-[1.1]">{sp.welcome && !screened ? `Welcome, ${p.preferredName ?? p.firstName}` : fullName(p)}</h1>
+            {p.headline ? <p className="text-ink-muted text-[15px] mt-1.5">{p.headline}</p> : null}
+            <p className="mt-2 inline-flex items-center gap-2 text-[13px] text-ink-muted" data-member-status><span className={`h-2 w-2 rounded-full ${screened && p.referralConsent !== "no" ? "bg-teal" : submitted ? "bg-amber" : "bg-line-strong"}`} aria-hidden="true" />{status}</p>
+            {screened && !todo ? <div className="mt-2.5" data-step="availability">{checklist[2].action}</div> : null}
+          </div>
+        </div>
+        {screened ? <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)} className="min-w-[96px] border-l border-line pl-4 first:border-l-0 first:pl-0"><div className="text-[12px] font-medium text-ink-muted">{l}</div><div className="font-display num-grad text-[28px] tabular leading-[1.05] mt-1.5">{v}</div><div className="text-[12px] text-ink-faint">{h}</div></div>)}</div> : null}
       </div>
-
-      <Card className="mb-5">
-        <CardBody className="pt-5">
-          <Steps steps={[
-            { title: "Account created", detail: "You are registered with the network.", state: "done" },
-            { title: `${SCREENING_MINUTES}-minute screening`, detail: screened || submitted ? "Done. Thank you." : "A short structured conversation about what you do.", state: screened || submitted ? "done" : "current" },
-            { title: "Accepted", detail: screened ? "Your screening has been accepted." : submitted ? "We are reading your screening now." : "A complete screening is accepted quickly.", state: screened ? "done" : submitted ? "current" : "todo" },
-            { title: "On the radar", detail: screened && p.referralConsent === "yes" ? "We will come to you first when something fits." : screened ? "Choose how you want to be referred, below." : "We come to you when a client needs someone like you.", state: screened && p.referralConsent === "yes" ? "done" : screened ? "current" : "todo" },
-          ]} />
-        </CardBody>
-      </Card>
-
-      <Tabs items={[{ key: "home", label: "Home" }, { key: "opportunities", label: "Opportunities", count: open.length }, { key: "refer", label: "Invite and refer" }, { key: "privacy", label: "Privacy & data" }]} current={tab} base={internal ? `/member?person=${p.id}` : "/member"} />
 
       {tab === "opportunities" ? (
         <><div className="mb-3"><h2 className="text-[15px] font-semibold">Opportunities open to members</h2><p className="text-[12.5px] text-ink-muted">Anonymised. Pitch with your own profile, or refer someone you would put your name behind. You are only ever named to a client with your consent.</p></div>{open.length ? <div className="space-y-3">{open.map((b) => <OppCard key={b.id} b={b} />)}</div> : <EmptyState title="Nothing open right now" description="When a requirement is opened to members, it appears here." />}</>
@@ -157,13 +166,28 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           </div>
         </div>
       ) : (
+        <>
+        {todo ? (
+          <Card className="mb-5" data-checklist>
+            <CardHeader title={screened ? `${todo} ${todo === 1 ? "thing" : "things"} left to strengthen your profile` : "Three things, then you are on the radar"} description={screened ? undefined : "That is all we need from you. When work comes up that fits, we come to you first, and your name is never shared without your yes."} />
+            <CardBody className="pt-0">
+              <ol className="divide-y divide-line">
+                {checklist.map((c, n) => (
+                  <li key={c.key} className="flex flex-col gap-3 py-4 first:pt-1 sm:flex-row sm:items-center sm:justify-between" data-step={c.key} data-done={c.done || undefined}>
+                    <div className="flex gap-3 min-w-0">
+                      <span className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full text-[12px] font-semibold ${c.done ? "bg-teal text-white dark:text-canvas" : c.waiting ? "bg-amber-100 text-ink" : "border border-line-strong text-ink-muted"}`} aria-hidden="true">{c.done ? "✓" : n + 1}</span>
+                      <div className="min-w-0"><b className={`block text-[14.5px] font-semibold ${c.done ? "text-ink-muted" : "text-ink"}`}>{c.title}<span className="sr-only">{c.done ? " (done)" : ""}</span></b><span className="block text-[13px] text-ink-muted leading-[1.5] max-w-[62ch]">{c.detail}</span></div>
+                    </div>
+                    {c.action && !(c.done && c.key !== "availability") ? <div className="flex-none sm:pl-4 pl-9">{c.action}</div> : null}
+                  </li>
+                ))}
+              </ol>
+            </CardBody>
+          </Card>
+        ) : null}
+        {screened ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4">
-            <Card><CardHeader title="Your screening" description="A real conversation, structured, in your own time." /><CardBody>
-              {screened ? <div className="flex items-center justify-between gap-3"><div><ScreeningBadge status="APPROVED" /><div className="text-[12px] text-ink-faint mt-1">Completed <DateText date={p.screenedAt ?? p.memberSince} relative />. Your profile is live in the network.</div></div><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><input type="hidden" name="restart" value="1" /><SubmitButton size="sm" variant="ghost" pendingText="…">Redo screening</SubmitButton></form></div>
-                : submitted ? <div><ScreeningBadge status="SUBMITTED" /><div className="text-[12px] text-ink-faint mt-1">A person is reviewing your answers. You will be on the radar for opportunities as soon as it is confirmed.</div></div>
-                : <div className="space-y-3"><div><b className="text-[15px]">Do your {SCREENING_MINUTES}-minute screening</b><p className="text-[13px] text-ink-muted mt-1 max-w-[60ch]">{SCREENING_SCRIPT.length} short sections: {SCREENING_SCRIPT.map((s) => s.title.toLowerCase()).join(", ")}. It is the one thing every member does, and it is what puts you on the radar for opportunities.</p></div><div className="flex flex-wrap gap-2"><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><SubmitButton pendingText="Starting…">Start the AI screening</SubmitButton></form><BookScreeningDrawer personId={p.id} label="Book a real call instead" /></div></div>}
-            </CardBody></Card>
             {open.length ? <Link href={`/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`} className="group flex items-center justify-between gap-3 rounded-[18px] px-1 py-1 text-[13.5px] text-ink-muted hover:text-ink"><span><b className="font-semibold text-ink">{open.length} {open.length === 1 ? "opportunity is" : "opportunities are"} open to you.</b> Client names stay hidden until an introduction is agreed.</span><span className="flex-none font-semibold text-ink">See them</span></Link> : null}
             {fit.some((r) => r.combined !== null) ? <FitCard rows={fit} self /> : null}
           </div>
@@ -177,6 +201,8 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             </CardBody></Card>
           </div>
         </div>
+        ) : null}
+        </>
       )}
     </>
   );

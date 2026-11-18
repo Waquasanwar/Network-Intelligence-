@@ -76,6 +76,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const canMerge = user.role === "OWNER" || user.role === "ADMIN";
 
   const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: person.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
+  // Someone who has just joined has nothing on record yet: one line says so, instead of three empty cards.
+  const blank = !person.capabilities.length && !person.sectors.length && !person.headline && !person.conversations.some((c) => c.approvalStatus === "APPROVED") && !person.attributes;
   const [trust, fit, users] = await Promise.all([trustFor(person), fitFor(person), prisma.user.findMany({ where: { tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true, name: true } })]);
   // What the profile's drawings show.
   const ring = circleOf({ worked: person.relationships.some((r) => r.workedTogether), screened: person.screeningStatus === "APPROVED" || !!person.screenedAt, trust: trust.score });
@@ -192,6 +194,12 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       {tab === "overview" ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4">
+            {blank ? (
+              <Card data-blank-profile>
+                <CardHeader title="Nothing on record yet" description={person.memberUser ? `${person.firstName} has joined. Their screening fills in what they do, when they are free and how they work. They do it themselves, in their own time.` : `Their screening, or a conversation with you, fills in what they do, when they are free and how they work.`} />
+                <CardBody className="pt-0 text-[13px] text-ink-muted">{person.memberUser ? (person.screeningStatus === "SUBMITTED" ? "Their screening is in. Review it under Conversations." : "Nothing for you to do yet. If you would like to speed it up, ask someone who knows their work for a reference.") : "Invite them to join, or book a conversation."}</CardBody>
+              </Card>
+            ) : <>
             <Card>
               <CardHeader title="What we know" description={latestSummary ? `From the approved conversation on ${approved[0].date.toLocaleDateString("en-GB")}` : "No approved conversation yet — book one."} />
               <CardBody>
@@ -239,6 +247,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               </CardBody>
             </Card>
             <FitCard rows={fit} />
+            </>}
           </div>
           <div className="space-y-4">
             <TrustCard t={trust} standard={standardFor(person)} firstName={person.firstName} action={<span className="flex flex-wrap justify-end gap-1.5"><ReferenceDrawer personId={person.id} about={person.firstName} open={openRefs} /><VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} /></span>} />
