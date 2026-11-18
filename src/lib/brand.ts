@@ -2,5 +2,5 @@
 export const APP_NAME = "Amana Network";
 export const THEME_COOKIE = "amana-theme";
 export type Theme = "dark" | "light";
-/** Dark unless the visitor has chosen light. */
-export const themeFrom = (v: string | undefined): Theme => (v === "light" ? "light" : "dark");
+/** Light unless the visitor has chosen dark. */
+export const themeFrom = (v: string | undefined): Theme => (v === "dark" ? "dark" : "light");

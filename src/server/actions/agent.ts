@@ -11,6 +11,7 @@ import { ACTIVE_STATUSES } from "@/lib/availability";
 import { AVAILABILITY_LABELS, ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import type { EngagementRoute, Prisma } from "@prisma/client";
+import { copilotEnabled, runCopilot } from "@/server/copilot";
 
 export type AgentPerson = {
   id: string; name: string; headline: string; trust: number; band: string;
@@ -19,7 +20,9 @@ export type AgentPerson = {
   why: string[];
 };
 export type AgentAnswer =
-  | { ok: true; query: string; understood: string[]; total: number; searched: number; answer: string; people: AgentPerson[]; href: string }
+  | { ok: true; query: string; understood: string[]; total: number; searched: number; answer: string; people: AgentPerson[]; href: string;
+      /** What the agent actually did, in order. */ steps: string[];
+      /** "claude" when the AI co-pilot answered; "rules" when the built-in matcher did. */ engine: "claude" | "rules" }
   | { ok: false; error: string };
 
 const STOP = new Set(["who", "whom", "what", "which", "with", "that", "have", "from", "could", "would", "should", "know", "need", "find", "show", "someone", "somebody", "anyone", "people", "person", "lead", "role", "work", "fits", "does", "there", "their", "them", "they", "about", "into", "some", "available", "soon"]);
@@ -35,6 +38,25 @@ export async function askNetwork(query: string): Promise<AgentAnswer> {
   const q = String(query ?? "").trim().slice(0, 300);
   if (!(await rateLimit("ai", `ask:${user.id}`)).success) return { ok: false, error: "That is a lot of questions at once. Give it a moment and ask again." };
   if (q.length < 2) return { ok: false, error: "Ask about a skill, a place or a kind of work — for example “cyber lead in Dubai, available now”." };
+
+  if (copilotEnabled()) {
+    try {
+      const [searched, r] = await Promise.all([prisma.person.count({ where: { tenantId: user.tenantId } }), runCopilot(user.tenantId, q)]);
+      const people: AgentPerson[] = r.picks.flatMap(({ id, why }) => {
+        const p = r.found.get(id);
+        if (!p) return [];
+        const t = trustFor(p);
+        return [{
+          id: p.id, name: p.preferredName || fullName(p), headline: p.headline ?? "", trust: t.score, band: TRUST_BAND_LABEL[trustBand(t.score)],
+          availability: AVAILABILITY_LABELS[p.availabilityStatus], open: ACTIVE_STATUSES.includes(p.availabilityStatus),
+          city: p.primaryCity ?? p.primaryCountry ?? null, worked: p.relationships.some((x) => x.workedTogether), vouchedBy: t.vouchedBy, why: [why],
+        }];
+      });
+      return { ok: true, query: q, understood: r.understood, total: r.found.size, searched, answer: r.answer, people, href: `/network?q=${encodeURIComponent(q)}`, steps: r.steps, engine: "claude" };
+    } catch (err) {
+      console.warn("[copilot] falling back to the built-in matcher", err instanceof Error ? err.message : err);
+    }
+  }
 
   const intent = await getAIProvider().parseSearch(q);
   const select = {
@@ -99,5 +121,5 @@ export async function askNetwork(query: string): Promise<AgentAnswer> {
     ? `Nobody in the network matches that yet. I looked across all ${searched} people. Try a broader skill or drop the location, or add the person you have in mind.`
     : `${total === 1 ? "One person matches" : `${total} people match`}${openCount ? `, ${openCount === total ? (total === 1 ? "and they are open to work" : "all open to work") : `${openCount} open to work`}` : ""}. ${top.name} is the strongest — trust ${Math.round(top.trust)} (${top.band.toLowerCase()})${top.why.length ? `, ${top.why.slice(0, 2).join(", ")}` : ""}.`;
 
-  return { ok: true, query: q, understood, total, searched, answer, people: people.slice(0, 4), href: `/network?q=${encodeURIComponent(q)}` };
+  return { ok: true, query: q, understood, total, searched, answer, people: people.slice(0, 4), href: `/network?q=${encodeURIComponent(q)}`, steps: [`Matched your words against ${searched} people`, "Ranked by trust"], engine: "rules" };
 }

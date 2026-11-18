@@ -68,6 +68,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
           <Search className="h-4 w-4 text-ink-faint" />
           <input
             ref={inputRef}
+            autoFocus
             value={q}
             onChange={(e) => { setQ(e.target.value); setIdx(0); }}
             onKeyDown={(e) => {

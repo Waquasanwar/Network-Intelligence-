@@ -5,7 +5,7 @@ import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { askNetwork, type AgentAnswer } from "@/server/actions/agent";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Reading your question", "Searching the network", "Ranking by trust"];
+const STEPS = ["Reading your question", "Searching the network and reading records", "Choosing who fits, and why"];
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const initials = (name: string) => name.split(/\s+/).map((s) => s[0]).join("").slice(0, 2).toUpperCase();
 
@@ -113,8 +113,8 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
           ) : result?.ok ? (
             <>
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12px] text-ink-faint">
-                <span className="eyebrow text-ink">Network agent</span>
-                <span>Searched {result.searched} people · ranked by trust</span>
+                <span className="eyebrow text-ink">{result.engine === "claude" ? "Claude co-pilot" : "Network agent"}</span>
+                <span>{result.engine === "claude" ? `Looked across ${result.searched} people` : `Searched ${result.searched} people · ranked by trust`}</span>
                 {result.understood.length ? <span className="inline-flex flex-wrap items-center gap-1.5">Understood{result.understood.slice(0, 4).map((u) => <span key={u} className="rounded-full bg-surface-muted px-2 py-0.5 font-medium text-ink-muted">{u}</span>)}</span> : null}
               </div>
               <p className={cn("font-display is-small mt-3 max-w-[64ch] text-[18px] leading-[1.4] text-ink", !done && "stream-caret")}>{typed}</p>
@@ -141,6 +141,13 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
                     </Link>
                   ))}
                 </div>
+              ) : null}
+
+              {done && result.steps.length ? (
+                <details className="rise-in mt-3 text-[12.5px] text-ink-muted" data-agent-steps>
+                  <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-medium text-ink-muted hover:text-ink [&::-webkit-details-marker]:hidden">How I got here · {result.steps.length} step{result.steps.length === 1 ? "" : "s"}</summary>
+                  <ol className="mt-2 space-y-1 border-l border-line pl-3">{result.steps.map((st, i) => <li key={i}>{st}</li>)}</ol>
+                </details>
               ) : null}
 
               {done ? (

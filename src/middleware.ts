@@ -78,5 +78,5 @@ export default auth(async (req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|forbidden|.*\\.(?:svg|png|jpg|ico)).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|forbidden|manifest.webmanifest|sw.js|offline.html|.*\\.(?:svg|png|jpg|ico)).*)"],
 };

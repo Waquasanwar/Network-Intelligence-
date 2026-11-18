@@ -1,9 +1,10 @@
 import type { AIProvider, ExtractedSummary, ProfileDraft, SearchIntent } from "./types";
 import { ExtractedSummarySchema, ProfileDraftSchema } from "./types";
+import Anthropic from "@anthropic-ai/sdk";
 import { HeuristicAIProvider } from "./heuristic";
 
 /**
- * Anthropic adapter. Uses the Messages API directly (no SDK dependency) so the platform
+ * Anthropic adapter, on the official SDK. The interface stays provider-neutral so the platform
  * can swap providers. Transcripts are wrapped as untrusted data and the model is told to
  * treat any instructions inside them as content, not commands. Falls back to the heuristic
  * provider on any failure so the workflow never blocks.
@@ -19,21 +20,24 @@ Rules:
 export class AnthropicAIProvider implements AIProvider {
   readonly name = "anthropic";
   private fallback = new HeuristicAIProvider();
-  constructor(private apiKey: string, private model = process.env.AI_MODEL || "claude-sonnet-5") {}
+  private client: Anthropic;
+  constructor(apiKey: string, private model = process.env.AI_MODEL || "claude-opus-5-5") {
+    this.client = new Anthropic({ apiKey, maxRetries: 1, timeout: 60_000 });
+  }
 
-  private async call(prompt: string, maxTokens = 1500): Promise<string> {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": this.apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({ model: this.model, max_tokens: maxTokens, system: SYSTEM, messages: [{ role: "user", content: prompt }] }),
+  /** One request, one text answer. Effort is "low" for quick reads and "medium" for structuring. */
+  private async call(prompt: string, maxTokens = 4000, effort: "low" | "medium" = "medium"): Promise<string> {
+    const res = await this.client.beta.messages.create({
+      model: this.model,
+      max_tokens: maxTokens,
+      output_config: { effort },
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      system: SYSTEM,
+      messages: [{ role: "user", content: prompt }],
     });
-    if (!res.ok) throw new Error(`Anthropic API ${res.status}`);
-    const data = (await res.json()) as { content: { type: string; text?: string }[] };
-    return data.content.find((c) => c.type === "text")?.text ?? "";
+    if (res.stop_reason === "refusal") throw new Error("declined");
+    return res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
   }
 
   private extractJson(text: string): unknown {
@@ -56,7 +60,7 @@ export class AnthropicAIProvider implements AIProvider {
   async explainFit(input: { personName: string; opportunityTitle: string; dimensions: { name: string; score: number; note: string }[]; uncertainty: string[] }) {
     try {
       const prompt = `Explain in under 120 words why ${input.personName} may fit "${input.opportunityTitle}", what is uncertain, and end with "This is a suggestion for human review." Dimensions: ${JSON.stringify(input.dimensions)}. Uncertainty: ${JSON.stringify(input.uncertainty)}.`;
-      return (await this.call(prompt, 400)).trim();
+      return (await this.call(prompt, 2000, "low")).trim();
     } catch {
       return this.fallback.explainFit(input);
     }
@@ -65,7 +69,7 @@ export class AnthropicAIProvider implements AIProvider {
   async parseSearch(query: string): Promise<SearchIntent> {
     try {
       const prompt = `Convert this search into JSON {capabilities[], locations[], routes[] (PERMANENT|CONTRACT|INTERIM|FRACTIONAL|ADVISORY|SOW), availableSoon:boolean, workedWithOnly:boolean, sectors[]}: "${query.replace(/"/g, "'")}"`;
-      const j = this.extractJson(await this.call(prompt, 400)) as Partial<SearchIntent>;
+      const j = this.extractJson(await this.call(prompt, 2000, "low")) as Partial<SearchIntent>;
       // The model's answer becomes database filters, so it is held to a strict shape first.
       const words = (v: unknown, n = 8) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0 && x.length <= 60).slice(0, n) : []);
       const ROUTES = ["PERMANENT", "CONTRACT", "INTERIM", "FRACTIONAL", "ADVISORY", "SOW"];
@@ -99,7 +103,7 @@ Return only JSON with keys: firstName, lastName, headline, currentCompany, curre
       const prompt = `Write a short, warm, honest outreach message (under 110 words) from ${input.senderName} to ${input.toName.split(" ")[0]} about a possible opportunity. ${input.worked ? "They have worked together before." : "They have not worked together directly."}
 Context (do NOT name any client or company): role/route = "${input.role}"; area = "${input.capability}"; why they came to mind = "${input.whyFit}".
 Rules: no client or company name; make clear it is early and exploratory; say nothing about them is shared without their consent; ask for a short call; sign off as ${input.senderName}. Return only the message text, no preamble.`;
-      const text = (await this.call(prompt, 400)).trim();
+      const text = (await this.call(prompt, 2000, "low")).trim();
       return text || this.fallback.draftOutreach(input);
     } catch {
       return this.fallback.draftOutreach(input);
