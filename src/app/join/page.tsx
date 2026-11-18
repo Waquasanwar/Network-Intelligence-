@@ -82,8 +82,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
 
       <main className="relative flex items-center justify-center px-4 py-10 sm:px-10 text-ink">
         <ThemeToggle className="absolute right-4 top-4" />
-        <div className="widget relative w-full max-w-[480px] p-6 sm:p-8">
-          <span className="beam is-slow" aria-hidden="true" />
+        <div className="relative w-full max-w-[440px]">
           <div className="lg:hidden mb-7">
             <div className="flex items-center gap-2.5 mb-6">
               <BrandMark className="h-6 w-auto text-ink" />

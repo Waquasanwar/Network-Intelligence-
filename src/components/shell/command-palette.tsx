@@ -23,7 +23,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
       if (e.key === "Escape") setOpen(false);
     };
     // Opened from the ask bar, the palette arrives with that bar's question already typed.
-    const onOpen = (e: Event) => { seed.current = (e as CustomEvent<{ q?: string }>).detail?.q ?? ""; setOpen(true); };
+    const onOpen = (e: Event) => { const s = (e as CustomEvent<{ q?: string }>).detail?.q ?? ""; seed.current = s; setQ(s); setIdx(0); setOpen(true); }; // same render: no empty flash
     window.addEventListener("keydown", onKey);
     window.addEventListener("ni:open-palette", onOpen);
     return () => {
@@ -62,7 +62,8 @@ export function CommandPalette({ items }: { items: Item[] }) {
   return (
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Search the network" onClick={() => setOpen(false)}>
       <div className="absolute inset-0 bg-[#0f172a]/30 backdrop-blur-[2px] anim-fade" />
-      <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-[22px] bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[580px] max-w-[92vw] rounded-[22px] border border-line-strong bg-surface shadow-[var(--shadow-pop)] overflow-hidden anim-pop" onClick={(e) => e.stopPropagation()}>
+        <span className="beam is-slow" aria-hidden="true" />
         <div className="flex items-center gap-2 px-3 border-b border-line">
           <Search className="h-4 w-4 text-ink-faint" />
           <input
@@ -75,7 +76,7 @@ export function CommandPalette({ items }: { items: Item[] }) {
               if (e.key === "Enter" && results[idx]) go(results[idx]);
             }}
             placeholder="Search, or ask the network in plain language…"
-            className="h-11 flex-1 bg-transparent text-sm outline-none placeholder:text-ink-faint"
+            className="palette-input h-12 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-ink-faint"
           />
           <kbd>esc</kbd>
         </div>

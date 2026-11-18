@@ -538,3 +538,11 @@ a.figure:hover { opacity: 0.72; }
 /* The active place in the menu: glass with a mint light at its left edge, not a solid slab. */
 .nav-active { position: relative; background: var(--color-rail-active); color: var(--color-rail-ink-strong); box-shadow: inset 0 0 0 1px var(--color-line); }
 .nav-active::before { content: ""; position: absolute; left: 6px; top: 50%; width: 3px; height: 16px; translate: 0 -50%; border-radius: 3px; background: linear-gradient(180deg, #7ee3bc, #8b94ff); box-shadow: 0 0 12px rgba(126, 227, 188, 0.8); }
+
+/* In the dark theme "navy" fills turn near-white, so text set white on them would vanish. Whatever
+   sits on a navy fill takes the night ink instead, wherever it was written. */
+[data-theme="dark"] :is(.bg-navy, .bg-navy-600).text-white,
+[data-theme="dark"] :is(.bg-navy, .bg-navy-600) > .text-white { color: var(--color-canvas); }
+
+/* The command palette's field: the panel shows focus, not a ring drawn inside it. */
+.palette-input:focus, .palette-input:focus-visible { outline: none; box-shadow: none; }

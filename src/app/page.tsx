@@ -66,7 +66,7 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
       <div className="relative mx-auto w-full max-w-[1180px] px-4 sm:px-6 pb-16">
         <section className="pt-16 text-center sm:pt-24">
           <span className="pill-badge"><span className="live-dot !h-1.5 !w-1.5" />Invitation-led · Dubai and London</span>
-          <h1 className="display-wide mx-auto mt-7 max-w-[15ch] text-[44px] sm:text-[72px] lg:text-[88px] text-balance"><span className="text-sheen">Expertise,</span> <span className="text-aurora">known first hand.</span></h1>
+          <h1 className="display-wide mx-auto mt-7 max-w-[15ch] text-[38px] sm:text-[72px] lg:text-[88px] text-balance"><span className="text-sheen">Expertise,</span> <span className="text-aurora">known first hand.</span></h1>
           <p className="mx-auto mt-6 max-w-[60ch] text-[16px] leading-[1.6] text-ink-muted sm:text-[17.5px]">{network.name} is a private network of senior consultants, for roles and for consultancy assignments. Everyone arrives through someone we know, and holds proofs that other people have put their name to.</p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <a href="#join" className="btn-glow inline-flex h-12 items-center gap-2 rounded-full px-6 text-[14.5px] font-semibold">Apply to join <ArrowRight className="h-4 w-4" /></a>
