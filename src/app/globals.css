@@ -242,7 +242,7 @@ a > .glass-tile:hover { box-shadow: var(--shadow-card-hover); }
 h1, h2, h3 { letter-spacing: -0.02em; }
 
 /* Glass */
-.glass { background: color-mix(in srgb, var(--color-canvas) 46%, transparent); backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px); }
+.glass { background: color-mix(in srgb, var(--color-canvas) 80%, transparent); backdrop-filter: saturate(180%) blur(18px); }
 
 /* Tables: dense, quiet, readable */
 /* A wide table scrolls inside its own card on a narrow screen; the page never scrolls sideways. */
