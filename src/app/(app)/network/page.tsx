@@ -23,10 +23,12 @@ import type { AvailabilityStatus, EngagementRoute, Prisma } from "@prisma/client
 import { Handshake, Search, UserCheck, Users, Zap } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { TableSort } from "@/components/ui/table-sort";
+import { PROOFS, isProofKey } from "@/lib/standard";
+import { standardFor } from "@/lib/standard-for";
 
 export const metadata = { title: "Network" };
 
-type SP = { q?: string; status?: string; route?: string; location?: string; workedWith?: string; freshness?: string; amanaBench?: string; source?: string; view?: string };
+type SP = { q?: string; status?: string; route?: string; location?: string; workedWith?: string; freshness?: string; amanaBench?: string; source?: string; missing?: string; view?: string };
 
 export default async function NetworkPage({ searchParams }: { searchParams: Promise<SP> }) {
   const user = await requireInternal();
@@ -71,6 +73,9 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
     orderBy: [{ updatedAt: "desc" }],
     take: 300,
   });
+  // People who do not yet hold one of the six proofs: the list to work through to strengthen the network.
+  const missing = isProofKey(filters.missing) ? filters.missing : null;
+  if (missing) people = people.filter((p) => !standardFor(p, "internal", now).proofs.find((x) => x.key === missing)!.held);
   if (filters.freshness) people = people.filter((p) => assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now) === (filters.freshness === "stale" ? "stale" : "fresh") || (filters.freshness === "stale" && assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now) === "unknown"));
 
   const allPeopleLite = await prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } });
@@ -119,6 +124,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         {pill("Fresh", "freshness", "fresh")}
         {pill("Amana core circle", "amanaBench", "1")}
         {pill("Introduced", "source", "INTRODUCTION")}
+        {missing ? pill(`Not yet: ${PROOFS.find((x) => x.key === missing)!.title.toLowerCase()}`, "missing", missing) : null}
         <span className="mx-1 text-ink-faint">·</span>
         <span className="text-[12px] text-ink-faint">Saved views:</span>
         {savedViews.map((v) => (

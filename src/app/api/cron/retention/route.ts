@@ -23,6 +23,12 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
+  // What strangers sent through the public page: unanswered after six months, or dealt with more
+  // than three months ago, it is deleted. An accepted application lives on as its invitation.
+  const day = 86_400_000, nowMs = Date.now();
+  const cleared = await prisma.publicRequest.deleteMany({ where: { OR: [{ status: "NEW", createdAt: { lt: new Date(nowMs - 180 * day) } }, { status: { not: "NEW" }, handledAt: { lt: new Date(nowMs - 90 * day) } }] } });
+  const lapsed = await prisma.referenceRequest.deleteMany({ where: { status: { in: ["SENT", "REVOKED"] }, expiresAt: { lt: new Date(nowMs - 30 * day) } } });
+
   const tenants = await prisma.tenant.findMany({ select: { id: true } });
   let totalDue = 0;
 
@@ -43,5 +49,5 @@ export async function GET(req: NextRequest) {
     totalDue += itemsDue;
   }
 
-  return NextResponse.json({ ok: true, ranAt: new Date().toISOString(), tenants: tenants.length, itemsDue: totalDue });
+  return NextResponse.json({ ok: true, ranAt: new Date().toISOString(), tenants: tenants.length, itemsDue: totalDue, publicRequestsDeleted: cleared.count, referenceRequestsDeleted: lapsed.count });
 }

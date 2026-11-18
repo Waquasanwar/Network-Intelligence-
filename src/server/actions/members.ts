@@ -1,13 +1,15 @@
 "use server";
 import { z } from "zod";
+import { AUTO_ACCEPT_COMPLETENESS, screeningProfileUpdate } from "@/server/screening-apply";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { limitOrThrow } from "@/lib/rate-limit";
-import { requireInternalAction, requireUser, type SessionUser } from "@/server/session";
+import { requireAdminAction, requireInternalAction, requireUser, type SessionUser } from "@/server/session";
 import { assertSameTenant, isInternal, isMember } from "@/lib/authz";
 import { ATTRIBUTES, type FitScores } from "@/lib/fit";
+import { suggestNextCheck } from "@/lib/availability";
 import { SCREENING_SCRIPT, screeningToResult, type ScreeningAnswers, type ScreeningResult } from "@/lib/screening";
 import { matchBrief, type BriefPerson } from "@/lib/demand";
 import { toDomain } from "@/lib/brief-domain";
@@ -48,6 +50,25 @@ export async function createVouch(formData: FormData) {
   await prisma.vouch.create({ data: { personId: person.id, voucherKind: kind, voucherUserId, voucherPersonId, voucherName: kind === "EXTERNAL" ? d.voucherName || null : null, source: kind === "EXTERNAL" ? "LinkedIn recommendation" : null, context: d.context, statement: d.statement || null, wouldRecommend: d.wouldRecommend ?? false, attributes: Object.keys(attrs).length ? (attrs as Prisma.InputJsonValue) : undefined } });
   await audit({ tenantId: person.tenantId, actorId: user.id, action: "vouch.create", entityType: "Person", entityId: person.id, metadata: { kind, wouldRecommend: d.wouldRecommend ?? false } });
   revalidatePath(`/network/${person.id}`); revalidatePath("/network"); revalidatePath("/member");
+}
+
+// ---------- availability ----------
+
+/** The statuses a person can set for themselves in one tap. Anything needing a date goes through the team. */
+const SELF_STATUSES = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "TAKING_A_BREAK"] as const;
+
+/**
+ * A member says where they stand, themselves. It is the freshest source there is, and it keeps the
+ * "Up to date" proof without anybody on the team having to ask.
+ */
+export async function confirmMyAvailability(formData: FormData) {
+  const user = await requireUser();
+  const p = await screeningPersonFor(user, String(formData.get("personId") || ""));
+  const status = z.enum(SELF_STATUSES).parse(formData.get("status"));
+  const now = new Date();
+  await prisma.person.update({ where: { id: p.id }, data: { availabilityStatus: status, availabilityConfirmedAt: now, availabilitySource: isInternal(user) ? "manual" : "self", availabilityConfidence: 90, nextCheckDate: suggestNextCheck(status, now) } });
+  await audit({ tenantId: p.tenantId, actorId: user.id, action: "person.update", entityType: "Person", entityId: p.id, metadata: { field: "availability", status, by: isInternal(user) ? "team" : "self" } });
+  revalidatePath("/member"); revalidatePath(`/network/${p.id}`); revalidatePath("/network");
 }
 
 // ---------- screening ----------
@@ -108,9 +129,20 @@ export async function answerScreening(formData: FormData) {
       await tx.referral.create({ data: { tenantId: p.tenantId, referrerPersonId: p.id, referredPersonId: existing?.id ?? null, name: r.name, email: r.email ?? null, context: r.context, note: "Named in screening" } });
     }
   });
-  await audit({ tenantId: p.tenantId, actorId: user.id, action: "screening.submit", entityType: "Person", entityId: p.id, metadata: { completeness: result.completeness, referrals: result.referrals.length } });
+  // The owner may let complete screenings through without reading each one. Incomplete ones, and
+  // every screening while the setting is off, wait for a person exactly as before.
+  const tenant = await prisma.tenant.findUnique({ where: { id: p.tenantId }, select: { screeningAutoAccept: true } });
+  const auto = !!tenant?.screeningAutoAccept && result.completeness >= AUTO_ACCEPT_COMPLETENESS;
+  if (auto) {
+    const when = new Date();
+    await prisma.$transaction([
+      prisma.conversation.update({ where: { id: conv.id }, data: { approvalStatus: "APPROVED", approvedById: null, approvedSummary: result.summary as unknown as Prisma.InputJsonValue } }),
+      prisma.person.update({ where: { id: p.id }, data: screeningProfileUpdate({ ...p, memberSince: p.memberSince ?? when }, result, when) }),
+    ]);
+  }
+  await audit({ tenantId: p.tenantId, actorId: user.id, action: auto ? "screening.auto_accept" : "screening.submit", entityType: "Person", entityId: p.id, metadata: { completeness: result.completeness, referrals: result.referrals.length } });
   revalidatePath("/conversations"); revalidatePath(`/network/${p.id}`); revalidatePath("/member"); revalidatePath("/referrals");
-  redirect(isMember(user) ? "/member?screened=1" : `/conversations?tab=review&open=${conv.id}`);
+  redirect(isMember(user) ? "/member?screened=1" : auto ? `/network/${p.id}` : `/conversations?tab=review&open=${conv.id}`);
 }
 
 export async function bookScreening(formData: FormData) {
@@ -216,6 +248,15 @@ export async function setBriefMembers(formData: FormData) {
   await audit({ tenantId: b.tenantId, actorId: user.id, action: "brief.members", entityType: "Brief", entityId: b.id, metadata: { open } });
   revalidatePath(`/requirements/${b.id}`); revalidatePath("/member");
   if (formData.get("openToMembers") === "on" && !summary) redirect(`/requirements/${b.id}?notice=member-summary`);
+}
+
+/** Whether a complete screening is accepted without a person reading it first. The owner's call. */
+export async function saveScreeningReview(formData: FormData) {
+  const user = await requireAdminAction();
+  const on = formData.get("autoAccept") === "on";
+  await prisma.tenant.update({ where: { id: user.tenantId }, data: { screeningAutoAccept: on } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "settings.screening", entityType: "Tenant", entityId: user.tenantId, metadata: { screeningAutoAccept: on } });
+  revalidatePath("/settings/screening");
 }
 
 /** Which voice the AI interviewer speaks in. The API key itself never leaves the server environment. */

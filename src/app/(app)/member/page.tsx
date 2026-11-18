@@ -18,8 +18,12 @@ import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { TrustCard, FitCard, ScreeningBadge } from "@/components/domain/trust";
 import { BookScreeningDrawer, PitchDrawer } from "@/components/domain/member-drawers";
-import { startScreening, setConsent, submitReferral } from "@/server/actions/members";
+import { startScreening, setConsent, submitReferral, confirmMyAvailability } from "@/server/actions/members";
+import type { AvailabilityStatus } from "@prisma/client";
 import { trustFor, fitFor } from "@/lib/trust-for";
+import { standardFor } from "@/lib/standard-for";
+import { ReferenceDrawer } from "@/components/domain/reference-request";
+import { ProofLine } from "@/components/domain/standard";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
 import { privacyOf } from "@/lib/privacy";
@@ -29,10 +33,12 @@ import { TRUST_BAND_LABEL } from "@/lib/trust";
 import { fitHighlights, ATTRIBUTES } from "@/lib/fit";
 import { rateBand } from "@/lib/demand";
 import { SCREENING_MINUTES, SCREENING_SCRIPT } from "@/lib/screening";
-import { ROUTE_LABELS } from "@/lib/labels";
+import { ROUTE_LABELS, AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 
 export const metadata = { title: "My network profile" };
+
+const SELF_STATUSES: AvailabilityStatus[] = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "TAKING_A_BREAK"];
 
 const REF_STATUS: Record<string, string> = { NEW: "New", CONTACTED: "Contacted", SCREENING: "Screening booked", ACCEPTED: "In the network", DECLINED: "Not now" };
 const PITCH_STATUS: Record<string, string> = { SUBMITTED: "Submitted", SHORTLISTED: "On the shortlist", DECLINED: "Not this time" };
@@ -51,6 +57,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
     prisma.brief.findMany({ where: { tenantId: p.tenantId, openToMembers: true, memberSummary: { not: null }, status: { notIn: ["FILLED", "CLOSED"] } }, select: { id: true, roles: true, headcount: true, engagementRoute: true, locations: true, sectors: true, capabilities: true, workRights: true, memberSummary: true }, orderBy: { updatedAt: "desc" } }),
     prisma.invite.findMany({ where: { inviterPersonId: p.id }, select: { id: true, name: true, status: true, expiresAt: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 25 }),
   ]);
+  const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: p.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
   const canInvite = mayInvite(p);
   const now = new Date();
   const tab = sp.tab ?? "home";
@@ -80,7 +87,8 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       {sp.sent ? <div className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. Your referral is with us to review.</div> : null}
 
       <div className="rounded-[28px] px-5 py-6 sm:px-9 sm:py-8 mb-5 bg-surface border border-line shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
-        <div className="flex items-center gap-4"><Avatar person={p} size="xl" ring /><div><div className="eyebrow text-ink-faint">Network member{p.memberSince ? ` since ${p.memberSince.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}` : ""}</div><h1 className="font-display text-[26px] sm:text-[34px] leading-[1.1] mt-2.5">{fullName(p)}</h1><p className="text-ink-muted text-[15px] mt-2">{p.headline ?? "Add a headline in your screening"}</p><div className="flex flex-wrap gap-2 mt-2.5"><ScreeningBadge status={p.screeningStatus} /><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} />{p.referralConsent === "yes" ? <Badge tone="teal" filled>on the radar</Badge> : p.referralConsent === "no" ? <Badge filled>not being referred</Badge> : <Badge tone="amber" filled>asked each time</Badge>}</div></div></div>
+        <div className="flex items-center gap-4"><Avatar person={p} size="xl" ring /><div><div className="eyebrow text-ink-faint">Network member{p.memberSince ? ` since ${p.memberSince.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}` : ""}</div><h1 className="font-display text-[26px] sm:text-[34px] leading-[1.1] mt-2.5">{fullName(p)}</h1><p className="text-ink-muted text-[15px] mt-2">{p.headline ?? "Add a headline in your screening"}</p><div className="flex flex-wrap gap-2 mt-2.5"><ScreeningBadge status={p.screeningStatus} /><AvailabilityBadge status={p.availabilityStatus} confirmedAt={p.availabilityConfirmedAt} nextCheckDate={p.nextCheckDate} />{p.referralConsent === "yes" ? <Badge tone="teal" filled>on the radar</Badge> : p.referralConsent === "no" ? <Badge filled>not being referred</Badge> : <Badge tone="amber" filled>asked each time</Badge>}</div>
+          <form action={confirmMyAvailability} className="mt-3.5 flex flex-wrap items-center gap-2"><input type="hidden" name="personId" value={p.id} /><Select name="status" aria-label="Your availability" defaultValue={SELF_STATUSES.includes(p.availabilityStatus) ? p.availabilityStatus : "OPEN_TO_CONVERSATIONS"} className="h-9 w-[230px] text-[13px]">{SELF_STATUSES.map((k) => <option key={k} value={k}>{AVAILABILITY_LABELS[k]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="Saving…">Confirm availability</SubmitButton></form></div></div>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)} className="min-w-[96px] border-l border-line pl-4 first:border-l-0 first:pl-0"><div className="text-[12px] font-medium text-ink-muted">{l}</div><div className="font-display num-grad text-[28px] tabular leading-[1.05] mt-1.5">{v}</div><div className="text-[12px] text-ink-faint">{h}</div></div>)}</div>
       </div>
 
@@ -89,7 +97,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           <Steps steps={[
             { title: "Account created", detail: "You are registered with the network.", state: "done" },
             { title: `${SCREENING_MINUTES}-minute screening`, detail: screened || submitted ? "Done. Thank you." : "A short structured conversation about what you do.", state: screened || submitted ? "done" : "current" },
-            { title: "Reviewed by a person", detail: screened ? "Your profile has been reviewed." : submitted ? "We are reading your screening now." : "Nothing goes live until someone has read it.", state: screened ? "done" : submitted ? "current" : "todo" },
+            { title: "Accepted", detail: screened ? "Your screening has been accepted." : submitted ? "We are reading your screening now." : "A complete screening is accepted quickly.", state: screened ? "done" : submitted ? "current" : "todo" },
             { title: "On the radar", detail: screened && p.referralConsent === "yes" ? "We will come to you first when something fits." : screened ? "Choose how you want to be referred, below." : "We come to you when a client needs someone like you.", state: screened && p.referralConsent === "yes" ? "done" : screened ? "current" : "todo" },
           ]} />
         </CardBody>
@@ -151,7 +159,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4">
-            <Card><CardHeader title="Your screening" description="A real conversation, structured. Nothing goes live until a person has reviewed it." /><CardBody>
+            <Card><CardHeader title="Your screening" description="A real conversation, structured, in your own time." /><CardBody>
               {screened ? <div className="flex items-center justify-between gap-3"><div><ScreeningBadge status="APPROVED" /><div className="text-[12px] text-ink-faint mt-1">Completed <DateText date={p.screenedAt ?? p.memberSince} relative />. Your profile is live in the network.</div></div><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><input type="hidden" name="restart" value="1" /><SubmitButton size="sm" variant="ghost" pendingText="…">Redo screening</SubmitButton></form></div>
                 : submitted ? <div><ScreeningBadge status="SUBMITTED" /><div className="text-[12px] text-ink-faint mt-1">A person is reviewing your answers. You will be on the radar for opportunities as soon as it is confirmed.</div></div>
                 : <div className="space-y-3"><div><b className="text-[15px]">Do your {SCREENING_MINUTES}-minute screening</b><p className="text-[13px] text-ink-muted mt-1 max-w-[60ch]">{SCREENING_SCRIPT.length} short sections: {SCREENING_SCRIPT.map((s) => s.title.toLowerCase()).join(", ")}. It is the one thing every member does, and it is what puts you on the radar for opportunities.</p></div><div className="flex flex-wrap gap-2"><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><SubmitButton pendingText="Starting…">Start the AI screening</SubmitButton></form><BookScreeningDrawer personId={p.id} label="Book a real call instead" /></div></div>}
@@ -160,11 +168,12 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             {fit.some((r) => r.combined !== null) ? <FitCard rows={fit} self /> : null}
           </div>
           <div className="space-y-4">
-            <TrustCard t={t} firstName={p.firstName} self screened={screened} workedWith={p.relationships.some((r) => r.workedTogether)} />
+            <TrustCard t={t} standard={standardFor(p, internal ? "internal" : "self")} firstName={p.firstName} self action={<ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} />} />
             <Card><CardHeader title="How the network sees you" description="This is the anonymised card a client or agency sees. Your name only after you consent." /><CardBody>
               <div className="flex items-center gap-2 min-w-0"><code className="text-[12px] bg-surface-muted rounded px-1.5 py-0.5">{anon.ref}</code><b className="text-[13px] truncate">{anon.headlineSummary || p.headline || "Profile"}</b></div>
-              <div className="flex flex-wrap gap-1 mt-1.5"><Chip>{anon.region ?? "region undisclosed"}</Chip><Chip>availability: {anon.availabilityBand}</Chip><Chip>vouched by {t.vouchedBy}</Chip>{highlights.map((h) => <Chip key={h}>{h}</Chip>)}{band ? <Chip>{band}</Chip> : null}</div>
-              <div className="text-[12px] text-ink-muted mt-1.5">{anon.evidenceSummary}</div>
+              <div className="flex flex-wrap gap-1 mt-1.5"><Chip>{anon.region ?? "region undisclosed"}</Chip><Chip>availability: {anon.availabilityBand}</Chip>{highlights.map((h) => <Chip key={h}>{h}</Chip>)}{band ? <Chip>{band}</Chip> : null}</div>
+              <ProofLine proofs={anon.proofs} className="mt-2" />
+              {anon.proofs.length ? null : <div className="text-[12px] text-ink-muted mt-1.5">Nothing on record yet. Your screening and a reference are the quickest two.</div>}
             </CardBody></Card>
           </div>
         </div>

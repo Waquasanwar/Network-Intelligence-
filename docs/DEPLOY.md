@@ -88,6 +88,7 @@ production). Never reuse the demo value.
 | `CRON_SECRET` | `openssl rand -base64 32` | gates the daily retention sweep (`/api/cron/retention`); Vercel Cron sends it automatically |
 | `AI_PROVIDER` | `heuristic` | no external AI calls; set `anthropic` + `ANTHROPIC_API_KEY` to enable Claude |
 | `SHOW_DEMO_ACCOUNTS` | *(unset / `false`)* | keep the demo panel off the login page |
+| `PUBLIC_NETWORK_SLUG` | your tenant slug, e.g. `amana` | the network the public page at `/` speaks for: its name, and where applications and needs land. Unset, it is the first tenant that runs a network |
 
 > **Client addresses.** Rate limits key on the visitor's address from `x-real-ip` (set by Vercel).
 > If you host elsewhere, put the app behind a proxy that sets `x-real-ip` itself and strips any

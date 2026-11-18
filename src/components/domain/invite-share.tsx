@@ -25,20 +25,19 @@ function useCopy() {
  * Everything needed to get one link in front of one person: the link, and one-tap ways to send it
  * from the tools people already use. Nothing is sent by the platform itself.
  */
-export function ShareKit({ url, message, email, compact = false }: { url: string; message: string; email?: string | null; compact?: boolean }) {
+export function ShareKit({ url, message, email, compact = false, subject = "An invitation to join our network", linkLabel = "Invitation link", social = true }: { url: string; message: string; email?: string | null; compact?: boolean; subject?: string; linkLabel?: string; social?: boolean }) {
   const { copied, copy } = useCopy();
-  const subject = "An invitation to join our network";
   const pill = "inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[12.5px] font-semibold text-ink hover:bg-surface-hover transition-colors";
   return (
     <div>
       <div className="flex items-center gap-2">
-        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label="Invitation link" className="min-w-0 flex-1 h-10 rounded-[12px] border border-line bg-surface-muted px-3 text-[12.5px] text-ink-muted outline-none truncate" />
+        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label={linkLabel} className="min-w-0 flex-1 h-10 rounded-[12px] border border-line bg-surface-muted px-3 text-[12.5px] text-ink-muted outline-none truncate" />
         <Button type="button" onClick={() => copy("link", url)} className="flex-none">{copied === "link" ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy link</>}</Button>
       </div>
       <div className={`flex flex-wrap gap-2 ${compact ? "mt-2.5" : "mt-3"}`}>
         <a className={pill} href={`mailto:${email ? encodeURIComponent(email) : ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`}><Mail className="h-3.5 w-3.5" /> Email</a>
         <a className={pill} href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</a>
-        <a className={pill} href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer"><Share2 className="h-3.5 w-3.5" /> LinkedIn</a>
+        {social ? <a className={pill} href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer"><Share2 className="h-3.5 w-3.5" /> LinkedIn</a> : null}
         <button type="button" className={pill} onClick={() => copy("msg", message)}>{copied === "msg" ? <><Check className="h-3.5 w-3.5 text-teal" /> Message copied</> : <><Copy className="h-3.5 w-3.5" /> Copy message</>}</button>
       </div>
     </div>

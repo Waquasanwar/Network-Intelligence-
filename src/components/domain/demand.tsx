@@ -3,6 +3,7 @@ import { cn, formatMoney } from "@/lib/utils";
 import { ROUTE_LABELS, SENIORITY_LABELS } from "@/lib/labels";
 import { FEE_MODEL_LABELS, SHORTLIST_LABELS, shortlistLabel, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS, fmt, rateBand, type Brief, type HardCheck, type FeeEstimate, type ShortlistDecision, type BriefStatus, type FeeStatus, type AccountKind, type FeeModel } from "@/lib/demand";
 import { Check, X, HelpCircle } from "lucide-react";
+import { ProofLine } from "@/components/domain/standard";
 
 export const KIND_LABEL: Record<AccountKind, string> = { CLIENT: "Client", AGENCY: "Agency", EXPERT_NETWORK: "Expert network" };
 const KIND_TONE: Record<AccountKind, "navy" | "amber" | "teal"> = { CLIENT: "navy", AGENCY: "amber", EXPERT_NETWORK: "teal" };
@@ -98,7 +99,7 @@ export function FeeBox({ est, model, pct, label = "Estimated fee to us", extra }
 }
 
 /** The anonymised card a client or agency sees. Never a name before introduction. */
-export function AnonCard({ refCode, headline, region, availabilityBand, evidenceSummary, rights, rateStated, tier, decision, kind, referred, clientNote, revealedName, actions }: { refCode: string; headline: string; region: string | null; availabilityBand: string; evidenceSummary: string; rights?: HardCheck; rateStated?: string | null; tier: string; decision: ShortlistDecision; kind?: AccountKind; referred?: boolean; clientNote?: string | null; revealedName?: string | null; actions?: React.ReactNode }) {
+export function AnonCard({ refCode, headline, region, availabilityBand, evidenceSummary, proofs = [], rights, rateStated, tier, decision, kind, referred, clientNote, revealedName, actions }: { refCode: string; headline: string; region: string | null; availabilityBand: string; evidenceSummary: string; proofs?: string[]; rights?: HardCheck; rateStated?: string | null; tier: string; decision: ShortlistDecision; kind?: AccountKind; referred?: boolean; clientNote?: string | null; revealedName?: string | null; actions?: React.ReactNode }) {
   const band = rateBand(rateStated);
   return (
     <li className="py-3 border-b border-line last:border-b-0">
@@ -112,7 +113,8 @@ export function AnonCard({ refCode, headline, region, availabilityBand, evidence
         {band ? <Chip>{band}</Chip> : null}
         <Chip>{tier === "meets" ? "meets the brief" : tier === "conversation" ? "one point to confirm" : "stretch"}</Chip>
       </div>
-      <div className="text-[12px] text-ink-muted mt-1.5">{evidenceSummary}</div>
+      <ProofLine proofs={proofs} className="mt-2" />
+      {!proofs.length || /shareable/.test(evidenceSummary) ? <div className="text-[12px] text-ink-muted mt-1.5">{evidenceSummary}</div> : null}
       {clientNote ? <div className="text-[12px] text-ink-muted mt-0.5">Note from us: {clientNote}</div> : null}
       {actions ? <div className="flex flex-wrap gap-2 mt-2">{actions}</div> : null}
     </li>

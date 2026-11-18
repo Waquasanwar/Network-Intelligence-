@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // Joining really is a sequence, so it is shown as one: three stops on a single path.
 const STEPS: { title: string; detail: string }[] = [
   { title: "Create your account", detail: "About two minutes. Paste your LinkedIn and we fill in the rest." },
-  { title: `Have the ${SCREENING_MINUTES}-minute screening`, detail: "A structured conversation about what you do and how you work. A person reviews it before anything goes live." },
+  { title: `Have the ${SCREENING_MINUTES}-minute screening`, detail: "A structured conversation about what you do and how you work, by voice or in writing, in your own time." },
   { title: "You're on the radar", detail: "When a client needs someone like you, we ask you first — fractional, contract or permanent." },
 ];
 

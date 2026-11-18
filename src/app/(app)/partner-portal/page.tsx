@@ -11,6 +11,7 @@ import { Badge, Chip } from "@/components/ui/badge";
 import { Input, Select, Textarea, Field } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { RouteBadge } from "@/components/domain/badges";
+import { ProofLine } from "@/components/domain/standard";
 import { DateText } from "@/components/domain/date";
 import { submitPartnerRequirement, requestIntroductionFromPortal } from "@/server/actions/partners";
 import { REQUIREMENT_STATUS_LABELS, ROUTE_LABELS, SENIORITY_LABELS } from "@/lib/labels";
@@ -32,7 +33,7 @@ export default async function PartnerPortal() {
   const results = await Promise.all(
     partner.requirements.map(async (r) => {
       if (!networkTenantId || !r.linkedOpportunityId || !["RESULTS_SHARED", "INTRO_REQUESTED"].includes(r.status)) return { requirement: r, results: [] as ReturnType<typeof redactForPartner>[] };
-      const opp = await prisma.opportunity.findFirst({ where: { id: r.linkedOpportunityId, tenantId: networkTenantId }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: { select: { evidenceType: true, visibility: true, description: true, context: true } } } } } } } });
+      const opp = await prisma.opportunity.findFirst({ where: { id: r.linkedOpportunityId, tenantId: networkTenantId }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: { select: { evidenceType: true, visibility: true, description: true, context: true } }, relationships: { select: { sourceType: true, introducedById: true, workedTogether: true, wouldWorkTogetherAgain: true } }, vouches: { select: { wouldRecommend: true, voucherKind: true } }, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } } } });
       // Only people who are happy to be shown anonymously; the reference is keyed to this agency.
       const safe = opp ? opp.matches.filter((m) => mayShowCard(m.person)).map((m) => redactForPartner(m.person, { ref: partnerRef(partner.id, m.person.id), hideRegion: partnerHidden({ privacy: m.person.privacy as never }).region })) : [];
       const leaks = containsForbiddenPartnerFields(safe);
@@ -65,7 +66,7 @@ export default async function PartnerPortal() {
                 <p className="text-xs text-ink-muted mb-3">{r.description}</p>
                 {rows.length === 0 ? <div className="text-xs text-ink-faint">{r.status === "SUBMITTED" || r.status === "REVIEWING" ? "The network owner is reviewing this requirement." : "No shareable results yet."}</div> : (
                   <table className="data">
-                    <thead><tr><th>Ref</th><th>Profile</th><th>Capabilities</th><th>Region</th><th>Availability</th><th>Evidence</th><th></th></tr></thead>
+                    <thead><tr><th>Ref</th><th>Profile</th><th>Capabilities</th><th>Region</th><th>Availability</th><th>On record</th><th></th></tr></thead>
                     <tbody>
                       {rows.map((p) => (
                         <tr key={p.ref}>
@@ -74,7 +75,7 @@ export default async function PartnerPortal() {
                           <td><div className="flex flex-wrap gap-1 max-w-[240px]">{p.capabilities.slice(0, 4).map((c) => <Chip key={c}>{c}</Chip>)}</div></td>
                           <td className="text-xs">{p.region ?? "undisclosed"}</td>
                           <td><Badge tone={p.availabilityBand === "near-term" ? "teal" : "neutral"}>{p.availabilityBand}</Badge></td>
-                          <td className="text-xs text-ink-muted">{p.evidenceSummary}</td>
+                          <td className="min-w-[220px]">{p.proofs.length ? <ProofLine proofs={p.proofs} className="flex-col gap-y-0.5" /> : <span className="text-xs text-ink-muted">{p.evidenceSummary}</span>}</td>
                           <td className="text-right"><form action={requestIntroductionFromPortal}><input type="hidden" name="requirementId" value={r.id} /><input type="hidden" name="ref" value={p.ref} /><SubmitButton size="sm" variant="secondary" pendingText="…">Request introduction</SubmitButton></form></td>
                         </tr>
                       ))}

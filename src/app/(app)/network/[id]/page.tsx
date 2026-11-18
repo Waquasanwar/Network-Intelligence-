@@ -23,6 +23,8 @@ import { InviteContactDrawer } from "@/components/domain/invite-drawers";
 import { mergeRegistration } from "@/server/actions/invites";
 import { startScreening } from "@/server/actions/members";
 import { trustFor, fitFor } from "@/lib/trust-for";
+import { standardFor } from "@/lib/standard-for";
+import { ReferenceDrawer } from "@/components/domain/reference-request";
 import { ReferDrawer, type ReferTarget } from "@/components/domain/refer";
 import { ReferredCard, type ReferredRow } from "@/components/domain/referred-card";
 import { toDomain } from "@/lib/brief-domain";
@@ -73,6 +75,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
     : null;
   const canMerge = user.role === "OWNER" || user.role === "ADMIN";
 
+  const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: person.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
   const [trust, fit, users] = await Promise.all([trustFor(person), fitFor(person), prisma.user.findMany({ where: { tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true, name: true } })]);
   // What the profile's drawings show.
   const ring = circleOf({ worked: person.relationships.some((r) => r.workedTogether), screened: person.screeningStatus === "APPROVED" || !!person.screenedAt, trust: trust.score });
@@ -238,7 +241,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             <FitCard rows={fit} />
           </div>
           <div className="space-y-4">
-            <TrustCard t={trust} firstName={person.firstName} screened={person.screeningStatus === "APPROVED" || !!person.screenedAt} workedWith={person.relationships.some((r) => r.workedTogether)} action={<VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} />} />
+            <TrustCard t={trust} standard={standardFor(person)} firstName={person.firstName} action={<span className="flex flex-wrap justify-end gap-1.5"><ReferenceDrawer personId={person.id} about={person.firstName} open={openRefs} /><VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} /></span>} />
             {person.vouches.length ? <VouchList vouches={person.vouches} /> : null}
             <Card>
               <CardHeader title="Details" />

@@ -1,4 +1,6 @@
 import type { Role, TenantType } from "@prisma/client";
+import { proofsForOutside } from "@/lib/standard";
+import { standardInput } from "@/lib/standard-for";
 
 /**
  * Server-side authorisation (spec §12). Every data access goes through these helpers.
@@ -107,6 +109,12 @@ export type PersonFull = {
   relationships?: { relationshipNotes?: string | null; [k: string]: unknown }[];
   evidence?: { description: string; visibility: string; evidenceType: string; context: string; [k: string]: unknown }[];
   conversations?: unknown[];
+  // Read only to work out which of the six proofs are held. None of it is passed on.
+  vouches?: { wouldRecommend?: unknown; [k: string]: unknown }[];
+  screeningStatus?: string | null;
+  screenedAt?: Date | null;
+  availabilityConfirmedAt?: Date | null;
+  nextCheckDate?: Date | null;
 };
 
 export type PartnerSafePerson = {
@@ -119,6 +127,8 @@ export type PartnerSafePerson = {
   region: string | null;
   availabilityBand: "near-term" | "selective" | "not-now" | "unknown";
   evidenceSummary: string;
+  /** Which of the six proofs we hold, as statements that name nobody (see src/lib/standard.ts). */
+  proofs: string[];
 };
 
 function availabilityBand(status: string): PartnerSafePerson["availabilityBand"] {
@@ -162,6 +172,7 @@ export function redactForPartner(p: PersonFull, opts: { ref?: string; hideRegion
     region: opts.hideRegion ? null : p.primaryCountry ?? null,
     availabilityBand: availabilityBand(p.availabilityStatus),
     evidenceSummary,
+    proofs: proofsForOutside(standardInput(p)),
   };
 }
 

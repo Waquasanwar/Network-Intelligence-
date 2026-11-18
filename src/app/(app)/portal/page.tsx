@@ -47,7 +47,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   const accounts = internal ? await prisma.commercialAccount.findMany({ where: { tenantId: user.tenantId, portalEnabled: true }, orderBy: { createdAt: "asc" } }) : [];
   if (!account) return <EmptyState title="No portal account" description={internal ? "Enable the portal on an account in Requirements." : "Your account has not been connected to the portal yet. Ask your contact at Network Intelligence."} />;
   const [briefs, card] = await Promise.all([
-    prisma.brief.findMany({ where: { accountId: account.id }, include: { shortlist: { include: { person: { include: { evidence: true, relationships: true } } } } }, orderBy: { updatedAt: "desc" } }),
+    prisma.brief.findMany({ where: { accountId: account.id }, include: { shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: { select: { wouldRecommend: true, voucherKind: true } }, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } } }, orderBy: { updatedAt: "desc" } }),
     loadRateCard(account.tenantId),
   ]);
   const preview = sp.q?.trim() ? parseBrief(sp.q) : null;
@@ -107,7 +107,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
                       if (leaked.length) throw new Error(`Portal redaction failed: ${leaked.join(", ")}`);
                       const checks = s.checks as HardCheck[];
                       const revealed = shortlistNameVisible(s, s.person);
-                      return <AnonCard key={s.id} refCode={safe.ref} headline={safe.headlineSummary || "Profile"} region={safe.region} availabilityBand={safe.availabilityBand} evidenceSummary={safe.evidenceSummary} rights={checks.find((c) => c.label === "Work rights")} rateStated={hidden.rateBand ? null : s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={revealed ? fullName(s.person) : null}
+                      return <AnonCard key={s.id} refCode={safe.ref} headline={safe.headlineSummary || "Profile"} region={safe.region} availabilityBand={safe.availabilityBand} evidenceSummary={safe.evidenceSummary} proofs={safe.proofs} rights={checks.find((c) => c.label === "Work rights")} rateStated={hidden.rateBand ? null : s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={revealed ? fullName(s.person) : null}
                         actions={s.decision === "PROPOSED" ? <><form action={portalRespond}><input type="hidden" name="itemId" value={s.id} /><input type="hidden" name="response" value="interested" /><SubmitButton size="sm" pendingText="…">Interested — request an introduction</SubmitButton></form><form action={portalRespond}><input type="hidden" name="itemId" value={s.id} /><input type="hidden" name="response" value="pass" /><Button size="sm" variant="ghost" type="submit">Not for us</Button></form></> : s.decision === "CLIENT_INTERESTED" ? <span className="text-[12px] text-ink-muted">Introduction requested. We are asking the person for consent{b.termsAccepted ? "" : " — accept the terms above to proceed"}.</span> : null} />;
                     })}</ul>
                   )}

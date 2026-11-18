@@ -54,6 +54,13 @@ export type AuditAction =
   | "vouch.create"
   | "screening.start"
   | "screening.submit"
+  | "screening.auto_accept"
+  | "reference.request"
+  | "reference.answer"
+  | "reference.revoke"
+  | "public.apply"
+  | "public.need"
+  | "public.handle"
   | "screening.approve"
   | "referral.create"
   | "referral.update"
@@ -65,7 +72,8 @@ export type AuditAction =
   | "brief.on_spec"
   | "shortlist.referred"
   | "screening.config"
-  | "settings.security";
+  | "settings.security"
+  | "settings.screening";
 
 export async function audit(input: {
   tenantId: string;

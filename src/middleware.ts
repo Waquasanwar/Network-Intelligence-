@@ -57,7 +57,8 @@ export default auth(async (req) => {
   const user = req.auth?.user as (typeof req.auth extends null ? never : { id: string; tenantId: string; role: Role; tenantType: TenantType }) | undefined;
 
   if (!user) {
-    if (pathname === "/login" || pathname === "/join" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname.startsWith("/api/cron") || pathname === "/api/health") return pass();
+    // The public page, an invitation, and a reference link are the only pages that need no session.
+    if (pathname === "/" || pathname === "/login" || pathname === "/join" || pathname === "/vouch" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname.startsWith("/api/cron") || pathname === "/api/health") return pass();
     const url = new URL("/login", req.nextUrl);
     url.searchParams.set("callbackUrl", pathname);
     return withCsp(NextResponse.redirect(url));
@@ -69,7 +70,7 @@ export default auth(async (req) => {
   }
 
   // Server-side route authorisation by role (spec §12). Object-level checks happen in server code.
-  if (pathname === "/join") return pass();
+  if (pathname === "/join" || pathname === "/vouch") return pass();
   if (!pathname.startsWith("/api") && !canAccessPath({ id: user.id, tenantId: user.tenantId, role: user.role, tenantType: user.tenantType }, pathname)) {
     return withCsp(NextResponse.redirect(new URL("/forbidden", req.nextUrl)));
   }

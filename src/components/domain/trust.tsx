@@ -7,6 +7,8 @@ import { ATTRIBUTES, type FitProfileRow } from "@/lib/fit";
 import type { ScreeningStatus, Vouch } from "@prisma/client";
 import { DateText } from "./date";
 import { StyleRadar } from "@/components/domain/person-visuals";
+import { ProofPips, StandardMarks } from "@/components/domain/standard";
+import type { Standard } from "@/lib/standard";
 
 const SCREEN: Record<ScreeningStatus, [string, "neutral" | "amber" | "navy" | "teal"]> = { NONE: ["Not screened", "neutral"], REGISTERED: ["Registered · needs screening", "amber"], INVITED: ["Invited to screening", "amber"], BOOKED: ["Screening call booked", "navy"], SUBMITTED: ["Screening submitted · review", "amber"], APPROVED: ["Screened", "teal"] };
 export function ScreeningBadge({ status }: { status: ScreeningStatus }) { const [l, t] = SCREEN[status]; return <Badge tone={t} filled>{l}</Badge>; }
@@ -25,7 +27,8 @@ export function TrustMini({ t }: { t: TrustScore }) {
   return <span className="inline-flex items-center gap-1.5" title={`${TRUST_BAND_LABEL[t.band]} · vouched by ${t.vouchedBy}`}><Ring score={t.score} size={26} /><b className="text-[13px] tabular">{t.score}</b><small className="text-[12px] text-ink-faint whitespace-nowrap">{t.vouchedBy} vouch{t.vouchedBy === 1 ? "" : "es"}</small></span>;
 }
 
-export function TrustCard({ t, firstName, self, screened, workedWith, action }: { t: TrustScore; firstName: string; self?: boolean; screened: boolean; workedWith: boolean; action?: React.ReactNode }) {
+export function TrustCard({ t, standard, firstName, self, action }: { t: TrustScore; standard: Standard; firstName: string; self?: boolean; action?: React.ReactNode }) {
+  const caution = t.breakdown.find((b) => b.points < 0);
   return (
     <Card>
       <CardHeader title="Trust" action={action} />
@@ -34,20 +37,24 @@ export function TrustCard({ t, firstName, self, screened, workedWith, action }: 
           <Ring score={t.score} label="of 100" size={72} />
           <div className="min-w-0">
             <div className="text-[15px] font-semibold">{TRUST_BAND_LABEL[t.band]}</div>
-            <p className="text-[12.5px] text-ink-muted mt-0.5">{self ? "How many people stand behind you, and how well the network knows you." : `How many people stand behind ${firstName}, and how well the network knows them. Network confidence, not a judgement.`}</p>
-            <div className="flex flex-wrap gap-1 mt-2"><Chip>vouched by {t.vouchedBy}</Chip><Chip>{screened ? "screened" : "not screened"}</Chip>{workedWith ? <Chip>worked with directly</Chip> : null}</div>
+            <p className="text-[12.5px] text-ink-muted mt-0.5">{self ? "Six proofs of how well the network knows you. Each is a fact on record, not a promise." : `Six proofs of how well the network knows ${firstName}. Each is a fact on record, not a judgement.`}</p>
+            <div className="mt-2 flex items-center gap-2 text-[12.5px] font-semibold text-ink"><ProofPips s={standard} />{standard.line}</div>
           </div>
         </div>
-        <ul className="mt-4 space-y-2">
-          {t.breakdown.map((b) => (
-            <li key={b.label} className="grid grid-cols-[130px_1fr_34px] gap-x-2.5 items-center text-[12px]">
-              <span className="text-ink-muted">{b.label}</span>
-              <div className="h-1.5 rounded-full bg-surface-muted border border-line overflow-hidden"><div className={cn("h-full rounded-full", b.points < 0 ? "bg-amber" : "bg-navy")} style={{ width: `${b.max ? Math.min(100, Math.max(0, (b.points / b.max) * 100)) : 100}%` }} /></div>
-              <b className={cn("text-right tabular", b.points < 0 && "text-amber")}>{b.points > 0 ? "+" : ""}{b.points}</b>
-              <small className="col-span-3 text-[12px] text-ink-faint -mt-1">{b.note}</small>
-            </li>
-          ))}
-        </ul>
+        <StandardMarks s={standard} className="mt-4" />
+        {caution ? <p className="mt-3 text-[12.5px] font-medium text-amber">{caution.note}</p> : null}
+        <Fold className="mt-3 border-t border-line pt-3" summary={<span className="text-[13px] font-semibold text-ink">How the score adds up</span>}>
+          <ul className="mt-3 space-y-2">
+            {t.breakdown.map((b) => (
+              <li key={b.label} className="grid grid-cols-[130px_1fr_34px] gap-x-2.5 items-center text-[12px]">
+                <span className="text-ink-muted">{b.label}</span>
+                <div className="h-1.5 rounded-full bg-surface-muted border border-line overflow-hidden"><div className={cn("h-full rounded-full", b.points < 0 ? "bg-amber" : "bg-navy")} style={{ width: `${b.max ? Math.min(100, Math.max(0, (b.points / b.max) * 100)) : 100}%` }} /></div>
+                <b className={cn("text-right tabular", b.points < 0 && "text-amber")}>{b.points > 0 ? "+" : ""}{b.points}</b>
+                <small className="col-span-3 text-[12px] text-ink-faint -mt-1">{b.note}</small>
+              </li>
+            ))}
+          </ul>
+        </Fold>
       </CardBody>
     </Card>
   );

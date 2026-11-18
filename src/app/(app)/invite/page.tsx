@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { handlePublicRequest } from "@/server/actions/public";
+import { gaps, type ProofKey } from "@/lib/standard";
+import { standardInput } from "@/lib/standard-for";
 import { ArrowRight, Globe, MailCheck, RotateCcw, UserCheck, Users } from "lucide-react";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
@@ -19,7 +22,8 @@ export const metadata = { title: "Grow the network" };
 
 const WEEK = 7 * 86_400_000;
 
-export default async function InvitePage() {
+export default async function InvitePage({ searchParams }: { searchParams: Promise<{ invited?: string; notice?: string }> }) {
+  const sp = await searchParams;
   const user = await requireInternal();
   const tenantId = user.tenantId;
   const now = new Date();
@@ -37,6 +41,11 @@ export default async function InvitePage() {
     prisma.relationship.groupBy({ by: ["introducedById"], where: { introducedById: { not: null }, person: { tenantId } }, _count: { _all: true }, orderBy: { _count: { introducedById: "desc" } }, take: 6 }),
     prisma.person.findMany({ where: { tenantId, memberSince: { gte: since }, memberUser: { isNot: null } }, select: { memberSince: true } }),
   ]);
+  // Where the network is thin: how many people do not yet hold each of the six proofs.
+  const forGaps = await prisma.person.findMany({ where: { tenantId }, take: 2000, select: { availabilityStatus: true, availabilityConfirmedAt: true, nextCheckDate: true, screeningStatus: true, screenedAt: true, relationships: { select: { sourceType: true, introducedById: true, workedTogether: true, wouldWorkTogetherAgain: true } }, vouches: { select: { wouldRecommend: true, voucherKind: true } }, evidence: { select: { evidenceType: true, context: true } }, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } });
+  const thin = gaps(forGaps.map((p) => standardInput(p, now)));
+  const THIN: [ProofKey, string][] = [["screened", "not screened"], ["vouched", "with nobody vouching"], ["current", "out of date"], ["known", "came to you directly"], ["worked", "not yet worked with"], ["delivered", "with no delivery on record"]];
+  const applications = await prisma.publicRequest.findMany({ where: { tenantId, kind: "JOIN", status: "NEW" }, orderBy: { createdAt: "asc" }, take: 50 });
   const connectors = introduced.length ? await prisma.person.findMany({ where: { tenantId, id: { in: introduced.map((i) => i.introducedById!) } }, select: { id: true, firstName: true, lastName: true } }) : [];
   const connectorRows = introduced.map((i) => { const p = connectors.find((c) => c.id === i.introducedById); return p ? { label: fullName(p), value: i._count._all, href: `/network/${p.id}` } : null; }).filter((r): r is { label: string; value: number; href: string } => !!r);
 
@@ -58,7 +67,7 @@ export default async function InvitePage() {
 
   return (
     <>
-      <PageHeader title="Grow the network" description="Bring in people you would put your name behind. They register, have their screening, and you review them before they go live." />
+      <PageHeader title="Grow the network" description="Bring in people you would put your name behind. They register, do their screening and ask for references themselves." />
 
       <ol className="figures mb-6">
         {steps.map((st, i) => (
@@ -70,8 +79,37 @@ export default async function InvitePage() {
         ))}
       </ol>
 
+      {THIN.some(([k]) => thin[k] > 0) ? (
+        <p className="mb-6 -mt-2 text-[13.5px] leading-[1.7] text-ink-muted" data-thin>
+          <b className="font-semibold text-ink">Where it is thin.</b>{" "}
+          {THIN.filter(([k]) => thin[k] > 0).map(([k, label], i, all) => <span key={k}><Link href={`/network?missing=${k}`} className="font-semibold text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink">{thin[k]} {label}</Link>{i < all.length - 1 ? ", " : "."}</span>)}
+          {" "}Screening, references and availability need nothing from you but sending a link.
+        </p>
+      ) : null}
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
+          {applications.length ? (
+            <Card id="applications">
+              <CardHeader title={`${applications.length} ${applications.length === 1 ? "application" : "applications"} from your public page`} description="Nobody is in until you say so. Inviting creates their personal link; declining deletes what they sent." />
+              <CardBody className="pt-0">
+                <ul className="divide-y divide-line">
+                  {applications.map((a) => (
+                    <li key={a.id} className="py-3.5 first:pt-1" data-application>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0"><b className="block text-[14px] font-semibold">{a.name}</b><span className="block text-[13px] text-ink-muted">{a.headline}</span><span className="block text-[12px] text-ink-faint">{a.email}{a.knows ? ` · says they know ${a.knows}` : " · came in directly"}{a.linkedinUrl ? <> · <a href={a.linkedinUrl} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-2">LinkedIn</a></> : null}</span></div>
+                        <div className="flex flex-none gap-1.5">
+                          <form action={handlePublicRequest}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="decision" value="invite" /><SubmitButton size="sm" pendingText="…">Invite</SubmitButton></form>
+                          <form action={handlePublicRequest}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="decision" value="decline" /><SubmitButton size="sm" variant="ghost" pendingText="…">Decline</SubmitButton></form>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[13px] leading-[1.55] text-ink-muted whitespace-pre-line max-w-[78ch]">{a.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              </CardBody>
+            </Card>
+          ) : null}
           <Card>
             <CardHeader title="Invite someone by name" description="A personal invitation: it works once, lasts 30 days, and you see when it is opened and when they join." />
             <CardBody>
@@ -99,8 +137,8 @@ export default async function InvitePage() {
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader title="Invitations" description="Personal invitations from you, your team and your members." />
+          <Card id="invitations" className="scroll-mt-24">
+            <CardHeader title="Invitations" description={sp.invited ? "Their invitation is at the top of this list. Copy the link and send it from your own email." : sp.notice === "already-in" ? "That person already has a login here, so no invitation was needed." : "Personal invitations from you, your team and your members."} />
             <CardBody className="px-0 pb-0">
               {invites.length === 0 ? <div className="px-6 pb-6"><EmptyState icon={MailCheck} title="No invitations sent yet" description="Invite someone by name above and it is tracked here: sent, opened, joined." /></div> : (
                 <table className="data">

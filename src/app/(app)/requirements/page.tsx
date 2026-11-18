@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { handlePublicRequest } from "@/server/actions/public";
 import { requireInternal } from "@/server/session";
 import { NextStep } from "@/components/ui/next-step";
 import { requirementsStep } from "@/server/next-step";
@@ -47,6 +48,8 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
     feeSummary(user.tenantId),
   ]);
 
+  const enquiries = await prisma.publicRequest.findMany({ where: { tenantId: user.tenantId, kind: "NEED", status: "NEW" }, orderBy: { createdAt: "asc" }, take: 50 });
+
   // Co-pilot: parse and retrieve on the server. Nothing is saved until the human chooses an account.
   let copilot: { brief: ReturnType<typeof parseBrief>; groups: { tier: string; rows: ReturnType<typeof matchBrief> }[]; people: Map<string, BriefPersonRow>; defaultAccountId: string | null } | null = null;
   type BriefPersonRow = { id: string; firstName: string; lastName: string; headline: string | null; availabilityStatus: BriefPerson["availabilityStatus"]; availabilityConfirmedAt: Date | null; nextCheckDate: Date | null };
@@ -84,6 +87,27 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
       </StatStrip>
       <Tabs items={[{ key: "briefs", label: "Requirements", count: briefs.length }, { key: "accounts", label: "Accounts", count: accounts.length }, ...(money ? [{ key: "fees", label: "Fees", count: fees.length }] : [])]} current={tab} base="/requirements" />
       {tab === "briefs" ? (<>
+      {enquiries.length ? (
+        <Card className="mb-5" id="enquiries">
+          <CardHeader title={`${enquiries.length} ${enquiries.length === 1 ? "need" : "needs"} from your public page`} description="Sent in by someone with no login. Reading one hands it to the co-pilot below; closing it deletes what they sent." />
+          <CardBody className="pt-0">
+            <ul className="divide-y divide-line">
+              {enquiries.map((e) => (
+                <li key={e.id} className="py-3.5 first:pt-1" data-enquiry>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0"><b className="block text-[14px] font-semibold">{e.organisation ?? e.name}</b><span className="block text-[12px] text-ink-faint">{e.name} · {e.email}</span></div>
+                    <div className="flex flex-none gap-1.5">
+                      <form action={handlePublicRequest}><input type="hidden" name="id" value={e.id} /><input type="hidden" name="decision" value="read" /><SubmitButton size="sm" pendingText="…">Read with the co-pilot</SubmitButton></form>
+                      <form action={handlePublicRequest}><input type="hidden" name="id" value={e.id} /><input type="hidden" name="decision" value="decline" /><SubmitButton size="sm" variant="ghost" pendingText="…">Close</SubmitButton></form>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[13px] leading-[1.55] text-ink-muted whitespace-pre-line max-w-[90ch]">{e.message}</p>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <Card className="mb-5 border-navy-400/30 shadow-[var(--shadow-card),0_0_0_4px_rgba(79,111,214,0.06)]">
         <CardBody className="pt-4">

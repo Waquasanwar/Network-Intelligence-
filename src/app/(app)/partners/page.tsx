@@ -36,7 +36,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
   const previews = selected
     ? await Promise.all(
         selected.requirements.filter((r) => r.linkedOpportunityId).map(async (r) => {
-          const opp = await prisma.opportunity.findFirst({ where: { id: r.linkedOpportunityId!, tenantId: user.tenantId }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: true } } } } } });
+          const opp = await prisma.opportunity.findFirst({ where: { id: r.linkedOpportunityId!, tenantId: user.tenantId }, include: { matches: { where: { humanDecision: { in: ["RECOMMEND", "POSSIBLE"] } }, include: { person: { include: { evidence: true, relationships: true, vouches: { select: { wouldRecommend: true, voucherKind: true } }, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } } } });
           return { requirement: r, results: opp ? opp.matches.filter((m) => mayShowCard(m.person)).map((m) => redactForPartner({ ...m.person, seniority: m.person.seniority, engagementPreferences: m.person.engagementPreferences }, { ref: partnerRef(selected!.id, m.person.id), hideRegion: partnerHidden({ privacy: m.person.privacy as never }).region })) : [] };
         }),
       )

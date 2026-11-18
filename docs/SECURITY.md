@@ -9,6 +9,8 @@ Security is a product requirement (spec §12). This is what the MVP does today a
 
 ## Authorisation
 - Route-level: `middleware.ts` redirects unauthenticated users and blocks partners/clients from internal routes (`canAccessPath`).
+- Pages with no session: `/` (the public page), `/login`, `/join` (needs a sealed invitation) and `/vouch` (needs a sealed, single-use reference link). The public page shows the network's name and its published standard, never who is in it. Its two forms (`applyToJoin`, `sendNeed`) and the referee's answer (`answerReference`) are the only public server actions besides joining; each is throttled per connection, carries a trap field for scripts, and writes only to a holding table (`PublicRequest`) or one reference for one person. Nothing sent in becomes a member, a client or a requirement until someone on the team accepts it. Declining deletes it; the daily retention sweep deletes the rest after 90 to 180 days.
+- References by link are an outside voice, not a vouch from inside the network: they are counted and shown apart, weighted lower in the trust score, and the team can read every word. A person could forward their own link to a friend, which is why a reference alone never stands in for the other five proofs.
 - Object-level: every page and server action loads the record and calls `assertSameTenant` before reading or writing. Cross-tenant lookups return 404, never 403, so record existence is not leaked.
 - Role gates: approvals (`canApprove`) are internal only; commercial terms and role changes are OWNER/ADMIN; identity reveal is audited.
 

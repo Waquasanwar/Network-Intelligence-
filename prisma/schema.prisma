@@ -35,6 +35,9 @@ model Tenant {
   voiceSettings Json?
   /// Bumped to revoke every network invite link issued so far (see src/lib/invite.ts).
   inviteVersion Int        @default(0)
+  /// Accept a complete screening without a person reading it first. Off unless the owner turns it
+  /// on; incomplete ones always wait for a person (see src/server/screening-apply.ts).
+  screeningAutoAccept Boolean @default(false)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -52,6 +55,8 @@ model Tenant {
   savedViews         SavedView[]
   introductions      Introduction[]
   scheduledMeetings  ScheduledConversation[]
+  referenceRequests  ReferenceRequest[]
+  publicRequests     PublicRequest[]
 }
 
 enum Role {
@@ -247,6 +252,7 @@ model Person {
   relocationProfile RelocationProfile?
   scheduledMeetings ScheduledConversation[]
   introducedPeople  Relationship[]          @relation("IntroducedBy")
+  referenceRequests ReferenceRequest[]      @relation("ReferenceAbout")
   teamMemberships   TeamShortlistMember[]
   shortlistItems    ShortlistItem[]
   feeLines          FeeLine[]
@@ -1025,4 +1031,75 @@ model Invite {
 
   @@index([tenantId, status])
   @@index([inviterPersonId])
+}
+
+enum ReferenceStatus {
+  SENT
+  ANSWERED
+  REVOKED
+}
+
+/// A request for a reference, answered by link by someone who has no login here. Single use, and
+/// it expires. The answer becomes a Vouch of kind EXTERNAL, which the trust score weighs lower
+/// than a vouch from inside the network. Trust that does not need a phone call.
+model ReferenceRequest {
+  id           String          @id @default(cuid())
+  tenantId     String
+  personId     String // who the reference is about
+  createdById  String? // the team member who asked, when it was not the person themselves
+  refereeName  String
+  refereeEmail String?
+  context      String // how the referee knows their work, in the asker's words
+  status       ReferenceStatus @default(SENT)
+  openedAt     DateTime?
+  answeredAt   DateTime?
+  vouchId      String?         @unique
+  expiresAt    DateTime
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person Person @relation("ReferenceAbout", fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId, status])
+  @@index([tenantId])
+}
+
+enum PublicRequestKind {
+  JOIN
+  NEED
+}
+
+enum PublicRequestStatus {
+  NEW
+  ACCEPTED
+  DECLINED
+}
+
+/// Something sent through the public page by someone with no login: an application to join the
+/// network, or a need from a company or an agency. Nothing here is a member or a client until a
+/// person on the team accepts it.
+model PublicRequest {
+  id           String              @id @default(cuid())
+  tenantId     String
+  kind         PublicRequestKind
+  status       PublicRequestStatus @default(NEW)
+  name         String
+  email        String
+  organisation String?
+  headline     String? // what they do, in a line (applications)
+  linkedinUrl  String?
+  knows        String? // who they know in the network, if anyone (applications)
+  message      String
+  consentAt    DateTime
+  handledAt    DateTime?
+  handledById  String?
+  inviteId     String? // the invitation an accepted application became
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, kind, status])
+  @@index([email])
 }

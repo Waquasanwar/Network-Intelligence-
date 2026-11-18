@@ -42,6 +42,13 @@ describe("server-action surface", () => {
     // Joining: the encrypted invitation decides the tenant, and the endpoint is throttled.
     registerMember: [/resolveInvite\(/, /rateLimit\("join"/],
     enrichSelfDraft: [/resolveInvite\(/, /rateLimit\("join"/],
+    // The public page's two forms. The network is fixed on the server, never taken from the caller,
+    // and each is throttled per connection before anything is read or stored.
+    applyToJoin: [/publicNetwork\(/, /rateLimit\("join"/],
+    sendNeed: [/publicNetwork\(/, /rateLimit\("join"/],
+    // A referee has no login. The sealed, single-use link decides which request it is, and the
+    // endpoint is throttled. It can only add one reference to the one person the link was made for.
+    answerReference: [/readReference\(/, /rateLimit\("join"/],
     // Signing out needs no permission; it only ever ends the caller's own session.
     signOutAction: [/signOut\(/],
   };

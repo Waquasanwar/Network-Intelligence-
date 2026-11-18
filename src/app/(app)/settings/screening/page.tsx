@@ -4,7 +4,9 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Input, Select, Field, Checkbox } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Badge } from "@/components/ui/badge";
-import { saveVoiceSettings } from "@/server/actions/members";
+import { saveVoiceSettings, saveScreeningReview } from "@/server/actions/members";
+import { prisma } from "@/lib/db";
+import { AUTO_ACCEPT_COMPLETENESS } from "@/server/screening-apply";
 import { loadVoiceSettings } from "@/server/queries";
 import { PROVIDER_LABELS, VOICE_MODELS } from "@/lib/voice-config";
 import { SCREENING_SCRIPT, SCREENING_MINUTES } from "@/lib/screening";
@@ -15,6 +17,8 @@ export const metadata = { title: "The screening conversation" };
 export default async function ScreeningSettingsPage() {
   const user = await requireInternal();
   const { settings, keyConfigured } = await loadVoiceSettings(user.tenantId);
+  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { screeningAutoAccept: true } });
+  const canChange = user.role === "OWNER" || user.role === "ADMIN";
 
   return (
     <>
@@ -25,6 +29,16 @@ export default async function ScreeningSettingsPage() {
       />
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
+          <Card>
+            <CardHeader title="Who reads each screening" description="The conversation runs without you either way. This decides whether you read every one before it counts." action={tenant?.screeningAutoAccept ? <Badge tone="teal" filled>automatic</Badge> : <Badge tone="neutral" filled>you read each one</Badge>} />
+            <CardBody>
+              <form action={saveScreeningReview} className="space-y-3">
+                <Checkbox name="autoAccept" label="Accept complete screenings automatically" defaultChecked={!!tenant?.screeningAutoAccept} disabled={!canChange} />
+                <p className="text-[12.5px] text-ink-muted max-w-[68ch]">When this is on, a screening that answers at least {AUTO_ACCEPT_COMPLETENESS}% of the questions that matter is accepted the moment it is finished, and the person holds the Screened proof straight away. Anything less complete still waits for you. On a profile it is marked as accepted automatically, so you always know which ones nobody has read.</p>
+                {canChange ? <div className="flex justify-end"><SubmitButton pendingText="Saving…">Save</SubmitButton></div> : <p className="text-[12.5px] text-ink-faint">Only the owner or an admin can change this.</p>}
+              </form>
+            </CardBody>
+          </Card>
           <Card>
             <CardHeader title="Voice" description="What the person hears. The natural voice is billed to your own ElevenLabs account." action={keyConfigured ? <Badge tone="teal" filled>key configured</Badge> : <Badge tone="amber" filled>no key on this platform</Badge>} />
             <CardBody>
