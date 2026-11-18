@@ -98,7 +98,7 @@ export default async function OverviewPage() {
       {/* The search banner: one question box, in plain words. */}
       <section className="brand-panel rounded-[28px] px-5 py-6 sm:px-8 sm:py-7 mb-4">
         <h2 className="font-display is-small text-[19px] sm:text-[21px] leading-[1.25]">Who are you looking for?</h2>
-        <p className="text-stage-muted text-[14px] mt-1 max-w-[70ch]">Ask in plain words. The agent searches everyone in your network and ranks them by how well you know and trust them.</p>
+        <p className="text-stage-muted text-[14px] mt-1 max-w-[70ch]">Ask in plain words. We search everyone in your network and rank them by how well you know and trust them.</p>
         <AgentComposer suggestions={askSuggestions} />
       </section>
 
@@ -144,9 +144,9 @@ export default async function OverviewPage() {
       ) : null}
 
       <Card className="ai-surface">
-        <CardHeader title={<span className="inline-flex items-center gap-2.5"><span className="live-dot" aria-hidden="true" /> Agent queue</span>} description="What the agent has lined up from the state of the network. Nothing happens until you say so." action={suggestions.length ? <span className="label-caps text-ink-faint">{suggestions.length} waiting</span> : undefined} />
+        <CardHeader title={<span className="inline-flex items-center gap-2.5"><span className="live-dot" aria-hidden="true" /> Waiting on you</span>} description="Suggested from the state of your network. Nothing happens until you say so." action={suggestions.length ? <span className="label-caps text-ink-faint">{suggestions.length} waiting</span> : undefined} />
         <CardBody>
-          {suggestions.length === 0 ? <EmptyState title="Nothing waiting" description="The agent is watching. New matches, reviews and reconnects appear here." /> : (
+          {suggestions.length === 0 ? <EmptyState title="Nothing waiting" description="New matches, reviews and people to reconnect with appear here." /> : (
             <ul className="space-y-1.5">
               {suggestions.map((s, i) => {
                 const k = QUEUE[s.kind]; const Icon = k.icon;

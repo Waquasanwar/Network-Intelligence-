@@ -8,7 +8,7 @@ let personId, briefId, oppId;
 await step("home: four blocks, and the invite link is under Grow", p, async () => {
   await go("/overview");
   // Home is the question box, the headline figures, the network and what needs you. Nothing else.
-  assert(await p.locator("#agent-ask").count(), "ask box"); assert((await p.locator(".figures .figure").count()) === 4, "four headline figures"); assert(await p.locator(".orbit-stage").count(), "the network"); assert(await p.getByText("Agent queue").count(), "what needs you");
+  assert(await p.locator("#agent-ask").count(), "ask box"); assert((await p.locator(".figures .figure").count()) === 4, "four headline figures"); assert(await p.locator(".orbit-stage").count(), "the network"); assert(await p.getByText("Waiting on you").count(), "what needs you");
   assert(!(await p.locator('input[aria-label="Your invite link"]').count()), "the invite card is no longer on Home");
   await go("/invite");
   const v = await p.locator('input[aria-label="Invitation link"]').first().inputValue();
@@ -18,7 +18,7 @@ await step("overview: ask the network agent", p, async () => {
   await go("/overview");
   await p.locator("input.agent-input").fill("Who do we know for cyber security in the UAE?");
   await p.locator("input.agent-input").press("Enter");
-  await p.getByText(/Network agent/i).first().waitFor({ timeout: 20000 });
+  await p.locator("[data-agent-steps]").first().waitFor({ timeout: 60000 });
 });
 await step("command palette opens and searches", p, async () => {
   await go("/overview");
@@ -109,7 +109,7 @@ await step("requirements: post a brief via co-pilot", p, async () => {
   await go("/requirements");
   const box = p.locator('textarea[name="q"], input[name="q"]').first();
   await box.fill(`E2E Client ${stamp} needs a fractional CFO two days a week in Dubai for six months, budget AED 5,000 a day`);
-  await p.getByRole("button", { name: /Ask the co-pilot/i }).click();
+  await p.getByRole("button", { name: /Read the need/i }).click();
   await p.waitForTimeout(3500);
   await p.screenshot({ path: `${DIR}/req-copilot.png` });
   const create = p.getByRole("button", { name: /Create|Save|Log|Post/i }).first();

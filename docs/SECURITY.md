@@ -48,3 +48,23 @@ Logged: `auth.login`, `person.create/update/export`, `relationship.create`, `evi
 
 ## Deferred to later phases
 Row-level security policies in Postgres, automated cross-tenant integration tests against the live app, passkeys, SCIM, SIEM export, retention jobs, per-tenant encryption keys.
+
+## Checked on every test run
+
+`tools/e2e/security.mjs` (part of `npm run test:e2e`) drives the real app and fails if any of these
+stops being true:
+
+- every response carries the CSP, frame, content-type, referrer, permissions, HSTS and noindex headers;
+- signed out, every private page redirects to sign-in, and private APIs and the retention job refuse;
+- a client, an agency and a member cannot open the team's pages or anyone's record by guessing an address;
+- repeated wrong passwords from one place are throttled (and each account allows 12 attempts per 5 minutes);
+- script typed into the public forms is shown as text and never runs on the team's screens;
+- the session cookie is HttpOnly and SameSite, so page scripts cannot read it;
+- the installed app's service worker keeps only code and icons on the device, never pages or data.
+
+## Dependencies
+
+`npm audit --omit=dev` reports no known vulnerabilities. Next.js is pinned to a patched release,
+PostCSS (including the copy Next.js bundles) is forced to a patched release through `overrides`, and
+so is `deepmerge-ts`, which only the Prisma command-line tool uses when it reads its own config.
+Re-run the audit before each release.

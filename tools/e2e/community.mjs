@@ -83,7 +83,9 @@ await step("community: members who chose to be seen can connect, and only then s
   assert(!/@example\.com/.test(await m1.locator("main").innerText()), "no email before connecting");
   await row.getByRole("button", { name: "Connect" }).click(); await m1.waitForURL(/notice=asked/, { timeout: 30000 });
   await m2.goto(`${BASE}/community?tab=connections`, { waitUntil: "networkidle" });
-  await m2.getByRole("button", { name: "Accept" }).first().click(); await m2.waitForURL(/tab=connections/); await m2.waitForLoadState("networkidle");
+  await m2.getByRole("button", { name: "Accept" }).first().click();
+  // The page is already on this tab, so wait for the acceptance to be saved rather than for a URL.
+  assert(await until(() => sql(`select count(*) from "Connection" where status='ACCEPTED' and "toPersonId" in ('${ana[1]}','${cy[1]}')`) !== "0", 15000), "connection accepted");
   await m1.goto(`${BASE}/community?tab=connections`, { waitUntil: "networkidle" });
   assert(new RegExp(cy[0].replace(/[.]/g, "\\.")).test(await m1.locator("[data-connection]").first().innerText()), "email shared once accepted");
 });

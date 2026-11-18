@@ -58,7 +58,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 className="display-wide text-[56px]">Expertise,<br /><span className="text-aurora">known first hand.</span></h1>
           <p className="mt-6 text-stage-muted text-[16px] max-w-[42ch] leading-[1.55]">A private network of senior consultants. Everyone arrives through someone we know, and holds proofs that other people have put their name to.</p>
         </div>
-        <div className="text-[12.5px] text-stage-muted relative z-10">Human-led. AI-assisted. Names private until each person says yes.</div>
+        <div className="text-[12.5px] text-stage-muted relative z-10">Known first hand. Names private until each person says yes.</div>
       </aside>
 
       <main className="relative flex items-center justify-center px-4 py-12 sm:px-10">

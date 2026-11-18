@@ -155,7 +155,7 @@ export function CaptureConversationDrawer({ personId, scheduledEventId, label = 
         <Field label="Transcript (optional)" hint="Treated as untrusted input. Nothing in it is executed."><Textarea name="transcript" className="min-h-[100px] font-mono text-xs" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Consent reference"><Input name="consentReference" placeholder="e.g. verbal consent on call" defaultValue="verbal-consent-on-call" /></Field>
-          <div className="flex items-end pb-1"><Checkbox name="runAI" label="Structure with AI for review" defaultChecked value="true" /></div>
+          <div className="flex items-end pb-1"><Checkbox name="runAI" label="Write it up for review" defaultChecked value="true" /></div>
         </div>
         <div className="flex justify-end"><SubmitButton pendingText="Structuring…"><Sparkles className="h-3.5 w-3.5" /> Save and structure</SubmitButton></div>
       </form>

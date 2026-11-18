@@ -55,7 +55,7 @@ export function AiAddPersonForm({ people }: { people: { id: string; firstName: s
     return (
       <div className="space-y-4">
         <div className="ai-surface rounded-[12px] bg-surface-muted p-4">
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-navy"><Sparkles className="h-4 w-4" /> Add with AI</div>
+          <div className="flex items-center gap-2 text-[13px] font-semibold text-navy"><Sparkles className="h-4 w-4" /> Quick add</div>
           <p className="text-[12.5px] text-ink-muted mt-1">Paste their LinkedIn URL, or a few lines about them. The assistant drafts the profile — you check it before saving.</p>
           <Textarea value={source} onChange={(e) => setSource(e.target.value)} rows={4} className="mt-3" placeholder="https://linkedin.com/in/…  — or —  Priya Natarajan, programme director at Majid Al Futtaim in Dubai, led two large transformations, open to advisory work." />
           {error ? <div className="mt-2 text-[12px] text-risk">{error}</div> : null}
@@ -78,7 +78,7 @@ export function AiAddPersonForm({ people }: { people: { id: string; firstName: s
       {draft ? (
         <div className="rounded-[12px] border border-line bg-surface-muted/60 px-3.5 py-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-ink"><Sparkles className="h-3.5 w-3.5 text-navy" /> AI draft — confirm before saving</span>
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-ink"><Sparkles className="h-3.5 w-3.5 text-navy" /> Draft — confirm before saving</span>
             <span className={`text-[12px] font-medium rounded-full px-2 py-0.5 ${CONFIDENCE[draft.confidence].cls}`}>{CONFIDENCE[draft.confidence].label}</span>
           </div>
           {draft.unresolved.length ? <ul className="mt-2 space-y-0.5">{draft.unresolved.map((u, i) => <li key={i} className="text-[12px] text-amber flex gap-1.5"><span>•</span>{u}</li>)}</ul> : null}

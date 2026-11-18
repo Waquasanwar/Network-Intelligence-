@@ -76,9 +76,9 @@ await step("bring us a need: a company sends one, the owner hands it to the co-p
   await o.goto(`${BASE}/requirements`, { waitUntil: "networkidle" });
   const row = o.locator("[data-enquiry]").filter({ hasText: "Gulf Utilities Co" });
   assert(await row.isVisible(), "need listed on Requirements");
-  await row.getByRole("button", { name: "Read with the co-pilot" }).click(); await o.waitForURL(/requirements\?q=/, { timeout: 30000 }); await o.waitForLoadState("networkidle");
+  await row.getByRole("button", { name: "Read this need" }).click(); await o.waitForURL(/requirements\?q=/, { timeout: 30000 }); await o.waitForLoadState("networkidle");
   assert(/Gulf Utilities Co/.test(await o.locator('textarea[name="q"]').first().inputValue()), "co-pilot prefilled with the need");
-  assert(await o.getByText("How the co-pilot read it").isVisible(), "co-pilot read it");
+  assert(await o.getByText("How we read it").isVisible(), "co-pilot read it");
   assert(sql(`select status from "PublicRequest" where email='${NEED}'`) === "ACCEPTED", "marked as read");
 });
 

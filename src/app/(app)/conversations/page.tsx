@@ -44,7 +44,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageHeader title="Conversations" description="Natural conversations, structured by AI, approved by you. Nothing becomes authoritative until reviewed." actions={<QuickCapture people={peopleLite} />} />
+      <PageHeader title="Conversations" description="Natural conversations, written up for you to approve. Nothing becomes authoritative until reviewed." actions={<QuickCapture people={peopleLite} />} />
       <NextStep step={await conversationsStep(user.tenantId)} />
       <Tabs items={tabs} current={tab} base="/conversations" />
 
@@ -93,7 +93,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
                   <li key={c.id}>
                     <Link href={`/conversations?tab=review&open=${c.id}`} className={`block px-3 py-2.5 hover:bg-surface-muted ${opened?.id === c.id ? "bg-navy-100" : ""}`}>
                       <div className="text-[13px] font-medium">{fullName(c.person)}</div>
-                      <div className="text-[12px] text-ink-faint flex items-center gap-1.5"><DateText date={c.date} /> · {c.conductedBy.name.split(" ")[0]} <Badge tone={c.approvalStatus === "DRAFT" ? "neutral" : "amber"}>{c.approvalStatus === "DRAFT" ? "draft" : "AI draft"}</Badge></div>
+                      <div className="text-[12px] text-ink-faint flex items-center gap-1.5"><DateText date={c.date} /> · {c.conductedBy.name.split(" ")[0]} <Badge tone={c.approvalStatus === "DRAFT" ? "neutral" : "amber"}>{c.approvalStatus === "DRAFT" ? "draft" : "needs review"}</Badge></div>
                     </Link>
                   </li>
                 ))}
@@ -108,7 +108,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
                       <div className="label-caps text-ink-faint mb-1">Source material</div>
                       <div className="rounded-md border border-line bg-surface-muted p-3 text-xs whitespace-pre-wrap max-h-[420px] overflow-y-auto">{opened.rawNotes || "(no notes)"}{opened.transcript ? `\n\n--- transcript ---\n${opened.transcript}` : ""}</div>
                       {!draft ? (
-                        <form action={regenerateSummary} className="mt-3"><input type="hidden" name="conversationId" value={opened.id} /><SubmitButton variant="secondary" pendingText="Structuring…">Structure with AI</SubmitButton></form>
+                        <form action={regenerateSummary} className="mt-3"><input type="hidden" name="conversationId" value={opened.id} /><SubmitButton variant="secondary" pendingText="Structuring…">Write it up again</SubmitButton></form>
                       ) : null}
                     </div>
                     <form action={approveSummary} className="space-y-3">

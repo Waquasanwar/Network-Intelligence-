@@ -35,7 +35,7 @@ export type EditableBrief = { id: string; rawText: string; title: string; engage
 
 export function EditBriefDrawer({ b }: { b: EditableBrief }) {
   return (
-    <Drawer width="lg" trigger={<Button variant="secondary"><Pencil className="h-3.5 w-3.5" /> Edit brief</Button>} title="Edit the brief" description="Correct anything the co-pilot read wrongly. Hard-requirement checks are re-run; your decisions are kept.">
+    <Drawer width="lg" trigger={<Button variant="secondary"><Pencil className="h-3.5 w-3.5" /> Edit brief</Button>} title="Edit the brief" description="Correct anything we read wrongly. Hard-requirement checks are re-run; your decisions are kept.">
       <form action={updateBrief} className="space-y-4">
         <input type="hidden" name="briefId" value={b.id} />
         <Field label="In their words"><Textarea name="rawText" defaultValue={b.rawText} className="min-h-[80px]" /></Field>

@@ -41,8 +41,8 @@ export function BriefChips({ b, className }: { b: Brief; className?: string }) {
   return <div className={cn("flex flex-wrap gap-1", className)}>{chips.map((c, i) => <span key={i} className="inline-flex items-center rounded-full bg-navy-100 text-navy px-2.5 py-0.5 text-[12px] font-medium">{c}</span>)}</div>;
 }
 
-/** "How the co-pilot read it": chips, assumptions, and what it could not infer. */
-export function ReadCard({ b, title = "How the co-pilot read it" }: { b: Brief; title?: string }) {
+/** "How we read it": chips, assumptions, and what it could not infer. */
+export function ReadCard({ b, title = "How we read it" }: { b: Brief; title?: string }) {
   return (
     <div className="widget p-4">
       <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-2">{title}</div>

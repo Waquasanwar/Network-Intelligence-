@@ -113,8 +113,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
           ) : result?.ok ? (
             <>
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12px] text-ink-faint">
-                <span className="eyebrow text-ink">{result.engine === "claude" ? "Claude co-pilot" : "Network agent"}</span>
-                <span>{result.engine === "claude" ? `Looked across ${result.searched} people` : `Searched ${result.searched} people · ranked by trust`}</span>
+                <span>Looked across {result.searched} people · ranked by trust</span>
                 {result.understood.length ? <span className="inline-flex flex-wrap items-center gap-1.5">Understood{result.understood.slice(0, 4).map((u) => <span key={u} className="rounded-full bg-surface-muted px-2 py-0.5 font-medium text-ink-muted">{u}</span>)}</span> : null}
               </div>
               <p className={cn("font-display is-small mt-3 max-w-[64ch] text-[18px] leading-[1.4] text-ink", !done && "stream-caret")}>{typed}</p>

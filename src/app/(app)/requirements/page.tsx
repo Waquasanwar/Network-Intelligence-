@@ -73,7 +73,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
 
   return (
     <>
-      <PageHeader title="Requirements" description={money ? "Clients, agencies and Amana tell us what they need. The co-pilot structures it, you decide who to propose, and the fee is worked out as you go." : "Clients, agencies and Amana tell us what they need. The co-pilot structures it and you decide who to propose."} actions={<NewAccountDrawer defaultCurrency={card.currency} />} />
+      <PageHeader title="Requirements" description={money ? "Clients, agencies and Amana tell us what they need. We structure it, you decide who to propose, and the fee is worked out as you go." : "Clients, agencies and Amana tell us what they need. We structure it and you decide who to propose."} actions={<NewAccountDrawer defaultCurrency={card.currency} />} />
       <NextStep step={await requirementsStep(user.tenantId)} />
       <StatStrip>
         <Stat icon={ListChecks} label="Open requirements" value={open.length} hint={`${briefs.filter((b) => b.submittedVia === "PORTAL").length} came through the portal`} />
@@ -90,7 +90,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
       {tab === "briefs" ? (<>
       {enquiries.length ? (
         <Card className="mb-5" id="enquiries">
-          <CardHeader title={`${enquiries.length} ${enquiries.length === 1 ? "need" : "needs"} from your public page`} description="Sent in by someone with no login. Reading one hands it to the co-pilot below; closing it deletes what they sent." />
+          <CardHeader title={`${enquiries.length} ${enquiries.length === 1 ? "need" : "needs"} from your public page`} description="Sent in by someone with no login. Reading one puts it in the box below; closing it deletes what they sent." />
           <CardBody className="pt-0">
             <ul className="divide-y divide-line">
               {enquiries.map((e) => (
@@ -98,7 +98,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0"><b className="block text-[14px] font-semibold">{e.organisation ?? e.name}</b><span className="block text-[12px] text-ink-faint">{e.name} · {e.email}</span></div>
                     <div className="flex flex-none gap-1.5">
-                      <form action={handlePublicRequest}><input type="hidden" name="id" value={e.id} /><input type="hidden" name="decision" value="read" /><SubmitButton size="sm" pendingText="…">Read with the co-pilot</SubmitButton></form>
+                      <form action={handlePublicRequest}><input type="hidden" name="id" value={e.id} /><input type="hidden" name="decision" value="read" /><SubmitButton size="sm" pendingText="…">Read this need</SubmitButton></form>
                       <form action={handlePublicRequest}><input type="hidden" name="id" value={e.id} /><input type="hidden" name="decision" value="decline" /><SubmitButton size="sm" variant="ghost" pendingText="…">Close</SubmitButton></form>
                     </div>
                   </div>
@@ -115,7 +115,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
           <form method="get" action="/requirements" className="space-y-3">
             <div className="flex flex-col md:flex-row gap-2.5 md:items-end">
               <div className="relative flex-1"><Sparkles className="absolute left-3.5 top-3 h-4 w-4 text-navy-400 pointer-events-none" /><Textarea name="q" defaultValue={q} rows={2} className="pl-10 text-[14px] min-h-[64px]" placeholder="Describe the need in plain words, e.g. “2 BAs already in Dubai with a visa, perm, retail banking, AED 360k”" aria-label="Describe the requirement" /></div>
-              <SubmitButton pendingText="Reading…">Ask the co-pilot</SubmitButton>
+              <SubmitButton pendingText="Reading…">Read the need</SubmitButton>
             </div>
             <div className="flex flex-wrap items-center gap-1.5"><span className="text-[12px] text-ink-faint mr-1">Try</span>{EXAMPLES.map((e) => <Link key={e} href={`/requirements?q=${encodeURIComponent(e)}`} className="px-2.5 h-6.5 inline-flex items-center rounded-full border border-line bg-surface text-[12px] text-ink-muted hover:border-line-strong hover:text-ink">{e.length > 46 ? e.slice(0, 44) + "…" : e}</Link>)}</div>
           </form>
@@ -164,7 +164,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
 
           <Card className="overflow-hidden">
             <CardHeader title="Requirements" description={money ? "Every brief, who it is from, and what it is worth if it fills." : "Every brief, who it is from, and where it stands."} />
-            {briefs.length === 0 ? <CardBody><EmptyState title="No requirements yet" description="Ask the co-pilot above, then save the brief against a client, agency or Amana." /></CardBody> : (
+            {briefs.length === 0 ? <CardBody><EmptyState title="No requirements yet" description="Describe a need above, then save the brief against a client, agency or Amana." /></CardBody> : (
               <table className="data">
                 <thead><tr><th>Requirement</th><th>Route</th><th>Status</th>{money ? <th className="text-right">Fee to us</th> : null}</tr></thead>
                 <tbody>
