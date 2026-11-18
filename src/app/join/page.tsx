@@ -5,6 +5,8 @@ import { PASSWORD_MIN } from "@/lib/password";
 import { SCREENING_MINUTES } from "@/lib/screening";
 import { MailQuestion } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { APP_NAME } from "@/lib/brand";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { CirclesMotif } from "@/components/ui/circles-motif";
 
 export const metadata = { title: "Join the network" };
@@ -53,12 +55,12 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
         <CirclesMotif className="pointer-events-none absolute right-[-290px] bottom-[-250px] h-[560px] w-[560px] opacity-70" />
         <div className="relative flex items-center gap-2.5">
           <BrandMark className="h-7 w-auto" />
-          <span className="font-display is-small text-[16px]">Network Intelligence</span>
+          <span className="font-display is-small text-[16px]">{APP_NAME}</span>
         </div>
 
         <div className="relative max-w-[460px]">
           <div className="eyebrow text-stage-muted mb-5">By invitation</div>
-          <h1 className="font-display text-[38px] leading-[1.1] text-balance">Be in the network for when the right work comes up.</h1>
+          <h1 className="display-wide text-[42px] text-balance">Be in the network for when <span className="text-aurora">the right work</span> comes up.</h1>
           <p className="mt-5 text-stage-muted text-[15.5px] leading-[1.55] max-w-[44ch]">We place people we actually know. Join once, and when something fits we already know who you are and why we&apos;d put our name behind you.</p>
 
           <ol className="mt-9 relative">
@@ -78,13 +80,14 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
         <div className="relative max-w-[38ch] text-[12.5px] leading-[1.5] text-stage-muted">Anonymous to clients until you say yes. See, export or delete your data any time.</div>
       </aside>
 
-      <main className="relative flex items-center justify-center px-5 py-10 sm:px-10 bg-canvas text-ink">
-        <div className="ambient" aria-hidden="true" />
-        <div className="w-full max-w-[440px] relative z-[1]">
+      <main className="relative flex items-center justify-center px-4 py-10 sm:px-10 text-ink">
+        <ThemeToggle className="absolute right-4 top-4" />
+        <div className="widget relative w-full max-w-[480px] p-6 sm:p-8">
+          <span className="beam is-slow" aria-hidden="true" />
           <div className="lg:hidden mb-7">
             <div className="flex items-center gap-2.5 mb-6">
               <BrandMark className="h-6 w-auto text-ink" />
-              <span className="font-display is-small text-[17px] text-ink">Network Intelligence</span>
+              <span className="font-display is-small text-[17px] text-ink">{APP_NAME}</span>
             </div>
             <h1 className="font-display text-[27px] leading-[1.12]">Be in the network for when the right work comes up.</h1>
             <p className="text-[13.5px] text-ink-muted mt-2 leading-[1.55]">Create your account, have a {SCREENING_MINUTES}-minute screening, and you&apos;re on the radar — fractional, contract or permanent.</p>

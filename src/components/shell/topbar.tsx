@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bell, Menu, ChevronRight, ChevronDown, LogOut } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { APP_NAME } from "@/lib/brand";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import * as React from "react";
 import type { Role } from "@prisma/client";
 import { sectionsFor, locate } from "./nav";
@@ -42,7 +44,7 @@ function useCrumbs(crumbs?: { label: string; href?: string }[]) {
   const [docTitle, setDocTitle] = React.useState<string | null>(null);
   React.useEffect(() => {
     const t = document.title.split(" · ")[0];
-    setDocTitle(t && t !== "Network Intelligence" ? t : null);
+    setDocTitle(t && t !== APP_NAME ? t : null);
   }, [pathname]);
   return (crumbs ?? auto).map((c, i, arr) => (i === arr.length - 1 && c.label === "Detail" && docTitle ? { ...c, label: docTitle } : c));
 }
@@ -89,6 +91,7 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette"))} aria-label="Search people and opportunities" className="lg:hidden h-10 w-10 flex-none grid place-items-center rounded-full border border-line bg-surface text-ink shadow-[var(--shadow-card)] cursor-pointer">
         <Search className="h-[18px] w-[18px]" />
       </button>
+      <ThemeToggle className="h-10 w-10 flex-none shadow-[var(--shadow-card)]" />
 
       <div className="relative flex-none">
         <button type="button" onClick={() => setOpen(open === "alerts" ? null : "alerts")} aria-label={`Alerts${alerts.length ? `, ${alerts.length} waiting` : ""}`} aria-expanded={open === "alerts"} className="relative h-10 w-10 rounded-full border border-line bg-surface grid place-items-center text-ink shadow-[var(--shadow-card)] hover:border-line-strong transition-colors duration-200 cursor-pointer">

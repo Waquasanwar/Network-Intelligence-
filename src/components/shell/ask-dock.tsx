@@ -54,6 +54,7 @@ export function AskDock() {
   return (
     <div className="ask-dock" data-away={away || editing || undefined}>
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette", { detail: { q } }))} aria-label={`Ask your network. For example: ${q}`} className="ask-dock-bar group">
+        <span className="beam is-slow" aria-hidden="true" />
         <span className="ai-orb" aria-hidden="true" />
         <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left"><span className="flex-none font-semibold text-ink">Ask</span><span key={q} className="rise-in min-w-0 truncate text-ink-muted">{q}</span></span>
         <kbd className="hidden sm:inline-flex h-6 flex-none items-center rounded-full bg-navy px-2 text-[11px] font-semibold text-white dark:text-canvas">⌘K</kbd>

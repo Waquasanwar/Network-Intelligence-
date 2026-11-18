@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/brand";
 /**
  * TOTP multi-factor authentication (control: "Require a second factor to sign in").
  *
@@ -9,7 +10,7 @@
 import * as OTPAuth from "otpauth";
 import { createHash, randomBytes } from "crypto";
 
-const ISSUER = "Network Intelligence";
+const ISSUER = APP_NAME;
 
 function totp(email: string, secret: string): OTPAuth.TOTP {
   return new OTPAuth.TOTP({

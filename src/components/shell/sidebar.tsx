@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Search, Briefcase, Handshake, ShieldCheck, ListChecks, UserPlus, BadgeCheck, Lock, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { APP_NAME } from "@/lib/brand";
 import { sectionsFor, locate } from "./nav";
 import type { Role } from "@prisma/client";
 
@@ -32,7 +33,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
   const here = locate(pathname, sections);
   const row = (active: boolean) => cn(
     "group flex items-center gap-3 rounded-full px-4 h-11 lg:h-10 text-[14px] transition-[background-color,color] duration-200",
-    active ? "btn-navy bg-navy text-white font-semibold dark:text-canvas" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
+    active ? "nav-active font-semibold" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
   );
   const Item = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
     const active = pathname === href.split("?")[0] && (!href.includes("?") || href === "/member");
@@ -50,8 +51,8 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         <Link href={home} className="flex items-center gap-3">
           <BrandMark className="h-[22px] w-auto flex-none text-rail-ink-strong" />
           <span className="leading-[1.15] min-w-0">
-            <span className="block font-display is-small text-[15px] text-rail-ink-strong truncate">Network Intelligence</span>
-            <span className="block text-[12px] text-ink-faint truncate">{user.tenantName}</span>
+            <span className="block font-display is-small text-[15px] text-rail-ink-strong truncate">{APP_NAME}</span>
+            <span className="block text-[12px] text-ink-faint truncate">{user.tenantName === APP_NAME ? "Private network" : user.tenantName}</span>
           </span>
         </Link>
       </div>
@@ -59,7 +60,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         <button type="button" onClick={openSearch} className="flex h-10 w-full items-center gap-2.5 rounded-full bg-surface-muted pl-4 pr-1.5 text-[13.5px] text-ink-faint transition-colors duration-200 hover:bg-navy-50 cursor-pointer">
           <Search className="h-4 w-4 flex-none" />
           <span className="flex-1 text-left">Search for…</span>
-          <span className="rounded-full bg-navy px-2.5 py-1 text-[11px] font-semibold text-white dark:text-canvas">⌘K</span>
+          <kbd className="!rounded-full !px-2 !py-1">⌘K</kbd>
         </button>
       </div>
       <nav aria-label="Main" className="px-3 flex-1 space-y-1 overflow-y-auto pt-3 pb-4">

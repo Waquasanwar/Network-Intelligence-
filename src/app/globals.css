@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* dark: follows the theme the visitor chose (dark unless they picked light), not the OS. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
   Network Intelligence — visual system.
   The same system as the Amana site: cool white ground, navy ink, mint as the first accent and
@@ -75,55 +78,60 @@
   --shadow-button: 0 1px 2px rgba(12, 27, 51, 0.12);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-canvas: #060d1d;
-    --color-surface: #0c1b33;
-    --color-surface-muted: #12264a;
-    --color-surface-hover: #10213f;
-    --color-line: rgba(243, 244, 240, 0.12);
-    --color-line-strong: rgba(243, 244, 240, 0.22);
-    --color-ink: #f7f9fc;
-    --color-ink-muted: #c7d0dc;
-    --color-ink-faint: #9fb0c6;
-    --color-navy: #f7f9fc;
-    --color-navy-600: #dce3ec;
-    --color-navy-400: #9fb0c6;
-    --color-navy-100: #1a2c4d;
-    --color-navy-50: #10213f;
-    --color-teal: #7ee3bc;
-    --color-teal-400: #7ee3bc;
-    --color-teal-100: #12382d;
-    --color-teal-50: #0d2820;
-    --color-stage: #12264a;
-    --color-amber: #f0a64a;
-    --color-amber-100: #3e2a10;
-    --color-amber-50: #2a1f0f;
-    --color-risk: #ff8a7d;
-    --color-risk-100: #3b1814;
-    --color-rail: #0c1b33;
-    --color-rail-ink: #c7d0dc;
-    --color-rail-ink-strong: #f7f9fc;
-    --color-rail-line: rgba(243, 244, 240, 0.12);
-    --color-rail-active: #12264a;
-    --color-chart-a: #f7f9fc;
-    --color-chart-b: #7ee3bc;
-    --color-series-1: #199e70;
-    --color-series-2: #3987e5;
-    --color-series-3: #ee5a45;
-    --color-coral: #ff6650;
-    --color-coral-ink: #ff8a78;
-    --color-coral-100: #3d1a15;
-    --color-series-track: #1a2c4d;
-    --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.3), 0 14px 34px -18px rgba(0, 0, 0, 0.6);
-    --widget-edge: linear-gradient(145deg, rgba(126, 227, 188, 0.55) 0%, rgba(255, 255, 255, 0.09) 22%, rgba(255, 255, 255, 0.06) 76%, rgba(255, 102, 80, 0.55) 100%);
-    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 22px 44px -18px rgba(0, 0, 0, 0.7);
-    --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.5);
-  }
+/* Dark is the default (the html element carries data-theme="dark" unless the visitor chose light).
+   Night ink rather than black: the Amana navy taken almost to the floor, glass surfaces, mint as
+   the light the product gives off, indigo for the agent, coral as the spark. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #04070f;
+  --color-surface: #0a0f1d;
+  --color-surface-muted: #111830;
+  --color-surface-hover: #0e1528;
+  --color-line: rgba(214, 226, 255, 0.085);
+  --color-line-strong: rgba(214, 226, 255, 0.17);
+  --color-ink: #f1f4fb;
+  --color-ink-muted: #b0bad0;
+  --color-ink-faint: #7e8aa6;
+  --color-navy: #f4f6fb;
+  --color-navy-600: #dfe5f1;
+  --color-navy-400: #94a3c2;
+  --color-navy-100: #18213d;
+  --color-navy-50: #0f1730;
+  --color-teal: #7ee3bc;
+  --color-teal-400: #7ee3bc;
+  --color-teal-100: #0f3328;
+  --color-teal-50: #0b241d;
+  --color-stage: #0b1226;
+  --color-amber: #f2c46d;
+  --color-amber-100: #3a2a0f;
+  --color-amber-50: #261c0b;
+  --color-risk: #ff8a7d;
+  --color-risk-100: #3b1814;
+  --color-rail: #070b17;
+  --color-rail-ink: #b0bad0;
+  --color-rail-ink-strong: #f4f6fb;
+  --color-rail-line: rgba(214, 226, 255, 0.085);
+  --color-rail-active: #121a33;
+  --color-chart-a: #f4f6fb;
+  --color-chart-b: #7ee3bc;
+  --color-series-1: #199e70;
+  --color-series-2: #3987e5;
+  --color-series-3: #ee5a45;
+  --color-coral: #ff6650;
+  --color-coral-ink: #ff8a78;
+  --color-coral-100: #3d1a15;
+  --color-series-track: #18213d;
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -22px rgba(0, 0, 0, 0.8);
+  --widget-edge: linear-gradient(145deg, rgba(126, 227, 188, 0.6) 0%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0.05) 74%, rgba(139, 148, 255, 0.6) 100%);
+  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.4), 0 26px 50px -20px rgba(0, 0, 0, 0.85);
+  --shadow-drawer: 0 40px 90px -20px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(214, 226, 255, 0.1);
+  --shadow-pop: 0 18px 44px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(214, 226, 255, 0.1);
+  --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* The ground: a soft aurora in the brand's three lights over a fine dot grid. Fixed, so content
-   scrolls across it. Everything is a gradient, so it stays sharp at any pixel density. */
+/* The ground. Light: a soft aurora in the brand's lights over a fine dot grid. Dark: a night sky
+   with mint rising from the top-left, indigo from the right, and a fine grid that fades out below
+   the fold. Fixed, so content scrolls across it. All gradients, so it is sharp at any density. */
 html {
   background:
     radial-gradient(rgba(12, 27, 51, 0.075) 1px, transparent 1.3px) 0 0 / 22px 22px,
@@ -133,16 +141,21 @@ html {
     var(--color-canvas);
   background-attachment: fixed;
 }
-@media (prefers-color-scheme: dark) {
-  html {
-    background:
-      radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.3px) 0 0 / 22px 22px,
-      radial-gradient(1100px 640px at 4% -10%, rgba(47, 179, 137, 0.22), transparent 62%),
-      radial-gradient(900px 620px at 104% 2%, rgba(57, 135, 229, 0.16), transparent 62%),
-      radial-gradient(900px 700px at 98% 110%, rgba(255, 102, 80, 0.12), transparent 60%),
-      var(--color-canvas);
-    background-attachment: fixed;
-  }
+html[data-theme="dark"] {
+  background:
+    radial-gradient(1000px 560px at 8% -12%, rgba(126, 227, 188, 0.16), transparent 62%),
+    radial-gradient(900px 620px at 100% -4%, rgba(110, 120, 255, 0.17), transparent 60%),
+    radial-gradient(800px 600px at 96% 112%, rgba(255, 102, 80, 0.09), transparent 60%),
+    var(--color-canvas);
+  background-attachment: fixed;
+}
+/* The fine grid, only near the top of the page, so it reads as depth rather than graph paper. */
+html[data-theme="dark"] body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(rgba(214, 226, 255, 0.045) 1px, transparent 1px) 0 0 / 56px 56px,
+    linear-gradient(90deg, rgba(214, 226, 255, 0.045) 1px, transparent 1px) 0 0 / 56px 56px;
+  mask-image: radial-gradient(120% 70% at 50% 0%, #000 0%, transparent 70%);
 }
 body { background: transparent; }
 html, body {
@@ -434,10 +447,94 @@ a.figure:hover { opacity: 0.72; }
 }
 /* Headline figures: ink that deepens to teal, so a number reads as a lit instrument rather than text. */
 .num-grad { background: linear-gradient(180deg, var(--color-ink) 35%, #17756b 115%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
-@media (prefers-color-scheme: dark) { .num-grad { background-image: linear-gradient(180deg, #ffffff 35%, #7ee3bc 115%); } }
+[data-theme="dark"] .num-grad { background-image: linear-gradient(180deg, #ffffff 35%, #7ee3bc 115%); }
 @media (forced-colors: active) { .num-grad { -webkit-text-fill-color: currentColor; color: CanvasText; background: none; } }
 /* The small round holder behind a widget's icon. */
 .chip-icon { background: linear-gradient(140deg, rgba(126, 227, 188, 0.5), rgba(126, 227, 188, 0.12) 55%, rgba(255, 84, 64, 0.22)); box-shadow: inset 0 0 0 1px rgba(12, 27, 51, 0.06); color: var(--color-ink); }
 /* Buttons with a little depth: a lit top edge and a shadow in their own colour. */
 .btn-navy { background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 60%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 8px 18px -10px rgba(12, 27, 51, 0.7); }
 .btn-coral { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 10px 22px -10px rgba(255, 84, 64, 0.75); }
+
+/* ---------- The AI-product layer ---------- */
+/* Glass widgets in the dark: a faint lit top edge over the surface, so cards read as panes of glass
+   lifted off the night rather than boxes. */
+[data-theme="dark"] .widget {
+  background:
+    linear-gradient(180deg, rgba(214, 226, 255, 0.04), rgba(214, 226, 255, 0.008) 40%, transparent) border-box,
+    var(--color-surface);
+}
+[data-theme="dark"] .rail { background: color-mix(in srgb, var(--color-rail) 82%, transparent); backdrop-filter: blur(18px) saturate(1.3); }
+
+/* Spotlight (after the 21st.dev "Spotlight" pattern): a soft light follows the pointer across a
+   card and lights the part of its edge nearest the pointer. --mx/--my are set by <Spotlight />. */
+.widget::after, .spot::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0;
+  transition: opacity 260ms ease;
+  padding: 1px;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(126, 227, 188, 0.75), rgba(139, 148, 255, 0.35) 40%, transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.widget[data-lit]::after, .spot[data-lit]::after { opacity: 1; }
+[data-theme="dark"] .widget[data-lit], [data-theme="dark"] .spot[data-lit] {
+  background-image: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), rgba(126, 227, 188, 0.055), transparent 45%), linear-gradient(180deg, rgba(214, 226, 255, 0.04), rgba(214, 226, 255, 0.008) 40%, transparent);
+}
+.spot { position: relative; }
+@media (prefers-reduced-motion: reduce), (hover: none) { .widget::after, .spot::after { display: none; } }
+
+/* Border beam (adapted from 21st.dev / Magic UI "Border Beam", MIT): a short light that travels
+   round the edge of whatever it sits in. Put <span class="beam" /> inside a positioned element. */
+.beam {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  border: var(--beam-width, 1.5px) solid transparent;
+  mask: linear-gradient(transparent, transparent), linear-gradient(#fff, #fff);
+  mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+}
+.beam::after {
+  content: ""; position: absolute; aspect-ratio: 1; width: var(--beam-size, 160px);
+  background: linear-gradient(to left, var(--beam-from, #7ee3bc), var(--beam-to, #8b94ff), transparent);
+  offset-path: rect(0 auto auto 0 round var(--beam-size, 160px));
+  offset-anchor: 90% 50%;
+  animation: border-beam var(--beam-duration, 9s) linear infinite;
+  animation-delay: var(--beam-delay, 0s);
+}
+.beam.is-slow { --beam-duration: 14s; }
+.beam.is-second { --beam-from: #ff6650; --beam-to: #f2c46d; --beam-delay: -4.5s; }
+@keyframes border-beam { to { offset-distance: 100%; } }
+@media (prefers-reduced-motion: reduce) { .beam::after { animation: none; display: none; } }
+
+/* Beams between people (adapted from 21st.dev / Magic UI "Animated Beam", MIT): a faint path with a
+   pulse of light travelling along it. Done with a dash rather than an animated gradient, so it needs
+   no animation library and no measuring. */
+.trace { fill: none; stroke: var(--color-line-strong); stroke-width: 1.25; }
+.trace-pulse { fill: none; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 70 496; filter: drop-shadow(0 0 5px rgba(126, 227, 188, 0.9)); animation: trace-run var(--d, 4.2s) cubic-bezier(0.55, 0.1, 0.3, 1) infinite; animation-delay: var(--t, 0s); }
+@keyframes trace-run { from { stroke-dashoffset: 566; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .trace-pulse { animation: none; stroke-dasharray: none; opacity: 0.35; } }
+
+/* Display type for the front door: Mona Sans pushed wide, so the headline has a voice of its own. */
+.display-wide { font-family: var(--font-display); font-variation-settings: "wdth" 118; font-weight: 600; letter-spacing: -0.035em; line-height: 0.98; }
+.text-sheen { background: linear-gradient(180deg, var(--color-ink) 30%, color-mix(in srgb, var(--color-ink) 52%, transparent) 110%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.text-aurora { background: linear-gradient(92deg, #7ee3bc 0%, #9fd8ff 45%, #a9a2ff 75%, #ff8a78 110%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+[data-theme="light"] .text-aurora { background-image: linear-gradient(92deg, #0b8a63 0%, #2868b4 48%, #6a4fd8 78%, #d4462f 110%); }
+@media (forced-colors: active) { .text-sheen, .text-aurora { -webkit-text-fill-color: currentColor; background: none; } }
+
+/* A pill label with a live dot, the way AI products announce themselves. */
+.pill-badge { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--color-ink-muted); border: 1px solid var(--color-line-strong); background: color-mix(in srgb, var(--color-surface) 70%, transparent); backdrop-filter: blur(10px); }
+
+/* Glow buttons: the primary action carries a soft mint light underneath it in the dark. */
+[data-theme="dark"] .btn-navy { background-image: linear-gradient(180deg, #ffffff, #dfe6f2); box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(255, 255, 255, 0.2), 0 10px 30px -10px rgba(126, 227, 188, 0.55); }
+.btn-glow { position: relative; background: linear-gradient(180deg, #8ff0c9, #5fd3a8); color: #04170f; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 0 0 1px rgba(126, 227, 188, 0.4), 0 12px 34px -10px rgba(126, 227, 188, 0.7); }
+.btn-glow:hover { filter: brightness(1.05); }
+.btn-ghost-glass { border: 1px solid var(--color-line-strong); background: color-mix(in srgb, var(--color-surface) 55%, transparent); backdrop-filter: blur(10px); color: var(--color-ink); }
+.btn-ghost-glass:hover { background: color-mix(in srgb, var(--color-surface-muted) 80%, transparent); }
+
+/* The sliding row of expertise on the front door. */
+.marquee { display: flex; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.marquee > div { display: flex; flex: none; gap: 10px; padding-right: 10px; animation: marquee 48s linear infinite; }
+@keyframes marquee { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .marquee > div { animation: none; } .marquee { flex-wrap: wrap; } }
+
+/* The active place in the menu: glass with a mint light at its left edge, not a solid slab. */
+.nav-active { position: relative; background: var(--color-rail-active); color: var(--color-rail-ink-strong); box-shadow: inset 0 0 0 1px var(--color-line); }
+.nav-active::before { content: ""; position: absolute; left: 6px; top: 50%; width: 3px; height: 16px; translate: 0 -50%; border-radius: 3px; background: linear-gradient(180deg, #7ee3bc, #8b94ff); box-shadow: 0 0 12px rgba(126, 227, 188, 0.8); }

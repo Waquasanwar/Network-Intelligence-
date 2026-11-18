@@ -45,7 +45,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   const account = await resolvePortalAccount(user, sp.account ?? null);
   const internal = isInternal(user);
   const accounts = internal ? await prisma.commercialAccount.findMany({ where: { tenantId: user.tenantId, portalEnabled: true }, orderBy: { createdAt: "asc" } }) : [];
-  if (!account) return <EmptyState title="No portal account" description={internal ? "Enable the portal on an account in Requirements." : "Your account has not been connected to the portal yet. Ask your contact at Network Intelligence."} />;
+  if (!account) return <EmptyState title="No portal account" description={internal ? "Enable the portal on an account in Requirements." : "Your account has not been connected to the portal yet. Ask your contact at Amana Network."} />;
   const [briefs, card] = await Promise.all([
     prisma.brief.findMany({ where: { accountId: account.id }, include: { shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: { select: { wouldRecommend: true, voucherKind: true } }, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } } }, orderBy: { updatedAt: "desc" } }),
     loadRateCard(account.tenantId),

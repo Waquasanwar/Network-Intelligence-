@@ -70,7 +70,7 @@ export class CalendlySchedulingProvider implements SchedulingProvider {
   }
 
   async cancelMeeting(externalId: string) {
-    await this.api(`/scheduled_events/${externalId}/cancellation`, { method: "POST", body: JSON.stringify({ reason: "Cancelled from Network Intelligence Platform" }) });
+    await this.api(`/scheduled_events/${externalId}/cancellation`, { method: "POST", body: JSON.stringify({ reason: "Cancelled from Amana Network" }) });
   }
 }
 

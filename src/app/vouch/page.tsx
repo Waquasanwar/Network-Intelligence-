@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { readReference, REFERENCE_RELATIONS } from "@/lib/reference-link";
 import { answerReference } from "@/server/actions/references";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { APP_NAME } from "@/lib/brand";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Check, MailQuestion } from "lucide-react";
@@ -35,7 +36,7 @@ export default async function VouchPage({ searchParams }: { searchParams: Promis
     <main className="relative min-h-screen bg-canvas text-ink px-5 py-10 sm:py-16">
       <div className="ambient" aria-hidden="true" />
       <div className="relative z-[1] mx-auto w-full max-w-[520px]">
-        <div className="flex items-center gap-2.5 mb-8"><BrandMark className="h-6 w-auto text-ink" /><span className="font-display is-small text-[17px]">Network Intelligence</span></div>
+        <div className="flex items-center gap-2.5 mb-8"><BrandMark className="h-6 w-auto text-ink" /><span className="font-display is-small text-[17px]">{APP_NAME}</span></div>
 
         {sp.done ? (
           <div className="widget p-7 sm:p-8">

@@ -8,6 +8,8 @@ import { prisma } from "@/lib/db";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { entraIsPinned } from "@/auth.config";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { APP_NAME } from "@/lib/brand";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { CirclesMotif } from "@/components/ui/circles-motif";
 
 export const metadata = { title: "Sign in" };
@@ -48,23 +50,24 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[28px]">
         <div className="flex items-center gap-2.5 relative z-10">
           <BrandMark className="h-7 w-auto" />
-          <span className="font-display is-small text-[16px]">Network Intelligence</span>
+          <span className="font-display is-small text-[16px]">{APP_NAME}</span>
         </div>
         <CirclesMotif className="pointer-events-none absolute right-[-70px] top-[-80px] h-[430px] w-[430px]" />
         <div className="relative z-10">
           <div className="eyebrow text-stage-muted mb-5">Invitation only</div>
-          <h1 className="font-display text-[52px] leading-[1.05]">Known.<br />Not just matched.</h1>
-          <p className="mt-6 text-stage-muted text-[16px] max-w-[42ch] leading-[1.55]">Who do we genuinely know who could solve this problem, why do we trust them, and how quickly can we start the right conversation?</p>
+          <h1 className="display-wide text-[56px]">Expertise,<br /><span className="text-aurora">known first hand.</span></h1>
+          <p className="mt-6 text-stage-muted text-[16px] max-w-[42ch] leading-[1.55]">A private network of senior consultants. Everyone arrives through someone we know, and holds proofs that other people have put their name to.</p>
         </div>
-        <div className="text-[12.5px] text-stage-muted relative z-10">Human-led. AI-enhanced. The relationship intelligence is the asset.</div>
+        <div className="text-[12.5px] text-stage-muted relative z-10">Human-led. AI-assisted. Names private until each person says yes.</div>
       </aside>
 
-      <main className="relative flex items-center justify-center px-6 py-12 sm:px-10 bg-canvas">
-        <div className="ambient" aria-hidden="true" />
-        <div className="w-full max-w-[380px] relative z-[1]">
+      <main className="relative flex items-center justify-center px-4 py-12 sm:px-10">
+        <ThemeToggle className="absolute right-4 top-4" />
+        <div className="widget relative w-full max-w-[420px] p-6 sm:p-8">
+          <span className="beam is-slow" aria-hidden="true" />
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <BrandMark className="h-6 w-auto text-ink" />
-            <span className="font-display is-small text-[17px] text-ink">Network Intelligence</span>
+            <span className="font-display is-small text-[17px] text-ink">{APP_NAME}</span>
           </div>
           <h2 className="font-display text-[30px] leading-[1.1]">Welcome back</h2>
           <p className="text-[15px] text-ink-muted mt-2.5">Sign in to your network.</p>

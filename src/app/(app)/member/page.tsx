@@ -45,7 +45,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const internal = isInternal(user);
   const base = await resolveMemberPerson(user, sp.person ?? null);
-  if (!base) return <EmptyState title="No member profile" description={internal ? "Nobody has joined as a member yet. Share the join link." : "Your login is not linked to a profile yet. Ask your contact at Network Intelligence."} />;
+  if (!base) return <EmptyState title="No member profile" description={internal ? "Nobody has joined as a member yet. Share the join link." : "Your login is not linked to a profile yet. Ask your contact at Amana Network."} />;
   const p = await prisma.person.findUnique({ where: { id: base.id }, include: { ...TRUST_INCLUDE, referralsMade: { include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } }, pitches: { include: { brief: { select: { id: true, roles: true } } } } } });
   if (!p) redirect("/forbidden");
   const [members, open, myInvites] = await Promise.all([

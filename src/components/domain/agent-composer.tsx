@@ -69,12 +69,13 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
 
   return (
     <div className="relative mt-5">
-      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="flex items-center gap-2.5 rounded-[12px] bg-white p-1.5 pl-4 text-[#0c1b33] transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_var(--color-accent)]">
-        <Sparkles className="h-[18px] w-[18px] flex-none text-[#0c1b33]" aria-hidden="true" />
+      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="relative flex items-center gap-2.5 rounded-[14px] bg-white p-1.5 pl-4 text-[#0c1b33] transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_var(--color-accent)] dark:bg-[#070c1a]/90 dark:text-ink dark:shadow-[inset_0_0_0_1px_rgba(214,226,255,0.12),0_20px_50px_-20px_rgba(126,227,188,0.35)]">
+        <span className="beam" aria-hidden="true" />
+        <Sparkles className="h-[18px] w-[18px] flex-none text-[#0c1b33] dark:text-teal" aria-hidden="true" />
         <input
           ref={inputRef} id="agent-ask" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Ask your network"
           placeholder={suggestions.length ? `Ask your network — “${suggestions[hint % suggestions.length]}”` : "Ask your network a question"}
-          className="agent-input h-11 min-w-0 flex-1 text-[15.5px] text-[#0c1b33] placeholder:text-[#5b6576]" autoComplete="off"
+          className="agent-input h-11 min-w-0 flex-1 text-[15.5px] text-[#0c1b33] placeholder:text-[#5b6576] dark:text-ink dark:placeholder:text-ink-faint" autoComplete="off"
         />
         <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="group inline-flex h-11 flex-none items-center gap-1.5 btn-coral rounded-[12px] bg-coral px-4 text-[14px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-105 cursor-pointer disabled:cursor-default">
           Ask
