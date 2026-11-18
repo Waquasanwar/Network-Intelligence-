@@ -57,6 +57,9 @@ model Tenant {
   scheduledMeetings  ScheduledConversation[]
   referenceRequests  ReferenceRequest[]
   publicRequests     PublicRequest[]
+  boardPosts         BoardPost[]
+  connections        Connection[]
+  referralCredits    ReferralCredit[]
 }
 
 enum Role {
@@ -219,7 +222,9 @@ model Person {
   referralConsent        String?            // yes | ask | no — the person decides whether they are on the radar
   privacy                Json?              // Privacy (lib/privacy.ts): granular consents, retention, erasureRequestedAt
   memberSince            DateTime?
-  attributes             Json?              // self-assessed FitScores from the screening (working style, never protected characteristics)
+  attributes             Json?
+  /// Framework checks only a person on the team can confirm: { key: { by, at, note } } (src/lib/framework.ts).
+  checks                 Json?              // self-assessed FitScores from the screening (working style, never protected characteristics)
   seniority              Seniority?
   languages              String[]           @default([])
   engagementPreferences  EngagementRoute[]  @default([])
@@ -253,6 +258,10 @@ model Person {
   scheduledMeetings ScheduledConversation[]
   introducedPeople  Relationship[]          @relation("IntroducedBy")
   referenceRequests ReferenceRequest[]      @relation("ReferenceAbout")
+  boardPosts        BoardPost[]             @relation("PostAuthor")
+  connectionsSent   Connection[]            @relation("ConnectionFrom")
+  connectionsGot    Connection[]            @relation("ConnectionTo")
+  referralCredits   ReferralCredit[]        @relation("CreditTo")
   teamMemberships   TeamShortlistMember[]
   shortlistItems    ShortlistItem[]
   feeLines          FeeLine[]
@@ -759,6 +768,8 @@ model CommercialAccount {
   partnerId      String? // licensed recruitment partner, where the account is an agency
   portalTenantId String?       @unique // tenant whose users log into the portal for this account
   portalEnabled  Boolean       @default(true)
+  /// May search the network themselves (anonymised, members who opted in). Off until the owner switches it on.
+  searchEnabled  Boolean       @default(false)
   notes          String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -784,6 +795,8 @@ enum BriefStatus {
 enum BriefVia {
   OWNER
   PORTAL
+  BOARD // shared by a member on the community board
+  SEARCH // asked for from a client's or agency's own search
 }
 
 /// A requirement in the client's or agency's words, structured by the co-pilot and corrected by a human.
@@ -830,6 +843,8 @@ model Brief {
   feeLines  FeeLine[]
   referrals Referral[]
   pitches   Pitch[]
+  boardPost BoardPost?
+  credits   ReferralCredit[]
 
   @@index([tenantId, status])
   @@index([accountId])
@@ -1102,4 +1117,94 @@ model PublicRequest {
 
   @@index([tenantId, kind, status])
   @@index([email])
+}
+
+enum BoardPostKind {
+  WORK // a role or an assignment the member knows about
+  HELP // the member is looking for someone
+  AVAILABLE // the member is free for work
+}
+
+enum BoardPostStatus {
+  OPEN
+  CLOSED // the author closed it
+  HIDDEN // the team took it down
+}
+
+/// A post on the members' community board. A WORK or HELP post is also copied to the owner's
+/// Requirements as a lead (briefId), so work found through the network runs through the network.
+model BoardPost {
+  id             String           @id @default(cuid())
+  tenantId       String
+  authorPersonId String
+  kind           BoardPostKind
+  title          String
+  body           String
+  route          EngagementRoute?
+  location       String?
+  status         BoardPostStatus  @default(OPEN)
+  briefId        String?          @unique
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author Person @relation("PostAuthor", fields: [authorPersonId], references: [id], onDelete: Cascade)
+  brief  Brief? @relation(fields: [briefId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, createdAt])
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+/// One member asking to connect with another. Contact details are shared only once it is accepted.
+model Connection {
+  id           String           @id @default(cuid())
+  tenantId     String
+  fromPersonId String
+  toPersonId   String
+  message      String?
+  status       ConnectionStatus @default(PENDING)
+  respondedAt  DateTime?
+  createdAt    DateTime         @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  from   Person @relation("ConnectionFrom", fields: [fromPersonId], references: [id], onDelete: Cascade)
+  to     Person @relation("ConnectionTo", fields: [toPersonId], references: [id], onDelete: Cascade)
+
+  @@unique([fromPersonId, toPersonId])
+  @@index([toPersonId, status])
+}
+
+enum CreditStatus {
+  OWED
+  PAID
+  WRITTEN_OFF
+}
+
+/// A member's share of the fee when someone they referred or introduced is placed. The percentage
+/// comes from the rate card at the time; the amount is filled in once the fee is known.
+model ReferralCredit {
+  id        String       @id @default(cuid())
+  tenantId  String
+  personId  String // the member who is owed it
+  briefId   String
+  placedId  String // the person who was placed
+  reason    String // "referred them for this requirement" | "introduced them to the network"
+  pct       Decimal      @db.Decimal(5, 2)
+  amount    Decimal?     @db.Decimal(14, 2)
+  currency  String
+  status    CreditStatus @default(OWED)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person Person @relation("CreditTo", fields: [personId], references: [id], onDelete: Cascade)
+  brief  Brief  @relation(fields: [briefId], references: [id], onDelete: Cascade)
+
+  @@unique([briefId, placedId, personId])
+  @@index([tenantId, status])
 }

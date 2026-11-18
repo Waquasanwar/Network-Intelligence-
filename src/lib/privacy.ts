@@ -26,7 +26,9 @@ export type ConsentKey =
   | "voiceProcessing"   // the screening may be spoken aloud through the platform's voice
   | "linkedin"          // we may read public recommendations to support the profile
   | "keepInTouch"       // we may contact them about work that suits them
-  | "showPhoto";        // a photo may be shown — inside the network, and on an unlocked profile
+  | "showPhoto"         // a photo may be shown — inside the network, and on an unlocked profile
+  | "memberDirectory"   // other members may see their name, headline and proofs, and ask to connect
+  | "searchable";       // companies and agencies with search access may find their anonymised card
 
 export type Consents = Record<ConsentKey, boolean>;
 
@@ -49,12 +51,15 @@ export const CONSENTS: ConsentDef[] = [
   { key: "linkedin", label: "Use my public LinkedIn recommendations", detail: "We read what is already public to support your trust profile. We never post, connect or message as you.", ifOff: "We rely only on people in the network who vouch for you." },
   { key: "keepInTouch", label: "Contact me about work that suits me", detail: "Occasional, specific, and about actual roles — never a mailshot.", ifOff: "We only contact you if you contact us first." },
   { key: "showPhoto", label: "Show my photo", detail: "Entirely optional — most profiles here have no photo at all. When it is off you appear as your initials, everywhere.", ifOff: "Your photo is deleted and your initials are used instead." },
+  { key: "memberDirectory", label: "Show me to other members", detail: "Other members who have also switched this on see your name, headline and the proofs you hold, and can ask to connect. Your email and phone are shared only with people whose request you accept.", ifOff: "You disappear from the member directory at once. Connections you have already accepted stay." },
+  { key: "searchable", label: "Let companies with search access find me, anonymously", detail: "Companies and agencies the network has given search access see an anonymised card: what you do, your region, availability and the proofs you hold. Never your name, employer or contact details. Any introduction still comes to you first.", ifOff: "You no longer appear in their searches. Introductions already agreed are not affected." },
 ];
 
 /** A new person is in the network and shown anonymously; everything beyond that is opt-in. */
 export const DEFAULT_CONSENTS: Consents = {
   listed: true, shareAnonymised: true, nameOnIntro: true,
   personalNotes: false, voiceProcessing: false, linkedin: false, keepInTouch: true, showPhoto: false,
+  memberDirectory: false, searchable: false,
 };
 
 /** A photo is never assumed. It shows inside the network only with consent, and outside only

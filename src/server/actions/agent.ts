@@ -1,11 +1,13 @@
 "use server";
 import { prisma } from "@/lib/db";
+import { trustFor } from "@/lib/trust-for";
+import { TRUST_SELECT } from "@/lib/trust-include";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireInternalAction } from "@/server/session";
 import { getAIProvider } from "@/lib/ai";
 import { textSearchClauses } from "@/server/network-search";
-import { trustScore, trustBand, TRUST_BAND_LABEL } from "@/lib/trust";
-import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
+import { trustBand, TRUST_BAND_LABEL } from "@/lib/trust";
+import { ACTIVE_STATUSES } from "@/lib/availability";
 import { AVAILABILITY_LABELS, ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import type { EngagementRoute, Prisma } from "@prisma/client";
@@ -34,16 +36,11 @@ export async function askNetwork(query: string): Promise<AgentAnswer> {
   if (!(await rateLimit("ai", `ask:${user.id}`)).success) return { ok: false, error: "That is a lot of questions at once. Give it a moment and ask again." };
   if (q.length < 2) return { ok: false, error: "Ask about a skill, a place or a kind of work — for example “cyber lead in Dubai, available now”." };
 
-  const now = new Date();
   const intent = await getAIProvider().parseSearch(q);
   const select = {
-    id: true, firstName: true, lastName: true, preferredName: true, headline: true, capabilities: true, sectors: true,
+    id: true, firstName: true, lastName: true, preferredName: true, headline: true, sectors: true,
     primaryCity: true, primaryCountry: true, targetLocations: true, engagementPreferences: true,
-    screeningStatus: true, screenedAt: true, availabilityStatus: true, availabilityConfirmedAt: true, nextCheckDate: true,
-    relationships: { select: { workedTogether: true, wouldWorkTogetherAgain: true } },
-    vouches: { select: { wouldRecommend: true, voucherKind: true } },
-    evidence: { select: { evidenceType: true } },
-    conversations: { select: { approvalStatus: true } },
+    ...TRUST_SELECT,
     referralsMade: { select: { status: true } },
   } satisfies Prisma.PersonSelect;
   const [searched, exact] = await Promise.all([
@@ -65,17 +62,7 @@ export async function askNetwork(query: string): Promise<AgentAnswer> {
 
   const people: AgentPerson[] = rows.map((p) => {
     const worked = p.relationships.some((r) => r.workedTogether);
-    const t = trustScore({
-      vouches: p.vouches.map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })),
-      workedWith: p.relationships.filter((r) => r.workedTogether).length,
-      wouldWorkAgain: p.relationships.filter((r) => r.wouldWorkTogetherAgain === true).length,
-      evidence: p.evidence.filter((e) => e.evidenceType !== "CAUTION").length,
-      cautions: p.evidence.filter((e) => e.evidenceType === "CAUTION").length,
-      approvedConversations: p.conversations.filter((c) => c.approvalStatus === "APPROVED").length,
-      screened: p.screeningStatus === "APPROVED" || !!p.screenedAt,
-      freshness: assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now),
-      referralsAccepted: p.referralsMade.filter((r) => r.status === "ACCEPTED").length,
-    });
+    const t = trustFor(p);
     const why: string[] = [];
     const caps = p.capabilities.filter((c) => intent.capabilities.some((k) => same(k, c) || c.toLowerCase().includes(k.toLowerCase())));
     if (caps.length) why.push(`strong at ${caps.slice(0, 2).join(" and ")}`);

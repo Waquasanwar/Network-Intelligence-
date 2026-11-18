@@ -28,7 +28,7 @@ import { resolveMemberPerson } from "@/server/queries";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
 import { fitHighlights, ATTRIBUTES } from "@/lib/fit";
-import { rateBand } from "@/lib/demand";
+import { rateBand, fmt } from "@/lib/demand";
 import { SCREENING_MINUTES } from "@/lib/screening";
 import { ROUTE_LABELS, AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
@@ -55,6 +55,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
     prisma.invite.findMany({ where: { inviterPersonId: p.id }, select: { id: true, name: true, status: true, expiresAt: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 25 }),
   ]);
   const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: p.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
+  const credits = await prisma.referralCredit.findMany({ where: { personId: p.id }, include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } });
   const canInvite = mayInvite(p);
   const now = new Date();
   const tab = sp.tab ?? "home";
@@ -144,6 +145,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             </form>
           </CardBody></Card></div>
           <div className="space-y-4">
+          {credits.length ? <Card data-member-credits><CardHeader title="Your share of placements" description="When someone you referred, introduced or found work for is placed, you receive this share of the fee." /><CardBody className="pt-0"><ul className="divide-y divide-line text-[12.5px]">{credits.map((c) => <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0"><span className="min-w-0"><b className="font-semibold">{c.brief.title}</b><span className="block text-ink-muted">You {c.reason} · {Number(c.pct)}%</span></span><span className="flex-none text-right"><b className="block tabular">{c.amount !== null ? fmt(Number(c.amount), c.currency) : "To follow"}</b><span className="text-[12px] text-ink-faint">{c.status === "PAID" ? "Paid" : c.status === "OWED" ? "Owed to you" : "Written off"}</span></span></li>)}</ul></CardBody></Card> : null}
           <Card><CardHeader title="Your referrals" description={`${accepted} accepted into the network`} /><CardBody>{p.referralsMade.length ? <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.map((r) => <li key={r.id} className="py-2 first:pt-0 last:pb-0"><div className="flex justify-between gap-2"><b>{r.name}</b><Badge tone={r.status === "ACCEPTED" ? "teal" : r.status === "DECLINED" ? "neutral" : "amber"} filled>{REF_STATUS[r.status]}</Badge></div><div className="text-ink-muted">{r.context}</div></li>)}</ul> : <div className="text-xs text-ink-muted">None yet.</div>}</CardBody></Card>
           <Card><CardHeader title="Your invitations" description={`${myInvites.filter((i) => i.status === "JOINED").length} joined`} /><CardBody>{myInvites.length ? <ul className="divide-y divide-line">{myInvites.map((i) => { const open = (i.status === "SENT" || i.status === "OPENED") && i.expiresAt > now; return <li key={i.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between gap-2"><b className="text-[13.5px]">{i.name}</b><Badge tone={i.status === "JOINED" ? "teal" : open ? (i.status === "OPENED" ? "navy" : "amber") : "neutral"} filled={i.status === "JOINED"}>{i.status === "JOINED" ? "Joined" : i.status === "REVOKED" ? "Cancelled" : !open ? "Expired" : i.status === "OPENED" ? "Opened" : "Sent"}</Badge></div>{open ? <div className="mt-2 flex items-center gap-2"><CopyInviteLink inviteId={i.id} /><form action={revokeInvite}><input type="hidden" name="inviteId" value={i.id} /><SubmitButton size="sm" variant="ghost" pendingText="…">Cancel</SubmitButton></form></div> : null}</li>; })}</ul> : <div className="text-[12.5px] text-ink-muted">Nobody invited yet.</div>}</CardBody></Card>
           </div>

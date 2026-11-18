@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { FrameworkCard } from "@/components/domain/framework";
+import { frameworkFor } from "@/lib/framework-for";
+import { INTRODUCER_SELECT } from "@/lib/trust-include";
 import { notFound } from "next/navigation";
 import { requireInternal, getUser } from "@/server/session";
 import { prisma } from "@/lib/db";
@@ -14,7 +17,7 @@ import { AvailabilityBadge, DecisionBadge, RouteBadge, StageBadge } from "@/comp
 import { DateText } from "@/components/domain/date";
 import { AvailabilityDrawer, EditProfileDrawer, AddRelationshipDrawer, AddEvidenceDrawer, ScheduleDrawer, CaptureConversationDrawer, RelocationDrawer } from "@/components/domain/person-drawers";
 import { fullName } from "@/lib/utils";
-import { TrustCard, FitCard, VouchList, ScreeningBadge } from "@/components/domain/trust";
+import { FitCard, VouchList, ScreeningBadge } from "@/components/domain/trust";
 import { VouchDrawer } from "@/components/domain/member-drawers";
 import { TrustHalo, CircleGlyph, Dial, Vital, Stack, ActivityStrip } from "@/components/domain/person-visuals";
 import { CIRCLES, circleOf } from "@/lib/circles";
@@ -53,7 +56,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const person = await prisma.person.findUnique({
     where: { id },
     include: {
-      relationships: { include: { networkOwner: { select: { name: true } }, introducedBy: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" } },
+      relationships: { include: { networkOwner: { select: { name: true } }, introducedBy: INTRODUCER_SELECT }, orderBy: { createdAt: "asc" } },
       vouches: { include: { voucherUser: { select: { name: true } }, voucherPerson: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } },
       referralsMade: { select: { status: true } },
       evidence: { include: { observer: { select: { name: true } } }, orderBy: { dateObserved: "desc" } },
@@ -250,7 +253,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             </>}
           </div>
           <div className="space-y-4">
-            <TrustCard t={trust} standard={standardFor(person)} firstName={person.firstName} action={<span className="flex flex-wrap justify-end gap-1.5"><ReferenceDrawer personId={person.id} about={person.firstName} open={openRefs} /><VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} /></span>} />
+            <FrameworkCard f={frameworkFor(person)} proofs={standardFor(person)} personId={person.id} firstName={person.firstName} action={<span className="flex flex-wrap justify-end gap-1.5"><ReferenceDrawer personId={person.id} about={person.firstName} open={openRefs} /><VouchDrawer personId={person.id} personName={fullName(person)} users={users} people={allPeople.filter((x) => x.id !== person.id).map((x) => ({ id: x.id, name: fullName(x) }))} /></span>} />
             {person.vouches.length ? <VouchList vouches={person.vouches} /> : null}
             <Card>
               <CardHeader title="Details" />

@@ -32,6 +32,8 @@ export default async function CommercialsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><F name="contractMarginPct" label="Direct client margin %" hint="of the billed day rate" /><F name="agencyContractMarginPct" label="Agency's margin %" hint="on the day rate" /><F name="agencyContractSharePct" label="Our share of the agency margin %" /><F name="workingDaysPerYear" label="Working days per year" /></div>
                 <H>Advisory · Amana</H>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><F name="expertHourlyTakePct" label="Expert call take %" hint="platform share of the hourly rate" /><F name="defaultExpertHours" label="Default expert hours" /><F name="sowSharePct" label="SOW share %" hint="of SOW value for people we supply" /><F name="introductionFee" label="Flat introduction fee" /></div>
+                <H>Members</H>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><F name="memberReferralSharePct" label="Member referral share %" hint="of our fee, to the member who referred, introduced or shared the work" /></div>
                 <Field label="Currency"><Select name="currency" defaultValue={rc.currency} className="w-[140px]">{["GBP", "AED", "SAR", "USD", "EUR"].map((c) => <option key={c}>{c}</option>)}</Select></Field>
                 <div className="flex justify-end"><SubmitButton pendingText="Saving…">Save rate card</SubmitButton></div>
               </form>

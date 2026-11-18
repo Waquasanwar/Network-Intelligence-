@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { setAccountSearch } from "@/server/actions/search";
 import { handlePublicRequest } from "@/server/actions/public";
 import { requireInternal } from "@/server/session";
 import { NextStep } from "@/components/ui/next-step";
@@ -183,7 +184,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
       {tab === "accounts" ? (
           <Card>
             <CardHeader title="Accounts" description="Who pays, and on what terms." action={money ? <Link href="/settings/commercials" className="text-[12px] text-ink-muted hover:text-ink">Rate card →</Link> : undefined} />
-            <CardBody><ul className="divide-y divide-line">{accounts.map((a) => <li key={a.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"><div><div className="text-[13px] font-medium">{a.name}</div><div className="text-[12px] text-ink-faint">{KIND_LABEL[a.kind]} · {a._count.briefs} requirements{money && a.monthlyFee ? ` · ${fmt(Number(a.monthlyFee), a.currency)}/mo access` : ""}{a.portalTenantId ? " · portal login" : ""}</div></div><Badge tone={a.status === "ACTIVE" ? "teal" : "amber"}>{a.status.toLowerCase()}</Badge></li>)}</ul></CardBody>
+            <CardBody><ul className="divide-y divide-line">{accounts.map((a) => <li key={a.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2"><div><div className="text-[13px] font-medium">{a.name}</div><div className="text-[12px] text-ink-faint">{KIND_LABEL[a.kind]} · {a._count.briefs} requirements{money && a.monthlyFee ? ` · ${fmt(Number(a.monthlyFee), a.currency)}/mo access` : ""}{a.portalTenantId ? " · portal login" : ""}</div></div><Badge tone={a.status === "ACTIVE" ? "teal" : "amber"}>{a.status.toLowerCase()}</Badge>{user.role === "OWNER" && a.kind !== "EXPERT_NETWORK" && a.portalEnabled ? <form action={setAccountSearch} className="flex-none"><input type="hidden" name="accountId" value={a.id} /><input type="hidden" name="on" value={a.searchEnabled ? "0" : "1"} /><SubmitButton size="sm" variant={a.searchEnabled ? "ghost" : "secondary"} pendingText="…">{a.searchEnabled ? "Search on · switch off" : "Give search access"}</SubmitButton></form> : null}</li>)}</ul></CardBody>
           </Card>
       ) : null}
       {tab === "fees" && money ? (

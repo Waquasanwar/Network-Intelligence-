@@ -73,7 +73,16 @@ export type AuditAction =
   | "shortlist.referred"
   | "screening.config"
   | "settings.security"
-  | "settings.screening";
+  | "settings.screening"
+  | "board.post"
+  | "board.close"
+  | "connection.request"
+  | "connection.answer"
+  | "credit.create"
+  | "credit.update"
+  | "portal.search"
+  | "portal.search_ask"
+  | "account.search";
 
 export async function audit(input: {
   tenantId: string;

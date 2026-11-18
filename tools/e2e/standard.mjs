@@ -109,14 +109,13 @@ await step("a filled-in trap field stores nothing", null, async () => {
 });
 
 let link = "";
-await step("the six proofs on a profile, with a next step for each one missing", o, async () => {
+await step("a profile shows the framework behind the score, and what clients see of it", o, async () => {
   await o.goto(`${BASE}/network/${person}`, { waitUntil: "networkidle" });
-  const s = o.locator("[data-standard]").first();
-  assert((await s.locator("[data-proof]").count()) === 6, "six proofs");
-  const held = Number(await s.getAttribute("data-standard"));
-  assert((await s.locator("[data-proof]:not([data-held])").filter({ hasText: "Next:" }).count()) === 6 - held, "a next step on every proof not held");
-  assert(await s.locator('[data-proof="worked"][data-held]').isVisible(), "worked-with proof held for someone we delivered with");
-  return `${held} of 6 held`;
+  const fw = o.locator("[data-framework]");
+  assert((await fw.locator("[data-check]").count()) === 22, "22 checks");
+  assert(await fw.locator('[data-check="workedWith"][data-held]').count(), "worked-with held for someone we delivered with");
+  assert(/Clients see \d of 6 proofs/.test(await fw.innerText()), "the six proofs clients see");
+  return `${await fw.getAttribute("data-framework")} of 22 held`;
 });
 
 await step("ask for a reference: the team creates a link from the profile", o, async () => {
@@ -148,8 +147,9 @@ await step("the referee answers with no login, and the proof is earned", null, a
 
 await step("the profile shows the reference apart from vouches inside the network", o, async () => {
   await o.goto(`${BASE}/network/${person}`, { waitUntil: "networkidle" });
-  const v = await o.locator('[data-proof="vouched"]').first().innerText();
-  assert(/named reference/.test(v), "reference counted as outside: " + v.replace(/\n/g, " "));
+  await o.locator('[data-framework] [data-area="record"] summary').click();
+  const v = await o.locator('[data-check="reference"]').first().innerText();
+  assert(await o.locator('[data-check="reference"][data-held]').count() && /reference/.test(v), "reference counted as outside: " + v.replace(/\n/g, " "));
 });
 
 await step("Grow shows where the network is thin, and each count opens the people missing that proof", o, async () => {

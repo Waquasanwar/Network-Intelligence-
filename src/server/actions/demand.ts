@@ -9,62 +9,14 @@ import { assertSameTenant, canRevealIdentity, canSeeMoney, isInternal } from "@/
 import { isShortlistNamingDecision, namingBlocked } from "@/lib/reveal";
 import { limitOrThrow } from "@/lib/rate-limit";
 import { parseList } from "@/lib/utils";
-import { parseBrief, matchBrief, hardChecks, estimateFee, defaultFeeModel, defaultTerms, DEFAULT_RATE_CARD, fmt, type Brief, type BudgetKind, type BriefPerson, type RateCard, type Terms, type FeeModel, type ShortlistDecision, type BriefStatus, type FeeStatus } from "@/lib/demand";
+import { parseBrief, matchBrief, hardChecks, estimateFee, defaultTerms, DEFAULT_RATE_CARD, type Brief, type RateCard, type FeeModel, type ShortlistDecision, type BriefStatus, type FeeStatus } from "@/lib/demand";
 import { toDomain } from "@/lib/brief-domain";
-import type { Brief as DbBrief, CommercialAccount, EngagementRoute, Seniority, Prisma } from "@prisma/client";
+import type { Brief as DbBrief, EngagementRoute, Seniority, Prisma } from "@prisma/client";
 import { resolvePortalAccount, loadRateCard } from "@/server/queries";
+import { briefData, briefPeople, termsFor, forecastFee, runShortlist, creditReferrers } from "@/server/briefs";
 
 // ---------- shared helpers (also used by pages) ----------
 
-
-async function briefPeople(tenantId: string): Promise<BriefPerson[]> {
-  const people = await prisma.person.findMany({ where: { tenantId }, include: { relationships: true, evidence: true, conversations: { where: { approvalStatus: "APPROVED" }, select: { id: true } } } });
-  return people.map((p) => ({
-    id: p.id, capabilities: p.capabilities, sectors: p.sectors, seniority: p.seniority, engagementPreferences: p.engagementPreferences, primaryCity: p.primaryCity, primaryCountry: p.primaryCountry, targetLocations: p.targetLocations,
-    availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate, rateExpectation: p.rateExpectation, salaryExpectation: p.salaryExpectation,
-    relationships: p.relationships.map((r) => ({ relationshipType: r.relationshipType, workedTogether: r.workedTogether, wouldWorkTogetherAgain: r.wouldWorkTogetherAgain, yearsKnown: r.yearsKnown })),
-    evidence: p.evidence.map((e) => ({ evidenceType: e.evidenceType, confidence: e.confidence, context: e.context })),
-    approvedConversations: p.conversations.length, workRights: p.workRights, relocationInterest: p.relocationInterest,
-  }));
-}
-
-/** Retrieve people for a brief and upsert the shortlist. Human decisions are preserved. */
-async function runShortlist(db: DbBrief, tenantId: string) {
-  const brief = toDomain(db);
-  const results = matchBrief(brief, await briefPeople(tenantId), 12);
-  for (const r of results) {
-    await prisma.shortlistItem.upsert({
-      where: { briefId_personId: { briefId: db.id, personId: r.match.personId } },
-      create: { briefId: db.id, personId: r.match.personId, fitScore: r.match.fitScore, fitExplanation: r.match.fitExplanation, dimensions: r.match.dimensions as unknown as Prisma.InputJsonValue, uncertainty: r.match.uncertainty, checks: r.checks as unknown as Prisma.InputJsonValue, tier: r.tier },
-      update: { fitScore: r.match.fitScore, fitExplanation: r.match.fitExplanation, dimensions: r.match.dimensions as unknown as Prisma.InputJsonValue, uncertainty: r.match.uncertainty, checks: r.checks as unknown as Prisma.InputJsonValue, tier: r.tier },
-    });
-  }
-  return results.length;
-}
-
-function briefData(parsed: Brief, terms: Terms) {
-  return {
-    rawText: parsed.rawText, title: parsed.title, engagementRoute: parsed.engagementRoute, headcount: parsed.headcount, roles: parsed.roles, capabilities: parsed.capabilities, sectors: parsed.sectors, seniority: parsed.seniority,
-    locations: parsed.locations, mustBeLocal: parsed.mustBeLocal, workRights: parsed.workRights, budgetKind: parsed.budget?.kind ?? null, budgetAmount: parsed.budget?.amount ?? null, budgetMax: parsed.budget?.max ?? null, budgetCurrency: parsed.budget?.currency ?? null,
-    durationMonths: parsed.durationMonths, startBy: parsed.startBy, assumptions: parsed.assumptions, questions: parsed.questions,
-    feeModel: terms.model, feePct: terms.pct, feeFlat: terms.flat, feeCurrency: terms.currency,
-  };
-}
-
-async function termsFor(account: CommercialAccount, route: EngagementRoute | null, card: RateCard): Promise<Terms> {
-  const model = defaultFeeModel(route, account.kind);
-  return { ...defaultTerms(card, model), ...((account.terms as Partial<Terms> | null) ?? {}) };
-}
-
-async function forecastFee(db: DbBrief, tenantId: string, card: RateCard) {
-  const d = toDomain(db);
-  const est = estimateFee(d, d.terms, card, d.expertHours);
-  const existing = await prisma.feeLine.findFirst({ where: { briefId: db.id, personId: null, status: "FORECAST" } });
-  if (!est.confident) { if (existing) await prisma.feeLine.delete({ where: { id: existing.id } }); return; }
-  const data = { model: d.terms.model, basis: est.basis, gross: est.gross, ourTake: est.ourTake, currency: est.currency };
-  if (existing) await prisma.feeLine.update({ where: { id: existing.id }, data });
-  else await prisma.feeLine.create({ data: { ...data, tenantId, briefId: db.id, accountId: db.accountId, status: "FORECAST" } });
-}
 
 async function ownedBrief(user: SessionUser, id: string) {
   const b = await prisma.brief.findUnique({ where: { id } });
@@ -220,6 +172,12 @@ export async function decideShortlist(formData: FormData) {
       await audit({ tenantId: user.tenantId, actorId: user.id, action: "fee.create", entityType: "Brief", entityId: item.briefId, metadata: { ourTake: est.ourTake, currency: est.currency, personId: item.personId } });
     }
   }
+  if (decision === "PLACED") {
+    // The members who brought the work or the person earn their share of the fee.
+    const card = await loadRateCard(user.tenantId);
+    const credits = await creditReferrers(item.briefId, item.personId, user.tenantId, card.memberReferralSharePct);
+    for (const c of credits) await audit({ tenantId: user.tenantId, actorId: user.id, action: "credit.create", entityType: "Brief", entityId: item.briefId, metadata: { memberId: c.personId, pct: Number(c.pct), reason: c.reason } });
+  }
   const placed = await prisma.shortlistItem.count({ where: { briefId: item.briefId, decision: "PLACED" } });
   const next: BriefStatus | null = placed >= item.brief.headcount ? "FILLED" : decision === "INTRODUCED" ? "INTRODUCING" : decision === "PROPOSED" && ["NEW", "QUALIFYING", "SEARCHING"].includes(item.brief.status) ? "SHORTLISTED" : null;
   if (next && next !== item.brief.status) await prisma.brief.update({ where: { id: item.briefId }, data: { status: next } });
@@ -338,6 +296,18 @@ export async function saveRateCard(formData: FormData) {
   await prisma.tenant.update({ where: { id: user.tenantId }, data: { rateCard: next as unknown as Prisma.InputJsonValue } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "ratecard.update", entityType: "Tenant", entityId: user.tenantId, metadata: { permPct: next.permPct, contractMarginPct: next.contractMarginPct, expertHourlyTakePct: next.expertHourlyTakePct } });
   revalidatePath("/settings/commercials"); revalidatePath("/requirements");
+}
+
+/** Mark a member's referral share as paid, or written off. Money, so the owner only. */
+export async function setCreditStatus(formData: FormData) {
+  const user = await requireOwnerAction();
+  const id = String(formData.get("id") || "");
+  const status = z.enum(["OWED", "PAID", "WRITTEN_OFF"]).parse(formData.get("status"));
+  const c = await prisma.referralCredit.findFirst({ where: { id, tenantId: user.tenantId } });
+  if (!c) throw new Error("Not found");
+  await prisma.referralCredit.update({ where: { id: c.id }, data: { status } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "credit.update", entityType: "Brief", entityId: c.briefId, metadata: { creditId: c.id, status } });
+  revalidatePath(`/requirements/${c.briefId}`); revalidatePath("/member");
 }
 
 // ---------- portal (clients and agencies) ----------

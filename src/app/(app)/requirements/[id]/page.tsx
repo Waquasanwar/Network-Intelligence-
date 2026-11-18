@@ -18,7 +18,7 @@ import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { EditBriefDrawer, AddFeeDrawer } from "@/components/domain/demand-drawers";
 import { BriefChips, CheckList, TierBadge, ShortlistBadge, BriefStatusBadge, FeeStatusBadge, FeeBox, AnonCard, routeLabel, budgetLabel, KIND_LABEL } from "@/components/domain/demand";
-import { findForBrief, decideShortlist, setBriefStatus, saveBriefTerms, setFeeStatus } from "@/server/actions/demand";
+import { findForBrief, decideShortlist, setBriefStatus, saveBriefTerms, setFeeStatus, setCreditStatus } from "@/server/actions/demand";
 import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard } from "@/server/queries";
 import { estimateFee, fmt, PORTAL_VISIBLE, FEE_MODEL_LABELS, SHORTLIST_LABELS, BRIEF_STATUS_LABELS, FEE_STATUS_LABELS, type HardCheck } from "@/lib/demand";
@@ -44,6 +44,7 @@ export default async function RequirementPage({ params, searchParams }: { params
   const user = await requireInternal();
   const money = canSeeMoney(user);
   const { id } = await params;
+  const credits = money ? await prisma.referralCredit.findMany({ where: { briefId: id, tenantId: user.tenantId }, include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" } }) : [];
   const b = await prisma.brief.findUnique({ where: { id }, include: { account: true, shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: true, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } }, pitches: { include: { person: { select: { id: true, firstName: true, lastName: true, headline: true } } } }, referrals: { include: { referrer: { select: { firstName: true, lastName: true } } } }, feeLines: { include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } } } });
   if (!b || b.tenantId !== user.tenantId) notFound();
   const [card, audit] = await Promise.all([loadRateCard(user.tenantId), prisma.auditLog.findMany({ where: { tenantId: user.tenantId, entityId: id }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 8 })]);
@@ -136,6 +137,11 @@ export default async function RequirementPage({ params, searchParams }: { params
               <CardBody>
                 <FeeBox est={est} extra={est.confident && b.headcount > 1 ? <div className="text-[12px] text-ink-faint">{fmt(est.perHead, est.currency)} per placement</div> : null} />
                 {b.feeLines.length ? <div className="mt-4"><div className="label-caps text-ink-faint mb-2">Fee lines</div><ul className="divide-y divide-line">{b.feeLines.map((f) => <li key={f.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><span className="text-[13px] font-semibold tabular">{fmt(Number(f.ourTake), f.currency)}</span><FeeStatusBadge status={f.status} /></div><div className="text-[12px] text-ink-faint">{f.person ? `${fullName(f.person)} · ` : ""}{f.basis}</div><form action={setFeeStatus} className="flex items-center gap-2 mt-1.5"><input type="hidden" name="feeId" value={f.id} /><Select name="status" defaultValue={f.status} className="h-7 text-xs w-[130px]">{Object.entries(FEE_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton></form></li>)}</ul></div> : <p className="mt-3 text-[12.5px] text-ink-muted">A fee line is created when someone is placed, or add one now.</p>}
+                {credits.length ? <div className="mt-4" data-credits><div className="label-caps text-ink-faint mb-2">Members&apos; share</div><ul className="divide-y divide-line">{credits.map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 first:pt-0 text-[12.5px]">
+                    <span className="min-w-0"><b className="font-semibold">{fullName(c.person)}</b> <span className="text-ink-muted">{c.reason} · {Number(c.pct)}%{c.amount !== null ? ` · ${fmt(Number(c.amount), c.currency)}` : " · amount follows the fee"}</span></span>
+                    {c.status === "OWED" ? <form action={setCreditStatus}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="status" value="PAID" /><SubmitButton size="sm" variant="secondary" pendingText="…">Mark paid</SubmitButton></form> : <span className="text-[12px] font-semibold text-teal">{c.status === "PAID" ? "Paid" : "Written off"}</span>}
+                  </li>))}</ul></div> : null}
                 <Fold className="mt-4 border-t border-line pt-3" summary={<span className="text-[13px] font-semibold text-ink">Change the terms</span>}>
                   <form action={saveBriefTerms} className="space-y-3 mt-3">
                     <input type="hidden" name="briefId" value={b.id} />

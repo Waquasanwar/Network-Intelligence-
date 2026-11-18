@@ -74,7 +74,7 @@ describe("server-action surface", () => {
   });
 
   it("fees, commercial terms and the rate card can only be changed by the owner", () => {
-    const owner: Record<string, string[]> = { "demand.ts": ["saveBriefTerms", "setFeeStatus", "addFeeLine", "saveRateCard"], "partners.ts": ["updatePartner"] };
+    const owner: Record<string, string[]> = { "demand.ts": ["saveBriefTerms", "setFeeStatus", "addFeeLine", "saveRateCard", "setCreditStatus"], "partners.ts": ["updatePartner"] };
     for (const [file, names] of Object.entries(owner)) {
       const all = bodies(readFileSync(join(ACTION_DIR, file), "utf8"));
       for (const n of names) expect(/requireOwnerAction\(/.test(all.find((f) => f.name === n)?.body ?? ""), `${file}: ${n} must require the owner`).toBe(true);

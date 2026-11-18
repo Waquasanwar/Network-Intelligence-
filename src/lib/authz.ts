@@ -77,8 +77,8 @@ export function assertSameTenant(actor: Actor, recordTenantId: string) {
 export function allowedPaths(actor: Actor): string[] {
   if (isPartner(actor)) return ["/partner-portal", "/portal", "/settings/security"];
   if (isClient(actor)) return ["/client-workspace", "/portal", "/settings/security"];
-  if (actor.role === "MEMBER") return ["/member", "/screening", "/settings/security"];
-  return ["/overview", "/network", "/invite", "/conversations", "/opportunities", "/requirements", "/referrals", "/portal", "/member", "/screening", "/amana", "/partners", "/relocation", "/settings"];
+  if (actor.role === "MEMBER") return ["/member", "/community", "/screening", "/settings/security"];
+  return ["/overview", "/network", "/community", "/invite", "/conversations", "/opportunities", "/requirements", "/referrals", "/portal", "/member", "/screening", "/amana", "/partners", "/relocation", "/settings"];
 }
 
 export function canAccessPath(actor: Actor, pathname: string) {

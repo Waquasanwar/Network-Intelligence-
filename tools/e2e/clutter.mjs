@@ -47,15 +47,15 @@ async function check(label, p, routes, phone = false) {
 
 await step("team screens stay within the clutter budget", null, async () => {
   const p = await session(b, "waqas@networkintelligence.local");
-  await check("team", p, [["home", "/overview"], ["people", "/network"], ["person", `/network/${person}`], ["map", "/network/map"], ["grow", "/invite"], ["import", "/network/import"], ["conversations", "/conversations"], ["requirements", "/requirements"], ["accounts", "/requirements?tab=accounts"], ["fees", "/requirements?tab=fees"], ...(brief ? [["requirement", `/requirements/${brief}`]] : []), ["opportunities", "/opportunities"], ...(opp ? [["opportunity", `/opportunities/${opp}`]] : []), ["referrals", "/referrals"], ["relocation", "/relocation"], ["portal", "/portal"], ["agencies", "/partners"], ["amana", "/amana"], ["screening", "/settings/screening"], ["commercials", "/settings/commercials"], ["integrations", "/settings/integrations"], ["security", "/settings/security"]]);
+  await check("team", p, [["home", "/overview"], ["people", "/network"], ["person", `/network/${person}`], ["map", "/network/map"], ["grow", "/invite"], ["community", "/community"], ["import", "/network/import"], ["conversations", "/conversations"], ["requirements", "/requirements"], ["accounts", "/requirements?tab=accounts"], ["fees", "/requirements?tab=fees"], ...(brief ? [["requirement", `/requirements/${brief}`]] : []), ["opportunities", "/opportunities"], ...(opp ? [["opportunity", `/opportunities/${opp}`]] : []), ["referrals", "/referrals"], ["relocation", "/relocation"], ["portal", "/portal"], ["agencies", "/partners"], ["amana", "/amana"], ["screening", "/settings/screening"], ["commercials", "/settings/commercials"], ["integrations", "/settings/integrations"], ["security", "/settings/security"]]);
   await p.screenshot({ path: `${DIR}/clutter-team.png` });
   if (p.errs.length) throw new Error(p.errs.join("; ")); await p.context().close();
   return report.splice(0).join(" · ");
 });
 await step("client, agency and member screens stay within the clutter budget", null, async () => {
-  const c = await session(b, "client@meridian.local"); await check("client", c, [["workspace", "/client-workspace"], ["portal", "/portal"]]); await c.context().close();
+  const c = await session(b, "client@meridian.local"); await check("client", c, [["workspace", "/client-workspace"], ["portal", "/portal"], ["search", "/portal/search"]]); await c.context().close();
   const a = await session(b, "partner@harboursearch.local"); await check("agency", a, [["portal", "/partner-portal"]]); await a.context().close();
-  if (member) { const m = await session(b, member, NEWPW); await check("member", m, [["home", "/member"], ["opportunities", "/member?tab=opportunities"], ["refer", "/member?tab=refer"], ["privacy", "/member?tab=privacy"]]); await m.context().close(); }
+  if (member) { const m = await session(b, member, NEWPW); await check("member", m, [["home", "/member"], ["opportunities", "/member?tab=opportunities"], ["refer", "/member?tab=refer"], ["privacy", "/member?tab=privacy"], ["community", "/community"], ["members", "/community?tab=members"]]); await m.context().close(); }
   return report.splice(0).join(" · ") + (member ? "" : " · no member account to check (run the network suite first)");
 });
 await step("nothing scrolls sideways on a phone", null, async () => {

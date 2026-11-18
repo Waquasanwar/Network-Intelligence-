@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { trustFor } from "@/lib/trust-for";
+import { INTRODUCER_SELECT } from "@/lib/trust-include";
 import { TrustMini } from "@/components/domain/trust";
-import { trustScore } from "@/lib/trust";
 import { requireInternal } from "@/server/session";
 import { NextStep } from "@/components/ui/next-step";
 import { networkStep } from "@/server/next-step";
@@ -69,7 +70,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   let people = await prisma.person.findMany({
     where,
-    include: { relationships: { include: { introducedBy: { select: { id: true, firstName: true, lastName: true } }, networkOwner: { select: { name: true } } } }, evidence: true, conversations: { select: { approvalStatus: true } }, vouches: true, referralsMade: { select: { status: true } } },
+    include: { relationships: { include: { introducedBy: INTRODUCER_SELECT, networkOwner: { select: { name: true } } } }, evidence: true, conversations: { select: { approvalStatus: true, type: true, approvedById: true } }, vouches: true, referralsMade: { select: { status: true } } },
     orderBy: [{ updatedAt: "desc" }],
     take: 300,
   });
@@ -165,7 +166,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
             <tbody>
               {people.map((p) => {
                 const primary = p.relationships[0];
-                const trust = trustScore({ vouches: p.vouches.map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })), workedWith: p.relationships.filter((r) => r.workedTogether).length, wouldWorkAgain: p.relationships.filter((r) => r.wouldWorkTogetherAgain === true).length, evidence: p.evidence.filter((e) => e.evidenceType !== "CAUTION").length, cautions: p.evidence.filter((e) => e.evidenceType === "CAUTION").length, approvedConversations: p.conversations.filter((c) => c.approvalStatus === "APPROVED").length, screened: p.screeningStatus === "APPROVED" || !!p.screenedAt, freshness: assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now), referralsAccepted: p.referralsMade.filter((r) => r.status === "ACCEPTED").length });
+                const trust = trustFor(p);
                 return (
                   <tr
                     key={p.id}

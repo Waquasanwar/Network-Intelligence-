@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
-import { trustScore, trustBand, TRUST_BAND_LABEL } from "@/lib/trust";
+import { trustFor } from "@/lib/trust-for";
+import { INTRODUCER_SELECT } from "@/lib/trust-include";
+import { trustBand, TRUST_BAND_LABEL } from "@/lib/trust";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { matchBrief, type BriefPerson } from "@/lib/demand";
 import { toDomain } from "@/lib/brief-domain";
@@ -26,10 +28,11 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
         capabilities: true, sectors: true, seniority: true, engagementPreferences: true, primaryCity: true, primaryCountry: true, targetLocations: true,
         rateExpectation: true, salaryExpectation: true, workRights: true, relocationInterest: true, attributes: true,
         screeningStatus: true, screenedAt: true, availabilityStatus: true, availabilityConfirmedAt: true, nextCheckDate: true,
-        relationships: { select: { relationshipType: true, workedTogether: true, wouldWorkTogetherAgain: true, yearsKnown: true, introducedById: true } },
+        checks: true, referralConsent: true, privacy: true,
+        relationships: { select: { relationshipType: true, sourceType: true, workedTogether: true, wouldWorkTogetherAgain: true, yearsKnown: true, introducedById: true, introducedBy: INTRODUCER_SELECT, networkOwner: { select: { name: true } } } },
         vouches: { select: { wouldRecommend: true, voucherKind: true, attributes: true } },
         evidence: { select: { evidenceType: true, confidence: true, context: true } },
-        conversations: { select: { approvalStatus: true } },
+        conversations: { select: { approvalStatus: true, type: true, approvedById: true } },
         referralsMade: { select: { status: true } },
       },
       take: 400,
@@ -68,17 +71,7 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
   for (const p of people) {
     const worked = p.relationships.some((r) => r.workedTogether);
     const freshness = assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now);
-    const t = trustScore({
-      vouches: p.vouches.map((v) => ({ wouldRecommend: v.wouldRecommend, external: v.voucherKind === "EXTERNAL" })),
-      workedWith: p.relationships.filter((r) => r.workedTogether).length,
-      wouldWorkAgain: p.relationships.filter((r) => r.wouldWorkTogetherAgain === true).length,
-      evidence: p.evidence.filter((e) => e.evidenceType !== "CAUTION").length,
-      cautions: p.evidence.filter((e) => e.evidenceType === "CAUTION").length,
-      approvedConversations: p.conversations.filter((c) => c.approvalStatus === "APPROVED").length,
-      screened: p.screeningStatus === "APPROVED" || !!p.screenedAt,
-      freshness,
-      referralsAccepted: p.referralsMade.filter((r) => r.status === "ACCEPTED").length,
-    });
+    const t = trustFor(p);
     const open = ACTIVE_STATUSES.includes(p.availabilityStatus);
     nodes.push({
       id: p.id, name: p.preferredName || fullName(p), headline: p.headline ?? "", trust: t.score, worked,
