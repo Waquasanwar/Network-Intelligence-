@@ -51,6 +51,7 @@ export function AskDock() {
   }, []);
 
   if (pathname === "/overview") return null; // Home has the full composer.
+  if (pathname === "/network/map") return null; // The map fills the screen and has its own controls along the bottom.
   const q = list[i % list.length];
   return (
     <div className="ask-dock" data-away={away || editing || undefined}>
