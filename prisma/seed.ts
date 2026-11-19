@@ -6,7 +6,8 @@ import { suggestNextCheck } from "../src/lib/availability";
 
 const prisma = new PrismaClient();
 
-const DEMO_PASSWORD = "Password123!";
+// A deployed test copy sets SEED_PASSWORD so its demo logins are not the one written here.
+const DEMO_PASSWORD = process.env.SEED_PASSWORD || "Password123!";
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
 const daysAhead = (n: number) => new Date(Date.now() + n * 86_400_000);
 
