@@ -23,6 +23,14 @@ export const metadata = { title: "Partner portal" };
  * defensive check that no forbidden field reached the page. Names appear only after an
  * internal human has approved an introduction and the person has consented.
  */
+// What happened, in words a person would use. Anything not listed reads as its own name, tidied.
+const ACTIONS: Record<string, string> = {
+  "auth.login": "Signed in", "auth.login_failed": "Sign-in attempt failed", "partner.requirement": "Submitted a requirement",
+  "portal.brief_submitted": "Submitted a requirement", "portal.response": "Replied about a proposal", "introduction.request": "Asked for an introduction",
+  "terms.accept": "Accepted terms", "brief.search": "Searched the network", "identity.reveal": "A name was shared with you", "user.mfa_enable": "Turned on two-step sign-in",
+};
+const plainAction = (a: string) => ACTIONS[a] ?? (a.replace(/[._]/g, " ").replace(/^\w/, (c) => c.toUpperCase()));
+
 export default async function PartnerPortal() {
   const user = await requireUser();
   if (!isPartner(user)) redirect("/forbidden");
@@ -115,7 +123,7 @@ export default async function PartnerPortal() {
           </Card>
           <Card>
             <CardHeader title="Your activity" />
-            <CardBody><ul className="text-xs space-y-1">{audit.map((a) => <li key={a.id} className="flex justify-between gap-2"><span className="font-mono text-[12px]">{a.action}</span><DateText date={a.createdAt} relative className="text-ink-faint" /></li>)}</ul></CardBody>
+            <CardBody className="pt-0"><ul className="divide-y divide-line">{audit.map((a) => <li key={a.id} className="flex items-center justify-between gap-3 py-2 text-[13px]"><span className="text-ink">{plainAction(a.action)}</span><DateText date={a.createdAt} relative className="flex-none text-[12px] text-ink-faint" /></li>)}</ul></CardBody>
           </Card>
         </div>
       </div>

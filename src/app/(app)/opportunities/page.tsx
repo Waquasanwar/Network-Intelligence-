@@ -67,7 +67,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             const cards = opps.filter((o) => o.status === stage);
             return (
               <div key={stage} className="rounded-[22px] bg-surface-muted/70 border border-line p-2.5">
-                <div className="flex items-center justify-between px-1 mb-2"><span className="text-[12px] font-medium uppercase tracking-wide text-ink-muted">{OPPORTUNITY_STATUS_LABELS[stage]}</span><span className="text-[12px] text-ink-faint tabular">{cards.length}</span></div>
+                <div className="flex items-center justify-between px-1 mb-2"><span className="text-[12.5px] font-semibold text-ink-muted">{OPPORTUNITY_STATUS_LABELS[stage]}</span><span className="text-[12px] text-ink-faint tabular">{cards.length}</span></div>
                 <div className="space-y-2">
                   {cards.map((o) => (
                     <Link key={o.id} href={`/opportunities/${o.id}`} className="block rounded-[12px] border border-line bg-surface p-3 lift shadow-[var(--shadow-card)]">

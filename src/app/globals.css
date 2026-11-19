@@ -226,7 +226,7 @@ table.data th {
   position: sticky; top: 0; z-index: 1;
   text-align: left; font-weight: 600; color: var(--color-ink-faint);
   padding: 12px 16px; background: var(--color-surface); border-bottom: 1px solid var(--color-line);
-  white-space: nowrap; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; font-variation-settings: "wdth" 118;
+  white-space: nowrap; font-size: 12.5px; letter-spacing: 0;
 }
 table.data td { padding: 14px 16px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
 table.data tbody tr { transition: background-color 90ms ease; }
@@ -642,3 +642,33 @@ a.figure:hover { opacity: 0.72; }
 .stage-ink .send-btn { background: var(--color-accent); color: #0c1b33; }
 .stage-ink .stage-chips .chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.16); color: #c3cde2; }
 .stage-ink .stage-chips .chip:hover { border-color: rgba(255, 255, 255, 0.4); color: #ffffff; }
+
+/* ---------- The network as an organism ----------
+   Membranes that ripple and breathe (drawn in network-graph.tsx), people as cells with a bright
+   nucleus that breathe out of step with each other, and you as the nucleus at the centre. Slow on
+   purpose: one breath is about seven seconds. Reduced motion holds a single still frame. */
+.organism-membrane { stroke-linejoin: round; }
+.organism-membrane.is-0 { stroke: rgba(126, 227, 188, 0.42); stroke-width: 1.4; }
+.organism-membrane.is-1 { stroke: rgba(180, 200, 255, 0.24); stroke-width: 1.2; }
+.organism-membrane.is-2 { stroke: rgba(160, 156, 255, 0.18); stroke-width: 1; }
+.cell { --cell: #e6eeff; --cell-deep: #9fb3dd; --cell-ring: rgba(200, 215, 255, 0.14); --cell-glow: rgba(180, 200, 255, 0.35);
+  background: radial-gradient(circle at 36% 32%, #ffffff 0%, var(--cell) 34%, var(--cell-deep) 100%);
+  box-shadow: 0 0 0 3px var(--cell-ring), 0 0 20px -2px var(--cell-glow); color: #1c2c50; }
+.cell.is-mint { --cell: #9af2cf; --cell-deep: #27a57d; --cell-ring: rgba(126, 227, 188, 0.2); --cell-glow: rgba(126, 227, 188, 0.6); color: #04392a; }
+.cell.is-white { --cell: #e9f0ff; --cell-deep: #93a9d8; }
+.cell.is-faint { --cell: #a9a6ff; --cell-deep: #5b57d8; --cell-ring: rgba(150, 145, 255, 0.16); --cell-glow: rgba(150, 145, 255, 0.45); color: #ffffff; }
+.cell.is-selected { box-shadow: 0 0 0 2px #0b1a3a, 0 0 0 4px #ffffff, 0 0 24px 0 var(--cell-glow); }
+@keyframes cell-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.cell-breathe { animation: cell-breathe 7s ease-in-out infinite; }
+@keyframes nucleus { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 18px rgba(126, 227, 188, 0.45)); } 50% { transform: scale(1.06); filter: drop-shadow(0 0 30px rgba(126, 227, 188, 0.7)); } }
+.organism-nucleus { color: #04392a; background: radial-gradient(circle at 38% 34%, #ffffff 0%, #c9f7e4 30%, #7ee3bc 70%, #2fb389 100%); box-shadow: 0 0 0 6px rgba(126, 227, 188, 0.12), 0 0 0 14px rgba(126, 227, 188, 0.05); animation: nucleus 7s ease-in-out infinite; }
+@keyframes halo { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 50% { opacity: 0.7; transform: scale(1.06); } }
+.organism-halo { background: radial-gradient(circle, rgba(126, 227, 188, 0.28) 0%, rgba(126, 227, 188, 0) 70%); animation: halo 7s ease-in-out infinite; }
+.organism-signal { filter: drop-shadow(0 0 4px rgba(255, 179, 166, 0.9)); }
+.orbit-ping::after { animation-duration: 4.5s; }
+@media (prefers-reduced-motion: reduce) { .cell-breathe, .organism-nucleus, .organism-halo { animation: none; } }
+
+/* No eyebrows: small labels are plain sentence case, never spaced-out capitals. */
+.label-caps { font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; line-height: 1.3; }
+.eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.eyebrow::before { display: none; }

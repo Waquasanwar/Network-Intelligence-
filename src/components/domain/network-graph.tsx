@@ -31,11 +31,16 @@ const RINGS = CIRCLES;
  * The map's heartbeat, in seconds. A wave leaves "You" on every beat and takes three beats to cross
  * the orbits, so three are always in flight. Each person glows as the wave reaches their circle.
  */
-const BEAT = 2.4;
-const WAVE = { from: 0.04, to: 1.1, beats: 3 };
-/** When, within a beat, the wave reaches an orbit of the given relative size. */
-const beatDelay = (scale: number) => (((scale - WAVE.from) / (WAVE.to - WAVE.from)) * WAVE.beats * BEAT) % BEAT;
+const BEAT = 7; // one slow breath, in seconds
 const ringOf = circleOf;
+
+/**
+ * The organism: each circle is a living membrane. Its edge ripples (two slow waves travelling round
+ * it in opposite directions) and the whole membrane breathes in and out once every BEAT seconds,
+ * each circle a little after the one inside it. People ride their membrane, so they breathe with it.
+ */
+const wob = (ring: number, th: number, t: number) =>
+  1 + 0.032 * Math.sin(3 * th + t * 0.32 + ring * 1.7) + 0.02 * Math.sin(5 * th - t * 0.24 + ring * 0.6) + 0.028 * Math.sin((t / BEAT) * Math.PI * 2 - ring * 0.9);
 
 type Placed = GNode & { ring: number; angle: number; size: number; a: number; b: number };
 // `base0` is the slot each person occupies (and the area you can click). Inside it, people in the
@@ -49,7 +54,7 @@ const SWAY = [{ amp: 0.085, period: 17 }, { amp: -0.06, period: 23 }, { amp: 0.0
 const swayOf = (ring: number, t: number) => SWAY[ring].amp * Math.sin((t / SWAY[ring].period) * Math.PI * 2);
 
 /**
- * The network as circles of trust on a light, quiet stage — no chart dependency. You are at the centre; the
+ * The network as a living organism — no chart dependency. You are at the centre; the
  * people you have worked with circle closest, people the network knows in the middle, new
  * introductions on the edge. The orbits are tilted, so people at the front read larger than people
  * at the back, and each circle drifts slowly. A mint arc shows trust; a mint dot means open to work.
@@ -155,8 +160,22 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
   const at = (p: Placed, t: number) => {
     const th = p.angle + swayOf(p.ring, t);
     const depth = (Math.sin(th) + 1) / 2;
-    return { x: layout!.cx + p.a * Math.cos(th), y: layout!.cy + p.b * Math.sin(th), depth, k: 0.86 + 0.24 * depth };
+    const w = wob(p.ring, th, t);
+    return { x: layout!.cx + p.a * w * Math.cos(th), y: layout!.cy + p.b * w * Math.sin(th), depth, k: 0.88 + 0.2 * depth };
   };
+  // A membrane's outline at time t: a closed, smooth curve through points on the rippling edge.
+  const membrane = (ring: number, t: number) => {
+    if (!layout) return "";
+    const a = layout.rx * layout.scale[ring], b = layout.ry * layout.scale[ring], N = 44;
+    const pts = Array.from({ length: N }, (_, i) => { const th = (i / N) * Math.PI * 2; const w = wob(ring, th, t); return [layout.cx + a * w * Math.cos(th), layout.cy + b * w * Math.sin(th)]; });
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < N; i++) {
+      const p0 = pts[(i - 1 + N) % N], p1 = pts[i], p2 = pts[(i + 1) % N], p3 = pts[(i + 2) % N];
+      d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d + "Z";
+  };
+  const membraneEls = useRef(new Map<number, SVGPathElement>());
   const pathFor = (l: GLink, t: number) => {
     const b = byId.get(l.target);
     if (!b || !layout) return "";
@@ -181,6 +200,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
       const t = clock.current;
       for (const p of layout.placed) { const el = nodeEls.current.get(p.id); if (el) { const st = nodeStyle(p, t); el.style.transform = st.transform; el.style.zIndex = String(st.zIndex); } }
       links.forEach((l, i) => { const el = linkEls.current.get(i); if (el) el.setAttribute("d", pathFor(l, t)); });
+      for (const [r, el] of membraneEls.current) el.setAttribute("d", membrane(r, t));
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -206,25 +226,26 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
       <div ref={wrapRef} className="orbit-stage relative flex-1 min-w-0 text-ink" onClick={() => setSelected(null)}>
         {layout ? (
           <>
-            {/* The heartbeat: a wave leaves the centre on every beat and crosses the three circles. */}
-            <div className="pointer-events-none absolute" aria-hidden="true" style={{ left: layout.cx, top: layout.cy, width: layout.rx * 2, height: layout.rx * 2, transform: `translate(-50%, -50%) scaleY(${(layout.ry / layout.rx).toFixed(4)})` }}>
-              {[0, 1, 2].map((k) => <span key={k} className="orbit-ripple" style={{ animationDelay: `${k * BEAT}s` }} />)}
-            </div>
             <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
-              {/* The orbits, widest first: each a faint plate with a fine edge, so the three bands read as depth. */}
+              <defs>
+                <radialGradient id={`${uid}-m0`} cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#7ee3bc" stopOpacity="0.2" /><stop offset="70%" stopColor="#7ee3bc" stopOpacity="0.07" /><stop offset="100%" stopColor="#7ee3bc" stopOpacity="0.02" /></radialGradient>
+                <radialGradient id={`${uid}-m1`} cx="50%" cy="50%" r="50%"><stop offset="55%" stopColor="#a9c2ff" stopOpacity="0" /><stop offset="100%" stopColor="#a9c2ff" stopOpacity="0.07" /></radialGradient>
+                <radialGradient id={`${uid}-m2`} cx="50%" cy="50%" r="50%"><stop offset="70%" stopColor="#8f8cff" stopOpacity="0" /><stop offset="100%" stopColor="#8f8cff" stopOpacity="0.06" /></radialGradient>
+              </defs>
+              {/* The membranes, outermost first: soft living edges that ripple and breathe. */}
               {[2, 1, 0].map((r) => (
-                <ellipse key={r} cx={layout.cx} cy={layout.cy} rx={layout.rx * layout.scale[r]} ry={layout.ry * layout.scale[r]} className={`orbit-band is-${r}`} strokeWidth={1} strokeDasharray={r === 2 ? "2 6" : undefined} strokeLinecap="round" />
+                <path key={r} ref={(el) => { if (el) membraneEls.current.set(r, el); else membraneEls.current.delete(r); }} d={membrane(r, t0)} fill={`url(#${uid}-m${r})`} className={`organism-membrane is-${r}`} />
               ))}
               {/* Who introduced whom: a faint thread by default, a moving mint line for the person in focus. */}
               {links.map((l, i) => {
                 const fromHub = l.source === hub?.id;
                 const on = !!focus && (l.source === focus || l.target === focus);
-                return <path key={i} id={`${uid}-l${i}`} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "var(--color-ink)"} strokeWidth={on ? 1.6 : 1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.05 : 0.13} strokeLinecap="round" />;
+                return <path key={i} id={`${uid}-l${i}`} ref={(el) => { if (el) linkEls.current.set(i, el); else linkEls.current.delete(i); }} d={pathFor(l, t0)} fill="none" className={on ? "orbit-flow" : undefined} stroke={on ? "var(--color-coral)" : "#9fe9cd"} strokeWidth={on ? 1.6 : 1.1} strokeOpacity={on ? 1 : fromHub ? 0 : focus ? 0.05 : 0.2} strokeLinecap="round" />;
               })}
               {/* Signals running along the threads, from whoever made the introduction to the person. */}
               <g className="orbit-signals" opacity={focus ? 0.12 : 1}>
-                {signals.map((i, k) => { const begin = `${((k * 0.53) % (BEAT * 2)).toFixed(2)}s`; const dur = `${BEAT * 2}s`; return (
-                  <circle key={i} r={2} opacity={0} fill={links[i].source === hub?.id ? "var(--color-teal-400)" : "var(--color-coral)"}>
+                {signals.map((i, k) => { const begin = `${((k * 1.3) % (BEAT * 1.4)).toFixed(2)}s`; const dur = `${(BEAT * 1.4).toFixed(1)}s`; return (
+                  <circle key={i} r={2.4} opacity={0} className="organism-signal" fill={links[i].source === hub?.id ? "var(--color-teal-400)" : "#ffb3a6"}>
                     <animateMotion dur={dur} begin={begin} repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keyPoints="0;1;1" keySplines="0.4 0 0.2 1;0 0 1 1"><mpath href={`#${uid}-l${i}`} /></animateMotion>
                     <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.42;0.5;1" dur={dur} begin={begin} repeatCount="indefinite" />
                   </circle>
@@ -242,8 +263,8 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
 
             {/* You, at the centre: a soft halo and a two-part beat that sets the rhythm for everything else. */}
             <div className="pointer-events-none absolute z-[6] -translate-x-1/2 -translate-y-1/2" style={{ left: layout.cx, top: layout.cy, width: layout.hub, height: layout.hub }}>
-              <span className="orbit-halo absolute -inset-[55%] rounded-full" />
-              <span className="orbit-beat absolute inset-0 grid place-items-center rounded-full text-white"><span className="label-caps !tracking-[0.1em]" style={layout.hub < 44 ? { fontSize: 8.5 } : undefined}>You</span></span>
+              <span className="organism-halo absolute -inset-[70%] rounded-full" />
+              <span className="organism-nucleus absolute inset-0 grid place-items-center rounded-full"><span className="label-caps !tracking-[0.1em]" style={layout.hub < 44 ? { fontSize: 8.5 } : undefined}>You</span></span>
             </div>
 
             {layout.placed.map((p, i) => {
@@ -265,9 +286,11 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
                   <span className="node-in relative block" style={{ width: dot, height: dot, animationDelay: `${Math.min(i * 14, 600)}ms` }}>
                     {/* Lights up as the wave from the centre reaches this person's circle. */}
                     {isFresh(p) ? <span className="orbit-bud" aria-hidden="true" /> : null}
-                    <span className={cn("orbit-glow", p.ring === 0 ? "is-near" : p.ring === 2 ? "is-far" : "")} style={{ animationDelay: `${beatDelay(layout.scale[p.ring]).toFixed(2)}s` }} aria-hidden="true" />
-                    <span className={cn("orbit-dot absolute inset-0 grid place-items-center rounded-full font-semibold leading-none transition-transform duration-200 group-hover:scale-[1.18]", trusted || p.ring === 0 ? "is-mint" : p.ring === 1 ? "is-white" : "is-faint", active && "scale-[1.18]", selected === p.id && "is-selected")} style={{ fontSize: Math.max(8.5, Math.round(dot * 0.36)) }}>{dot >= 22 ? initials(p.name) : ""}</span>
-                    {p.open ? <span className="orbit-ping orbit-open absolute -right-[3px] -bottom-[3px] h-[13px] w-[13px] rounded-full" style={{ animationDelay: `${((i * 0.41) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
+                    {/* Each cell breathes in its own rhythm, a little out of step with its neighbours. */}
+                    <span className="cell-breathe absolute inset-0" style={{ animationDelay: `${(-((i * 0.83) % BEAT)).toFixed(2)}s`, animationDuration: `${(BEAT - 1 + (i % 5) * 0.5).toFixed(1)}s` }} aria-hidden={dot < 22 ? true : undefined}>
+                      <span className={cn("cell absolute inset-0 grid place-items-center rounded-full font-semibold leading-none transition-transform duration-200 group-hover:scale-[1.18]", trusted || p.ring === 0 ? "is-mint" : p.ring === 1 ? "is-white" : "is-faint", active && "scale-[1.18]", selected === p.id && "is-selected")} style={{ fontSize: Math.max(8.5, Math.round(dot * 0.36)) }}>{dot >= 22 ? initials(p.name) : ""}</span>
+                    </span>
+                    {p.open ? <span className="orbit-ping orbit-open absolute -right-[2px] -bottom-[2px] h-[11px] w-[11px] rounded-full" style={{ animationDelay: `${((i * 0.9) % BEAT).toFixed(2)}s` }} aria-hidden="true" /> : null}
                     {named ? <span className={cn("pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] leading-none tracking-[0.01em] transition-colors duration-200", active ? "text-ink font-semibold" : "text-ink-muted")}>{shortName(p.name)}</span> : null}
                   </span>
                 </button>
@@ -316,9 +339,9 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
             ) : null}
           </div>
           <div className="hidden md:flex flex-none items-center gap-4 text-[11.5px] text-ink-muted">
-            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-mint h-3 w-3 rounded-full" /> worked together</span>
-            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-white h-3 w-3 rounded-full" /> known</span>
-            <span className="inline-flex items-center gap-1.5"><span className="orbit-dot is-faint h-2 w-2 rounded-full" /> new</span>
+            <span className="inline-flex items-center gap-1.5"><span className="cell is-mint h-3 w-3 rounded-full" /> worked together</span>
+            <span className="inline-flex items-center gap-1.5"><span className="cell is-white h-3 w-3 rounded-full" /> known</span>
+            <span className="inline-flex items-center gap-1.5"><span className="cell is-faint h-2.5 w-2.5 rounded-full" /> new</span>
             <span className="inline-flex items-center gap-1.5"><span className="orbit-open h-3 w-3 rounded-full" /> open to work</span>
             <span className="inline-flex items-center gap-1.5"><span className="orbit-bud-key" /> new this month</span>
           </div>

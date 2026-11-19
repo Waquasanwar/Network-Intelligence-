@@ -42,7 +42,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
 
   if (!internal) {
     return (
-      <div className="max-w-[560px] mx-auto">
+      <div className="max-w-[640px]">
         <PageHeader title="Sign-in security" description="Add a second step when you sign in. Your data and privacy choices are on your profile." />
         <Card>
           <CardHeader title="Your account" description="Sessions end after 8 hours. Turning on a second step protects your profile even if your password is guessed." />

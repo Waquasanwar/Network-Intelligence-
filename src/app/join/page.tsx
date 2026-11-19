@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 const STEPS: { title: string; detail: string }[] = [
   { title: "Create your account", detail: "About two minutes. Paste your LinkedIn and we fill in the rest." },
   { title: `Have the ${SCREENING_MINUTES}-minute screening`, detail: "A structured conversation about what you do and how you work, by voice or in writing, in your own time." },
-  { title: "You're on the radar", detail: "When a client needs someone like you, we ask you first — fractional, contract or permanent." },
+  { title: "You're on the radar, and in the community", detail: "We ask you first when work fits. Meanwhile connect with other members, share work you hear about, and earn a share of the fee when someone you refer is placed." },
 ];
 
 const PROBLEMS: Record<string, { title: string; detail: string }> = {

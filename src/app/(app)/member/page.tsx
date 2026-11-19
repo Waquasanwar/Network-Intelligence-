@@ -24,7 +24,8 @@ import { ProofLine } from "@/components/domain/standard";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
 import { privacyOf } from "@/lib/privacy";
-import { resolveMemberPerson } from "@/server/queries";
+import { resolveMemberPerson, loadRateCard } from "@/server/queries";
+import { UsersRound, Handshake, Megaphone, Briefcase, ArrowRight, Lock } from "lucide-react";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
 import { fitHighlights, ATTRIBUTES } from "@/lib/fit";
@@ -55,6 +56,15 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
     prisma.invite.findMany({ where: { inviterPersonId: p.id }, select: { id: true, name: true, status: true, expiresAt: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 25 }),
   ]);
   const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: p.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
+  // What the network does for a member, with real numbers: who they can connect with, what a referral
+  // earns, what is on the board, and what is open to them.
+  const [peers, boardPosts, rateCard, myConnections] = await Promise.all([
+    prisma.person.findMany({ where: { tenantId: p.tenantId, id: { not: p.id }, memberUser: { isNot: null } }, select: { memberSince: true, screeningStatus: true, screenedAt: true, privacy: true } }),
+    prisma.boardPost.count({ where: { tenantId: p.tenantId, status: "OPEN" } }),
+    loadRateCard(p.tenantId),
+    prisma.connection.count({ where: { status: "ACCEPTED", OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] } }),
+  ]);
+  const connectable = peers.filter((x) => mayInvite(x) && privacyOf({ privacy: x.privacy }).consents.memberDirectory).length;
   const credits = await prisma.referralCredit.findMany({ where: { personId: p.id }, include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } });
   const canInvite = mayInvite(p);
   const now = new Date();
@@ -187,20 +197,40 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             </CardBody>
           </Card>
         ) : null}
-        {screened ? (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2 space-y-4">
-            {open.length ? <Link href={`/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`} className="group flex items-center justify-between gap-3 rounded-[18px] px-1 py-1 text-[13.5px] text-ink-muted hover:text-ink"><span><b className="font-semibold text-ink">{open.length} {open.length === 1 ? "opportunity is" : "opportunities are"} open to you.</b> Client names stay hidden until an introduction is agreed.</span><span className="flex-none font-semibold text-ink">See them</span></Link> : null}
-            {fit.some((r) => r.combined !== null) ? <FitCard rows={fit} self /> : null}
+        <section className="mb-6" aria-labelledby="member-value">
+          <h2 id="member-value" className="text-[15px] font-semibold">What the network does for you</h2>
+          <p className="mt-1 text-[13px] text-ink-muted">Free for members. Your name is never shared without your yes.</p>
+          <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" data-member-value>
+            {[
+              { key: "connect", icon: UsersRound, tone: "is-mint", title: "Connect with members", stat: myConnections ? `${myConnections} connected` : `${connectable} to meet`, body: "Senior people who have chosen to be found. Contact details are swapped only when you both say yes.", href: "/community?tab=members", cta: "Find people", locked: !canInvite || !privacy.consents.memberDirectory, lockText: !canInvite ? "Opens once your screening is approved." : "Switch on ‘Show me to other members’ in Privacy & data." },
+              { key: "refer", icon: Handshake, tone: "is-coral", title: "Refer someone you know", stat: `${Number(rateCard.memberReferralSharePct)}% of the fee`, body: "If someone you refer or introduce is placed, you receive a share of our fee. Only people you would stand behind.", href: `/member?tab=refer${internal ? `&person=${p.id}` : ""}`, cta: "Refer someone", locked: false, lockText: "" },
+              { key: "share", icon: Megaphone, tone: "is-blue", title: "Share work, ask for help", stat: `${boardPosts} on the board`, body: "Post a role you heard about, ask for a specialist, or say you are free. Shared work that gets filled earns you a share.", href: "/community", cta: "Open the board", locked: false, lockText: "" },
+              { key: "work", icon: Briefcase, tone: "is-gold", title: "Work open to you", stat: `${open.length} open now`, body: "Roles and assignments opened to members, client names hidden. Put yourself forward, or refer someone better placed.", href: `/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`, cta: "See the work", locked: false, lockText: "" },
+            ].map((v) => (
+              <Link key={v.key} href={v.locked ? `/member?tab=${v.key === "connect" && canInvite ? "privacy" : "home"}${internal ? `&person=${p.id}` : ""}` : v.href} className="group flex flex-col rounded-[16px] border border-line bg-surface p-4 transition-colors duration-150 hover:border-line-strong" data-value={v.key}>
+                <span className="flex items-center justify-between gap-3">
+                  <span className={`tile ${v.tone}`}><v.icon className="h-4 w-4" aria-hidden="true" /></span>
+                  <span className="text-[12.5px] font-semibold text-ink">{v.stat}</span>
+                </span>
+                <b className="mt-3.5 text-[14.5px] font-semibold text-ink">{v.title}</b>
+                <span className="mt-1 flex-1 text-[13px] leading-[1.5] text-ink-muted">{v.locked ? v.lockText : v.body}</span>
+                <span className="mt-3.5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink">{v.locked ? <><Lock className="h-3.5 w-3.5" aria-hidden="true" /> {v.key === "connect" && canInvite ? "Change it" : "Not yet"}</> : <>{v.cta} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></>}</span>
+              </Link>
+            ))}
           </div>
+        </section>
+
+        {screened ? (
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+          <TrustCard t={t} standard={standardFor(p, internal ? "internal" : "self")} firstName={p.firstName} self action={<ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} />} />
           <div className="space-y-4">
-            <TrustCard t={t} standard={standardFor(p, internal ? "internal" : "self")} firstName={p.firstName} self action={<ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} />} />
             <Card><CardHeader title="How the network sees you" description="This is the anonymised card a client or agency sees. Your name only after you consent." /><CardBody>
               <div className="flex items-center gap-2 min-w-0"><code className="text-[12px] bg-surface-muted rounded px-1.5 py-0.5">{anon.ref}</code><b className="text-[13px] truncate">{anon.headlineSummary || p.headline || "Profile"}</b></div>
               <div className="flex flex-wrap gap-1 mt-1.5"><Chip>{anon.region ?? "region undisclosed"}</Chip><Chip>availability: {anon.availabilityBand}</Chip>{highlights.map((h) => <Chip key={h}>{h}</Chip>)}{band ? <Chip>{band}</Chip> : null}</div>
               <ProofLine proofs={anon.proofs} className="mt-2" />
               {anon.proofs.length ? null : <div className="text-[12px] text-ink-muted mt-1.5">Nothing on record yet. Your screening and a reference are the quickest two.</div>}
             </CardBody></Card>
+            {fit.some((r) => r.combined !== null) ? <FitCard rows={fit} self /> : null}
           </div>
         </div>
         ) : null}

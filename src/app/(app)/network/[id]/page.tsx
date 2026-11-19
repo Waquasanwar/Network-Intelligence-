@@ -39,6 +39,7 @@ import { ClipboardList, GitMerge } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
+import { Constellation } from "@/components/ui/constellation";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -143,7 +144,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       ) : null}
       <div className="widget overflow-hidden mb-5">
         {/* A band of the brand's dark surface behind the name: the profile opens like a cover. */}
-        <div className="brand-panel !shadow-none flex min-h-[132px] items-end pl-[136px] pr-5 pb-4 sm:pl-[154px] sm:pr-6">
+        <div className="stage-ink flex min-h-[132px] items-end pl-[136px] pr-5 pb-4 sm:pl-[154px] sm:pr-6">
+          <Constellation focus={0.82} density={0.7} />
           <div className="min-w-0">
             <h1 className="font-display text-[24px] sm:text-[32px] leading-[1.08] text-white">{fullName(person)}</h1>
             <div className="mt-1 text-[14px] text-white/75 line-clamp-2">{person.headline ?? "No headline yet"}</div>
@@ -204,7 +206,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               </Card>
             ) : <>
             <Card>
-              <CardHeader title="What we know" description={latestSummary ? `From the approved conversation on ${approved[0].date.toLocaleDateString("en-GB")}` : "No approved conversation yet — book one."} />
+              <CardHeader title="What we know" description={latestSummary ? `From the approved conversation on ${approved[0].date.toLocaleDateString("en-GB")}` : undefined} />
               <CardBody>
                 {latestSummary ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[13px]">

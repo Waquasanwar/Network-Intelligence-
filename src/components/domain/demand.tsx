@@ -45,7 +45,7 @@ export function BriefChips({ b, className }: { b: Brief; className?: string }) {
 export function ReadCard({ b, title = "How we read it" }: { b: Brief; title?: string }) {
   return (
     <div className="widget p-4">
-      <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-2">{title}</div>
+      <div className="text-[12px] font-medium text-ink-faint mb-2">{title}</div>
       <BriefChips b={b} />
       {b.assumptions.length ? <ul className="mt-3 pl-4 list-disc text-[12.5px] text-ink-muted space-y-0.5">{b.assumptions.map((a) => <li key={a}>{a}</li>)}</ul> : null}
       {b.questions.length ? <div className="mt-3 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="label-caps tracking-wide font-medium text-amber mb-1">Still to confirm</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
@@ -88,7 +88,7 @@ export function FitChecks({ checks }: { checks: { key: string; label: string; st
 export function FeeBox({ est, model, pct, label = "Estimated fee to us", extra }: { est: FeeEstimate; model?: FeeModel; pct?: number | null; label?: string; extra?: React.ReactNode }) {
   return (
     <div className={cn("rounded-[22px] border px-4 py-3.5", est.confident ? "border-teal/30 bg-teal-50" : "border-line bg-surface-muted")}>
-      <div className="text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-muted">{label}</div>
+      <div className="text-[12px] font-semibold text-ink-muted">{label}</div>
       <div className={cn("text-[28px] font-semibold tabular tracking-[-0.03em] leading-9 mt-0.5", est.confident ? "text-teal" : "text-ink-faint")}>{est.confident ? fmt(est.ourTake, est.currency) : "—"}</div>
       {model ? <div className="text-[12px] text-ink-muted">{FEE_MODEL_LABELS[model]}{pct ? ` · ${pct}%` : ""}</div> : null}
       <div className="text-[12px] text-ink-muted">{est.basis}</div>

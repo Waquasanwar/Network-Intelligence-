@@ -26,7 +26,7 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
   if (!draft || draft.personId !== id || draft.approvalStatus !== "DRAFT") {
     return (
       <div className="max-w-xl mx-auto py-16 text-center">
-        <div className="text-[12px] font-medium uppercase tracking-[0.1em] text-ink-faint">{member ? "Your screening" : "Screening call"}</div>
+        <div className="text-[12px] font-medium text-ink-faint">{member ? "Your screening" : "Screening call"}</div>
         <h1 className="text-[26px] font-semibold tracking-[-0.025em] mt-2">{member ? `Your ${SCREENING_MINUTES}-minute screening` : `Screening · ${fullName(person)}`}</h1>
         <p className="text-[13.5px] text-ink-muted mt-2">{SCREENING_SCRIPT.length} short sections. Answer in your own words; specifics beat adjectives. Nothing goes on the profile until a person has reviewed it.</p>
         <form action={startScreening} className="mt-5 flex justify-center gap-2"><input type="hidden" name="personId" value={id} /><input type="hidden" name="restart" value="1" /><SubmitButton pendingText="Starting…">Start</SubmitButton>{member ? null : <Link href={`/network/${id}`}><Button type="button" variant="ghost">Back to profile</Button></Link>}</form>
@@ -43,7 +43,7 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 items-start">
       <aside className="lg:sticky lg:top-[76px] rounded-[22px] p-6 bg-surface border border-line shadow-[var(--shadow-card)]">
-        <div className="text-[12px] font-medium uppercase tracking-[0.1em] text-ink-muted">{member ? "Your screening" : "Screening call"}</div>
+        <div className="text-[12px] font-medium text-ink-muted">{member ? "Your screening" : "Screening call"}</div>
         <h2 className="text-[20px] font-semibold tracking-[-0.02em] mt-1">{member ? `Your ${SCREENING_MINUTES}-minute screening` : `Screening · ${fullName(person)}`}</h2>
         <p className="text-ink-muted text-[12.5px] mt-2">{member ? "A structured conversation. Answer in your own words. Nothing goes on your profile until a person has reviewed it." : `Run the call from this script. About ${SCREENING_MINUTES} minutes. Every answer maps to a profile field.`}</p>
         <ol className="mt-4 space-y-1">{SCREENING_SCRIPT.map((s, i) => <li key={s.key} className={cn("relative pl-8 pr-2 py-2 rounded-[12px] text-[13px]", i === secIdx ? "bg-navy-50 text-ink" : i < secIdx ? "text-ink-muted" : "text-ink-muted")}><span className={cn("absolute left-2.5 top-2.5 h-[18px] w-[18px] rounded-full border border-line-strong grid place-items-center text-[12px]", i === secIdx && "bg-navy border-transparent text-white", i < secIdx && "bg-navy-100 border-transparent text-navy")}>{i < secIdx ? "✓" : i + 1}</span><b className="block font-medium">{s.title}</b><small className="block text-[12px] text-ink-faint">{s.minutes} min · {s.intent}</small></li>)}</ol>
@@ -52,7 +52,7 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
       </aside>
       <section className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] p-7 min-h-[420px]">
         <div className="h-1 rounded-full bg-surface-muted overflow-hidden mb-5"><div className="h-full rounded-full bg-navy" style={{ width: `${pct}%` }} /></div>
-        <div className="text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-faint mb-2">Section {secIdx + 1} of {SCREENING_SCRIPT.length} · {sec.title} · ~{sec.minutes} min</div>
+        <div className="text-[12px] font-semibold text-ink-faint mb-2">Section {secIdx + 1} of {SCREENING_SCRIPT.length} · {sec.title} · ~{sec.minutes} min</div>
         <h1 className="text-[24px] font-semibold tracking-[-0.025em] leading-8 max-w-[34ch]">{q.prompt}</h1>
         {q.help ? <p className="text-[13.5px] text-ink-muted mt-2 max-w-[60ch]">{q.help}</p> : null}
         {sp.required ? <p className="text-[12.5px] text-amber mt-2">This one matters. Give it a go.</p> : null}

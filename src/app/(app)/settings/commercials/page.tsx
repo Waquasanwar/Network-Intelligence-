@@ -16,7 +16,7 @@ export default async function CommercialsPage() {
   if (!canSeeMoney(user)) redirect("/forbidden");
   const rc = await loadRateCard(user.tenantId);
   const F = ({ name, label, hint }: { name: keyof RateCard; label: string; hint?: string }) => <Field label={label} hint={hint}><Input name={name} type="number" step="0.5" min={0} defaultValue={String(rc[name])} /></Field>;
-  const H = ({ children }: { children: React.ReactNode }) => <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint pt-2">{children}</div>;
+  const H = ({ children }: { children: React.ReactNode }) => <div className="text-[12px] font-medium text-ink-faint pt-2">{children}</div>;
   return (
     <>
       <PageHeader title="Commercials" description="How we charge clients, agencies and Amana. Defaults for every new requirement; each account or brief can override them. Nothing here is hard-coded." />

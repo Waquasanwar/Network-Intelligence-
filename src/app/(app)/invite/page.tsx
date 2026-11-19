@@ -80,11 +80,13 @@ export default async function InvitePage({ searchParams }: { searchParams: Promi
       </ol>
 
       {THIN.some(([k]) => thin[k] > 0) ? (
-        <p className="mb-6 -mt-2 text-[13.5px] leading-[1.7] text-ink-muted" data-thin>
-          <b className="font-semibold text-ink">Where it is thin.</b>{" "}
-          {THIN.filter(([k]) => thin[k] > 0).map(([k, label], i, all) => <span key={k}><Link href={`/network?missing=${k}`} className="font-semibold text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink">{thin[k]} {label}</Link>{i < all.length - 1 ? ", " : "."}</span>)}
-          {" "}Screening, references and availability need nothing from you but sending a link.
-        </p>
+        <div className="mb-6 -mt-1" data-thin>
+          <div className="flex flex-wrap items-center gap-2">
+            <b className="mr-1 text-[13.5px] font-semibold text-ink">Where it is thin</b>
+            {THIN.filter(([k]) => thin[k] > 0).map(([k, label]) => <Link key={k} href={`/network?missing=${k}`} className="chip !h-8"><b className="font-semibold text-ink">{thin[k]}</b> {label}</Link>)}
+          </div>
+          <p className="mt-2 text-[12.5px] text-ink-faint">Screening, references and availability need nothing from you but sending a link.</p>
+        </div>
       ) : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

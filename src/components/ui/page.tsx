@@ -100,7 +100,7 @@ export function Score({ value, label }: { value: number; label?: string }) {
 
 /** Uppercase micro-label for field groups and dl headings. */
 export function Label({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("text-[12px] font-medium uppercase tracking-[0.06em] text-ink-faint mb-1", className)}>{children}</div>;
+  return <div className={cn("text-[12px] font-medium text-ink-faint mb-1", className)}>{children}</div>;
 }
 
 /** Apple-style segmented control. Links, so it works without JS. */
