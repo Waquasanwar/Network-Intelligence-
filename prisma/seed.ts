@@ -99,7 +99,7 @@ async function main() {
 
   const passwordHash = await hash(DEMO_PASSWORD, 10);
 
-  const founderTenant = await prisma.tenant.create({ data: { slug: "founder", name: "Network Intelligence", type: "PLATFORM_OWNER", brandName: "Network Intelligence" } });
+  const founderTenant = await prisma.tenant.create({ data: { slug: "amana", name: "Amana Network", type: "PLATFORM_OWNER", brandName: "Amana Network" } });
   const partnerTenant = await prisma.tenant.create({ data: { slug: "harbour-search", name: "Harbour Search", type: "RECRUITMENT_PARTNER", brandName: "Harbour Search" } });
   const clientTenant = await prisma.tenant.create({ data: { slug: "meridian-energy", name: "Meridian Energy", type: "DIRECT_CLIENT", brandName: "Meridian Energy" } });
 
