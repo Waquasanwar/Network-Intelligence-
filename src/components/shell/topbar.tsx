@@ -25,9 +25,9 @@ export function SectionTabs({ role, className = "" }: { role: string; className?
   if (!here || here.section.pages.length < 2) return null;
   return (
     <nav aria-label={here.section.label} className={`max-w-full overflow-x-auto ${className}`}>
-      <ul className="inline-flex items-center gap-1 rounded-full border border-line bg-surface/80 p-1 shadow-[var(--shadow-card)] backdrop-blur">
+      <ul className="inline-flex items-center gap-1">
         {here.section.pages.map((pg) => { const active = pg.href === here.page.href; return (
-          <li key={pg.href}><Link href={pg.href} aria-current={active ? "page" : undefined} className={`inline-flex h-8 items-center whitespace-nowrap rounded-full px-3.5 text-[13px] transition-colors duration-200 ${active ? "bg-navy font-semibold text-white dark:text-canvas" : "font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"}`}>{pg.label}</Link></li>
+          <li key={pg.href}><Link href={pg.href} aria-current={active ? "page" : undefined} className={`inline-flex h-8 items-center whitespace-nowrap rounded-full px-3.5 text-[13px] transition-colors duration-200 ${active ? "bg-surface font-medium text-ink shadow-[0_0_0_1px_var(--color-line)]" : "font-medium text-ink-muted hover:text-ink"}`}>{pg.label}</Link></li>
         ); })}
       </ul>
     </nav>
@@ -91,7 +91,7 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette"))} aria-label="Search people and opportunities" className="lg:hidden h-10 w-10 flex-none grid place-items-center rounded-full border border-line bg-surface text-ink shadow-[var(--shadow-card)] cursor-pointer">
         <Search className="h-[18px] w-[18px]" />
       </button>
-      <ThemeToggle className="h-10 w-10 flex-none shadow-[var(--shadow-card)]" />
+      <ThemeToggle className="h-10 w-10 flex-none" />
 
       <div className="relative flex-none">
         <button type="button" onClick={() => setOpen(open === "alerts" ? null : "alerts")} aria-label={`Alerts${alerts.length ? `, ${alerts.length} waiting` : ""}`} aria-expanded={open === "alerts"} className="relative h-10 w-10 rounded-full border border-line bg-surface grid place-items-center text-ink shadow-[var(--shadow-card)] hover:border-line-strong transition-colors duration-200 cursor-pointer">

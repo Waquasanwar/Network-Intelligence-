@@ -5,18 +5,17 @@ import { canSeeMoney } from "@/lib/authz";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
 import { NetworkGraph } from "@/components/domain/network-graph";
 import { buildNetworkMap } from "@/server/network-map";
-import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/page";
 import { formatMoneyCompact, fullName } from "@/lib/utils";
 import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { Button } from "@/components/ui/button";
-import { Upload, Sparkles, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight, Users, Briefcase, TrendingUp, UserCheck } from "lucide-react";
+import { Upload, UserSearch, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight, Users, Briefcase, TrendingUp, UserCheck } from "lucide-react";
 import { AgentComposer } from "@/components/domain/agent-composer";
 
 // What the agent has queued for you, by the kind of decision it needs.
 type QueueKind = "match" | "review" | "approve" | "reconnect" | "intro";
-const QUEUE: Record<QueueKind, { tag: string; verb: string; icon: typeof Sparkles }> = {
-  match: { tag: "Matching", verb: "Run", icon: Sparkles },
+const QUEUE: Record<QueueKind, { tag: string; verb: string; icon: typeof UserSearch }> = {
+  match: { tag: "Matching", verb: "Run", icon: UserSearch },
   review: { tag: "Shortlist", verb: "Review", icon: ListChecks },
   approve: { tag: "Summary", verb: "Approve", icon: FileCheck2 },
   reconnect: { tag: "Reconnect", verb: "Open", icon: RefreshCw },
@@ -83,27 +82,16 @@ export default async function OverviewPage() {
 
   return (
     <>
-      {/* Page title and the two things you do most. */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-5">
-        <div className="min-w-0">
-          <p className="text-[12.5px] text-ink-faint">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
-          <h1 className="font-display text-[24px] sm:text-[28px] leading-[1.15] mt-1">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import contacts</Button></Link>
-          <AddPersonDrawer people={existingPeopleForDrawer} />
-        </div>
-      </div>
-
-      {/* The search banner: one question box, in plain words. */}
-      <section className="brand-panel rounded-[28px] px-5 py-6 sm:px-8 sm:py-7 mb-4">
-        <h2 className="font-display is-small text-[19px] sm:text-[21px] leading-[1.25]">Who are you looking for?</h2>
-        <p className="text-stage-muted text-[14px] mt-1 max-w-[70ch]">Ask in plain words. We search everyone in your network and rank them by how well you know and trust them.</p>
+      {/* A greeting and the question box: the agent is the first thing on the page. */}
+      <section className="max-w-[760px] pt-6 pb-10 sm:pt-10">
+        <p className="text-[13px] text-ink-faint">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
+        <h1 className="hero-title mt-2 text-[32px] sm:text-[40px]">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
+        <p className="mt-2 mb-6 text-[15px] text-ink-muted">Ask for anyone in plain words. I search everyone you know and rank them by trust.</p>
         <AgentComposer suggestions={askSuggestions} />
       </section>
 
       {/* Headline numbers. Each one opens the list behind it. */}
-      <div className="figures mb-6">
+      <div className="figures mb-10">
         {(showP23
           ? [
               { label: "People in the network", value: total, hint: `${workedWith} you've worked with`, href: "/network", delta: last7(peopleDates), icon: Users },
@@ -123,7 +111,7 @@ export default async function OverviewPage() {
         ).map((k) => (
           <Link key={k.label} href={k.href} className="figure group">
             <span className="block text-[12.5px] font-medium text-ink-muted leading-tight">{k.label}</span>
-            <span className="mt-2 block font-display num-grad text-[32px] sm:text-[38px] leading-none">{k.value}</span>
+            <span className="mt-2 block hero-title text-[30px] sm:text-[34px] leading-none tabular">{k.value}</span>
             <span className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-faint">
               {k.delta ? <span className="font-semibold text-teal">+{k.delta} this week</span> : null}
               <span>{k.hint}</span>
@@ -132,41 +120,46 @@ export default async function OverviewPage() {
         ))}
       </div>
 
+      <section className="mb-10" aria-labelledby="home-queue">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <h2 id="home-queue" className="section-title text-[20px]">Waiting on you</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/network/import"><Button variant="secondary"><Upload className="h-3.5 w-3.5" /> Import contacts</Button></Link>
+            <AddPersonDrawer people={existingPeopleForDrawer} />
+          </div>
+        </div>
+        {suggestions.length === 0 ? <EmptyState title="Nothing waiting" description="New matches, reviews and people to reconnect with appear here." /> : (
+          <ul className="divide-y divide-line rounded-[16px] border border-line bg-surface">
+            {suggestions.map((s, i) => {
+              const k = QUEUE[s.kind]; const Icon = k.icon;
+              return (
+                <li key={i}>
+                  <Link href={s.href} className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors duration-150 hover:bg-surface-hover">
+                    <Icon className="h-4 w-4 flex-none text-ink-faint" aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] text-ink">{s.text}</span>
+                      <span className="block text-[12px] text-ink-faint">{k.tag}</span>
+                    </span>
+                    <span className="inline-flex flex-none items-center gap-1 text-[13px] font-medium text-ink-muted transition-colors group-hover:text-ink">{k.verb} <ArrowRight className="h-3.5 w-3.5" /></span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       {/* The network itself: the one picture on the page. */}
       {people.length > 1 ? (
         <section className="mb-6" aria-labelledby="home-map">
           <div className="mb-3 flex items-end justify-between gap-4">
-            <h2 id="home-map" className="font-display is-small text-[19px] leading-tight">Your network</h2>
+            <h2 id="home-map" className="section-title text-[20px]">Your network</h2>
             <Link href="/network/map" className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink">Open the full map <ArrowRight className="arrow-badge h-3.5 w-3.5" /></Link>
           </div>
-          <NetworkGraph nodes={mapNodes} links={mapLinks} heightClass="h-[520px]" compact />
+          <NetworkGraph nodes={mapNodes} links={mapLinks} heightClass="h-[460px]" compact />
         </section>
       ) : null}
 
-      <Card className="ai-surface">
-        <CardHeader title={<span className="inline-flex items-center gap-2.5"><span className="live-dot" aria-hidden="true" /> Waiting on you</span>} description="Suggested from the state of your network. Nothing happens until you say so." action={suggestions.length ? <span className="label-caps text-ink-faint">{suggestions.length} waiting</span> : undefined} />
-        <CardBody>
-          {suggestions.length === 0 ? <EmptyState title="Nothing waiting" description="New matches, reviews and people to reconnect with appear here." /> : (
-            <ul className="space-y-1.5">
-              {suggestions.map((s, i) => {
-                const k = QUEUE[s.kind]; const Icon = k.icon;
-                return (
-                  <li key={i}>
-                    <Link href={s.href} className="group flex items-center gap-3 rounded-[14px] px-2.5 py-2.5 transition-colors duration-200 hover:bg-surface-muted">
-                      <span className="grid h-8 w-8 flex-none place-items-center rounded-[12px] bg-surface-muted text-ink"><Icon className="h-4 w-4" /></span>
-                      <span className="min-w-0 flex-1">
-                        <span className="label-caps block text-ink-faint">{k.tag}</span>
-                        <span className="block truncate text-[13px] text-ink">{s.text}</span>
-                      </span>
-                      <span className="inline-flex flex-none items-center gap-1 rounded-[12px] border border-line px-2.5 py-1.5 text-[12px] font-semibold text-ink transition-colors duration-200 group-hover:border-navy group-hover:bg-navy group-hover:text-white dark:group-hover:text-canvas">{k.verb} <ArrowRight className="h-3 w-3" /></span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
     </>
   );
 }

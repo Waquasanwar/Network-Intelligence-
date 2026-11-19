@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUp, Check } from "lucide-react";
+import { AgentMark } from "@/components/ui/agent-mark";
 import { askNetwork, type AgentAnswer } from "@/server/actions/agent";
 import { cn } from "@/lib/utils";
 
@@ -68,46 +69,31 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
   const done = phase === "answer" && result?.ok && typed.length >= result.answer.length;
 
   return (
-    <div className="relative mt-5">
-      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="relative flex items-center gap-2.5 rounded-[14px] bg-white p-1.5 pl-4 text-[#0c1b33] transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_var(--color-accent)] dark:bg-[#070c1a]/90 dark:text-ink dark:shadow-[inset_0_0_0_1px_rgba(214,226,255,0.12),0_20px_50px_-20px_rgba(126,227,188,0.35)]">
-        <span className="beam" aria-hidden="true" />
-        <Sparkles className="h-[18px] w-[18px] flex-none text-[#0c1b33] dark:text-teal" aria-hidden="true" />
+    <div className="relative">
+      <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="composer flex items-center gap-3 p-2 pl-4">
+        <AgentMark size={18} busy={phase === "thinking"} />
         <input
           ref={inputRef} id="agent-ask" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Ask your network"
-          placeholder={suggestions.length ? `Ask your network — “${suggestions[hint % suggestions.length]}”` : "Ask your network a question"}
-          className="agent-input h-11 min-w-0 flex-1 text-[15.5px] text-[#0c1b33] placeholder:text-[#5b6576] dark:text-ink dark:placeholder:text-ink-faint" autoComplete="off"
+          placeholder={suggestions.length ? `Who do you need? Try “${suggestions[hint % suggestions.length]}”` : "Who do you need?"}
+          className="agent-input h-12 min-w-0 flex-1 text-[16px] text-ink placeholder:text-ink-faint" autoComplete="off"
         />
-        <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="group inline-flex h-11 flex-none items-center gap-1.5 btn-coral rounded-[12px] bg-coral px-4 text-[14px] font-semibold text-[#0c1b33] transition-[filter] duration-200 hover:brightness-105 cursor-pointer disabled:cursor-default">
-          Ask
-          <span aria-hidden="true" className="arrow-badge inline-flex"><ArrowRight className="h-4 w-4" strokeWidth={2} /></span>
-        </button>
+        <button type="submit" aria-label="Ask" disabled={!value.trim() || phase === "thinking"} className="send-btn"><ArrowUp className="h-4 w-4" strokeWidth={2.2} /></button>
       </form>
 
       {phase === "idle" && suggestions.length ? (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="label-caps text-stage-muted mr-1">Try</span>
-          {suggestions.map((s) => (
-            <button key={s} type="button" onClick={() => ask(s)} className="rounded-full border border-stage-line px-3 py-1.5 text-[12.5px] text-stage-ink transition-colors duration-200 hover:border-white/60 hover:bg-white/[0.06] cursor-pointer">{s}</button>
-          ))}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {suggestions.map((s) => <button key={s} type="button" onClick={() => ask(s)} className="chip">{s}</button>)}
         </div>
       ) : null}
 
       {phase !== "idle" ? (
-        <div className="rise-in mt-3 rounded-[22px] bg-surface p-5 sm:p-6 text-ink" aria-live="polite">
+        <div className="rise-in mt-3 rounded-[20px] border border-line bg-surface p-5 sm:p-6 text-ink" aria-live="polite">
           {/* The plan: what the agent is doing, as it does it. Collapses to a single trace line once answered. */}
           {phase === "thinking" ? (
-            <ol className="space-y-2">
+            <ol className="space-y-2.5">
               {STEPS.map((label, i) => {
                 const state = i < step ? "done" : i === step ? "running" : "pending";
-                return (
-                  <li key={label} className="flex items-center gap-2.5 text-[13px]">
-                    <span className={cn("grid h-4 w-4 flex-none place-items-center rounded-full border", state === "done" ? "border-transparent bg-navy text-white dark:text-canvas" : state === "running" ? "border-navy-400" : "border-line-strong")}>
-                      {state === "done" ? <Check className="h-2.5 w-2.5" strokeWidth={3.2} /> : state === "running" ? <span className="h-1.5 w-1.5 rounded-full bg-navy" /> : null}
-                    </span>
-                    <span className={state === "running" ? "shimmer-text font-medium" : state === "done" ? "text-ink-muted" : "text-ink-faint"}>{label}</span>
-                    {state === "running" ? <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span> : null}
-                  </li>
-                );
+                return <li key={label} className="plan-step" data-state={state}><span className="plan-tick">{state === "done" ? <Check className="h-2.5 w-2.5" strokeWidth={3.2} /> : state === "running" ? <span className="h-1.5 w-1.5 rounded-full bg-ink" /> : null}</span><span className={state === "running" ? "shimmer-text font-medium" : undefined}>{label}</span></li>;
               })}
             </ol>
           ) : result?.ok ? (

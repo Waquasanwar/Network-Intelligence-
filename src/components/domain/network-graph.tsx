@@ -202,7 +202,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
   const t0 = clock.current;
 
   return (
-    <div className={cn("ink-stage relative w-full flex overflow-hidden rounded-[28px]", heightClass)}>
+    <div className={cn("ink-stage relative w-full flex overflow-hidden rounded-[20px]", heightClass)}>
       <div ref={wrapRef} className="orbit-stage relative flex-1 min-w-0 text-ink" onClick={() => setSelected(null)}>
         {layout ? (
           <>

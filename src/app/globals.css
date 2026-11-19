@@ -10,11 +10,11 @@
   a hairline and a soft lift on hover; colour is used sparingly so it means something.
 */
 @theme {
-  --color-canvas: #eef0f5;
+  --color-canvas: #f5f6f8;
   --color-surface: #ffffff;
-  --color-surface-muted: #f3f4f8;
+  --color-surface-muted: #f1f2f5;
   --color-surface-hover: #f8fafc;
-  --color-line: #e6e9ef;
+  --color-line: #e5e7ec;
   --color-line-strong: #cdd3dd;
   --color-ink: #0c1b33;
   --color-ink-muted: #3b475b;
@@ -83,10 +83,10 @@
    the light the product gives off, indigo for the agent, coral as the spark. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-canvas: #04070f;
-  --color-surface: #0a0f1d;
-  --color-surface-muted: #111830;
-  --color-surface-hover: #0e1528;
+  --color-canvas: #0b0d12;
+  --color-surface: #12151c;
+  --color-surface-muted: #181c25;
+  --color-surface-hover: #161a22;
   --color-line: rgba(214, 226, 255, 0.085);
   --color-line-strong: rgba(214, 226, 255, 0.17);
   --color-ink: #f1f4fb;
@@ -95,8 +95,8 @@
   --color-navy: #f4f6fb;
   --color-navy-600: #dfe5f1;
   --color-navy-400: #94a3c2;
-  --color-navy-100: #18213d;
-  --color-navy-50: #0f1730;
+  --color-navy-100: #1c212c;
+  --color-navy-50: #151922;
   --color-teal: #7ee3bc;
   --color-teal-400: #7ee3bc;
   --color-teal-100: #0f3328;
@@ -107,11 +107,11 @@
   --color-amber-50: #261c0b;
   --color-risk: #ff8a7d;
   --color-risk-100: #3b1814;
-  --color-rail: #070b17;
+  --color-rail: #0b0d12;
   --color-rail-ink: #b0bad0;
   --color-rail-ink-strong: #f4f6fb;
   --color-rail-line: rgba(214, 226, 255, 0.085);
-  --color-rail-active: #121a33;
+  --color-rail-active: #181c25;
   --color-chart-a: #f4f6fb;
   --color-chart-b: #7ee3bc;
   --color-series-1: #199e70;
@@ -129,34 +129,8 @@
   --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* The ground. Light: a soft aurora in the brand's lights over a fine dot grid. Dark: a night sky
-   with mint rising from the top-left, indigo from the right, and a fine grid that fades out below
-   the fold. Fixed, so content scrolls across it. All gradients, so it is sharp at any density. */
-html {
-  background:
-    radial-gradient(rgba(12, 27, 51, 0.075) 1px, transparent 1.3px) 0 0 / 22px 22px,
-    radial-gradient(1100px 640px at 4% -10%, rgba(126, 227, 188, 0.34), transparent 62%),
-    radial-gradient(900px 620px at 104% 2%, rgba(40, 104, 180, 0.16), transparent 62%),
-    radial-gradient(900px 700px at 98% 110%, rgba(255, 84, 64, 0.14), transparent 60%),
-    var(--color-canvas);
-  background-attachment: fixed;
-}
-html[data-theme="dark"] {
-  background:
-    radial-gradient(1000px 560px at 8% -12%, rgba(126, 227, 188, 0.16), transparent 62%),
-    radial-gradient(900px 620px at 100% -4%, rgba(110, 120, 255, 0.17), transparent 60%),
-    radial-gradient(800px 600px at 96% 112%, rgba(255, 102, 80, 0.09), transparent 60%),
-    var(--color-canvas);
-  background-attachment: fixed;
-}
-/* The fine grid, only near the top of the page, so it reads as depth rather than graph paper. */
-html[data-theme="dark"] body::before {
-  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    linear-gradient(rgba(214, 226, 255, 0.045) 1px, transparent 1px) 0 0 / 56px 56px,
-    linear-gradient(90deg, rgba(214, 226, 255, 0.045) 1px, transparent 1px) 0 0 / 56px 56px;
-  mask-image: radial-gradient(120% 70% at 50% 0%, #000 0%, transparent 70%);
-}
+/* The ground: one plain colour. Depth comes from type and spacing, not from light effects. */
+html { background: var(--color-canvas); }
 body { background: transparent; }
 html, body {
   color: var(--color-ink);
@@ -354,10 +328,7 @@ kbd {
   --color-amber: #f2c46d; --color-amber-50: rgba(242, 196, 109, 0.12); --color-amber-100: rgba(242, 196, 109, 0.16);
   --color-canvas: #06231a; --shadow-pop: 0 18px 40px -16px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
   color: var(--color-ink); color-scheme: dark;
-  background:
-    radial-gradient(60% 80% at 82% -10%, rgba(47, 179, 137, 0.2) 0%, rgba(47, 179, 137, 0) 60%),
-    radial-gradient(55% 70% at -6% 108%, rgba(255, 84, 64, 0.14) 0%, rgba(255, 84, 64, 0) 62%),
-    radial-gradient(70% 90% at 50% 40%, #12295a 0%, #0b1a3a 55%, #081226 100%);
+  background: radial-gradient(70% 90% at 50% 45%, #10244f 0%, #0b1a3a 60%, #091530 100%);
 }
 /* What was navy on a light page is mint here, so anything sitting on it needs dark text. */
 .ink-stage .bg-navy { color: #06231a; }
@@ -546,3 +517,70 @@ a.figure:hover { opacity: 0.72; }
 
 /* The command palette's field: the panel shows focus, not a ring drawn inside it. */
 .palette-input:focus, .palette-input:focus-visible { outline: none; box-shadow: none; }
+
+
+/* ---------- Calm layer ----------
+   Quiet, current product styling. White surfaces with one hairline; no gradient edges, no glow,
+   no pointer light, no gradient text. The agent has one small mark, and moves only when working. */
+@layer components {
+  .widget { border-radius: 16px; box-shadow: none; }
+  .widget-lg { border-radius: 20px; }
+}
+[data-theme="dark"] .widget { background: var(--color-surface); }
+.widget::after, .spot::after, .beam, .beam::after, .trace, .trace-pulse, .ai-surface::before { display: none !important; }
+@media (min-width: 1024px) {
+  .rail, [data-theme="dark"] .rail { background: transparent; box-shadow: none; border: 0; border-right: 1px solid var(--color-line); backdrop-filter: none; }
+}
+.num-grad, [data-theme="dark"] .num-grad, .text-sheen, .text-aurora, [data-theme="light"] .text-aurora, .gradient-text {
+  background: none; -webkit-text-fill-color: currentColor; color: var(--color-ink);
+}
+.btn-navy, [data-theme="dark"] .btn-navy, .btn-coral { background-image: none; box-shadow: none; }
+.chip-icon { background: var(--color-surface-muted); box-shadow: none; }
+.ai-orb, .ai-orb::after { animation: none; }
+.ai-orb { width: 8px; height: 8px; background: var(--color-teal-400); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-teal-400) 18%, transparent); }
+.ai-orb::after { display: none; }
+.nav-active { background: var(--color-surface); box-shadow: 0 0 0 1px var(--color-line); }
+.nav-active::before { display: none; }
+.next-step { box-shadow: none; backdrop-filter: none; background: var(--color-surface); }
+.ask-dock-bar { background: var(--color-surface); border: 1px solid var(--color-line); box-shadow: 0 1px 0 rgba(12, 27, 51, 0.03), 0 16px 36px -20px rgba(12, 27, 51, 0.35); }
+.ask-dock-bar:hover { translate: none; border-color: var(--color-line-strong); box-shadow: 0 1px 0 rgba(12, 27, 51, 0.03), 0 16px 36px -20px rgba(12, 27, 51, 0.4); }
+[data-theme="dark"] .ask-dock-bar { box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.9); }
+@media (min-width: 1024px) { .ask-dock { left: 248px; } }
+.glass { background: color-mix(in srgb, var(--color-canvas) 86%, transparent); backdrop-filter: blur(12px); }
+.pill-badge { background: none; border: 0; box-shadow: none; padding: 0; }
+
+/* Headlines: Mona Sans a touch wide, medium weight, tightly set. */
+.hero-title { font-family: var(--font-display); font-variation-settings: "wdth" 108; font-weight: 500; letter-spacing: -0.038em; line-height: 1.02; text-wrap: balance; }
+.section-title { font-family: var(--font-display); font-variation-settings: "wdth" 106; font-weight: 500; letter-spacing: -0.028em; line-height: 1.1; text-wrap: balance; }
+
+/* The composer: the one place you talk to the agent. After the prompt-input pattern on 21st.dev. */
+.composer { position: relative; border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: 0 1px 0 rgba(12, 27, 51, 0.03), 0 14px 34px -22px rgba(12, 27, 51, 0.28); transition: border-color 200ms ease, box-shadow 200ms ease; }
+.composer:focus-within { border-color: var(--color-line-strong); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-teal-400) 16%, transparent), 0 14px 34px -22px rgba(12, 27, 51, 0.32); }
+[data-theme="dark"] .composer { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 22px 44px -26px rgba(0, 0, 0, 0.9); }
+.composer textarea, .composer input { background: transparent; outline: none; box-shadow: none; }
+.send-btn { display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 999px; background: var(--color-ink); color: var(--color-canvas); cursor: pointer; transition: opacity 150ms ease, scale 150ms ease; }
+.send-btn:hover:not(:disabled) { scale: 1.05; }
+.send-btn:disabled { opacity: 0.3; cursor: default; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-ink-muted); font-size: 13px; cursor: pointer; transition: border-color 150ms ease, color 150ms ease; }
+.chip:hover { border-color: var(--color-line-strong); color: var(--color-ink); }
+.chip[aria-pressed="true"] { background: var(--color-ink); border-color: var(--color-ink); color: var(--color-canvas); }
+
+/* The agent's mark: three people and the lines between them. It pulses only while it works. */
+.agent-mark { flex: none; color: var(--color-ink); }
+.agent-mark line { stroke: currentColor; stroke-width: 1.3; opacity: 0.3; }
+.agent-mark circle { fill: currentColor; transform-box: fill-box; transform-origin: center; }
+.agent-mark circle.is-you { fill: var(--color-teal-400); }
+@keyframes mark-pulse { 0%, 100% { opacity: 1; scale: 1; } 50% { opacity: 0.3; scale: 0.6; } }
+@media (prefers-reduced-motion: no-preference) {
+  .agent-mark[data-busy] circle { animation: mark-pulse 1.1s ease-in-out infinite; }
+  .agent-mark[data-busy] circle:nth-of-type(2) { animation-delay: 0.18s; }
+  .agent-mark[data-busy] circle:nth-of-type(3) { animation-delay: 0.36s; }
+}
+
+/* A plan the agent is working through: one line per step. */
+.plan-step { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--color-ink-faint); transition: color 200ms ease; }
+.plan-step[data-state="done"] { color: var(--color-ink-muted); }
+.plan-step[data-state="running"] { color: var(--color-ink); }
+.plan-tick { display: grid; place-items: center; flex: none; width: 16px; height: 16px; border-radius: 999px; border: 1px solid var(--color-line-strong); }
+.plan-step[data-state="done"] .plan-tick { border-color: transparent; background: var(--color-ink); color: var(--color-canvas); }
+.plan-step[data-state="running"] .plan-tick { border-color: var(--color-ink); }

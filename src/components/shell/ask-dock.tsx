@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { usePathname } from "next/navigation";
+import { AgentMark } from "@/components/ui/agent-mark";
 
 /** What is worth asking depends on where you are. */
 const ASK: [RegExp, string[]][] = [
@@ -54,8 +55,7 @@ export function AskDock() {
   return (
     <div className="ask-dock" data-away={away || editing || undefined}>
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette", { detail: { q } }))} aria-label={`Ask your network. For example: ${q}`} className="ask-dock-bar group">
-        <span className="beam is-slow" aria-hidden="true" />
-        <span className="ai-orb" aria-hidden="true" />
+        <AgentMark size={18} />
         <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left"><span className="flex-none font-semibold text-ink">Ask</span><span key={q} className="rise-in min-w-0 truncate text-ink-muted">{q}</span></span>
         <kbd className="hidden sm:inline-flex flex-none items-center !rounded-full !px-2">⌘K</kbd>
       </button>

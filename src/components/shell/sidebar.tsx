@@ -46,7 +46,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
     <>
     {open ? <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-ink/35 lg:hidden cursor-default" /> : null}
     {/* A floating white panel: brand, search, the menu, and one prompt to use the agent. */}
-    <aside id="app-nav" className={cn("rail flex flex-col flex-none bg-surface text-rail-ink fixed inset-y-0 left-0 z-40 w-[284px] max-w-[88vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-3 lg:z-auto lg:m-3 lg:mr-0 lg:h-[calc(100dvh-24px)] lg:w-[264px] lg:translate-x-0 lg:visible lg:rounded-[28px] lg:border lg:border-line lg:shadow-[var(--shadow-card)]", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)]" : "-translate-x-full invisible")}>
+    <aside id="app-nav" className={cn("rail flex flex-col flex-none bg-surface text-rail-ink fixed inset-y-0 left-0 z-40 w-[284px] max-w-[88vw] transition-[transform,visibility] duration-200 ease-out lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:w-[248px] lg:translate-x-0 lg:visible", open ? "translate-x-0 visible shadow-[var(--shadow-drawer)]" : "-translate-x-full invisible")}>
       <div className="px-5 pt-6 pb-4">
         <Link href={home} className="flex items-center gap-3">
           <BrandMark className="h-[22px] w-auto flex-none text-rail-ink-strong" />
@@ -57,7 +57,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         </Link>
       </div>
       <div className="px-3 pb-2">
-        <button type="button" onClick={openSearch} className="flex h-10 w-full items-center gap-2.5 rounded-full bg-surface-muted pl-4 pr-1.5 text-[13.5px] text-ink-faint transition-colors duration-200 hover:bg-navy-50 cursor-pointer">
+        <button type="button" onClick={openSearch} className="flex h-9 w-full items-center gap-2.5 rounded-[10px] border border-line bg-surface pl-3 pr-1.5 text-[13.5px] text-ink-faint transition-colors duration-200 hover:border-line-strong cursor-pointer">
           <Search className="h-4 w-4 flex-none" />
           <span className="flex-1 text-left">Search for…</span>
           <kbd className="!rounded-full !px-2 !py-1">⌘K</kbd>

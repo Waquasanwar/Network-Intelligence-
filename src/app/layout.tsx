@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { Mona_Sans, IBM_Plex_Mono } from "next/font/google";
 import { APP_NAME, THEME_COOKIE, themeFrom } from "@/lib/brand";
-import { Spotlight } from "@/components/ui/spotlight";
 import { RegisterServiceWorker } from "@/components/ui/register-sw";
 import "./globals.css";
 
@@ -26,7 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const theme = themeFrom((await cookies()).get(THEME_COOKIE)?.value);
   return (
     <html lang="en-GB" data-theme={theme} className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
-      <body>{children}<Spotlight /><RegisterServiceWorker /></body>
+      <body>{children}<RegisterServiceWorker /></body>
     </html>
   );
 }

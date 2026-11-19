@@ -19,7 +19,7 @@ await step("public page: signed out, it says what the network is and publishes t
   const p = await stranger();
   const r = await p.goto(`${BASE}/`, { waitUntil: "networkidle" });
   assert(r.status() === 200 && new URL(p.url()).pathname === "/", "public page served at / to a stranger, got " + p.url());
-  assert(/known first hand/i.test(await p.locator("h1").innerText()), "headline");
+  assert(/who do you need/i.test(await p.locator("h1").innerText()), "headline"); assert(await p.locator("#front-ask").count(), "the question box");
   for (const t of ["Came through someone we know", "Screened", "Vouched for", "Worked with", "Delivery on record", "Up to date"]) assert(await p.getByText(t, { exact: true }).first().isVisible(), "proof listed: " + t);
   // Nothing about who is in the network.
   const body = await p.locator("body").innerText();
