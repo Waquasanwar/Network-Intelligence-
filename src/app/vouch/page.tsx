@@ -46,7 +46,6 @@ export default async function VouchPage({ searchParams }: { searchParams: Promis
           </div>
         ) : open ? (
           <>
-            <div className="eyebrow text-ink-faint mb-3">A reference · about a minute</div>
             <h1 className="font-display text-[30px] leading-[1.1] text-balance">{byTeam ? `We would value a few words from you on ${first} ${req!.person.lastName}'s work.` : `${first} ${req!.person.lastName} has asked you to say how you know their work.`}</h1>
             <p className="text-[14.5px] text-ink-muted mt-3 leading-[1.55]">{first} is part of {network}, a network of people known first hand. A few honest lines from someone who has seen them work counts for more than anything they could say themselves.</p>
             <form action={answerReference} className="widget p-6 sm:p-7 mt-6 space-y-4">

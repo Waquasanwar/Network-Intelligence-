@@ -10,6 +10,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NeedComposer } from "@/components/public/need-composer";
+import { Constellation } from "@/components/ui/constellation";
 import { APP_NAME } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
@@ -49,27 +50,31 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="min-h-screen overflow-x-clip text-ink">
-      <header className="glass sticky top-0 z-30 border-b border-line">
-        <nav aria-label="Main" className="mx-auto flex h-16 w-full max-w-[1120px] items-center gap-6 px-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-2.5"><BrandMark className="h-[20px] w-auto text-ink" /><span className="font-display is-small text-[15px]">{network.name}</span></Link>
-          <div className="hidden items-center gap-6 text-[13.5px] text-ink-muted md:flex">
-            <a href="#how" className="hover:text-ink">How it works</a><a href="#standard" className="hover:text-ink">The standard</a><a href="#start" className="hover:text-ink">Get started</a>
-          </div>
-          <span className="flex-1" />
-          <ThemeToggle className="!h-9 !w-9 !border-0 !bg-transparent !shadow-none" />
-          <a href="/login" className="hidden text-[13.5px] font-medium text-ink-muted hover:text-ink sm:inline">Sign in</a>
-          <a href="#join" className="inline-flex h-9 items-center rounded-full bg-ink px-4 text-[13.5px] font-medium text-canvas transition-opacity hover:opacity-85">Apply to join</a>
-        </nav>
-      </header>
+      <div className="stage-ink">
+        <Constellation focus={0.5} />
+        <span className="stage-scrim is-center" aria-hidden="true" />
+        <header>
+          <nav aria-label="Main" className="mx-auto flex h-[72px] w-full max-w-[1180px] items-center gap-6 px-5 sm:px-8">
+            <Link href="/" className="flex items-center gap-2.5"><BrandMark className="h-[22px] w-auto text-white" /><span className="font-display text-[16px]">{network.name}</span></Link>
+            <div className="hidden items-center gap-7 text-[14px] stage-muted md:flex">
+              <a href="#how" className="hover:text-white">How it works</a><a href="#standard" className="hover:text-white">The standard</a><a href="#start" className="hover:text-white">Get started</a>
+            </div>
+            <span className="flex-1" />
+            <ThemeToggle className="!h-9 !w-9 !border-0 !bg-transparent !text-white !shadow-none" />
+            <a href="/login" className="hidden text-[14px] font-medium text-white/85 hover:text-white sm:inline">Sign in</a>
+            <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a>
+          </nav>
+        </header>
+
+        <section className="mx-auto w-full max-w-[960px] px-5 pb-24 pt-16 text-center sm:px-8 sm:pb-32 sm:pt-24">
+          <h1 className="hero-title mx-auto max-w-[14ch] text-[48px] sm:text-[84px]">Who do you <span className="text-mint">need?</span></h1>
+          <p className="mx-auto mt-6 max-w-[52ch] text-[16px] leading-[1.6] stage-muted sm:text-[18px]">Describe a role or a piece of work. We find senior consultants in the Gulf and London whom we know first hand, and introduce them once they say yes.</p>
+          <NeedComposer />
+          <p className="mt-12 text-[13px] stage-faint">Free for members · Pay only on placement · Names private until they say yes</p>
+        </section>
+      </div>
 
       <main>
-        <section className="mx-auto w-full max-w-[920px] px-5 pb-20 pt-20 text-center sm:px-8 sm:pt-28">
-          <p className="inline-flex items-center gap-2 text-[13px] text-ink-faint"><span className="h-1.5 w-1.5 rounded-full bg-teal-400" aria-hidden="true" />A private network · Dubai and London</p>
-          <h1 className="hero-title mx-auto mt-6 max-w-[14ch] text-[44px] sm:text-[72px]">Who do you need?</h1>
-          <p className="mx-auto mt-5 max-w-[52ch] text-[16px] leading-[1.6] text-ink-muted sm:text-[17px]">Describe a role or a piece of work. We find senior consultants we know first hand, and introduce them once they say yes.</p>
-          <NeedComposer />
-          <p className="mt-10 text-[13px] text-ink-faint">Free for members · Pay only on placement · Names private until they say yes</p>
-        </section>
 
         <section id="how" className="scroll-mt-20 border-t border-line" aria-labelledby="how-title">
           <div className="mx-auto w-full max-w-[1120px] px-5 py-20 sm:px-8 sm:py-24">
@@ -81,8 +86,8 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
                 ["Matched", "You see who fits by what they have proven, not by who they say they are."],
                 ["Placed", "They say yes, you meet. A fee applies only when someone starts."],
               ].map(([t, d], i) => (
-                <li key={t} className="border-t border-ink pt-5">
-                  <span className="mono text-[12px] text-ink-faint">{String(i + 1).padStart(2, "0")}</span>
+                <li key={t} className={`border-t-2 pt-5 ${["border-teal-400", "border-[#5aa2f0]", "border-[#f2c46d]", "border-coral"][i]}`}>
+                  <span className={`tile ${["is-mint", "is-blue", "is-gold", "is-coral"][i]} !h-8 !w-8 text-[13px] font-semibold`}>{i + 1}</span>
                   <b className="mt-3 block text-[17px] font-semibold tracking-[-0.01em]">{t}</b>
                   <span className="mt-2 block max-w-[34ch] text-[14.5px] leading-[1.6] text-ink-muted">{d}</span>
                 </li>
@@ -100,8 +105,8 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
             <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
               {PROOFS.map((p) => (
                 <div key={p.key} className="border-t border-line py-5">
-                  <dt className="flex items-center gap-2 text-[15px] font-semibold"><Check className="h-3.5 w-3.5 flex-none text-teal" strokeWidth={3} aria-hidden="true" />{p.title}</dt>
-                  <dd className="mt-1.5 text-[14px] leading-[1.55] text-ink-muted">{p.means}</dd>
+                  <dt className="flex items-center gap-2.5 text-[15.5px] font-semibold"><span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-teal-50 text-teal"><Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" /></span>{p.title}</dt>
+                  <dd className="mt-1.5 pl-[34px] text-[14px] leading-[1.55] text-ink-muted">{p.means}</dd>
                 </div>
               ))}
             </dl>
@@ -111,9 +116,9 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
         <section id="start" className="scroll-mt-20 border-t border-line" aria-labelledby="start-title">
           <div className="mx-auto w-full max-w-[1120px] px-5 py-20 sm:px-8 sm:py-24">
             <h2 id="start-title" className="section-title text-[30px] sm:text-[40px]">Get started</h2>
-            <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 lg:divide-x lg:divide-line">
-          <div id="need" className="scroll-mt-24 lg:pr-12">
-            <h3 className="section-title text-[24px]">Bring us a need</h3>
+            <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div id="need" className="scroll-mt-24 rounded-[22px] border border-line bg-surface p-6 sm:p-9">
+            <h3 className="section-title text-[26px]">Bring us a need</h3>
             <p className="mt-2 max-w-[48ch] text-[14.5px] leading-[1.55] text-ink-muted">For companies and agencies. Asking is free; a fee applies only when someone starts.</p>
             {sp.sent === "need" ? <Sent title="Thank you. We have it." detail="A person will read it and come back to you by email, usually with a question or two before any names are discussed." /> : (
               <>
@@ -136,8 +141,8 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
             )}
           </div>
 
-          <div id="join" className="scroll-mt-24 pt-10 lg:pt-0 lg:pl-12">
-            <h3 className="section-title text-[24px]">Apply to join</h3>
+          <div id="join" className="scroll-mt-24 rounded-[22px] border border-line bg-surface p-6 sm:p-9">
+            <h3 className="section-title text-[26px]">Apply to join</h3>
             <p className="mt-2 max-w-[48ch] text-[14.5px] leading-[1.55] text-ink-muted">For senior consultants. Free, by invitation. Your name is never shared until you say yes to an introduction.</p>
             {sp.sent === "join" ? <Sent title="Thank you. Your application is with us." detail="A person reads every application. If it is a fit you will get a personal invitation by email, with a link to create your login." /> : (
               <>
@@ -165,10 +170,17 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
         </section>
       </main>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-3 px-5 py-8 text-[13px] text-ink-faint sm:px-8">
-          <span>{network.name}. By invitation. Members can see, export or delete their data at any time.</span>
-          <a href="/login" className="font-medium text-ink-muted hover:text-ink">Sign in</a>
+      <footer className="stage-ink">
+        <Constellation focus={0.85} density={0.5} />
+        <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-end justify-between gap-6 px-5 py-14 sm:px-8">
+          <div>
+            <div className="flex items-center gap-2.5"><BrandMark className="h-[22px] w-auto text-white" /><span className="font-display text-[16px]">{network.name}</span></div>
+            <p className="mt-4 max-w-[46ch] text-[13.5px] leading-[1.6] stage-muted">By invitation. Members can see, export or delete their data at any time.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="/login" className="btn-ghost-stage h-10 px-5 text-[14px]">Sign in</a>
+            <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a>
+          </div>
         </div>
       </footer>
     </div>

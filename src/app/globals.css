@@ -10,7 +10,7 @@
   a hairline and a soft lift on hover; colour is used sparingly so it means something.
 */
 @theme {
-  --color-canvas: #f5f6f8;
+  --color-canvas: #f3f5f9;
   --color-surface: #ffffff;
   --color-surface-muted: #f1f2f5;
   --color-surface-hover: #f8fafc;
@@ -60,9 +60,10 @@
   --color-series-track: #eceef3;
   --color-pink: #e8598b;
   --color-pink-100: #fde3ec;
-  --font-display: var(--font-sans-mona), "Helvetica Neue", Arial, sans-serif;
-  --font-sans: var(--font-sans-mona), "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-mono-fallback), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Samsung Sans", "SamsungOne", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-brand: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Samsung Sans", "SamsungOne", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Samsung Sans", "SamsungOne", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 22px;
@@ -135,8 +136,7 @@ body { background: transparent; }
 html, body {
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-variation-settings: "wdth" 100;
-  font-size: 14px;
+    font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -550,8 +550,11 @@ a.figure:hover { opacity: 0.72; }
 .pill-badge { background: none; border: 0; box-shadow: none; padding: 0; }
 
 /* Headlines: Mona Sans a touch wide, medium weight, tightly set. */
-.hero-title { font-family: var(--font-display); font-variation-settings: "wdth" 108; font-weight: 500; letter-spacing: -0.038em; line-height: 1.02; text-wrap: balance; }
-.section-title { font-family: var(--font-display); font-variation-settings: "wdth" 106; font-weight: 500; letter-spacing: -0.028em; line-height: 1.1; text-wrap: balance; }
+.hero-title { font-family: var(--font-brand); font-weight: 700; letter-spacing: -0.028em; line-height: 1.04; text-wrap: balance; }
+.section-title { font-family: var(--font-brand); font-weight: 650; letter-spacing: -0.022em; line-height: 1.12; text-wrap: balance; }
+/* Figures in the text face: the display face draws its zero with a slash. */
+.figure-num { font-family: var(--font-display); font-weight: 650; letter-spacing: -0.025em; }
+.ink-stage .num-grad { background-image: none; -webkit-text-fill-color: currentColor; }
 
 /* The composer: the one place you talk to the agent. After the prompt-input pattern on 21st.dev. */
 .composer { position: relative; border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: 0 1px 0 rgba(12, 27, 51, 0.03), 0 14px 34px -22px rgba(12, 27, 51, 0.28); transition: border-color 200ms ease, box-shadow 200ms ease; }
@@ -584,3 +587,58 @@ a.figure:hover { opacity: 0.72; }
 .plan-tick { display: grid; place-items: center; flex: none; width: 16px; height: 16px; border-radius: 999px; border: 1px solid var(--color-line-strong); }
 .plan-step[data-state="done"] .plan-tick { border-color: transparent; background: var(--color-ink); color: var(--color-canvas); }
 .plan-step[data-state="running"] .plan-tick { border-color: var(--color-ink); }
+
+
+/* ---------- Brand stage ----------
+   Deep ink with the live network drawn on it (<Constellation />). The one place the product is
+   unmistakably Amana: sign-in, join, the public hero and the top of home. Text on it is white;
+   whatever sits on it keeps its own surface (the composer stays a white card). */
+.stage-ink { position: relative; isolation: isolate; overflow: hidden; color: #ffffff; background: radial-gradient(110% 95% at 72% 40%, #15306a 0%, #0c1d42 46%, #07122b 100%); }
+.stage-ink > canvas { z-index: -1; }
+.stage-scrim { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(7, 18, 43, 0.92) 0%, rgba(7, 18, 43, 0.6) 38%, rgba(7, 18, 43, 0) 70%); }
+.stage-scrim.is-center { background: radial-gradient(60% 70% at 50% 46%, rgba(7, 18, 43, 0.82) 0%, rgba(7, 18, 43, 0.35) 60%, rgba(7, 18, 43, 0) 100%); }
+.stage-muted { color: #c3cde2; }
+.stage-faint { color: #8f9cbb; }
+.text-mint { color: var(--color-accent); }
+.on-stage-line { border-color: rgba(255, 255, 255, 0.12); }
+
+/* Mint, the brand's own colour, for the one action that matters on a screen. Navy text on it. */
+.btn-mint { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--color-accent); color: #0c1b33; font-weight: 600; border-radius: 999px; transition: background-color 150ms ease, translate 150ms ease, box-shadow 150ms ease; box-shadow: 0 8px 22px -10px rgba(126, 227, 188, 0.9); cursor: pointer; }
+.btn-mint:hover { background: #95ecca; translate: 0 -1px; }
+.btn-mint:active { translate: 0 0; }
+.btn-ghost-stage { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 999px; font-weight: 500; transition: border-color 150ms ease, background-color 150ms ease; }
+.btn-ghost-stage:hover { border-color: rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.06); }
+
+/* A record card on the stage: a solid ink face, never glass. */
+.stage-card { background: #0f2350; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7); }
+
+/* Category colour: what kind of thing is waiting, at a glance. */
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.tag.is-mint { background: var(--color-teal-50); color: var(--color-teal); }
+.tag.is-gold { background: var(--color-amber-50); color: var(--color-amber); }
+.tag.is-coral { background: var(--color-coral-100); color: var(--color-coral-ink); }
+.tag.is-blue { background: #e6eefa; color: #1b4a86; }
+[data-theme="dark"] .tag.is-blue { background: #14233f; color: #8db6ee; }
+.tile { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 11px; }
+.tile.is-mint { background: var(--color-teal-50); color: var(--color-teal); }
+.tile.is-gold { background: var(--color-amber-50); color: var(--color-amber); }
+.tile.is-coral { background: var(--color-coral-100); color: var(--color-coral-ink); }
+.tile.is-blue { background: #e6eefa; color: #1b4a86; }
+[data-theme="dark"] .tile.is-blue { background: #14233f; color: #8db6ee; }
+
+/* The active page in the menu: a mint mark beside it. */
+.nav-active { position: relative; }
+.nav-active::before { display: block !important; content: ""; position: absolute; left: -3px; top: 50%; width: 3px; height: 18px; translate: 0 -50%; border-radius: 3px; background: var(--color-teal-400); }
+/* The plan, when it runs on the stage. */
+.stage-ink .plan-step { color: #8f9cbb; }
+.stage-ink .plan-step[data-state="done"] { color: #c3cde2; }
+.stage-ink .plan-step[data-state="running"] { color: #ffffff; }
+.stage-ink .plan-tick { border-color: rgba(255, 255, 255, 0.3); }
+.stage-ink .plan-step[data-state="done"] .plan-tick { background: var(--color-accent); color: #0c1b33; }
+.stage-ink .plan-step[data-state="running"] .plan-tick { border-color: var(--color-accent); }
+.stage-ink .composer { border-color: transparent; box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.06); }
+.stage-ink .composer:focus-within { box-shadow: 0 0 0 4px rgba(126, 227, 188, 0.35), 0 30px 70px -30px rgba(0, 0, 0, 0.75); }
+.stage-ink .chip:not([aria-pressed="true"]) { background: transparent; }
+.stage-ink .send-btn { background: var(--color-accent); color: #0c1b33; }
+.stage-ink .stage-chips .chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.16); color: #c3cde2; }
+.stage-ink .stage-chips .chip:hover { border-color: rgba(255, 255, 255, 0.4); color: #ffffff; }

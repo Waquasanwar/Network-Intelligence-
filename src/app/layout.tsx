@@ -1,14 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { Mona_Sans, IBM_Plex_Mono } from "next/font/google";
 import { APP_NAME, THEME_COOKIE, themeFrom } from "@/lib/brand";
 import { RegisterServiceWorker } from "@/components/ui/register-sw";
 import "./globals.css";
 
-// Mona Sans, as on the Amana site: one variable family carries everything. Text runs at normal
-// width; headlines a touch wider and semibold; small uppercase labels wider still (see globals.css).
-const sans = Mona_Sans({ subsets: ["latin"], axes: ["wdth"], variable: "--font-sans-mona", display: "swap" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono-fallback", display: "swap" });
+// Type is the device's own: SF Pro on Apple devices, the system face on Samsung and other
+// Android phones, Segoe on Windows. No web fonts to download, and it feels native everywhere.
 
 export const metadata: Metadata = {
   title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
@@ -24,7 +21,7 @@ export const viewport: Viewport = { themeColor: [{ media: "(prefers-color-scheme
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = themeFrom((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="en-GB" data-theme={theme} className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en-GB" data-theme={theme} suppressHydrationWarning>
       <body>{children}<RegisterServiceWorker /></body>
     </html>
   );

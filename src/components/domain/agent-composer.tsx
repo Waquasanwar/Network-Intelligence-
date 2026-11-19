@@ -81,7 +81,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
       </form>
 
       {phase === "idle" && suggestions.length ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="stage-chips mt-3 flex flex-wrap items-center gap-2">
           {suggestions.map((s) => <button key={s} type="button" onClick={() => ask(s)} className="chip">{s}</button>)}
         </div>
       ) : null}

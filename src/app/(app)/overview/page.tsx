@@ -11,15 +11,16 @@ import { AddPersonDrawer } from "@/components/domain/add-person-drawer";
 import { Button } from "@/components/ui/button";
 import { Upload, UserSearch, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight, Users, Briefcase, TrendingUp, UserCheck } from "lucide-react";
 import { AgentComposer } from "@/components/domain/agent-composer";
+import { Constellation } from "@/components/ui/constellation";
 
 // What the agent has queued for you, by the kind of decision it needs.
 type QueueKind = "match" | "review" | "approve" | "reconnect" | "intro";
-const QUEUE: Record<QueueKind, { tag: string; verb: string; icon: typeof UserSearch }> = {
-  match: { tag: "Matching", verb: "Run", icon: UserSearch },
-  review: { tag: "Shortlist", verb: "Review", icon: ListChecks },
-  approve: { tag: "Summary", verb: "Approve", icon: FileCheck2 },
-  reconnect: { tag: "Reconnect", verb: "Open", icon: RefreshCw },
-  intro: { tag: "Introduction", verb: "Respond", icon: Handshake },
+const QUEUE: Record<QueueKind, { tag: string; verb: string; icon: typeof UserSearch; tone: string }> = {
+  match: { tag: "Matching", verb: "Run", icon: UserSearch, tone: "is-mint" },
+  review: { tag: "Shortlist", verb: "Review", icon: ListChecks, tone: "is-blue" },
+  approve: { tag: "Summary", verb: "Approve", icon: FileCheck2, tone: "is-blue" },
+  reconnect: { tag: "Reconnect", verb: "Open", icon: RefreshCw, tone: "is-gold" },
+  intro: { tag: "Introduction", verb: "Respond", icon: Handshake, tone: "is-coral" },
 };
 
 export const metadata = { title: "Overview" };
@@ -83,11 +84,14 @@ export default async function OverviewPage() {
   return (
     <>
       {/* A greeting and the question box: the agent is the first thing on the page. */}
-      <section className="max-w-[760px] pt-6 pb-10 sm:pt-10">
-        <p className="text-[13px] text-ink-faint">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
-        <h1 className="hero-title mt-2 text-[32px] sm:text-[40px]">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, {user.name.split(" ")[0]}</h1>
-        <p className="mt-2 mb-6 text-[15px] text-ink-muted">Ask for anyone in plain words. I search everyone you know and rank them by trust.</p>
-        <AgentComposer suggestions={askSuggestions} />
+      <section className="stage-ink mb-8 mt-2 rounded-[24px] px-5 py-8 sm:px-10 sm:py-11">
+        <Constellation focus={0.82} density={0.85} />
+        <span className="stage-scrim" aria-hidden="true" />
+        <div className="max-w-[760px]">
+          <h1 className="hero-title text-[34px] sm:text-[46px]">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, <span className="text-mint">{user.name.split(" ")[0]}</span></h1>
+          <p className="mt-3 mb-7 max-w-[56ch] text-[15.5px] stage-muted">Ask for anyone in plain words. I search all {total} people you know and rank them by trust.</p>
+          <AgentComposer suggestions={askSuggestions} />
+        </div>
       </section>
 
       {/* Headline numbers. Each one opens the list behind it. */}
@@ -108,10 +112,10 @@ export default async function OverviewPage() {
               { label: "Awaiting screening", value: awaitingScreening, hint: "registered, not yet screened", href: "/conversations", delta: 0, icon: ListChecks },
               { label: "Worked with", value: workedWith, hint: "people you've delivered with", href: "/network?workedWith=1", delta: 0, icon: Handshake },
             ]
-        ).map((k) => (
+        ).map((k, i) => (
           <Link key={k.label} href={k.href} className="figure group">
-            <span className="block text-[12.5px] font-medium text-ink-muted leading-tight">{k.label}</span>
-            <span className="mt-2 block hero-title text-[30px] sm:text-[34px] leading-none tabular">{k.value}</span>
+            <span className="flex items-center gap-2.5 text-[12.5px] font-medium text-ink-muted leading-tight"><span className={`tile !h-7 !w-7 !rounded-[9px] ${["is-mint", "is-blue", "is-coral", "is-gold"][i]}`}><k.icon className="h-3.5 w-3.5" aria-hidden="true" /></span>{k.label}</span>
+            <span className="figure-num mt-2.5 block text-[32px] sm:text-[36px] leading-none">{k.value}</span>
             <span className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-faint">
               {k.delta ? <span className="font-semibold text-teal">+{k.delta} this week</span> : null}
               <span>{k.hint}</span>
@@ -135,11 +139,9 @@ export default async function OverviewPage() {
               return (
                 <li key={i}>
                   <Link href={s.href} className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors duration-150 hover:bg-surface-hover">
-                    <Icon className="h-4 w-4 flex-none text-ink-faint" aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] text-ink">{s.text}</span>
-                      <span className="block text-[12px] text-ink-faint">{k.tag}</span>
-                    </span>
+                    <span className={`tile ${k.tone}`}><Icon className="h-4 w-4" aria-hidden="true" /></span>
+                    <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{s.text}</span>
+                    <span className={`tag ${k.tone} hidden sm:inline-flex`}>{k.tag}</span>
                     <span className="inline-flex flex-none items-center gap-1 text-[13px] font-medium text-ink-muted transition-colors group-hover:text-ink">{k.verb} <ArrowRight className="h-3.5 w-3.5" /></span>
                   </Link>
                 </li>

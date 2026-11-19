@@ -3,11 +3,10 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
 
-export function PageHeader({ title, description, actions, eyebrow }: { title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode; eyebrow?: React.ReactNode }) {
+export function PageHeader({ title, description, actions }: { title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode; eyebrow?: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-6">
       <div className="min-w-0">
-        {eyebrow ? <div className="eyebrow text-ink-faint mb-2.5">{eyebrow}</div> : null}
         <h1 className="font-display text-[26px] sm:text-[32px] text-ink leading-[1.1]">{title}</h1>
         {description ? <p className="text-[14.5px] text-ink-muted mt-2 max-w-2xl leading-[1.55]">{description}</p> : null}
       </div>

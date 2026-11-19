@@ -7,7 +7,7 @@ import { MailQuestion } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { APP_NAME } from "@/lib/brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { CirclesMotif } from "@/components/ui/circles-motif";
+import { Constellation } from "@/components/ui/constellation";
 
 export const metadata = { title: "Join the network" };
 export const dynamic = "force-dynamic";
@@ -51,16 +51,16 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[1fr_1.05fr]">
-      <aside className="brand-panel is-edge relative hidden lg:flex flex-col justify-between p-12 overflow-hidden lg:m-3 lg:rounded-[28px]">
-        <CirclesMotif className="pointer-events-none absolute right-[-290px] bottom-[-250px] h-[560px] w-[560px] opacity-70" />
+      <aside className="stage-ink hidden lg:flex flex-col justify-between p-14 min-h-screen">
+        <Constellation focus={0.72} density={0.8} />
+        <span className="stage-scrim" aria-hidden="true" />
         <div className="relative flex items-center gap-2.5">
-          <BrandMark className="h-7 w-auto" />
-          <span className="font-display is-small text-[16px]">{APP_NAME}</span>
+          <BrandMark className="h-7 w-auto text-white" />
+          <span className="font-display text-[17px]">{APP_NAME}</span>
         </div>
 
         <div className="relative max-w-[460px]">
-          <div className="eyebrow text-stage-muted mb-5">By invitation</div>
-          <h1 className="display-wide text-[42px] text-balance">Be in the network for when <span className="text-aurora">the right work</span> comes up.</h1>
+          <h1 className="hero-title text-[48px]">Be in the network for when <span className="text-mint">the right work</span> comes up.</h1>
           <p className="mt-5 text-stage-muted text-[15.5px] leading-[1.55] max-w-[44ch]">We place people we actually know. Join once, and when something fits we already know who you are and why we&apos;d put our name behind you.</p>
 
           <ol className="mt-9 relative">
