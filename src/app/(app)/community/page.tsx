@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
 import { privacyOf } from "@/lib/privacy";
 import { mayInvite } from "@/server/invites";
-import { resolveMemberPerson } from "@/server/queries";
+import { resolveMemberPerson, loadRateCard } from "@/server/queries";
 import { standardFor } from "@/lib/standard-for";
 import { TRUST_SELECT } from "@/lib/trust-include";
 import { ROUTE_LABELS } from "@/lib/labels";
@@ -54,6 +54,8 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const base = internal ? null : await resolveMemberPerson(user, null);
   const me = base ? await prisma.person.findUnique({ where: { id: base.id }, select: { id: true, tenantId: true, memberSince: true, screeningStatus: true, screenedAt: true, privacy: true } }) : null;
   const tenantId = internal ? user.tenantId : me?.tenantId;
+  // Money talk to members is off until the owner switches earnings on in Commercials.
+  const earnings = tenantId ? (await loadRateCard(tenantId)).membersSeeEarnings === 1 : false;
 
   if (!internal && (!me || !mayInvite(me))) {
     return (
@@ -85,7 +87,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader title="Community" description={internal ? "What members are sharing. Work and asks posted here are already leads in Requirements. You can take a post down." : "Share work you know about, ask for someone, say when you are free, and connect with other members. Free for members."} />
-      {sp.notice && NOTICE[sp.notice] ? <div role="status" className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">{NOTICE[sp.notice]}</div> : null}
+      {sp.notice && NOTICE[sp.notice] ? <div role="status" className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">{sp.notice === "referred" && !earnings ? "Thank you. We will tell you how it goes." : NOTICE[sp.notice]}</div> : null}
       {internal ? null : <Tabs items={[{ key: "board", label: "Board", count: posts.length }, { key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length || undefined }]} current={tab} base="/community" />}
 
       {tab === "board" ? (
@@ -145,7 +147,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                       <Field label="Type of work"><Select name="route" defaultValue=""><option value="">Any</option>{(Object.keys(ROUTE_LABELS) as EngagementRoute[]).map((r) => <option key={r} value={r}>{ROUTE_LABELS[r]}</option>)}</Select></Field>
                       <Field label="Where"><Input name="location" maxLength={120} placeholder="Dubai, remote" /></Field>
                     </div>
-                    <label className="flex items-start gap-2.5 text-[12px] text-ink-muted leading-[1.5]"><input type="checkbox" name="terms" className="mt-0.5 h-4 w-4 flex-none accent-[var(--color-navy)]" /><span>For work or an ask: it is introduced through the network, so nobody is cut out. If someone you bring in is placed, you receive a share of the fee.</span></label>
+                    <label className="flex items-start gap-2.5 text-[12px] text-ink-muted leading-[1.5]"><input type="checkbox" name="terms" className="mt-0.5 h-4 w-4 flex-none accent-[var(--color-navy)]" /><span>For work or an ask: it is introduced through the network, so nobody is cut out.{earnings ? " If someone you bring in is placed, you receive a share of the fee." : ""}</span></label>
                     <div className="flex justify-end"><SubmitButton pendingText="Posting…">Post</SubmitButton></div>
                   </form>
                 </CardBody>

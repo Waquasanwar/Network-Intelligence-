@@ -99,7 +99,7 @@ export function FeeBox({ est, model, pct, label = "Estimated fee to us", extra }
 }
 
 /** The anonymised card a client or agency sees. Never a name before introduction. */
-export function AnonCard({ refCode, headline, region, availabilityBand, evidenceSummary, proofs = [], rights, rateStated, tier, decision, kind, referred, clientNote, revealedName, actions }: { refCode: string; headline: string; region: string | null; availabilityBand: string; evidenceSummary: string; proofs?: string[]; rights?: HardCheck; rateStated?: string | null; tier: string; decision: ShortlistDecision; kind?: AccountKind; referred?: boolean; clientNote?: string | null; revealedName?: string | null; actions?: React.ReactNode }) {
+export function AnonCard({ refCode, headline, region, availabilityBand, evidenceSummary, proofs = [], rights, rateStated, tier, decision, kind, referred, clientNote, revealedName, actions, why = [] }: { why?: string[]; refCode: string; headline: string; region: string | null; availabilityBand: string; evidenceSummary: string; proofs?: string[]; rights?: HardCheck; rateStated?: string | null; tier: string; decision: ShortlistDecision; kind?: AccountKind; referred?: boolean; clientNote?: string | null; revealedName?: string | null; actions?: React.ReactNode }) {
   const band = rateBand(rateStated);
   return (
     <li className="py-3 border-b border-line last:border-b-0">
@@ -113,6 +113,12 @@ export function AnonCard({ refCode, headline, region, availabilityBand, evidence
         {band ? <Chip>{band}</Chip> : null}
         <Chip>{tier === "meets" ? "meets the brief" : tier === "conversation" ? "one point to confirm" : "stretch"}</Chip>
       </div>
+      {why.length ? (
+        <div className="mt-2.5 rounded-[12px] border border-teal/20 bg-teal-50 px-3 py-2.5" data-why>
+          <div className="text-[12px] font-semibold text-ink">Why this person</div>
+          <ul className="mt-1 space-y-0.5">{why.map((w) => <li key={w} className="flex items-start gap-1.5 text-[12.5px] text-ink-muted"><span className="mt-[5px] h-1.5 w-1.5 flex-none rounded-full bg-teal-400" aria-hidden="true" />{w}</li>)}</ul>
+        </div>
+      ) : null}
       <ProofLine proofs={proofs} className="mt-2" />
       {!proofs.length || /shareable/.test(evidenceSummary) ? <div className="text-[12px] text-ink-muted mt-1.5">{evidenceSummary}</div> : null}
       {clientNote ? <div className="text-[12px] text-ink-muted mt-0.5">Note from us: {clientNote}</div> : null}

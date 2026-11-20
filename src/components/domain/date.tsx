@@ -4,7 +4,7 @@ export function DateText({ date, relative = false, className }: { date: Date | s
   if (!date) return <span className={className}>—</span>;
   const d = typeof date === "string" ? new Date(date) : date;
   const abs = format(d, "d MMM yyyy");
-  if (!relative) return <span className={className} title={abs}>{abs}</span>;
+  if (!relative) return <span className={className} title={abs} suppressHydrationWarning>{abs}</span>;
   const rel = formatDistanceToNowStrict(d, { addSuffix: true });
-  return <span className={className} title={abs}>{isPast(d) ? rel : `in ${formatDistanceToNowStrict(d)}`}</span>;
+  return <span className={className} title={abs} suppressHydrationWarning>{isPast(d) ? rel : `in ${formatDistanceToNowStrict(d)}`}</span>;
 }

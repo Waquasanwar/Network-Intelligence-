@@ -30,9 +30,11 @@ import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
 import { fitHighlights, ATTRIBUTES } from "@/lib/fit";
 import { rateBand, fmt } from "@/lib/demand";
-import { SCREENING_MINUTES } from "@/lib/screening";
+import { SCREENING_MINUTES, SCREENING_SCRIPT } from "@/lib/screening";
+import { ShieldCheck, EyeOff, PenLine } from "lucide-react";
 import { ROUTE_LABELS, AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
+import { Tracker, stepsFrom } from "@/components/ui/tracker";
 
 export const metadata = { title: "My network profile" };
 
@@ -58,12 +60,17 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: p.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
   // What the network does for a member, with real numbers: who they can connect with, what a referral
   // earns, what is on the board, and what is open to them.
-  const [peers, boardPosts, rateCard, myConnections] = await Promise.all([
+  const [peers, boardPosts, rateCard, myConnections, myShortlist] = await Promise.all([
     prisma.person.findMany({ where: { tenantId: p.tenantId, id: { not: p.id }, memberUser: { isNot: null } }, select: { memberSince: true, screeningStatus: true, screenedAt: true, privacy: true } }),
     prisma.boardPost.count({ where: { tenantId: p.tenantId, status: "OPEN" } }),
     loadRateCard(p.tenantId),
     prisma.connection.count({ where: { status: "ACCEPTED", OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] } }),
+    // Where this member stands on each requirement: the stage only, never the client's name or notes.
+    prisma.shortlistItem.findMany({ where: { personId: p.id }, select: { briefId: true, decision: true } }),
   ]);
+  // The member's own screening record, as they gave it: shown on Privacy & data, like a call log.
+  const myScreenings = (sp.tab ?? "home") === "privacy" ? await prisma.conversation.findMany({ where: { personId: p.id, type: "SCREENING" }, select: { id: true, createdAt: true, approvalStatus: true, screening: true }, orderBy: { createdAt: "desc" }, take: 5 }) : [];
+  const earnings = rateCard.membersSeeEarnings === 1; // off until the owner switches it on in Commercials
   const connectable = peers.filter((x) => mayInvite(x) && privacyOf({ privacy: x.privacy }).consents.memberDirectory).length;
   const credits = await prisma.referralCredit.findMany({ where: { personId: p.id }, include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } });
   const canInvite = mayInvite(p);
@@ -101,6 +108,19 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
         <div className="flex items-start justify-between gap-3"><div><div className="text-[14px] font-semibold">{b.roles[0] ?? "Requirement"}{b.headcount > 1 ? ` × ${b.headcount}` : ""}</div><div className="text-[12px] text-ink-faint">{b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"} · {b.locations.join(" / ") || "location flexible"} · {b.sectors.join(", ") || "any sector"}</div></div><Badge filled>client name hidden</Badge></div>
         <p className="text-[13.5px] leading-6 my-2.5">{b.memberSummary}</p>
         <div className="flex flex-wrap gap-1 mb-3">{b.capabilities.map((c) => <Chip key={c}>{c}</Chip>)}{b.workRights ? <Chip>{b.workRights}</Chip> : null}</div>
+        {(() => {
+          const sl = myShortlist.find((x) => x.briefId === b.id)?.decision;
+          if (!pitched && !sl) return null;
+          const at = (ds: string[]) => !!sl && ds.includes(sl);
+          const stopped = pitched?.status === "DECLINED" || at(["CLIENT_PASSED", "NOT_FOR_THIS"]);
+          return <Tracker className="mb-3" label="Where you stand" steps={stepsFrom([
+            { label: pitched ? "You put yourself forward" : "Considered", reached: true },
+            { label: "On the shortlist", reached: pitched?.status === "SHORTLISTED" || at(["SHORTLISTED", "PROPOSED", "CLIENT_INTERESTED", "CLIENT_PASSED", "INTRODUCED", "PLACED"]) },
+            { label: "Shown to the client", reached: at(["PROPOSED", "CLIENT_INTERESTED", "CLIENT_PASSED", "INTRODUCED", "PLACED"]) },
+            { label: "Introduced", reached: at(["INTRODUCED", "PLACED"]) },
+            { label: "Placed", reached: at(["PLACED"]) },
+          ], stopped)} />;
+        })()}
         <div className="flex flex-wrap items-center gap-2">{pitched ? <Badge tone={pitched.status === "SHORTLISTED" ? "teal" : "navy"} filled>You pitched · {PITCH_STATUS[pitched.status]}</Badge> : screened ? <PitchDrawer briefId={b.id} asPersonId={internal ? p.id : undefined} summary={summary} /> : <small className="text-ink-faint">Complete your screening to pitch.</small>}<Link href={`/member?tab=refer&for=${b.id}${internal ? `&person=${p.id}` : ""}`}><Button size="sm" variant="secondary" type="button">Refer someone</Button></Link>{refd ? <Badge tone="teal" filled>{refd} referred</Badge> : null}</div>
       </CardBody>
     </Card>
@@ -155,7 +175,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             </form>
           </CardBody></Card></div>
           <div className="space-y-4">
-          {credits.length ? <Card data-member-credits><CardHeader title="Your share of placements" description="When someone you referred, introduced or found work for is placed, you receive this share of the fee." /><CardBody className="pt-0"><ul className="divide-y divide-line text-[12.5px]">{credits.map((c) => <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0"><span className="min-w-0"><b className="font-semibold">{c.brief.title}</b><span className="block text-ink-muted">You {c.reason} · {Number(c.pct)}%</span></span><span className="flex-none text-right"><b className="block tabular">{c.amount !== null ? fmt(Number(c.amount), c.currency) : "To follow"}</b><span className="text-[12px] text-ink-faint">{c.status === "PAID" ? "Paid" : c.status === "OWED" ? "Owed to you" : "Written off"}</span></span></li>)}</ul></CardBody></Card> : null}
+          {earnings && credits.length ? <Card data-member-credits><CardHeader title="Your share of placements" description="When someone you referred, introduced or found work for is placed, you receive this share of the fee." /><CardBody className="pt-0"><ul className="divide-y divide-line text-[12.5px]">{credits.map((c) => <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0"><span className="min-w-0"><b className="font-semibold">{c.brief.title}</b><span className="block text-ink-muted">You {c.reason} · {Number(c.pct)}%</span></span><span className="flex-none text-right"><b className="block tabular">{c.amount !== null ? fmt(Number(c.amount), c.currency) : "To follow"}</b><span className="text-[12px] text-ink-faint">{c.status === "PAID" ? "Paid" : c.status === "OWED" ? "Owed to you" : "Written off"}</span></span></li>)}</ul></CardBody></Card> : null}
           <Card><CardHeader title="Your referrals" description={`${accepted} accepted into the network`} /><CardBody>{p.referralsMade.length ? <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.map((r) => <li key={r.id} className="py-2 first:pt-0 last:pb-0"><div className="flex justify-between gap-2"><b>{r.name}</b><Badge tone={r.status === "ACCEPTED" ? "teal" : r.status === "DECLINED" ? "neutral" : "amber"} filled>{REF_STATUS[r.status]}</Badge></div><div className="text-ink-muted">{r.context}</div></li>)}</ul> : <div className="text-xs text-ink-muted">None yet.</div>}</CardBody></Card>
           <Card><CardHeader title="Your invitations" description={`${myInvites.filter((i) => i.status === "JOINED").length} joined`} /><CardBody>{myInvites.length ? <ul className="divide-y divide-line">{myInvites.map((i) => { const open = (i.status === "SENT" || i.status === "OPENED") && i.expiresAt > now; return <li key={i.id} className="py-2.5 first:pt-0 last:pb-0"><div className="flex items-center justify-between gap-2"><b className="text-[13.5px]">{i.name}</b><Badge tone={i.status === "JOINED" ? "teal" : open ? (i.status === "OPENED" ? "navy" : "amber") : "neutral"} filled={i.status === "JOINED"}>{i.status === "JOINED" ? "Joined" : i.status === "REVOKED" ? "Cancelled" : !open ? "Expired" : i.status === "OPENED" ? "Opened" : "Sent"}</Badge></div>{open ? <div className="mt-2 flex items-center gap-2"><CopyInviteLink inviteId={i.id} /><form action={revokeInvite}><input type="hidden" name="inviteId" value={i.id} /><SubmitButton size="sm" variant="ghost" pendingText="…">Cancel</SubmitButton></form></div> : null}</li>; })}</ul> : <div className="text-[12.5px] text-ink-muted">Nobody invited yet.</div>}</CardBody></Card>
           </div>
@@ -163,6 +183,36 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       ) : tab === "privacy" ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4">
+            <section aria-labelledby="data-promises" className="rounded-[16px] border border-line bg-surface p-5" data-promises>
+              <h2 id="data-promises" className="section-title text-[22px]">Your data stays yours.</h2>
+              <ul className="mt-3 divide-y divide-line">
+                {[
+                  [ShieldCheck, "Never sold, and never used to train AI models.", "We are not in the data business. Your profile is here to find you work."],
+                  [EyeOff, "Used for two things only: your profile, and introductions you agree to.", "Clients see what you hold, never your name, until you say yes to that introduction."],
+                  [PenLine, "Yours to change or remove at any time.", "Every permission below takes effect at once. Take a copy, or ask us to delete it, from this page."],
+                ].map(([Icon, t, d]) => { const I = Icon as typeof ShieldCheck; return (
+                  <li key={String(t)} className="flex gap-3.5 py-3 first:pt-1 last:pb-0"><span className="tile is-mint !h-8 !w-8 !rounded-[9px]"><I className="h-4 w-4" aria-hidden="true" /></span><span><b className="block text-[14.5px] font-semibold text-ink">{String(t)}</b><span className="block text-[13px] text-ink-muted">{String(d)}</span></span></li>
+                ); })}
+              </ul>
+            </section>
+            <Card data-my-screening><CardHeader title="Your screening" description="What you told us, in your own words. Nothing reaches your profile until a person has read it." /><CardBody className="pt-0">
+              {myScreenings.length ? <ul className="divide-y divide-line">{myScreenings.map((c) => {
+                const answers = ((c.screening as { answers?: Record<string, unknown> } | null)?.answers ?? {});
+                const shown = SCREENING_SCRIPT.flatMap((sec) => sec.questions).map((q) => { const v = answers[q.key]; const text = Array.isArray(v) ? v.map((x) => (typeof x === "object" && x ? (x as { name?: string }).name : String(x))).filter(Boolean).join(", ") : v == null ? "" : String(v); return { q: q.prompt, a: text }; }).filter((x) => x.a);
+                const status = c.approvalStatus === "APPROVED" ? "Read and approved" : c.approvalStatus === "NEEDS_REVIEW" ? "With us to read" : c.approvalStatus === "REJECTED" ? "Not used" : "In progress";
+                return (
+                  <li key={c.id} className="py-3 first:pt-1">
+                    <details className="group">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                        <span className="text-[13.5px] text-ink"><b className="font-semibold">{new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(c.createdAt)}</b> · {shown.length} answers</span>
+                        <span className="flex items-center gap-2"><Badge tone={c.approvalStatus === "APPROVED" ? "teal" : c.approvalStatus === "NEEDS_REVIEW" ? "amber" : "neutral"} filled>{status}</Badge><span className="text-[12.5px] font-medium text-ink-muted group-open:hidden">Show</span><span className="hidden text-[12.5px] font-medium text-ink-muted group-open:inline">Hide</span></span>
+                      </summary>
+                      <dl className="mt-3 space-y-3 border-l-2 border-teal/30 pl-4">{shown.map((x) => <div key={x.q}><dt className="text-[12.5px] font-semibold text-ink-faint">{x.q}</dt><dd className="mt-0.5 whitespace-pre-line text-[13.5px] text-ink">{x.a}</dd></div>)}</dl>
+                    </details>
+                  </li>
+                );
+              })}</ul> : <div className="text-[13px] text-ink-muted">No screening yet. When you have one, what you said appears here, in your own words.</div>}
+            </CardBody></Card>
             <Card><CardHeader title="What we may do with your profile" description="Each permission is yours to switch on or off — immediately." /><CardBody>
               <ConsentToggles privacy={privacy} update={updateMyConsents} asPersonId={internal ? p.id : undefined} />
             </CardBody></Card>
@@ -203,8 +253,8 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" data-member-value>
             {[
               { key: "connect", icon: UsersRound, tone: "is-mint", title: "Connect with members", stat: myConnections ? `${myConnections} connected` : `${connectable} to meet`, body: "Senior people who have chosen to be found. Contact details are swapped only when you both say yes.", href: "/community?tab=members", cta: "Find people", locked: !canInvite || !privacy.consents.memberDirectory, lockText: !canInvite ? "Opens once your screening is approved." : "Switch on ‘Show me to other members’ in Privacy & data." },
-              { key: "refer", icon: Handshake, tone: "is-coral", title: "Refer someone you know", stat: `${Number(rateCard.memberReferralSharePct)}% of the fee`, body: "If someone you refer or introduce is placed, you receive a share of our fee. Only people you would stand behind.", href: `/member?tab=refer${internal ? `&person=${p.id}` : ""}`, cta: "Refer someone", locked: false, lockText: "" },
-              { key: "share", icon: Megaphone, tone: "is-blue", title: "Share work, ask for help", stat: `${boardPosts} on the board`, body: "Post a role you heard about, ask for a specialist, or say you are free. Shared work that gets filled earns you a share.", href: "/community", cta: "Open the board", locked: false, lockText: "" },
+              { key: "refer", icon: Handshake, tone: "is-coral", title: "Refer someone you know", stat: earnings ? `${Number(rateCard.memberReferralSharePct)}% of the fee` : `${accepted} accepted`, body: earnings ? "If someone you refer or introduce is placed, you receive a share of our fee. Only people you would stand behind." : "Bring in people you would stand behind. We tell you when they join, and when they are placed.", href: `/member?tab=refer${internal ? `&person=${p.id}` : ""}`, cta: "Refer someone", locked: false, lockText: "" },
+              { key: "share", icon: Megaphone, tone: "is-blue", title: "Share work, ask for help", stat: `${boardPosts} on the board`, body: earnings ? "Post a role you heard about, ask for a specialist, or say you are free. Shared work that gets filled earns you a share." : "Post a role you heard about, ask for a specialist, or say you are free. Members see it and can refer people.", href: "/community", cta: "Open the board", locked: false, lockText: "" },
               { key: "work", icon: Briefcase, tone: "is-gold", title: "Work open to you", stat: `${open.length} open now`, body: "Roles and assignments opened to members, client names hidden. Put yourself forward, or refer someone better placed.", href: `/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`, cta: "See the work", locked: false, lockText: "" },
             ].map((v) => (
               <Link key={v.key} href={v.locked ? `/member?tab=${v.key === "connect" && canInvite ? "privacy" : "home"}${internal ? `&person=${p.id}` : ""}` : v.href} className="group flex flex-col rounded-[16px] border border-line bg-surface p-4 transition-colors duration-150 hover:border-line-strong" data-value={v.key}>

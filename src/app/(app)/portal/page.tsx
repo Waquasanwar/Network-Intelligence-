@@ -20,6 +20,8 @@ import { parseBrief, fmt, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, type HardCheck, t
 import { fullName } from "@/lib/utils";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import { Tracker, stepsFrom } from "@/components/ui/tracker";
+import { Constellation } from "@/components/ui/constellation";
 
 export const metadata = { title: "Client & agency portal" };
 
@@ -56,17 +58,20 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <div className="relative rounded-[28px] px-5 py-6 sm:px-9 sm:py-8 mb-5 bg-surface border border-line shadow-[var(--shadow-card)] grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
-        <div>
-          <div className="text-[12px] font-medium text-ink-muted">Client & agency portal{internal ? " · viewing as" : ""}</div>
-          {internal ? <form method="get" action="/portal" className="flex items-center gap-2 mt-2"><Select name="account" defaultValue={account.id} className="h-9 rounded-full bg-surface text-ink border-line-strong max-w-[340px]">{accounts.map((a) => <option key={a.id} value={a.id} className="text-ink">{a.name} · {KIND_LABEL[a.kind]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Switch</SubmitButton></form> : null}
-          <h1 className="font-display text-[26px] sm:text-[32px] leading-[1.1] mt-2.5">{account.name}</h1>
-          <p className="text-ink-muted max-w-[60ch] mt-2 text-[13.5px] leading-5">What {account.kind === "AGENCY" ? "an agency" : account.kind === "CLIENT" ? "a client" : "Amana"} sees. Names are hidden until an introduction is requested and the person consents. Relationship notes never leave the network.</p>
+      <section className="stage-ink mb-6 rounded-[24px] px-5 py-7 sm:px-9 sm:py-9">
+        <Constellation focus={0.8} density={0.8} />
+        <span className="stage-scrim" aria-hidden="true" />
+        <div className="grid grid-cols-1 items-end gap-7 lg:grid-cols-[1fr_auto]">
+          <div className="min-w-0">
+            {internal ? <div className="mb-3 [&_select]:!bg-white [&_select]:!text-[#0c1b33]">{internal ? <form method="get" action="/portal" className="flex items-center gap-2 mt-2"><Select name="account" defaultValue={account.id} className="h-9 rounded-full bg-surface text-ink border-line-strong max-w-[340px]">{accounts.map((a) => <option key={a.id} value={a.id} className="text-ink">{a.name} · {KIND_LABEL[a.kind]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Switch</SubmitButton></form> : null}</div> : null}
+            <h1 className="hero-title text-[34px] sm:text-[44px]">{account.name}</h1>
+            <p className="mt-3 max-w-[58ch] text-[15px] leading-[1.6] stage-muted">People we know first hand, proposed by what they have proven. Names stay hidden until you ask for an introduction and the person says yes.</p>
+          </div>
+          <dl className="flex flex-wrap gap-x-9 gap-y-4">
+            {[["Open requests", briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length], ["People proposed", proposedCount], ["Introductions", introCount]].map(([l, v]) => <div key={String(l)}><dt className="text-[12.5px] stage-muted">{l}</dt><dd className="figure-num mt-1 text-[34px] leading-none">{v}</dd></div>)}
+          </dl>
         </div>
-        <div className="flex flex-wrap gap-2.5">
-          {[["Open requests", briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length], ["People proposed", proposedCount], ["Introductions", introCount]].map(([l, v]) => <div key={String(l)} className="flex-1 min-w-[104px] sm:min-w-[132px] rounded-[22px] bg-surface border border-line shadow-[var(--shadow-card)] px-4 py-3"><div className="text-[12px] text-ink-muted">{l}</div><div className="text-[24px] font-semibold tabular leading-8">{v}</div></div>)}
-        </div>
-      </div>
+      </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
@@ -95,6 +100,18 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
               <Card key={b.id}>
                 <CardHeader title={b.title} description={<>{BRIEF_STATUS_LABELS[b.status]} · sent <DateText date={b.createdAt} relative /></>} />
                 <CardBody>
+                  {(() => {
+                    const at = (ds: string[]) => items.filter((x) => ds.includes(x.decision)).length;
+                    const interested = at(["CLIENT_INTERESTED", "INTRODUCED", "PLACED"]), introduced = at(["INTRODUCED", "PLACED"]), placed = at(["PLACED"]);
+                    return <Tracker className="mb-4" label={`Where "${b.title}" stands`} steps={stepsFrom([
+                      { label: "Received", reached: true },
+                      { label: "Searching", reached: b.status !== "NEW" },
+                      { label: "Proposed", reached: items.length > 0, count: items.length },
+                      { label: "Interested", reached: interested > 0, count: interested },
+                      { label: "Introduced", reached: introduced > 0, count: introduced },
+                      { label: "Placed", reached: placed > 0 || b.status === "FILLED", count: placed },
+                    ])} />;
+                  })()}
                   <BriefChips b={d} />
                   {b.questions.length && b.status !== "FILLED" ? <div className="mt-3 rounded-[12px] bg-amber-100 border border-amber/30 px-3 py-2.5 text-[12.5px]"><div className="label-caps tracking-wide font-medium text-amber mb-1">We will confirm with you</div><ul className="pl-4 list-disc space-y-0.5">{b.questions.map((q) => <li key={q}>{q}</li>)}</ul></div> : null}
                   <div className="mt-3 rounded-[12px] bg-surface-muted px-3 py-2.5 text-[12.5px] flex flex-wrap items-center gap-2"><b>Terms</b> {termsText(d.terms, card)} {b.termsAccepted ? <Badge tone="teal" filled>accepted</Badge> : <form action={portalAcceptTerms}><input type="hidden" name="briefId" value={b.id} /><SubmitButton size="sm" pendingText="…">Accept terms</SubmitButton></form>}</div>
@@ -107,7 +124,17 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
                       if (leaked.length) throw new Error(`Portal redaction failed: ${leaked.join(", ")}`);
                       const checks = s.checks as HardCheck[];
                       const revealed = shortlistNameVisible(s, s.person);
-                      return <AnonCard key={s.id} refCode={safe.ref} headline={safe.headlineSummary || "Profile"} region={safe.region} availabilityBand={safe.availabilityBand} evidenceSummary={safe.evidenceSummary} proofs={safe.proofs} rights={checks.find((c) => c.label === "Work rights")} rateStated={hidden.rateBand ? null : s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} kind={account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={revealed ? fullName(s.person) : null}
+                      // Why we put this person forward, from facts that never identify them: the brief's
+                      // must-haves they meet, who stands behind them, and how we know them.
+                      const met = checks.filter((c) => c.state === "met").length;
+                      const vouchers = s.person.vouches.filter((v) => v.wouldRecommend).length;
+                      const why = [
+                        met ? `Meets ${met} of ${checks.length} of your must-haves` : null,
+                        vouchers ? `Vouched for by ${vouchers} ${vouchers === 1 ? "person" : "people"} who would recommend them` : null,
+                        s.person.relationships.some((r) => r.introducedById) ? "Came to us through someone we know" : null,
+                        s.person.relationships.some((r) => r.workedTogether) ? "We have delivered work alongside them" : null,
+                      ].filter((x): x is string => !!x);
+                      return <AnonCard key={s.id} refCode={safe.ref} headline={safe.headlineSummary || "Profile"} region={safe.region} availabilityBand={safe.availabilityBand} evidenceSummary={safe.evidenceSummary} proofs={safe.proofs} rights={checks.find((c) => c.label === "Work rights")} rateStated={hidden.rateBand ? null : s.person.rateExpectation ?? s.person.salaryExpectation} tier={s.tier} decision={s.decision} why={why} kind={account.kind} referred={s.referred} clientNote={s.clientNote} revealedName={revealed ? fullName(s.person) : null}
                         actions={s.decision === "PROPOSED" ? <><form action={portalRespond}><input type="hidden" name="itemId" value={s.id} /><input type="hidden" name="response" value="interested" /><SubmitButton size="sm" pendingText="…">Interested — request an introduction</SubmitButton></form><form action={portalRespond}><input type="hidden" name="itemId" value={s.id} /><input type="hidden" name="response" value="pass" /><Button size="sm" variant="ghost" type="submit">Not for us</Button></form></> : s.decision === "CLIENT_INTERESTED" ? <span className="text-[12px] text-ink-muted">Introduction requested. We are asking the person for consent{b.termsAccepted ? "" : " — accept the terms above to proceed"}.</span> : null} />;
                     })}</ul>
                   )}

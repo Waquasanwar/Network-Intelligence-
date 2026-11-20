@@ -105,8 +105,15 @@ await step("referral share: placing someone from a member's lead credits that me
   await o.goto(`${BASE}/requirements/${brief}`, { waitUntil: "networkidle" });
   await o.locator("[data-credits]").getByRole("button", { name: "Mark paid" }).first().click();
   assert(await until(() => sql(`select status from "ReferralCredit" where "briefId"='${brief}' and "personId"='${ana[1]}'`) === "PAID"), "marked paid");
+  // Earnings are off until the owner switches them on in Commercials: recorded, but not shown.
+  const tenant = sql(`select "tenantId" from "Brief" where id='${brief}'`);
   await m1.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
-  assert(/Paid/.test(await m1.locator("[data-member-credits]").innerText()), "the member sees their share");
+  assert(!(await m1.locator("[data-member-credits]").count()), "earnings stay hidden while switched off");
+  sql(`update "Tenant" set "rateCard" = coalesce("rateCard", '{}'::jsonb) || '{"membersSeeEarnings":1}'::jsonb where id='${tenant}'`);
+  try {
+    await m1.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
+    assert(/Paid/.test(await m1.locator("[data-member-credits]").innerText()), "once switched on, the member sees their share");
+  } finally { sql(`update "Tenant" set "rateCard" = "rateCard" - 'membersSeeEarnings' where id='${tenant}'`); }
 });
 
 await step("search: off until you switch it on for an account; then clients find people by skill, never by name", o, async () => {

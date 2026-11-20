@@ -10,6 +10,7 @@ import { answerScreening, startScreening } from "@/server/actions/members";
 import { resolveMemberPerson } from "@/server/queries";
 import { SCREENING_SCRIPT, SCREENING_MINUTES, type ScreeningAnswers, type ReferredPerson } from "@/lib/screening";
 import { fullName, cn } from "@/lib/utils";
+import { ScreeningVoice } from "@/components/domain/screening-voice";
 
 export const metadata = { title: "Screening" };
 
@@ -22,12 +23,22 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
   if (!person) notFound();
   if (isInternal(user)) { if (person.tenantId !== user.tenantId) notFound(); } else { const me = await resolveMemberPerson(user); if (!me || me.id !== person.id) redirect("/forbidden"); }
   const member = !isInternal(user);
+  // We open with what we already know, as a good interviewer would, so nobody repeats themselves.
+  const intro = await prisma.relationship.findFirst({ where: { personId: id, introducedById: { not: null } }, select: { introducedById: true } });
+  const introducer = intro?.introducedById ? await prisma.person.findUnique({ where: { id: intro.introducedById }, select: { firstName: true, lastName: true } }) : null;
+  const known = [person.headline ? `you are ${person.headline.replace(/\.$/, "")}` : null, introducer ? `${introducer.firstName} ${introducer.lastName} introduced you` : null, person.linkedinUrl ? "we have your LinkedIn" : null].filter((x): x is string => !!x);
+  const KnownCard = () => known.length ? (
+    <div className="mb-5 rounded-[14px] border border-teal/20 bg-teal-50 px-4 py-3 text-left text-[13.5px] leading-[1.55] text-ink" data-screening-known>
+      <b className="font-semibold">{member ? `Hello ${person.preferredName ?? person.firstName}.` : "What we already know."}</b> {member ? "We start from what we already know: " : ""}{known.join("; ")}. {member ? "If any of that is wrong, say so in your first answer." : ""}
+    </div>
+  ) : null;
   const draft = sp.c ? await prisma.conversation.findUnique({ where: { id: sp.c } }) : await prisma.conversation.findFirst({ where: { personId: id, type: "SCREENING", approvalStatus: "DRAFT" }, orderBy: { createdAt: "desc" } });
   if (!draft || draft.personId !== id || draft.approvalStatus !== "DRAFT") {
     return (
       <div className="max-w-xl mx-auto py-16 text-center">
         <div className="text-[12px] font-medium text-ink-faint">{member ? "Your screening" : "Screening call"}</div>
         <h1 className="text-[26px] font-semibold tracking-[-0.025em] mt-2">{member ? `Your ${SCREENING_MINUTES}-minute screening` : `Screening · ${fullName(person)}`}</h1>
+        <div className="mt-5"><KnownCard /></div>
         <p className="text-[13.5px] text-ink-muted mt-2">{SCREENING_SCRIPT.length} short sections. Answer in your own words; specifics beat adjectives. Nothing goes on the profile until a person has reviewed it.</p>
         <form action={startScreening} className="mt-5 flex justify-center gap-2"><input type="hidden" name="personId" value={id} /><input type="hidden" name="restart" value="1" /><SubmitButton pendingText="Starting…">Start</SubmitButton>{member ? null : <Link href={`/network/${id}`}><Button type="button" variant="ghost">Back to profile</Button></Link>}</form>
       </div>
@@ -53,8 +64,10 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
       <section className="rounded-[12px] border border-line bg-surface shadow-[var(--shadow-card)] p-7 min-h-[420px]">
         <div className="h-1 rounded-full bg-surface-muted overflow-hidden mb-5"><div className="h-full rounded-full bg-navy" style={{ width: `${pct}%` }} /></div>
         <div className="text-[12px] font-semibold text-ink-faint mb-2">Section {secIdx + 1} of {SCREENING_SCRIPT.length} · {sec.title} · ~{sec.minutes} min</div>
+        {step === 0 ? <KnownCard /> : null}
         <h1 className="text-[24px] font-semibold tracking-[-0.025em] leading-8 max-w-[34ch]">{q.prompt}</h1>
         {q.help ? <p className="text-[13.5px] text-ink-muted mt-2 max-w-[60ch]">{q.help}</p> : null}
+        {member && (q.kind === "text" || q.kind === "long" || q.kind === "chips") ? <ScreeningVoice question={[q.prompt, q.help].filter(Boolean).join(" ")} /> : null}
         {sp.required ? <p className="text-[12.5px] text-amber mt-2">This one matters. Give it a go.</p> : null}
         <form action={answerScreening} className="mt-5 space-y-4">
           <input type="hidden" name="conversationId" value={draft.id} /><input type="hidden" name="step" value={step} />

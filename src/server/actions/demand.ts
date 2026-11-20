@@ -291,7 +291,7 @@ export async function saveRateCard(formData: FormData) {
   const next: RateCard = { ...current };
   for (const k of Object.keys(DEFAULT_RATE_CARD) as (keyof RateCard)[]) {
     const v = formData.get(k); if (v === null) continue;
-    if (k === "currency") next.currency = String(v).slice(0, 3).toUpperCase(); else (next as unknown as Record<string, number>)[k] = Math.max(0, Number(v) || 0);
+    if (k === "currency") next.currency = String(v).slice(0, 3).toUpperCase(); else if (k === "membersSeeEarnings") next.membersSeeEarnings = v === "1" ? 1 : 0; else (next as unknown as Record<string, number>)[k] = Math.max(0, Number(v) || 0);
   }
   await prisma.tenant.update({ where: { id: user.tenantId }, data: { rateCard: next as unknown as Prisma.InputJsonValue } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "ratecard.update", entityType: "Tenant", entityId: user.tenantId, metadata: { permPct: next.permPct, contractMarginPct: next.contractMarginPct, expertHourlyTakePct: next.expertHourlyTakePct } });

@@ -267,11 +267,13 @@ export type RateCard = {
   unlockFee: number;
   /** A member's share of our fee when someone they referred, introduced or found work for is placed. */
   memberReferralSharePct: number;
+  /** Whether members see earnings: their share of placements and the referral percentage. 0 off (default), 1 on. */
+  membersSeeEarnings: number;
 };
 
 export const DEFAULT_RATE_CARD: RateCard = {
   currency: "AED", permPct: 18, agencyPermPct: 20, agencyReferralSharePct: 35, contractMarginPct: 12, agencyContractSharePct: 40, agencyContractMarginPct: 15, expertHourlyTakePct: 30, sowSharePct: 10, introductionFee: 9000, workingDaysPerYear: 220, defaultExpertHours: 2,
-  clientSubscription: 4500, agencySubscription: 6000, subscriptionCurrency: "AED", unlockFee: 0, memberReferralSharePct: 10,
+  clientSubscription: 4500, agencySubscription: 6000, subscriptionCurrency: "AED", unlockFee: 0, memberReferralSharePct: 10, membersSeeEarnings: 0,
 };
 
 /** What this kind of account pays a month for access to the network. */
