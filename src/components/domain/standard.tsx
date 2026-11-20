@@ -15,16 +15,17 @@ export function ProofPips({ s, className }: { s: Standard; className?: string })
  * The six proofs as a list: what is on record for each one held, and for each one not yet held,
  * what would earn it. No boxes, no scores. Reads the same on a profile and on a member's own page.
  */
-export function StandardMarks({ s, className }: { s: Standard; className?: string }) {
+/** compact: one line per proof in two columns, for a member's own profile, where the next steps are already listed above. */
+export function StandardMarks({ s, className, compact }: { s: Standard; className?: string; compact?: boolean }) {
   return (
-    <ul className={cn("space-y-2.5", className)} data-standard={s.held}>
+    <ul className={cn(compact ? "grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2" : "space-y-2.5", className)} data-standard={s.held}>
       {s.proofs.map((p) => (
         <li key={p.key} className="flex gap-2.5" data-proof={p.key} data-held={p.held || undefined}>
           <span className={cn("mt-[1px] grid h-[18px] w-[18px] flex-none place-items-center rounded-full", p.held ? "bg-teal text-white dark:text-canvas" : "border border-dashed border-line-strong")} aria-hidden="true">{p.held ? <Check className="h-3 w-3" strokeWidth={3} /> : null}</span>
           <span className="min-w-0 leading-snug">
             <b className={cn("block text-[13px] font-semibold", p.held ? "text-ink" : "text-ink-muted")}>{p.title}<span className="sr-only">{p.held ? ": held" : ": not yet"}</span></b>
             <span className="block text-[12.5px] text-ink-muted">{p.fact}</span>
-            {p.next ? <span className="block text-[12.5px] text-ink-faint">Next: {p.next}.</span> : null}
+            {p.next && !compact ? <span className="block text-[12.5px] text-ink-faint">Next: {p.next}.</span> : null}
           </span>
         </li>
       ))}

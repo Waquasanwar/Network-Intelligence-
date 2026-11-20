@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, UserSearch, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight, Users, Briefcase, TrendingUp, UserCheck } from "lucide-react";
 import { AgentComposer } from "@/components/domain/agent-composer";
 import { Constellation } from "@/components/ui/constellation";
+import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 
 // What the agent has queued for you, by the kind of decision it needs.
 type QueueKind = "match" | "review" | "approve" | "reconnect" | "intro";
@@ -66,7 +67,7 @@ export default async function OverviewPage() {
   for (const o of activeOpps.filter((o) => o.matches.length === 0).slice(0, 2)) suggestions.push({ kind: "match", text: `Generate matches for "${o.title}" — no suggestions yet.`, href: `/opportunities/${o.id}` });
   for (const o of activeOpps.filter((o) => o.matches.some((m) => m.humanDecision === "UNDECIDED")).slice(0, 2)) suggestions.push({ kind: "review", text: `Review ${o.matches.filter((m) => m.humanDecision === "UNDECIDED").length} undecided suggestions on "${o.title}".`, href: `/opportunities/${o.id}` });
   for (const c of needsReview.slice(0, 2)) suggestions.push({ kind: "approve", text: `Approve the structured summary for ${fullName(c.person)}.`, href: `/conversations?tab=review&open=${c.id}` });
-  for (const p of reconnect.slice(0, 2)) suggestions.push({ kind: "reconnect", text: `Reconnect with ${fullName(p)} — status last confirmed ${p.availabilityConfirmedAt ? p.availabilityConfirmedAt.toLocaleDateString("en-GB") : "never"}.`, href: `/network/${p.id}` });
+  for (const p of reconnect.slice(0, 2)) suggestions.push({ kind: "reconnect", text: p.availabilityConfirmedAt ? `Reconnect with ${fullName(p)}. They last told us they were free on ${p.availabilityConfirmedAt.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.` : `Reconnect with ${fullName(p)}. They have not told us when they are free yet.`, href: `/network/${p.id}` });
   for (const r of partnerReqs.filter((r) => r.status === "INTRO_REQUESTED").slice(0, 1)) suggestions.push({ kind: "intro", text: `${r.partner.name} has requested an introduction on "${r.title}".`, href: "/partners" });
 
   // The same living map as /network/map — real trust scores and real role matches — in a compact frame.
@@ -81,6 +82,17 @@ export default async function OverviewPage() {
     topCaps[1] ? `${topCaps[1]} we have worked with` : null,
   ].filter((x): x is string => !!x);
 
+  // What the agent is doing right now, each line a fact from the network.
+  const unmatched = activeOpps.filter((o) => o.matches.length === 0);
+  const pulse = ([
+    activeOpps.length ? { text: `Watching ${activeOpps.length} live ${activeOpps.length === 1 ? "opportunity" : "opportunities"} for people who fit`, href: "/opportunities" } : null,
+    unmatched[0] ? { text: `Ready to find people for “${unmatched[0].title}”`, href: `/opportunities/${unmatched[0].id}` } : null,
+    reconnect.length ? { text: `${reconnect.length} ${reconnect.length === 1 ? "person you trust has" : "people you trust have"} not confirmed they are free`, href: "/network" } : null,
+    awaitingScreening ? { text: `${awaitingScreening} ${awaitingScreening === 1 ? "member is" : "members are"} part way through joining`, href: "/conversations" } : null,
+    last7(peopleDates) ? { text: `${last7(peopleDates)} new ${last7(peopleDates) === 1 ? "person" : "people"} in your network this week`, href: "/network" } : null,
+    liveIntros.length ? { text: `Following ${liveIntros.length} ${liveIntros.length === 1 ? "introduction" : "introductions"} through to a meeting`, href: "/opportunities" } : null,
+  ] as (PulseLine | null)[]).filter((x): x is PulseLine => !!x);
+
   return (
     <>
       {/* A greeting and the question box: the agent is the first thing on the page. */}
@@ -91,6 +103,7 @@ export default async function OverviewPage() {
           <h1 className="hero-title text-[34px] sm:text-[46px]">Good {now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, <span className="text-mint">{user.name.split(" ")[0]}</span></h1>
           <p className="mt-3 mb-7 max-w-[56ch] text-[15.5px] stage-muted">Ask for anyone in plain words. I search all {total} people you know and rank them by trust.</p>
           <AgentComposer suggestions={askSuggestions} />
+          <AgentPulse lines={pulse} onInk className="mt-6 max-w-[620px]" />
         </div>
       </section>
 

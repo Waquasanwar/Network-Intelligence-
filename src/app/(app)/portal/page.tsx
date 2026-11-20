@@ -22,6 +22,8 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { Tracker, stepsFrom } from "@/components/ui/tracker";
 import { Constellation } from "@/components/ui/constellation";
+import { Fold } from "@/components/ui/fold";
+import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 
 export const metadata = { title: "Client & agency portal" };
 
@@ -56,6 +58,19 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   const proposedCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision) && mayShowCard(s.person)).length, 0);
   const introCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => shortlistNameVisible(s, s.person)).length, 0);
 
+  // What we are doing on this account right now, each line a fact.
+  const live = briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status));
+  const shown = (b: (typeof briefs)[number]) => b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision) && mayShowCard(s.person));
+  const searching = live.filter((b) => shown(b).length === 0);
+  const asking = live.reduce((a, b) => a + shown(b).filter((s) => s.decision === "CLIENT_INTERESTED").length, 0);
+  const unsigned = live.filter((b) => !b.termsAccepted).length;
+  const pulse = ([
+    searching[0] ? { text: `Searching people we know for “${searching[0].title}”${searching.length > 1 ? ` and ${searching.length - 1} more` : ""}` } : null,
+    proposedCount ? { text: `${proposedCount} ${proposedCount === 1 ? "person" : "people"} proposed. Names stay hidden until they say yes` } : null,
+    asking ? { text: `Asking ${asking === 1 ? "the person you liked" : `${asking} people you liked`} whether they are happy to be introduced` } : null,
+    unsigned ? { text: `${unsigned} ${unsigned === 1 ? "requirement needs" : "requirements need"} your terms before introductions` } : null,
+  ] as (PulseLine | null)[]).filter((x): x is PulseLine => !!x);
+
   return (
     <>
       <section className="stage-ink mb-6 rounded-[24px] px-5 py-7 sm:px-9 sm:py-9">
@@ -66,6 +81,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
             {internal ? <div className="mb-3 [&_select]:!bg-white [&_select]:!text-[#0c1b33]">{internal ? <form method="get" action="/portal" className="flex items-center gap-2 mt-2"><Select name="account" defaultValue={account.id} className="h-9 rounded-full bg-surface text-ink border-line-strong max-w-[340px]">{accounts.map((a) => <option key={a.id} value={a.id} className="text-ink">{a.name} · {KIND_LABEL[a.kind]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Switch</SubmitButton></form> : null}</div> : null}
             <h1 className="hero-title text-[34px] sm:text-[44px]">{account.name}</h1>
             <p className="mt-3 max-w-[58ch] text-[15px] leading-[1.6] stage-muted">People we know first hand, proposed by what they have proven. Names stay hidden until you ask for an introduction and the person says yes.</p>
+            <AgentPulse lines={pulse} onInk className="mt-6 max-w-[580px]" />
           </div>
           <dl className="flex flex-wrap gap-x-9 gap-y-4">
             {[["Open requests", briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status)).length], ["People proposed", proposedCount], ["Introductions", introCount]].map(([l, v]) => <div key={String(l)}><dt className="text-[12.5px] stage-muted">{l}</dt><dd className="figure-num mt-1 text-[34px] leading-none">{v}</dd></div>)}
@@ -148,7 +164,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
         <div className="space-y-4">
           <Card>
             <CardHeader title="How this works" />
-            <CardBody><ol className="pl-5 list-decimal space-y-2 text-[12.5px] text-ink-muted"><li><b className="text-ink">Describe the need</b> in plain words. We structure it and confirm what is unclear.</li><li><b className="text-ink">We search people we know</b>, not a database. Every card is someone a person in our network has seen deliver.</li><li><b className="text-ink">You see anonymised cards</b>: capability, region, availability, work-rights status, rate band.</li><li><b className="text-ink">Request an introduction.</b> The person is asked first. Names are revealed only with consent.</li><li><b className="text-ink">Fees are on success</b>, on the terms shown against each requirement.</li></ol><div className="mt-5 border-t border-line pt-4"><div className="mb-2 text-[13px] font-semibold text-ink">What you can and cannot see</div><div className="grid grid-cols-2 gap-4 text-[12.5px]"><div><div className="font-semibold text-teal mb-1">Can</div><ul className="pl-4 list-disc space-y-0.5 text-ink-muted"><li>Your own requirements</li><li>Anonymised capability cards</li><li>Availability and work-rights status</li><li>Rate or salary band</li><li>Request an introduction</li></ul></div><div><div className="font-semibold text-risk mb-1">Cannot</div><ul className="pl-4 list-disc space-y-0.5 text-ink-muted"><li>Names before consent</li><li>Relationship notes</li><li>Who else is in the network</li><li>Other clients&apos; requirements</li><li>Export anything</li></ul></div></div></div></CardBody>
+            <CardBody><ol className="pl-5 list-decimal space-y-2 text-[12.5px] text-ink-muted"><li><b className="text-ink">Describe the need</b> in plain words. We structure it and confirm what is unclear.</li><li><b className="text-ink">We search people we know</b>, not a database. Every card is someone a person in our network has seen deliver.</li><li><b className="text-ink">You see anonymised cards</b>: capability, region, availability, work-rights status, rate band.</li><li><b className="text-ink">Request an introduction.</b> The person is asked first. Names are revealed only with consent.</li><li><b className="text-ink">Fees are on success</b>, on the terms shown against each requirement.</li></ol><Fold className="mt-5 border-t border-line pt-4" summary={<span className="text-[13px] font-semibold text-ink">What you can and cannot see</span>}><div className="mt-3"><div className="grid grid-cols-2 gap-4 text-[12.5px]"><div><div className="font-semibold text-teal mb-1">Can</div><ul className="pl-4 list-disc space-y-0.5 text-ink-muted"><li>Your own requirements</li><li>Anonymised capability cards</li><li>Availability and work-rights status</li><li>Rate or salary band</li><li>Request an introduction</li></ul></div><div><div className="font-semibold text-risk mb-1">Cannot</div><ul className="pl-4 list-disc space-y-0.5 text-ink-muted"><li>Names before consent</li><li>Relationship notes</li><li>Who else is in the network</li><li>Other clients&apos; requirements</li><li>Export anything</li></ul></div></div></div></Fold></CardBody>
           </Card>
           {internal ? <div className="text-[12px] text-ink-faint">Internal preview. <Link href="/requirements" className="text-navy hover:underline">Back to requirements →</Link></div> : null}
         </div>

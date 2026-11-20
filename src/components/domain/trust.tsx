@@ -42,7 +42,7 @@ export function TrustCard({ t, standard, firstName, self, action }: { t: TrustSc
             <div className="mt-2 flex items-center gap-2 text-[12.5px] font-semibold text-ink"><ProofPips s={standard} />{standard.line}</div>
           </div>
         </div>
-        <StandardMarks s={standard} className="mt-4" />
+        <StandardMarks s={standard} className="mt-4" compact={self} />
         {caution ? <p className="mt-3 text-[12.5px] font-medium text-amber">{caution.note}</p> : null}
         <Fold className="mt-3 border-t border-line pt-3" summary={<span className="text-[13px] font-semibold text-ink">How the score adds up</span>}>
           <ul className="mt-3 space-y-2">

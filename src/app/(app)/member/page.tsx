@@ -35,6 +35,8 @@ import { ShieldCheck, EyeOff, PenLine } from "lucide-react";
 import { ROUTE_LABELS, AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import { Tracker, stepsFrom } from "@/components/ui/tracker";
+import { Constellation } from "@/components/ui/constellation";
+import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 
 export const metadata = { title: "My network profile" };
 
@@ -87,6 +89,19 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   // What the member is told about where they stand, in one plain line.
   const status = screened ? (p.referralConsent === "no" ? "Not being put forward for now" : p.referralConsent === "yes" ? "On the radar. We come to you when work fits" : "On the radar. We ask you before putting you forward")
     : submitted ? "Screening sent. We will confirm it shortly" : "Not on the radar yet";
+  // What the agent is doing for this member right now, each line a fact.
+  const withClients = myShortlist.filter((x) => ["PROPOSED", "CLIENT_INTERESTED", "INTRODUCED"].includes(x.decision)).length;
+  const q = internal ? `&person=${p.id}` : "";
+  const pulse = ([
+    !screened && !submitted ? { text: `Ready when you are: your ${SCREENING_MINUTES}-minute screening` } : null,
+    submitted && !screened ? { text: "Reading your screening. We will confirm it shortly" } : null,
+    open.length ? { text: `Watching ${open.length} ${open.length === 1 ? "opportunity" : "opportunities"} open to members`, href: `/member?tab=opportunities${q}` } : { text: "Watching for work that fits what you do" },
+    withClients ? { text: `Your anonymous card is with ${withClients} ${withClients === 1 ? "client" : "clients"}. Your name stays hidden` } : null,
+    openRefs[0] ? { text: `Waiting on a reference from ${openRefs[0].refereeName}${openRefs[0].opened ? ". They have opened the link" : ""}` } : null,
+    features.memberConnections && canInvite && connectable ? { text: `${connectable} ${connectable === 1 ? "member" : "members"} you can connect with`, href: "/community?tab=members" } : null,
+    earnings && credits.length ? { text: `Tracking ${credits.length} ${credits.length === 1 ? "placement share" : "placement shares"} for you`, href: `/member?tab=refer${q}` } : null,
+  ] as (PulseLine | null)[]).filter((x): x is PulseLine => !!x);
+
   // The three things a member can do for themselves. Everything else is earned with the network.
   const mine = standardFor(p, "self");
   const has = (k: string) => mine.proofs.find((x) => x.key === k)?.held ?? false;
@@ -101,7 +116,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       detail: has("current") ? `${AVAILABILITY_LABELS[p.availabilityStatus]}. You can change it any time.` : "One tap. You can change it any time.",
       action: <form action={confirmMyAvailability} className="flex flex-wrap items-center gap-2"><input type="hidden" name="personId" value={p.id} /><Select name="status" aria-label="When you are free" defaultValue={SELF_STATUSES.includes(p.availabilityStatus) ? p.availabilityStatus : "OPEN_TO_CONVERSATIONS"} className="h-9 w-[230px] text-[13px]">{SELF_STATUSES.map((k) => <option key={k} value={k}>{AVAILABILITY_LABELS[k]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="Saving…">{has("current") ? "Update" : "Confirm"}</SubmitButton></form> },
   ];
-  const todo = checklist.filter((c) => !c.done).length;
+  const todo = checklist.filter((c) => !c.done && !(screened && c.key === "availability")).length;
 
   const OppCard = ({ b }: { b: (typeof open)[number] }) => { const pitched = p.pitches.find((x) => x.briefId === b.id); const refd = p.referralsMade.filter((r) => r.briefId === b.id).length; const summary = `${b.roles[0] ?? "Requirement"}${b.headcount > 1 ? ` × ${b.headcount}` : ""} · ${b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"} · ${b.locations.join(" / ") || "location flexible"}`; return (
     <Card key={b.id}>
@@ -133,18 +148,26 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       {sp.screened ? <div className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. Your screening is with us.</div> : null}
       {sp.sent ? <div className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">Thank you. Your referral is with us to review.</div> : null}
 
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-        <div className="flex items-center gap-4 min-w-0">
-          <Avatar person={p} size="xl" ring />
+      {/* Who you are and what the agent is doing for you, on the brand stage. */}
+      <section className="stage-ink mb-6 rounded-[24px] px-5 py-7 sm:px-9 sm:py-8" data-member-hero>
+        <Constellation focus={0.8} density={0.7} />
+        <span className="stage-scrim" aria-hidden="true" />
+        <div className="grid grid-cols-1 items-end gap-7 lg:grid-cols-[1fr_auto]">
           <div className="min-w-0">
-            <h1 className="font-display text-[26px] sm:text-[32px] leading-[1.1]">{sp.welcome && !screened ? `Welcome, ${p.preferredName ?? p.firstName}` : fullName(p)}</h1>
-            {p.headline ? <p className="text-ink-muted text-[15px] mt-1.5">{p.headline}</p> : null}
-            <p className="mt-2 inline-flex items-center gap-2 text-[13px] text-ink-muted" data-member-status><span className={`h-2 w-2 rounded-full ${screened && p.referralConsent !== "no" ? "bg-teal" : submitted ? "bg-amber" : "bg-line-strong"}`} aria-hidden="true" />{status}</p>
-            {screened && !todo ? <div className="mt-2.5" data-step="availability">{checklist[2].action}</div> : null}
+            <div className="flex items-center gap-4 min-w-0">
+              <Avatar person={p} size="xl" ring />
+              <div className="min-w-0">
+                <h1 className="hero-title text-[28px] sm:text-[38px]">{sp.welcome && !screened ? `Welcome, ${p.preferredName ?? p.firstName}` : fullName(p)}</h1>
+                {p.headline ? <p className="stage-muted text-[15px] mt-1.5">{p.headline}</p> : null}
+                <p className="mt-2 inline-flex items-center gap-2 text-[13px] stage-muted" data-member-status><span className={`h-2 w-2 rounded-full ${screened && p.referralConsent !== "no" ? "bg-[var(--color-teal-400)]" : submitted ? "bg-amber" : "bg-white/40"}`} aria-hidden="true" />{status}</p>
+              </div>
+            </div>
+            {screened ? <div className="mt-4" data-step="availability">{checklist[2].action}</div> : null}
+            <AgentPulse lines={pulse} onInk className="mt-6 max-w-[580px]" />
           </div>
+          {screened ? <dl className="grid grid-cols-2 gap-x-9 gap-y-4 sm:flex sm:flex-wrap">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)}><dt className="text-[12.5px] stage-muted">{l}</dt><dd className="figure-num mt-1 text-[34px] leading-none text-white">{v}</dd><dd className="mt-1 text-[12px] stage-muted">{h}</dd></div>)}</dl> : null}
         </div>
-        {screened ? <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)} className="min-w-[96px] border-l border-line pl-4 first:border-l-0 first:pl-0"><div className="text-[12px] font-medium text-ink-muted">{l}</div><div className="font-display num-grad text-[28px] tabular leading-[1.05] mt-1.5">{v}</div><div className="text-[12px] text-ink-faint">{h}</div></div>)}</div> : null}
-      </div>
+      </section>
 
       {tab === "opportunities" ? (
         <><div className="mb-3"><h2 className="text-[15px] font-semibold">Opportunities open to members</h2><p className="text-[12.5px] text-ink-muted">Anonymised. Pitch with your own profile, or refer someone you would put your name behind. You are only ever named to a client with your consent.</p></div>{open.length ? <div className="space-y-3">{open.map((b) => <OppCard key={b.id} b={b} />)}</div> : <EmptyState title="Nothing open right now" description="When a requirement is opened to members, it appears here." />}</>
@@ -236,7 +259,8 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             <CardHeader title={screened ? `${todo} ${todo === 1 ? "thing" : "things"} left to strengthen your profile` : "Three things, then you are on the radar"} description={screened ? undefined : "That is all we need from you. When work comes up that fits, we come to you first, and your name is never shared without your yes."} />
             <CardBody className="pt-0">
               <ol className="divide-y divide-line">
-                {checklist.map((c, n) => (
+                {/* Once screened, only what is left: "when you are free" lives in the header. */}
+                {checklist.filter((c) => !screened || (!c.done && c.key !== "availability")).map((c, n) => (
                   <li key={c.key} className="flex flex-col gap-3 py-4 first:pt-1 sm:flex-row sm:items-center sm:justify-between" data-step={c.key} data-done={c.done || undefined}>
                     <div className="flex gap-3 min-w-0">
                       <span className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full text-[12px] font-semibold ${c.done ? "bg-teal text-white dark:text-canvas" : c.waiting ? "bg-amber-100 text-ink" : "border border-line-strong text-ink-muted"}`} aria-hidden="true">{c.done ? "✓" : n + 1}</span>
@@ -250,14 +274,13 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           </Card>
         ) : null}
         <section className="mb-6" aria-labelledby="member-value">
-          <h2 id="member-value" className="text-[15px] font-semibold">What the network does for you</h2>
-          <p className="mt-1 text-[13px] text-ink-muted">Free for members. Your name is never shared without your yes.</p>
+          <h2 id="member-value" className="section-title text-[18px]">What the network does for you</h2>
           <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]" data-member-value>
             {[
-              { key: "connect", icon: UsersRound, tone: "is-mint", title: "Connect with members", stat: myConnections ? `${myConnections} connected` : `${connectable} to meet`, body: "Senior people who have chosen to be found. Contact details are swapped only when you both say yes.", href: "/community?tab=members", cta: "Find people", locked: !canInvite || !privacy.consents.memberDirectory, lockText: !canInvite ? "Opens once your screening is approved." : "Switch on ‘Show me to other members’ in Privacy & data." },
-              { key: "refer", icon: Handshake, tone: "is-coral", title: "Refer someone you know", stat: earnings ? `${Number(rateCard.memberReferralSharePct)}% of the fee` : `${accepted} accepted`, body: earnings ? "If someone you refer or introduce is placed, you receive a share of our fee. Only people you would stand behind." : "Bring in people you would stand behind. We tell you when they join, and when they are placed.", href: `/member?tab=refer${internal ? `&person=${p.id}` : ""}`, cta: "Refer someone", locked: false, lockText: "" },
-              { key: "share", icon: Megaphone, tone: "is-blue", title: "Share work, ask for help", stat: `${boardPosts} on the board`, body: earnings ? "Post a role you heard about, ask for a specialist, or say you are free. Shared work that gets filled earns you a share." : "Post a role you heard about, ask for a specialist, or say you are free. Members see it and can refer people.", href: "/community", cta: "Open the board", locked: false, lockText: "" },
-              { key: "work", icon: Briefcase, tone: "is-gold", title: "Work open to you", stat: `${open.length} open now`, body: "Roles and assignments opened to members, client names hidden. Put yourself forward, or refer someone better placed.", href: `/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`, cta: "See the work", locked: false, lockText: "" },
+              { key: "connect", icon: UsersRound, tone: "is-mint", title: "Connect with members", stat: myConnections ? `${myConnections} connected` : `${connectable} to meet`, body: "People who chose to be found. Details swap only when you both say yes.", href: "/community?tab=members", cta: "Find people", locked: !canInvite || !privacy.consents.memberDirectory, lockText: !canInvite ? "Opens once your screening is approved." : "Switch on ‘Show me to other members’ in Privacy & data." },
+              { key: "refer", icon: Handshake, tone: "is-coral", title: "Refer someone you know", stat: earnings ? `${Number(rateCard.memberReferralSharePct)}% of the fee` : `${accepted} accepted`, body: earnings ? "A share of our fee when someone you bring in is placed." : "We tell you when they join, and when they are placed.", href: `/member?tab=refer${internal ? `&person=${p.id}` : ""}`, cta: "Refer someone", locked: false, lockText: "" },
+              { key: "share", icon: Megaphone, tone: "is-blue", title: "Share work, ask for help", stat: `${boardPosts} on the board`, body: "Post work you hear about, ask for a specialist, or say you are free.", href: "/community", cta: "Open the board", locked: false, lockText: "" },
+              { key: "work", icon: Briefcase, tone: "is-gold", title: "Work open to you", stat: `${open.length} open now`, body: "Client names hidden. Put yourself forward, or refer someone.", href: `/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`, cta: "See the work", locked: false, lockText: "" },
             ].filter((v) => (v.key !== "connect" || features.memberConnections) && (v.key !== "share" || features.communityBoard)).map((v) => (
               <Link key={v.key} href={v.locked ? `/member?tab=${v.key === "connect" && canInvite ? "privacy" : "home"}${internal ? `&person=${p.id}` : ""}` : v.href} className="group flex flex-col rounded-[16px] border border-line bg-surface p-4 transition-colors duration-150 hover:border-line-strong" data-value={v.key}>
                 <span className="flex items-center justify-between gap-3">

@@ -697,3 +697,38 @@ a.figure:hover { opacity: 0.72; }
 .switch-knob { width: 22px; height: 22px; border-radius: 999px; background: #ffffff; box-shadow: 0 1px 3px rgba(12, 27, 51, 0.25); transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .switch[aria-checked="true"] .switch-knob { transform: translateX(18px); }
 @media (prefers-reduced-motion: reduce) { .switch, .switch-knob { transition: none; } }
+
+/* ---------- Agent pulse ----------
+   One living line: what the agent is doing now. The mark breathes, a soft halo swells behind it,
+   and each new line rises in. On the ink stage it is glass; on paper it is a quiet pill. */
+.pulse { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px 6px 6px; border-radius: 24px; border: 1px solid var(--color-line); background: var(--color-surface); font-size: 13.5px; line-height: 1.4; color: var(--color-ink); }
+.pulse.is-ink { border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.07); color: #ffffff; backdrop-filter: blur(8px); }
+.pulse-orb { position: relative; display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 999px; background: color-mix(in srgb, var(--color-teal-400) 16%, transparent); }
+.pulse.is-ink .pulse-orb { background: rgba(110, 231, 183, 0.16); box-shadow: inset 0 0 0 1px rgba(110, 231, 183, 0.28); }
+.pulse.is-ink .pulse-orb .agent-mark { color: #ffffff; }
+.pulse.is-ink .pulse-orb .agent-mark line { opacity: 0.55; }
+.pulse-orb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid var(--color-teal-400); opacity: 0; }
+.pulse-line { display: flex; align-items: center; gap: 6px; min-width: 0; color: inherit; }
+.pulse-text { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+a.pulse-line:hover .pulse-text { text-decoration: underline; text-underline-offset: 3px; }
+.pulse-go { opacity: 0.55; transition: transform 150ms ease, opacity 150ms ease; }
+a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
+.pulse-dots { display: flex; gap: 4px; flex: none; padding-right: 8px; }
+.pulse-dots button { width: 5px; height: 5px; border-radius: 999px; background: currentColor; opacity: 0.22; cursor: pointer; transition: opacity 200ms ease, width 200ms ease; }
+.pulse-dots button[data-on] { opacity: 0.8; width: 14px; }
+@keyframes pulse-halo { 0% { transform: scale(1); opacity: 0.55; } 70%, 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes pulse-rise { from { opacity: 0; transform: translateY(6px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .pulse-orb::after { animation: pulse-halo 2.8s ease-out infinite; }
+  .pulse-text { animation: pulse-rise 420ms cubic-bezier(.2, .7, .2, 1); }
+}
+@media (max-width: 520px) { .pulse-dots { display: none; } }
+
+/* Feature switches: the knob glides, the row warms when it is on. */
+[data-feature] { transition: background-color 250ms ease; }
+[data-feature][data-on] { background: color-mix(in srgb, var(--color-teal-400) 5%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .pulse .agent-mark[data-busy] circle { animation-duration: 2.6s; }
+  .pulse .agent-mark[data-busy] circle:nth-of-type(2) { animation-delay: 0.4s; }
+  .pulse .agent-mark[data-busy] circle:nth-of-type(3) { animation-delay: 0.8s; }
+}
