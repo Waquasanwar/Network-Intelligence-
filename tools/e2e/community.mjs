@@ -1,4 +1,4 @@
-import { launch, session, step, assert, sql, BASE, DIR, NEWPW, summary } from "./lib.mjs";
+import { launch, session, step, assert, sql, BASE, DIR, NEWPW, summary, walk } from "./lib.mjs";
 
 /**
  * The trust framework, the members' community board, referral shares and client search. Runs after
@@ -44,18 +44,13 @@ await step("community: a member shares work, and it lands in your Requirements a
   sql(`update "Person" set "screeningStatus"='APPROVED', "screenedAt"=now(), "referralConsent"='yes' where id='${cy[1]}'`);
   m1 = await session(b, ana[0], NEWPW);
   await m1.goto(`${BASE}/community`, { waitUntil: "networkidle" });
-  const f = m1.locator("form").filter({ has: m1.getByRole("button", { name: "Post" }) });
-  await f.locator('select[name="kind"]').selectOption("WORK"); await f.getByLabel("Title").fill(TITLE);
-  await f.getByLabel("Details").fill("An energy group needs an interim finance transformation lead for six months in Dubai.");
-  await f.locator('select[name="route"]').selectOption("INTERIM");
-  // Without agreeing that work goes through the network, nothing is posted.
-  await f.getByRole("button", { name: "Post" }).click(); await m1.waitForURL(/notice=post-terms/, { timeout: 30000 });
+  // One question at a time. Work goes up only once they agree it is introduced through the network.
+  const g = m1.locator("[data-guide]").first();
+  await walk(g, [{ pick: "Work I know about" }, TITLE, "An energy group needs an interim finance transformation lead for six months in Dubai.", { pick: "Interim" }, null]);
+  assert(/before it goes up/.test(await g.locator(".guide-ask").innerText()), "asked to agree first");
+  assert(!(await g.getByRole("button", { name: "Post" }).count()), "nothing to post before agreeing");
   assert(sql(`select count(*) from "BoardPost" where title='${TITLE}'`) === "0", "not posted without agreeing");
-  const g = m1.locator("form").filter({ has: m1.getByRole("button", { name: "Post" }) });
-  await g.locator('select[name="kind"]').selectOption("WORK"); await g.getByLabel("Title").fill(TITLE);
-  await g.getByLabel("Details").fill("An energy group needs an interim finance transformation lead for six months in Dubai.");
-  await g.locator('select[name="route"]').selectOption("INTERIM"); await g.locator('input[name="terms"]').check();
-  await g.getByRole("button", { name: "Post" }).click(); await m1.waitForURL(/notice=posted/, { timeout: 60000 });
+  await walk(g, [{ yes: true }], "Post"); await m1.waitForURL(/notice=posted/, { timeout: 60000 });
   const lead = sql(`select b."submittedVia" || '|' || b.status from "BoardPost" p join "Brief" b on b.id=p."briefId" where p.title='${TITLE}'`);
   assert(lead === "BOARD|NEW", "a new lead from the board: " + lead);
   await m1.screenshot({ path: `${DIR}/community-board.png`, fullPage: true });
@@ -166,7 +161,7 @@ await step("features: you switch the board off and members lose it at once, then
     await o.waitForFunction(() => document.querySelector('[data-feature="communityBoard"] [role="switch"]')?.getAttribute("aria-checked") === "false", null, { timeout: 30000 });
     // The member sees no board, no post form, and no "share" card on their profile.
     await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
-    assert(!(await m2.getByRole("button", { name: "Post" }).count()), "no post form");
+    assert(!(await m2.locator("[data-guide]").count()), "nothing to post");
     assert(!(await m2.getByRole("link", { name: /^Board/ }).count()), "no board tab");
     await m2.goto(`${BASE}/member`, { waitUntil: "networkidle" });
     assert(!(await m2.locator('[data-value="share"]').count()), "no share card");
@@ -175,7 +170,7 @@ await step("features: you switch the board off and members lose it at once, then
     await o.locator('[data-feature="communityBoard"]').getByRole("switch").click();
     assert(await until(() => state() === "true"), "stored as on");
     await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
-    assert(await m2.getByRole("button", { name: "Post" }).count(), "the board is back");
+    assert(await m2.locator("[data-guide]").count(), "the board is back");
     assert(sql(`select count(*) from "AuditLog" where action='feature.update' and "tenantId"='${tenant}'`) !== "0", "each change is in the audit log");
     return "off, then on";
   } finally { sql(`update "Tenant" set "features" = "features" - 'communityBoard' where id='${tenant}'`); }

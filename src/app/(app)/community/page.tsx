@@ -13,10 +13,11 @@ import { PageHeader, EmptyState, Tabs } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Chip } from "@/components/ui/badge";
-import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { Field, Input } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ProofPips } from "@/components/domain/standard";
 import { DateText } from "@/components/domain/date";
+import { Guide } from "@/components/ui/guide";
 import { createPost, closePost, interestedInPost, referToPost, connect, answerConnection, setDirectory } from "@/server/actions/community";
 import type { BoardPostKind, EngagementRoute } from "@prisma/client";
 
@@ -88,6 +89,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   ]);
   const mine = me ? await prisma.pitch.findMany({ where: { personId: me.id, briefId: { in: posts.map((p) => p.briefId).filter((x): x is string => !!x) } }, select: { briefId: true } }) : [];
   const pitched = new Set(mine.map((m) => m.briefId));
+  const empty = !internal && posts.length === 0; // nothing to read yet: the guide leads on its own
   const incoming = connections.filter((c) => me && c.toPersonId === me.id && c.status === "PENDING");
   const accepted = connections.filter((c) => c.status === "ACCEPTED");
   const linkWith = (id: string) => connections.find((c) => c.fromPersonId === id || c.toPersonId === id);
@@ -106,8 +108,8 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
       {!internal && !board ? <Tabs items={[{ key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length || undefined }]} current={tab} base="/community" /> : null}
 
       {tab === "board" ? (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2">
+        <div className={empty ? "max-w-[760px]" : "grid grid-cols-1 xl:grid-cols-3 gap-4"}>
+          {empty ? null : <div className="xl:col-span-2">
             <Card>
               <CardBody className="pt-2">
                 {posts.length === 0 ? <div className="py-6"><EmptyState title="Nothing on the board yet" description={internal ? "When members share work, ask for someone or say they are free, it shows here." : "Be the first: share a piece of work you know about, or say when you are free."} /></div> : (
@@ -148,25 +150,28 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 )}
               </CardBody>
             </Card>
-          </div>
+          </div>}
           {internal ? null : (
             <div>
-              <Card>
-                <CardHeader title="Share something" description="Your name is shown with your post." />
-                <CardBody className="pt-0">
-                  <form action={createPost} className="space-y-3">
-                    <Field label="What is it?" required><Select name="kind" defaultValue="WORK">{(Object.keys(KIND) as BoardPostKind[]).map((k) => <option key={k} value={k}>{KIND[k].label}</option>)}</Select></Field>
-                    <Field label="Title" required><Input name="title" required minLength={4} maxLength={120} placeholder="Interim CFO, energy group, Dubai" /></Field>
-                    <Field label="Details" required><Textarea name="body" required minLength={10} maxLength={2000} rows={4} placeholder="What it is, for how long, and anything fixed like budget or start date." /></Field>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <Field label="Type of work"><Select name="route" defaultValue=""><option value="">Any</option>{(Object.keys(ROUTE_LABELS) as EngagementRoute[]).map((r) => <option key={r} value={r}>{ROUTE_LABELS[r]}</option>)}</Select></Field>
-                      <Field label="Where"><Input name="location" maxLength={120} placeholder="Dubai, remote" /></Field>
-                    </div>
-                    <label className="flex items-start gap-2.5 text-[12px] text-ink-muted leading-[1.5]"><input type="checkbox" name="terms" className="mt-0.5 h-4 w-4 flex-none accent-[var(--color-navy)]" /><span>For work or an ask: it is introduced through the network, so nobody is cut out.{earnings ? " If someone you bring in is placed, you receive a share of the fee." : ""}</span></label>
-                    <div className="flex justify-end"><SubmitButton pendingText="Posting…">Post</SubmitButton></div>
-                  </form>
-                </CardBody>
-              </Card>
+              <Guide
+                intro={empty ? "The board is empty, so you would be first. Your name is shown with what you share." : "Share something with members. Your name is shown with it."}
+                action={createPost}
+                submit="Post"
+                pending="Posting…"
+                review="Here is your post"
+                steps={[
+                  { name: "kind", kind: "choice", ask: "What would you like to share?", short: "What", options: [
+                    { value: "WORK", label: "Work I know about", hint: "A role or project someone needs filled" },
+                    { value: "HELP", label: "I am looking for someone", hint: "A specialist you need yourself" },
+                    { value: "AVAILABLE", label: "I am free for work", hint: "Let members know you can take something on" },
+                  ] },
+                  { name: "title", kind: "text", ask: "Give it a one-line title", short: "Title", placeholder: "Interim CFO, energy group, Dubai", min: 4, max: 120 },
+                  { name: "body", kind: "long", ask: "Tell members a little more", short: "Details", hint: "What it is, for how long, and anything fixed like budget or start date.", min: 10, max: 2000 },
+                  { name: "route", kind: "choice", ask: "What kind of work is it?", short: "Type", optional: true, options: [{ value: "", label: "Any, or not sure" }, ...(Object.keys(ROUTE_LABELS) as EngagementRoute[]).map((r) => ({ value: r, label: ROUTE_LABELS[r] }))] },
+                  { name: "location", kind: "text", ask: "Where is it?", short: "Where", optional: true, max: 120, placeholder: "City, or remote", picks: ["Dubai", "Abu Dhabi", "Riyadh", "London", "Remote"] },
+                  { name: "terms", kind: "confirm", ask: "One thing before it goes up", short: "Through the network", when: { name: "kind", in: ["WORK", "HELP"] }, hint: earnings ? "Work shared here is introduced through the network, so nobody is cut out. If someone you bring in is placed, you receive a share of the fee." : "Work shared here is introduced through the network, so nobody is cut out.", yes: "That is fine" },
+                ]}
+              />
             </div>
           )}
         </div>

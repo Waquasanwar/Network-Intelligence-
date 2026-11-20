@@ -5,12 +5,12 @@ import { prisma } from "@/lib/db";
 import { isInternal, redactForPartner } from "@/lib/authz";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { InviteComposer, MyLinkShare, CopyInviteLink, KnownHowPicker } from "@/components/domain/invite-share";
+import { InviteComposer, MyLinkShare, CopyInviteLink } from "@/components/domain/invite-share";
 import { revokeInvite } from "@/server/actions/invites";
 import { mayInvite } from "@/server/invites";
 import { Badge, Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input, Select, Textarea, Field, Checkbox } from "@/components/ui/form";
+import { Select } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyState } from "@/components/ui/page";
 import { TrustCard, FitCard } from "@/components/domain/trust";
@@ -37,6 +37,8 @@ import { fullName } from "@/lib/utils";
 import { Tracker, stepsFrom } from "@/components/ui/tracker";
 import { Constellation } from "@/components/ui/constellation";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
+import { Guide } from "@/components/ui/guide";
+import { KNOWN_HOW } from "@/lib/known";
 
 export const metadata = { title: "My network profile" };
 
@@ -187,18 +189,22 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
                 )}
               </CardBody>
             </Card>
-            <Card><CardHeader title="Recommend someone to us" description="Tell us about someone good and we will take it from there." /><CardBody>
-            <form action={submitReferral} className="space-y-4">
-              {internal ? <input type="hidden" name="asPersonId" value={p.id} /> : null}
-              <p className="text-[12.5px] text-ink-muted">Only people you would genuinely stand behind. Your referral is anonymous to clients; we tell the person you sent them only if you say we can.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3"><Field label="Full name" required><Input name="name" required /></Field><Field label="Email or LinkedIn"><Input name="email" placeholder="so we can reach them" /></Field></div>
-              <KnownHowPicker name="knownHow" />
-              <Field label="What you have seen them do" required><Textarea name="context" required className="min-h-[90px]" placeholder="e.g. Ran the requirements workstream for me on the payments hub. Precise, calm, well liked by the business." /></Field>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3"><Field label="For an open opportunity?"><Select name="briefId" defaultValue={""}><option value="">— general referral —</option>{open.map((b) => <option key={b.id} value={b.id}>{b.roles[0] ?? "Requirement"} · {b.locations[0] ?? ""}</option>)}</Select></Field><Field label="Anything else"><Input name="note" /></Field></div>
-              <Checkbox name="tell" label="You may tell them I referred them" defaultChecked />
-              <div className="flex justify-end"><SubmitButton pendingText="Sending…">Send referral</SubmitButton></div>
-            </form>
-          </CardBody></Card></div>
+            <Guide
+              intro="Recommend someone good. Only people you would stand behind."
+              action={submitReferral}
+              hidden={internal ? { asPersonId: p.id } : {}}
+              submit="Send referral"
+              review="Here is your referral"
+              steps={[
+                { name: "name", kind: "text", ask: "Who would you like to recommend?", short: "Who", placeholder: "Their full name", min: 2, max: 120 },
+                { name: "knownHow", kind: "choice", ask: "How do you know {name}?", short: "How you know them", options: (Object.keys(KNOWN_HOW) as (keyof typeof KNOWN_HOW)[]).map((k) => ({ value: k, label: KNOWN_HOW[k].label })) },
+                { name: "context", kind: "long", ask: "What have you seen {name} do?", short: "What you have seen", hint: "A line or two is plenty. Specifics help us place them well.", placeholder: "Ran the requirements workstream on our payments hub. Precise, calm, well liked by the business.", min: 5, max: 1000 },
+                { name: "email", kind: "text", ask: "How can we reach {name}?", short: "Contact", optional: true, placeholder: "Email or LinkedIn", max: 200 },
+                ...(open.length ? [{ name: "briefId", kind: "choice" as const, ask: "Is it for one of the open opportunities?", short: "For", optional: true, options: [{ value: "", label: "No, just someone good" }, ...open.map((b) => ({ value: b.id, label: `${b.roles[0] ?? "Requirement"}${b.locations[0] ? ` · ${b.locations[0]}` : ""}` }))] }] : []),
+                { name: "tell", kind: "confirm", ask: "May we tell {name} you referred them?", short: "Tell them", optional: true, yes: "Yes, tell them" },
+              ]}
+            />
+          </div>
           <div className="space-y-4">
           {earnings && credits.length ? <Card data-member-credits><CardHeader title="Your share of placements" description="When someone you referred, introduced or found work for is placed, you receive this share of the fee." /><CardBody className="pt-0"><ul className="divide-y divide-line text-[12.5px]">{credits.map((c) => <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0"><span className="min-w-0"><b className="font-semibold">{c.brief.title}</b><span className="block text-ink-muted">You {c.reason} · {Number(c.pct)}%</span></span><span className="flex-none text-right"><b className="block tabular">{c.amount !== null ? fmt(Number(c.amount), c.currency) : "To follow"}</b><span className="text-[12px] text-ink-faint">{c.status === "PAID" ? "Paid" : c.status === "OWED" ? "Owed to you" : "Written off"}</span></span></li>)}</ul></CardBody></Card> : null}
           <Card><CardHeader title="Your referrals" description={`${accepted} accepted into the network`} /><CardBody>{p.referralsMade.length ? <ul className="divide-y divide-line text-[12.5px]">{p.referralsMade.map((r) => <li key={r.id} className="py-2 first:pt-0 last:pb-0"><div className="flex justify-between gap-2"><b>{r.name}</b><Badge tone={r.status === "ACCEPTED" ? "teal" : r.status === "DECLINED" ? "neutral" : "amber"} filled>{REF_STATUS[r.status]}</Badge></div><div className="text-ink-muted">{r.context}</div></li>)}</ul> : <div className="text-xs text-ink-muted">None yet.</div>}</CardBody></Card>

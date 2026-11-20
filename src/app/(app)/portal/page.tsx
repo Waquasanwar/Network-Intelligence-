@@ -7,7 +7,7 @@ import { partnerHidden } from "@/lib/privacy";
 import { EmptyState } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, Textarea } from "@/components/ui/form";
+import { Select } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Button } from "@/components/ui/button";
 import { DateText } from "@/components/domain/date";
@@ -19,10 +19,10 @@ import { resolvePortalAccount } from "@/server/queries";
 import { parseBrief, fmt, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, type HardCheck, type Terms, type RateCard } from "@/lib/demand";
 import { fullName } from "@/lib/utils";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
 import { Tracker, stepsFrom } from "@/components/ui/tracker";
 import { Constellation } from "@/components/ui/constellation";
 import { Fold } from "@/components/ui/fold";
+import { Guide } from "@/components/ui/guide";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 
 export const metadata = { title: "Client & agency portal" };
@@ -58,6 +58,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   const proposedCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision) && mayShowCard(s.person)).length, 0);
   const introCount = briefs.reduce((a, b) => a + b.shortlist.filter((s) => shortlistNameVisible(s, s.person)).length, 0);
 
+  const monthAhead = (n: number) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + n); return d.toLocaleString("en-GB", { month: "long" }); };
   // What we are doing on this account right now, each line a fact.
   const live = briefs.filter((b) => !["FILLED", "CLOSED"].includes(b.status));
   const shown = (b: (typeof briefs)[number]) => b.shortlist.filter((s) => PORTAL_VISIBLE.includes(s.decision) && mayShowCard(s.person));
@@ -91,23 +92,38 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
-          <Card>
-            <CardHeader title="Submit a requirement" description="Plain words are fine. We will confirm anything unclear." />
-            <CardBody>
-              <form method="get" action="/portal" className="flex flex-col md:flex-row gap-2.5 md:items-end mb-3">
-                {internal ? <input type="hidden" name="account" value={account.id} /> : null}
-                <div className="relative flex-1"><Sparkles className="absolute left-3.5 top-3 h-4 w-4 text-navy-400 pointer-events-none" /><Textarea name="q" defaultValue={sp.q ?? ""} rows={2} className="pl-10 min-h-[64px]" placeholder={account.kind === "AGENCY" ? "e.g. We need 2 BAs already in Dubai with a visa, perm, retail banking, AED 360k" : account.kind === "CLIENT" ? "e.g. We want a permanent senior project manager for our digital programme, London, £95k, start January" : "e.g. Expert call: 2 hours on SAP S/4 go-live assurance for a utility, this week"} aria-label="Describe your requirement" /></div>
-                <SubmitButton variant="secondary" pendingText="Reading…">Preview</SubmitButton>
-              </form>
-              {preview ? <div className="mb-3"><ReadCard b={preview} title="We read this as" /></div> : null}
-              <form action={portalSubmitBrief} className="flex items-center justify-between gap-3">
-                <input type="hidden" name="accountId" value={account.id} />
-                <input type="hidden" name="text" value={sp.q ?? ""} />
-                <span className="text-[12px] text-ink-faint">You see how we read it before it is sent. We come back with people we genuinely know, not a database search.</span>
-                <SubmitButton disabled={!preview} pendingText="Sending…">Send requirement</SubmitButton>
-              </form>
-            </CardBody>
-          </Card>
+          {preview ? (
+            <Card data-portal-read>
+              <CardHeader title="Here is how we read it" description="Check it before it goes. We confirm anything unclear with you." />
+              <CardBody className="pt-0">
+                <ReadCard b={preview} title="We read this as" />
+                <form action={portalSubmitBrief} className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <input type="hidden" name="accountId" value={account.id} />
+                  <input type="hidden" name="text" value={sp.q ?? ""} />
+                  <Link href={internal ? `/portal?account=${account.id}` : "/portal"} className="text-[13px] font-medium text-ink-muted hover:text-ink">Start again</Link>
+                  <SubmitButton pendingText="Sending…">Send requirement</SubmitButton>
+                </form>
+              </CardBody>
+            </Card>
+          ) : (
+            <Guide
+              intro="Tell me who you need. One question at a time, and you see how I read it before anything is sent."
+              href="/portal"
+              hidden={internal ? { account: account.id } : {}}
+              compose={{ name: "q", parts: ["role", "route", "where", "when", "budget", "more"] }}
+              submit="See how we read it"
+              pending="Reading…"
+              review="Here is your requirement"
+              steps={[
+                { name: "role", kind: "text", ask: account.kind === "AGENCY" ? "Who does your client need?" : "Who do you need?", short: "Who", placeholder: "A senior project manager for our digital programme", min: 4, max: 300 },
+                { name: "route", kind: "choice", ask: "How would they work with you?", short: "How", options: [{ value: "permanent", label: "Permanent" }, { value: "contract", label: "Contract" }, { value: "interim", label: "Interim" }, { value: "fractional", label: "Fractional, a few days a week" }, { value: "advisory", label: "Advisory or an expert call" }, { value: "", label: "Not sure yet" }] },
+                { name: "where", kind: "text", ask: "Where will they work?", short: "Where", optional: true, placeholder: "City, or remote", max: 120, picks: ["Dubai", "Abu Dhabi", "Riyadh", "London", "Remote"] },
+                { name: "when", kind: "choice", ask: "When do you need them?", short: "When", optional: true, options: [{ value: "start ASAP", label: "As soon as possible" }, { value: `start in ${monthAhead(1)}`, label: "Within a month" }, { value: `start by ${monthAhead(3)}`, label: "In the next three months" }, { value: "", label: "Flexible" }] },
+                { name: "budget", kind: "text", ask: "What is the budget or rate?", short: "Budget", optional: true, placeholder: "£95k, or AED 2,500 a day", max: 120 },
+                { name: "more", kind: "long", ask: "Anything else we should know?", short: "Also", optional: true, placeholder: "Sector, must-haves, languages, right to work…", max: 1500 },
+              ]}
+            />
+          )}
 
           {briefs.length === 0 ? <EmptyState title="No requirements yet" description="Send your first one above." /> : await Promise.all(briefs.map(async (b) => {
             const d = toDomain(b);

@@ -1,4 +1,4 @@
-import { launch, session, step, assert, sql, BASE, DIR, NEWPW, summary } from "./lib.mjs";
+import { launch, session, step, assert, sql, BASE, DIR, NEWPW, summary, walk } from "./lib.mjs";
 
 /**
  * The standard (six proofs), references by link, and the public page. Everything here is built
@@ -134,10 +134,8 @@ await step("the referee answers with no login, and the proof is earned", null, a
   await p.goto(link, { waitUntil: "networkidle" });
   assert(/would value a few words/i.test(await p.locator("h1").innerText()), "page says the team asked");
   assert(!(await p.getByText(/Trust|score|Waqas/).count()), "the referee sees nothing about the network beyond the name");
-  await p.getByLabel(/Where, and roughly when/).fill("Billing replacement, 2024");
-  await p.locator('select[name="knownSince"]').selectOption("2016");
-  await p.getByLabel(/What did you see/).fill("Pulled a failing vendor back into line and landed the cutover on the planned weekend.");
-  await p.locator('input[name="consent"]').check(); await p.getByRole("button", { name: "Send my reference" }).click(); await p.waitForURL(/done=1/, { timeout: 20000 });
+  await walk(p.locator("[data-guide]"), [{ keep: true }, { pick: "We worked alongside each other" }, "2016", "Billing replacement, 2024", { pick: "Yes" }, "Pulled a failing vendor back into line and landed the cutover on the planned weekend.", { yes: true }], "Send my reference");
+  await p.waitForURL(/done=1/, { timeout: 20000 });
   await p.goto(link, { waitUntil: "networkidle" }); assert(/already been given/i.test(await p.locator("h1").innerText()), "link works once");
   assert(sql(`select "knownSince" from "Vouch" where "voucherName"='${REFEREE}' order by "createdAt" desc limit 1`) === "2016", "the referee's 'known since' is kept");
   await p.goto(`${BASE}/vouch?t=forged.token.here`, { waitUntil: "networkidle" }); assert(/not valid/i.test(await p.locator("h1").innerText()), "forged link refused");

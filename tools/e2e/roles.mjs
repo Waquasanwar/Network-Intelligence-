@@ -1,4 +1,4 @@
-import { launch, session, step, assert, dialog, sql, BASE, DIR, PW, summary, NEWPW } from "./lib.mjs";
+import { launch, session, step, assert, dialog, sql, BASE, DIR, PW, summary, NEWPW, walk } from "./lib.mjs";
 import * as OTPAuth from "otpauth";
 const stamp = String(Date.now()).slice(-6);
 const b = await launch();
@@ -25,9 +25,10 @@ await stepIf("member: sees open opportunity (summary only) and pitches", m, asyn
 });
 await stepIf("member: recommends someone", m, async () => {
   await m.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
-  const f = m.locator("form").filter({ has: m.getByRole("button", { name: "Send referral" }) }); await f.locator('input[name="name"]').fill("Rae Stone" + stamp); await f.locator('[name="context"]').fill("Led the data migration for me. Careful, quick and well liked.");
-  await f.getByRole("button", { name: "Seen their work" }).click();
-  await f.getByRole("button", { name: "Send referral" }).click(); await m.waitForURL(/sent=1/, { timeout: 15000 });
+  const f = m.locator("[data-guide]").filter({ hasText: "Recommend someone good" });
+  const opps = sql(`select count(*) from "Brief" where "openToMembers" and "memberSummary" is not null and status not in ('FILLED','CLOSED')`) !== "0";
+  await walk(f, ["Rae Stone" + stamp, { pick: "Seen their work" }, "Led the data migration for me. Careful, quick and well liked.", null, ...(opps ? [null] : []), { yes: true }], "Send referral");
+  await m.waitForURL(/sent=1/, { timeout: 15000 });
   assert(sql(`select count(*) from "Referral" where name='Rae Stone${stamp}'`) === "1", "referral row");
   assert(sql(`select "knownHow" from "Referral" where name='Rae Stone${stamp}'`) === "seen", "how the member knows them is kept");
 });
@@ -70,7 +71,7 @@ await stepIf("partner: portal shows keyed references, never names or ids", null,
 await stepIf("client: workspace and portal load, internal areas closed", null, async () => {
   const p = await session(b, "client@meridian.local"); await p.goto(`${BASE}/client-workspace`, { waitUntil: "networkidle" }); await p.screenshot({ path: `${DIR}/client.png`, fullPage: true });
   const html = await p.content(); for (const id of sql(`select id from "Person" limit 60`).split("\n")) assert(!html.includes(id), "person id in client page");
-  await p.goto(`${BASE}/portal`, { waitUntil: "networkidle" }); await p.locator('textarea[name="q"]').fill("We need a permanent head of procurement in London, £120k, start in March"); await p.getByRole("button", { name: "Preview" }).click(); await p.waitForLoadState("networkidle");
+  await p.goto(`${BASE}/portal`, { waitUntil: "networkidle" }); await walk(p.locator("[data-guide]"), ["A head of procurement in London", { pick: "Permanent" }, "London", { pick: "In the next three months" }, "£120k", null], "See how we read it"); await p.waitForLoadState("networkidle");
   await p.getByRole("button", { name: "Send requirement" }).click(); await p.waitForTimeout(2500);
   assert(Number(sql(`select count(*) from "Brief" where "submittedVia"='PORTAL' and "createdAt" > now() - interval '1 minute'`)) >= 1, "portal brief created");
   for (const u of ["/network", "/invite", "/requirements", "/settings/commercials"]) { await p.goto(BASE + u, { waitUntil: "domcontentloaded" }); assert(/forbidden/.test(p.url()), u + " open to client"); }

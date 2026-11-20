@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
-import { KNOWN_HOW, type KnownHow } from "@/lib/known";
-import { Check, Copy, Mail, MessageCircle, Send, Share2, UserPlus } from "lucide-react";
+import { KNOWN_HOW, isKnownHow, type KnownHow } from "@/lib/known";
+import { Guide } from "@/components/ui/guide";
+import { Check, Copy, Mail, MessageCircle, Share2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Textarea } from "@/components/ui/form";
 import { createInvite, inviteLink, myInviteLink } from "@/server/actions/invites";
 
 const joinUrl = (token: string) => `${window.location.origin}/join?t=${token}`;
@@ -67,65 +67,52 @@ export function MyLinkShare({ asPersonId, network, from }: { asPersonId?: string
  * Invite one named person. Creates a tracked, single-use invitation and then offers the ways to
  * send it. `personId` turns it into "claim the profile we already hold for you".
  */
-/** One optional tap: how you know the person you are bringing in. Shown to the team, never to clients. */
-export function KnownHowPicker({ value, onChange, name }: { value?: KnownHow | ""; onChange?: (v: KnownHow | "") => void; name?: string }) {
-  const [own, setOwn] = useState<KnownHow | "">(value ?? "");
-  const v = onChange ? (value ?? "") : own;
-  const set = (k: KnownHow | "") => (onChange ? onChange(k) : setOwn(k));
-  return (
-    <div role="group" aria-labelledby="known-how-label">
-      <div id="known-how-label" className="mb-1.5 text-[12.5px] font-semibold text-ink">How do you know them? <span className="font-normal text-ink-faint">Optional</span></div>
-      <div className="flex flex-wrap gap-1.5">
-        {(Object.keys(KNOWN_HOW) as KnownHow[]).map((k) => <button key={k} type="button" className="chip" aria-pressed={v === k} onClick={() => set(v === k ? "" : k)}>{KNOWN_HOW[k].label}</button>)}
-      </div>
-      {name ? <input type="hidden" name={name} value={v} /> : null}
-    </div>
-  );
-}
-
 export function InviteComposer({ network, from, asPersonId, person, onDone }: { network: string; from?: string; asPersonId?: string; person?: { id: string; name: string; email?: string | null }; onDone?: () => void }) {
-  const [name, setName] = useState(person?.name ?? "");
-  const [email, setEmail] = useState(person?.email ?? "");
-  const [note, setNote] = useState("");
-  const [known, setKnown] = useState<KnownHow | "">("");
-  const [made, setMade] = useState<{ url: string; name: string; email: string } | null>(null);
+  const [made, setMade] = useState<{ url: string; name: string; email: string; note: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [round, setRound] = useState(0);
   const [pending, start] = useTransition();
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault(); setErr(null);
+  function finish(f: Record<string, string>) {
+    setErr(null);
     start(async () => {
-      const r = await createInvite({ name, email, note, knownHow: known, personId: person?.id ?? "", asPersonId: asPersonId ?? "" });
+      const r = await createInvite({ name: f.name, email: f.email, note: f.note, knownHow: (isKnownHow(f.knownHow) ? f.knownHow : ""), personId: person?.id ?? "", asPersonId: asPersonId ?? "" });
       if (!r.ok) { setErr(r.error); return; }
-      setMade({ url: joinUrl(r.token), name: r.name, email });
+      setMade({ url: joinUrl(r.token), name: r.name, email: f.email, note: f.note });
       onDone?.();
     });
   }
 
   if (made) {
     const first = made.name.split(/\s+/)[0];
-    const message = inviteMessage({ url: made.url, firstName: first, network, from: note ? `${note}${from ? `\n\n${from}` : ""}` : from });
+    const message = inviteMessage({ url: made.url, firstName: first, network, from: made.note ? `${made.note}${from ? `\n\n${from}` : ""}` : from });
     return (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-[13.5px] font-semibold text-ink"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-ink"><Check className="h-3.5 w-3.5" /></span> {first}&apos;s invitation is ready. Send it however you normally talk.</div>
+        <div className="mb-3 flex items-center gap-2 text-[13.5px] font-semibold text-ink"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-ink"><Check className="h-3.5 w-3.5" /></span>{first}&apos;s invitation is ready. Send it your way:</div>
         <ShareKit url={made.url} message={message} email={made.email} />
         <p className="mt-3 text-[12px] text-ink-faint">Works once, for 30 days. You will see here when {first} opens it and when they join.</p>
-        {person ? null : <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={() => { setMade(null); setName(""); setEmail(""); setNote(""); setKnown(""); }}><UserPlus className="h-3.5 w-3.5" /> Invite someone else</Button>}
+        {person ? null : <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={() => { setMade(null); setRound((n) => n + 1); }}><UserPlus className="h-3.5 w-3.5" /> Invite someone else</Button>}
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3.5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Their name" required><Input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={120} placeholder="Sara Malik" /></Field>
-        <Field label="Email" hint="Optional. Fills in the To line and their form."><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={200} placeholder="sara@example.com" /></Field>
-      </div>
-      <KnownHowPicker value={known} onChange={setKnown} />
-      <Field label="A line from you" hint="Optional. Added to the message."><Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} className="min-h-[64px]" placeholder="We worked together on the payments programme and I thought of you straight away." /></Field>
-      {err ? <div role="alert" className="text-[12.5px] text-risk">{err}</div> : null}
-      <div className="flex justify-end"><Button type="submit" disabled={pending || name.trim().length < 2}><Send className="h-3.5 w-3.5" /> {pending ? "Creating…" : person ? "Create their invitation" : "Create invitation"}</Button></div>
-    </form>
+    <Guide
+      key={round}
+      intro={person ? `An invitation for ${person.name}. Three quick questions.` : "Invite someone you trust. A few quick questions, then a link to send."}
+      onFinish={finish}
+      busy={pending}
+      error={err}
+      submit={person ? "Create their invitation" : "Create invitation"}
+      pending="Creating…"
+      review="Here is the invitation"
+      steps={[
+        { name: "name", kind: "text", ask: "Who would you like to invite?", short: "Who", placeholder: "Their full name", initial: person?.name ?? "", min: 2, max: 120 },
+        { name: "knownHow", kind: "choice", ask: "How do you know {name}?", short: "How you know them", optional: true, options: (Object.keys(KNOWN_HOW) as KnownHow[]).map((k) => ({ value: k, label: KNOWN_HOW[k].label })) },
+        { name: "email", kind: "text", ask: "What is {name}'s email?", short: "Email", hint: "Optional. It fills in the To line and their form.", optional: true, initial: person?.email ?? "", placeholder: "sara@example.com", max: 200 },
+        { name: "note", kind: "long", ask: "Would you like to add a line from you?", short: "Your line", hint: "Optional. It is added to the message.", optional: true, placeholder: "We worked together on the payments programme. You would like it here.", max: 500 },
+      ]}
+    />
   );
 }
 

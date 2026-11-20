@@ -69,3 +69,22 @@ export const assert = (c, m) => { if (!c) throw new Error("assert: " + m); };
 export const dialog = (p) => p.locator('[role="dialog"]:visible').last();
 export async function submitIn(scope, label) { const btn = scope.getByRole("button", { name: label }).last(); await btn.scrollIntoViewIfNeeded(); await btn.click(); }
 export function summary() { const bad = results.filter((r) => !r.ok); console.log(`\n${results.length - bad.length}/${results.length} passed`); for (const r of bad) console.log(" ✗", r.name, "::", r.why); }
+
+/**
+ * Walk a one-question-at-a-time guide the way a person would. Each answer is typed text, or
+ * { pick: "Option label" }, { yes: true } to agree, { keep: true } to accept what is already filled
+ * in, or null to skip. Finishes by pressing `submit`, if given.
+ */
+export async function walk(guide, answers, submit) {
+  const ask = () => guide.locator(".guide-ask").innerText().catch(() => "");
+  for (const a of answers) {
+    const before = await ask();
+    if (a === null) await guide.getByRole("button", { name: "Skip", exact: true }).click();
+    else if (typeof a === "string") { const box = guide.locator(".guide-q input, .guide-q textarea").first(); await box.fill(a); await guide.getByRole("button", { name: "Next", exact: true }).click(); }
+    else if (a.keep) await guide.getByRole("button", { name: "Next", exact: true }).click();
+    else if (a.yes) await guide.locator(".guide-yes").click();
+    else if (a.pick) await guide.locator("[data-guide-options]").getByRole("button", { name: new RegExp("^" + a.pick.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) }).first().click();
+    for (let i = 0; i < 40 && (await ask()) === before; i++) await new Promise((r) => setTimeout(r, 100));
+  }
+  if (submit) await guide.getByRole("button", { name: submit }).click();
+}

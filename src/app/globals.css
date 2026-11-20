@@ -732,3 +732,29 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
   .pulse .agent-mark[data-busy] circle:nth-of-type(2) { animation-delay: 0.4s; }
   .pulse .agent-mark[data-busy] circle:nth-of-type(3) { animation-delay: 0.8s; }
 }
+
+/* ---------- Guide ----------
+   One question at a time, asked by the agent, in one card. The question is the biggest thing on it;
+   choices are large and tappable; what you have said so far sits above as a quiet trail. */
+.guide { position: relative; border-radius: 22px; border: 1px solid var(--color-line); background: var(--color-surface); padding: 18px 20px 20px; box-shadow: 0 1px 0 rgba(12, 27, 51, 0.03), 0 18px 40px -28px rgba(12, 27, 51, 0.3); }
+@media (min-width: 640px) { .guide { padding: 22px 26px 24px; } }
+.guide-head { display: flex; align-items: center; gap: 10px; }
+.guide-orb { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 999px; background: color-mix(in srgb, var(--color-teal-400) 16%, transparent); }
+.guide-bar { margin-top: 12px; height: 3px; border-radius: 999px; background: var(--color-surface-muted); overflow: hidden; }
+.guide-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--color-teal-400); transition: width 400ms cubic-bezier(.2, .7, .2, 1); }
+.guide-trail { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.guide-trail button { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; background: var(--color-surface-muted); padding: 4px 10px; font-size: 12px; color: var(--color-ink-muted); transition: color 150ms ease; }
+.guide-trail button:hover { color: var(--color-ink); }
+.guide-q { margin-top: 18px; }
+.guide-ask { font-family: var(--font-display); font-size: 21px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
+@media (min-width: 640px) { .guide-ask { font-size: 24px; } }
+.guide-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 56px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--color-line); background: var(--color-surface); text-align: left; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease; }
+.guide-option:hover { border-color: var(--color-teal-400); background: color-mix(in srgb, var(--color-teal-400) 6%, var(--color-surface)); }
+.guide-option:hover svg { opacity: 1; transform: translateX(2px); }
+.guide-option svg { transition: opacity 150ms ease, transform 150ms ease; }
+.guide-option[aria-pressed="true"] { border-color: var(--color-teal-400); }
+.guide-yes { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 999px; background: var(--color-ink); color: var(--color-canvas); font-size: 14px; font-weight: 600; cursor: pointer; }
+.guide-skip { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 4px; font-size: 13px; font-weight: 500; color: var(--color-ink-muted); cursor: pointer; }
+.guide-skip:hover { color: var(--color-ink); }
+@media (prefers-reduced-motion: no-preference) { .guide-q { animation: pulse-rise 380ms cubic-bezier(.2, .7, .2, 1); } }
+@media (prefers-reduced-motion: reduce) { .guide-bar > span { transition: none; } }

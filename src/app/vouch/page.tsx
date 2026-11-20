@@ -3,8 +3,7 @@ import { readReference, REFERENCE_RELATIONS } from "@/lib/reference-link";
 import { answerReference } from "@/server/actions/references";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { APP_NAME } from "@/lib/brand";
-import { Field, Input, Select, Textarea } from "@/components/ui/form";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { Guide } from "@/components/ui/guide";
 import { Check, MailQuestion } from "lucide-react";
 
 export const metadata = { title: "A reference", robots: { index: false, follow: false } };
@@ -29,6 +28,7 @@ export default async function VouchPage({ searchParams }: { searchParams: Promis
   if (open && !req!.openedAt) await prisma.referenceRequest.updateMany({ where: { id: req!.id, openedAt: null }, data: { openedAt: new Date() } });
   const network = req?.tenant.brandName ?? req?.tenant.name ?? "the network";
   const first = req?.person.firstName ?? "";
+  const thisYear = new Date().getFullYear();
   // Said truthfully either way: the person asked themselves, or the team asked for them.
   const byTeam = !!req?.createdById;
 
@@ -48,32 +48,25 @@ export default async function VouchPage({ searchParams }: { searchParams: Promis
           <>
             <h1 className="font-display text-[30px] leading-[1.1] text-balance">{byTeam ? `We would value a few words from you on ${first} ${req!.person.lastName}'s work.` : `${first} ${req!.person.lastName} has asked you to say how you know their work.`}</h1>
             <p className="text-[14.5px] text-ink-muted mt-3 leading-[1.55]">{first} is part of {network}, a network of people known first hand. A few honest lines from someone who has seen them work counts for more than anything they could say themselves.</p>
-            <form action={answerReference} className="widget p-6 sm:p-7 mt-6 space-y-4">
-              <input type="hidden" name="t" value={sp.t} />
-              {/* Left empty by people, filled in by scripts. */}
-              <div className="hidden" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
-              {sp.error && ERRORS[sp.error] ? <div role="alert" className="rounded-[12px] bg-risk-100 px-3.5 py-2.5 text-[13px] text-risk">{ERRORS[sp.error]}</div> : null}
-              <Field label="Your name" required><Input name="name" required minLength={2} maxLength={120} defaultValue={req!.refereeName} autoComplete="name" /></Field>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_170px]">
-                <Field label={`How do you know ${first}'s work?`} required>
-                  <Select name="relation" defaultValue="peer" required>{REFERENCE_RELATIONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>
-                </Field>
-                <Field label="Known them since" hint="Optional">
-                  <Select name="knownSince" defaultValue=""><option value="">Rather not say</option>{Array.from({ length: 40 }, (_, i) => new Date().getFullYear() - i).map((y) => <option key={y} value={y}>{y}</option>)}</Select>
-                </Field>
-              </div>
-              <Field label="Where, and roughly when" required hint={`${byTeam ? "We have it down as" : `${first} described it as`}: “${req!.context}”`}><Input name="where" required minLength={2} maxLength={160} placeholder="e.g. Core banking programme, 2022 to 2024" /></Field>
-              <fieldset>
-                <legend className="text-[13px] font-medium text-ink mb-1.5">Would you recommend {first} to someone you know?</legend>
-                <div className="flex gap-5 text-[14px]">
-                  <label className="inline-flex items-center gap-2"><input type="radio" name="recommend" value="yes" defaultChecked className="h-4 w-4 accent-[var(--color-navy)]" /> Yes</label>
-                  <label className="inline-flex items-center gap-2"><input type="radio" name="recommend" value="no" className="h-4 w-4 accent-[var(--color-navy)]" /> Not on what I saw</label>
-                </div>
-              </fieldset>
-              <Field label="What did you see them do well?" hint="Optional. A sentence or two. Specifics beat adjectives."><Textarea name="statement" maxLength={1000} rows={4} /></Field>
-              <label className="flex items-start gap-2.5 text-[12.5px] text-ink-muted leading-[1.5]"><input type="checkbox" name="consent" required className="mt-0.5 h-4 w-4 flex-none accent-[var(--color-navy)]" /><span>I am happy for {network} to keep my name and what I have written. The team there can read it. {first} is told that you answered, not what you wrote.</span></label>
-              <div className="flex justify-end"><SubmitButton pendingText="Sending…">Send my reference</SubmitButton></div>
-            </form>
+            {sp.error && ERRORS[sp.error] ? <div role="alert" className="mt-6 rounded-[12px] bg-risk-100 px-3.5 py-2.5 text-[13px] text-risk">{ERRORS[sp.error]}</div> : null}
+            <Guide
+              className="mt-6"
+              intro={`A few short questions about ${first}. About a minute.`}
+              action={answerReference}
+              hidden={{ t: sp.t! }}
+              extra={<div className="hidden" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>}
+              submit="Send my reference"
+              review="Here is your reference"
+              steps={[
+                { name: "name", kind: "text", ask: "First, is this your name?", short: "Your name", initial: req!.refereeName, min: 2, max: 120 },
+                { name: "relation", kind: "choice", ask: `How do you know ${first}'s work?`, short: "How you know them", options: REFERENCE_RELATIONS.map(([k, l]) => ({ value: k, label: l })) },
+                { name: "knownSince", kind: "text", ask: `Since when have you known ${first}?`, short: "Known since", optional: true, placeholder: "A year, e.g. 2016", max: 4, picks: [thisYear - 2, thisYear - 5, thisYear - 10, thisYear - 15].map(String) },
+                { name: "where", kind: "text", ask: "Where, and roughly when?", short: "Where", hint: `${byTeam ? "We have it down as" : `${first} described it as`}: “${req!.context}”`, placeholder: "Core banking programme, 2021 to 2023", min: 2, max: 160 },
+                { name: "recommend", kind: "choice", ask: `Would you recommend ${first} to someone you know?`, short: "Would recommend", options: [{ value: "yes", label: "Yes" }, { value: "no", label: "Not on what I saw" }] },
+                { name: "statement", kind: "long", ask: "What did you see them do well?", short: "What you saw", hint: "Optional. A sentence or two. Specifics beat adjectives.", optional: true, max: 1000 },
+                { name: "consent", kind: "confirm", ask: "Last thing", short: "Agreed", hint: `${network} keeps your name and what you have written, and the team there can read it. ${first} is told that you answered, not what you wrote.`, yes: "That is fine" },
+              ]}
+            />
             <p className="text-[12px] text-ink-faint mt-4 leading-[1.5]">Not sure why you have this? {byTeam ? `The ${network} team sent you this link, because ${first} named you as someone who has seen their work.` : `${first} sent you this link personally.`} If you would rather not answer, simply close the page: nothing is recorded.</p>
           </>
         ) : (

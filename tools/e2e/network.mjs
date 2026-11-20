@@ -1,4 +1,4 @@
-import { launch, session, step, assert, dialog, sql, BASE, DIR, PW, summary, NEWPW } from "./lib.mjs";
+import { launch, session, step, assert, dialog, sql, BASE, DIR, PW, summary, NEWPW, walk } from "./lib.mjs";
 const stamp = String(Date.now()).slice(-6);
 const b = await launch();
 const o = await session(b, "waqas@networkintelligence.local");
@@ -20,10 +20,9 @@ await step("public: join with no invitation shows nothing about the network", nu
 await step("owner: Grow the network page + personal invite", o, async () => {
   await og("/invite"); await o.screenshot({ path: `${DIR}/grow.png`, fullPage: true });
   networkLink = await o.locator('input[aria-label="Invitation link"]').first().inputValue(); assert(/\/join\?t=/.test(networkLink), "network link");
-  const card = o.locator("form").filter({ hasText: "Their name" });
-  await card.locator("input").nth(0).fill("Ana Costa" + stamp); await card.locator('input[type="email"]').fill(a1);
-  await card.getByRole("button", { name: "Worked with them" }).click(); // how the inviter knows them: one optional tap
-  await card.getByRole("button", { name: "Create invitation" }).click();
+  const card = o.locator("[data-guide]").first();
+  // One question at a time: who, how you know them (one tap), their email, and an optional line.
+  await walk(card, ["Ana Costa" + stamp, { pick: "Worked with them" }, a1, null], "Create invitation");
   await o.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
   assert(sql(`select "knownHow" from "Invite" where email='${a1}'`) === "worked", "how the inviter knows them is kept");
   link1 = await o.locator('input[aria-label="Invitation link"]').first().inputValue();
@@ -84,7 +83,7 @@ await step("member (approved): own link + invites someone by name", m1, async ()
   await m1.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
   await m1.locator('input[aria-label="Invitation link"]').first().waitFor({ timeout: 15000 });
   memberLink = await m1.locator('input[aria-label="Invitation link"]').first().inputValue(); assert(/\/join\?t=/.test(memberLink), "member link");
-  const f = m1.locator("form").filter({ hasText: "Their name" }); await f.locator("input").nth(0).fill("Bo Lin" + stamp); await f.getByRole("button", { name: "Create invitation" }).click();
+  await walk(m1.locator("[data-guide]").filter({ hasText: "Invite someone you trust" }), ["Bo Lin" + stamp, null, null, null], "Create invitation");
   await m1.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
   await m1.screenshot({ path: `${DIR}/member-invite.png`, fullPage: true });
   assert(sql(`select count(*) from "Invite" i join "Person" p on p.id=i."inviterPersonId" where p.email='${a1}'`) === "1", "member invite row");
@@ -100,7 +99,7 @@ await step("owner: invite an existing contact to claim their profile", o, async 
   const pid = sql(`select id from "Person" where "lastName" like 'Tester%' and email is not null and id not in (select "personId" from "User" where "personId" is not null) order by "createdAt" desc limit 1`); assert(pid, "an unclaimed contact exists");
   const before = sql(`select count(*) from "Person"`);
   await og(`/network/${pid}`); await o.getByRole("button", { name: "More" }).click(); await o.getByRole("button", { name: /Invite to join/ }).click();
-  const d = dialog(o); await d.waitFor(); await d.getByRole("button", { name: /Create their invitation/ }).click(); await d.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
+  const d = dialog(o); await d.waitFor(); await walk(d.locator("[data-guide]"), [{ keep: true }, null, { keep: true }, null], "Create their invitation"); await d.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
   const link = await d.locator('input[aria-label="Invitation link"]').inputValue(); await o.keyboard.press("Escape");
   const p = await fresh(); await p.goto(link, { waitUntil: "networkidle" }); assert(await p.getByText(/We already know you a little/).count(), "claim wording");
   const email = await p.inputValue('input[name="email"]'); await register(p, {}); await p.waitForURL((u) => u.pathname === "/member", { timeout: 30000 });
@@ -119,7 +118,7 @@ await step("duplicate registration can be joined up by the owner", o, async () =
 await step("owner: cancel an invitation and reset the network link", o, async () => {
   await og("/invite"); const row = o.locator("tr").filter({ hasText: "Bo Lin" + stamp });
   if (await row.count()) { /* member's invite is visible to the owner */ }
-  const f = o.locator("form").filter({ hasText: "Their name" }); await f.locator("input").nth(0).fill("Dee Park" + stamp); await f.getByRole("button", { name: "Create invitation" }).click(); await o.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
+  await walk(o.locator("[data-guide]").first(), ["Dee Park" + stamp, null, null, null], "Create invitation"); await o.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
   const link = await o.locator('input[aria-label="Invitation link"]').first().inputValue();
   await og("/invite"); await o.locator("tr").filter({ hasText: "Dee Park" + stamp }).getByRole("button", { name: "Cancel" }).click(); await o.waitForTimeout(1500);
   const p = await fresh(); await p.goto(link, { waitUntil: "networkidle" }); assert(await p.getByText("no longer open").count(), "cancelled link refused");
