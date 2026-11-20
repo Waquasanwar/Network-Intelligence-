@@ -105,15 +105,15 @@ await step("referral share: placing someone from a member's lead credits that me
   await o.goto(`${BASE}/requirements/${brief}`, { waitUntil: "networkidle" });
   await o.locator("[data-credits]").getByRole("button", { name: "Mark paid" }).first().click();
   assert(await until(() => sql(`select status from "ReferralCredit" where "briefId"='${brief}' and "personId"='${ana[1]}'`) === "PAID"), "marked paid");
-  // Earnings are off until the owner switches them on in Commercials: recorded, but not shown.
+  // Earnings are off until the owner switches them on in Settings → Features: recorded, but not shown.
   const tenant = sql(`select "tenantId" from "Brief" where id='${brief}'`);
   await m1.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
   assert(!(await m1.locator("[data-member-credits]").count()), "earnings stay hidden while switched off");
-  sql(`update "Tenant" set "rateCard" = coalesce("rateCard", '{}'::jsonb) || '{"membersSeeEarnings":1}'::jsonb where id='${tenant}'`);
+  sql(`update "Tenant" set "features" = coalesce("features", '{}'::jsonb) || '{"earnings":true}'::jsonb where id='${tenant}'`);
   try {
     await m1.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
     assert(/Paid/.test(await m1.locator("[data-member-credits]").innerText()), "once switched on, the member sees their share");
-  } finally { sql(`update "Tenant" set "rateCard" = "rateCard" - 'membersSeeEarnings' where id='${tenant}'`); }
+  } finally { sql(`update "Tenant" set "features" = "features" - 'earnings' where id='${tenant}'`); }
 });
 
 await step("search: off until you switch it on for an account; then clients find people by skill, never by name", o, async () => {
@@ -152,6 +152,33 @@ await step("community: you can take a post down, and members no longer see it", 
   assert(await until(() => sql(`select status from "BoardPost" where title='${TITLE}'`) === "HIDDEN"), "hidden");
   await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
   assert(!(await m2.locator("[data-post]").filter({ hasText: TITLE }).count()), "gone for members");
+});
+
+await step("features: you switch the board off and members lose it at once, then switch it back on", o, async () => {
+  const state = () => sql(`select coalesce(features->>'communityBoard', 'default') from "Tenant" where id='${tenant}'`);
+  try {
+    await o.goto(`${BASE}/settings/features`, { waitUntil: "networkidle" });
+    assert((await o.locator("[data-feature]").count()) >= 4, "the switches are listed");
+    const sw = o.locator('[data-feature="communityBoard"]').getByRole("switch");
+    assert((await sw.getAttribute("aria-checked")) === "true", "the board starts on");
+    await sw.click();
+    assert(await until(() => state() === "false"), "stored as off");
+    await o.waitForFunction(() => document.querySelector('[data-feature="communityBoard"] [role="switch"]')?.getAttribute("aria-checked") === "false", null, { timeout: 30000 });
+    // The member sees no board, no post form, and no "share" card on their profile.
+    await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
+    assert(!(await m2.getByRole("button", { name: "Post" }).count()), "no post form");
+    assert(!(await m2.getByRole("link", { name: /^Board/ }).count()), "no board tab");
+    await m2.goto(`${BASE}/member`, { waitUntil: "networkidle" });
+    assert(!(await m2.locator('[data-value="share"]').count()), "no share card");
+    assert(await m2.locator('[data-value="connect"]').count(), "connections still offered");
+    // And it comes straight back.
+    await o.locator('[data-feature="communityBoard"]').getByRole("switch").click();
+    assert(await until(() => state() === "true"), "stored as on");
+    await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
+    assert(await m2.getByRole("button", { name: "Post" }).count(), "the board is back");
+    assert(sql(`select count(*) from "AuditLog" where action='feature.update' and "tenantId"='${tenant}'`) !== "0", "each change is in the audit log");
+    return "off, then on";
+  } finally { sql(`update "Tenant" set "features" = "features" - 'communityBoard' where id='${tenant}'`); }
 });
 
 // Leave the shared demo data as it was.

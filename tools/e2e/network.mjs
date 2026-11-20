@@ -22,8 +22,10 @@ await step("owner: Grow the network page + personal invite", o, async () => {
   networkLink = await o.locator('input[aria-label="Invitation link"]').first().inputValue(); assert(/\/join\?t=/.test(networkLink), "network link");
   const card = o.locator("form").filter({ hasText: "Their name" });
   await card.locator("input").nth(0).fill("Ana Costa" + stamp); await card.locator('input[type="email"]').fill(a1);
+  await card.getByRole("button", { name: "Worked with them" }).click(); // how the inviter knows them: one optional tap
   await card.getByRole("button", { name: "Create invitation" }).click();
   await o.getByText(/invitation is ready/).waitFor({ timeout: 15000 });
+  assert(sql(`select "knownHow" from "Invite" where email='${a1}'`) === "worked", "how the inviter knows them is kept");
   link1 = await o.locator('input[aria-label="Invitation link"]').first().inputValue();
   assert(link1 !== networkLink && /\/join\?t=/.test(link1), "personal link");
   assert(!link1.includes("cmw"), "no id readable in link");

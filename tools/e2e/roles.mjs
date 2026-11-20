@@ -25,9 +25,11 @@ await stepIf("member: sees open opportunity (summary only) and pitches", m, asyn
 });
 await stepIf("member: recommends someone", m, async () => {
   await m.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
-  const f = m.locator("form").filter({ hasText: "How you know them" }); await f.locator('input[name="name"]').fill("Rae Stone" + stamp); await f.locator('[name="context"]').fill("Led the data migration for me. Careful, quick and well liked.");
+  const f = m.locator("form").filter({ has: m.getByRole("button", { name: "Send referral" }) }); await f.locator('input[name="name"]').fill("Rae Stone" + stamp); await f.locator('[name="context"]').fill("Led the data migration for me. Careful, quick and well liked.");
+  await f.getByRole("button", { name: "Seen their work" }).click();
   await f.getByRole("button", { name: "Send referral" }).click(); await m.waitForURL(/sent=1/, { timeout: 15000 });
   assert(sql(`select count(*) from "Referral" where name='Rae Stone${stamp}'`) === "1", "referral row");
+  assert(sql(`select "knownHow" from "Referral" where name='Rae Stone${stamp}'`) === "seen", "how the member knows them is kept");
 });
 await stepIf("owner: triages the pitch and the referral", o, async () => {
   await og("/referrals?tab=pitches"); const add = o.getByRole("button", { name: "Add to shortlist" }); if (await add.count()) { await add.first().click(); await o.waitForTimeout(2000); }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KNOWN_HOW, isKnownHow } from "@/lib/known";
 import { handlePublicRequest } from "@/server/actions/public";
 import { gaps, type ProofKey } from "@/lib/standard";
 import { standardInput } from "@/lib/standard-for";
@@ -149,7 +150,7 @@ export default async function InvitePage({ searchParams }: { searchParams: Promi
                     {invites.map((i) => { const st = statusOf(i); const open = st.text === "Sent" || st.text === "Opened"; return (
                       <tr key={i.id}>
                         <td className="pl-6"><div className="font-semibold text-[13.5px]">{i.joinedPerson ? <Link href={`/network/${i.joinedPerson.id}`} className="hover:underline underline-offset-4">{i.name}</Link> : i.name}</div>{i.email ? <div className="text-[12px] text-ink-faint">{i.email}</div> : null}</td>
-                        <td className="text-[13px] text-ink-muted whitespace-nowrap">{i.inviterPerson ? fullName(i.inviterPerson) : i.createdBy?.name ?? "Team"}</td>
+                        <td className="text-[13px] text-ink-muted whitespace-nowrap">{i.inviterPerson ? fullName(i.inviterPerson) : i.createdBy?.name ?? "Team"}{isKnownHow(i.knownHow) ? <div className="text-[12px] text-ink-faint">{KNOWN_HOW[i.knownHow].label.toLowerCase()}</div> : null}</td>
                         <td><Badge tone={st.tone} filled={st.text === "Joined"}>{st.text}</Badge></td>
                         <td className="text-[13px] text-ink-muted whitespace-nowrap"><DateText date={i.createdAt} relative /></td>
                         <td className="pr-6"><div className="flex items-center justify-end gap-1.5 whitespace-nowrap">{open ? <><CopyInviteLink inviteId={i.id} /><form action={revokeInvite}><input type="hidden" name="inviteId" value={i.id} /><SubmitButton size="sm" variant="ghost" pendingText="…">Cancel</SubmitButton></form></> : null}</div></td>

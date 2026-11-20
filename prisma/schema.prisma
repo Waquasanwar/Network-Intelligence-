@@ -33,6 +33,7 @@ model Tenant {
   rateCard  Json? // commercial defaults (see src/lib/demand.ts RateCard); configurable, never hard-coded
   /// Which voice the AI interviewer speaks in (see src/lib/voice-config.ts). Never holds an API key.
   voiceSettings Json?
+  features      Json? // owner switches for optional features (src/lib/features.ts)
   /// Bumped to revoke every network invite link issued so far (see src/lib/invite.ts).
   inviteVersion Int        @default(0)
   /// Accept a complete screening without a person reading it first. Off unless the owner turns it
@@ -947,6 +948,7 @@ model Vouch {
   context        String
   statement      String?
   wouldRecommend Boolean   @default(true)
+  knownSince     Int? // the year the voucher first knew them, in their own words
   attributes     Json? // observed FitScores
   createdAt      DateTime  @default(now())
 
@@ -975,6 +977,7 @@ model Referral {
   email            String?
   context          String
   note             String?
+  knownHow         String? // how the referrer knows them: worked | seen | know (lib/known.ts)
   briefId          String?
   status           ReferralStatus @default(NEW)
   createdAt        DateTime       @default(now())
@@ -1030,6 +1033,7 @@ model Invite {
   name            String
   email           String?
   note            String?
+  knownHow        String? // how the inviter knows them: worked | seen | know (lib/known.ts)
   status          InviteStatus @default(SENT)
   openedAt        DateTime?
   joinedAt        DateTime?

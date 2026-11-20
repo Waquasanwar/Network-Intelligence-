@@ -7,7 +7,7 @@ import { Input, Textarea } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { answerScreening, startScreening } from "@/server/actions/members";
-import { resolveMemberPerson } from "@/server/queries";
+import { resolveMemberPerson, loadFeatures } from "@/server/queries";
 import { SCREENING_SCRIPT, SCREENING_MINUTES, type ScreeningAnswers, type ReferredPerson } from "@/lib/screening";
 import { fullName, cn } from "@/lib/utils";
 import { ScreeningVoice } from "@/components/domain/screening-voice";
@@ -23,6 +23,7 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
   if (!person) notFound();
   if (isInternal(user)) { if (person.tenantId !== user.tenantId) notFound(); } else { const me = await resolveMemberPerson(user); if (!me || me.id !== person.id) redirect("/forbidden"); }
   const member = !isInternal(user);
+  const readAloud = member && (await loadFeatures(person.tenantId)).readAloud;
   // We open with what we already know, as a good interviewer would, so nobody repeats themselves.
   const intro = await prisma.relationship.findFirst({ where: { personId: id, introducedById: { not: null } }, select: { introducedById: true } });
   const introducer = intro?.introducedById ? await prisma.person.findUnique({ where: { id: intro.introducedById }, select: { firstName: true, lastName: true } }) : null;
@@ -67,7 +68,7 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
         {step === 0 ? <KnownCard /> : null}
         <h1 className="text-[24px] font-semibold tracking-[-0.025em] leading-8 max-w-[34ch]">{q.prompt}</h1>
         {q.help ? <p className="text-[13.5px] text-ink-muted mt-2 max-w-[60ch]">{q.help}</p> : null}
-        {member && (q.kind === "text" || q.kind === "long" || q.kind === "chips") ? <ScreeningVoice question={[q.prompt, q.help].filter(Boolean).join(" ")} /> : null}
+        {member && readAloud && (q.kind === "text" || q.kind === "long" || q.kind === "chips") ? <ScreeningVoice question={[q.prompt, q.help].filter(Boolean).join(" ")} /> : null}
         {sp.required ? <p className="text-[12.5px] text-amber mt-2">This one matters. Give it a go.</p> : null}
         <form action={answerScreening} className="mt-5 space-y-4">
           <input type="hidden" name="conversationId" value={draft.id} /><input type="hidden" name="step" value={step} />

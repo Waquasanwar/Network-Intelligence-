@@ -44,6 +44,7 @@ const inviteSchema = z.object({
   note: z.string().trim().max(500).optional(),
   personId: z.string().max(40).optional().or(z.literal("")),
   asPersonId: z.string().max(40).optional().or(z.literal("")),
+  knownHow: z.enum(["worked", "seen", "know"]).optional().or(z.literal("")),
 });
 
 export type CreateInviteResult = { ok: true; id: string; token: string; name: string } | { ok: false; error: string };
@@ -80,7 +81,7 @@ export async function createInvite(input: z.input<typeof inviteSchema>): Promise
   if (d.email && (await prisma.user.findFirst({ where: { email: d.email, tenantId }, select: { id: true } }))) return { ok: false, error: "Someone with that email is already in the network." };
 
   const invite = await prisma.invite.create({
-    data: { tenantId, createdById, inviterPersonId, personId: claimPersonId, name: d.name, email: d.email || null, note: d.note || null, expiresAt: new Date(Date.now() + INVITE_DAYS * 86_400_000) },
+    data: { tenantId, createdById, inviterPersonId, personId: claimPersonId, name: d.name, email: d.email || null, note: d.note || null, knownHow: d.knownHow || null, expiresAt: new Date(Date.now() + INVITE_DAYS * 86_400_000) },
   });
   await audit({ tenantId, actorId: user.id, action: "invite.create", entityType: "Invite", entityId: invite.id, metadata: { by: inviterPersonId ? "member" : "team", claim: !!claimPersonId } });
   revalidatePath("/invite"); revalidatePath("/member");

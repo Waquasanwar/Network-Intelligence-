@@ -117,11 +117,13 @@ export async function answerReference(formData: FormData) {
   const r = await prisma.referenceRequest.findUnique({ where: { id: id! }, include: { person: { select: { id: true, tenantId: true } } } });
   if (!r || r.status !== "SENT" || r.expiresAt < new Date()) redirect(`/vouch?t=${encodeURIComponent(raw)}`);
   const relation = REFERENCE_RELATIONS.find(([k]) => k === d.relation)?.[1] ?? "Another way";
+  // "Known since" is optional and only kept when it is a plausible year.
+  const since = Number(formData.get("knownSince")); const knownSince = Number.isInteger(since) && since >= 1960 && since <= new Date().getFullYear() ? since : null;
   // Claim the request first, so two submissions of the same link cannot both become a reference.
   const claimed = await prisma.referenceRequest.updateMany({ where: { id: r!.id, status: "SENT" }, data: { status: "ANSWERED", answeredAt: new Date() } });
   if (claimed.count !== 1) redirect(`/vouch?t=${encodeURIComponent(raw)}`);
   const vouch = await prisma.vouch.create({
-    data: { personId: r!.personId, voucherKind: "EXTERNAL", voucherName: d.name, source: "Reference by link", context: `${relation} · ${d.where}`, statement: d.statement || null, wouldRecommend: d.recommend === "yes" },
+    data: { personId: r!.personId, voucherKind: "EXTERNAL", voucherName: d.name, source: "Reference by link", context: `${relation} · ${d.where}`, statement: d.statement || null, wouldRecommend: d.recommend === "yes", knownSince },
   });
   await prisma.referenceRequest.update({ where: { id: r!.id }, data: { vouchId: vouch.id } });
   await audit({ tenantId: r!.tenantId, actorId: null, action: "reference.answer", entityType: "Person", entityId: r!.personId, metadata: { wouldRecommend: d.recommend === "yes" } });

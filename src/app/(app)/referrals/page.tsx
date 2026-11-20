@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KNOWN_HOW, isKnownHow } from "@/lib/known";
 import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
@@ -59,6 +60,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: Pr
       : (refs.length === 0 ? <EmptyState title="No referrals yet" description="Members refer people from their portal and name them in screenings." /> : <div className="space-y-3">{await Promise.all(refs.map(async (r) => { const t = await trustFor(r.referrer); return (
         <Card key={r.id}><CardBody className="pt-3">
           <div className="flex items-start justify-between gap-3"><div><div className="text-[14px] font-semibold">{r.name}</div><div className="text-[12px] text-ink-faint">referred by <Link href={`/network/${r.referrerPersonId}`} className="text-navy hover:underline">{fullName(r.referrer)}</Link> · <DateText date={r.createdAt} relative />{r.brief ? <> · for <Link href={`/requirements/${r.brief.id}`} className="text-navy hover:underline">{r.brief.title}</Link></> : null}</div></div><div className="flex items-center gap-3"><TrustMini t={t} /><Badge tone={r.status === "ACCEPTED" ? "teal" : r.status === "NEW" ? "amber" : "navy"}>{REF_STATUS[r.status]}</Badge></div></div>
+          {isKnownHow(r.knownHow) ? <div className="mt-2"><span className="tag is-mint">{KNOWN_HOW[r.knownHow].label}</span></div> : null}
           <p className="italic text-[13px] mt-2">“{r.context}”</p>
           {r.note ? <div className="text-[12px] text-ink-muted mt-0.5">{r.note}</div> : null}
           {r.referred ? <div className="text-[12px] text-ink-muted mt-1">In the network: <Link href={`/network/${r.referred.id}`} className="text-navy hover:underline">{fullName(r.referred)}</Link></div> : null}

@@ -10,7 +10,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { privacyOf } from "@/lib/privacy";
 import { parseBrief } from "@/lib/demand";
 import { requireUser } from "@/server/session";
-import { resolveMemberPerson, loadRateCard } from "@/server/queries";
+import { resolveMemberPerson, loadRateCard, loadFeatures } from "@/server/queries";
 import { mayInvite } from "@/server/invites";
 import { boardAccount, briefData, termsFor, forecastFee, runShortlist } from "@/server/briefs";
 
@@ -36,6 +36,11 @@ async function participant(user: Awaited<ReturnType<typeof requireUser>>) {
   return { user, me: me! };
 }
 
+/** Stop here if the owner has switched this part of the community off in Settings → Features. */
+async function mustBeOn(tenantId: string, key: "communityBoard" | "memberConnections") {
+  if (!(await loadFeatures(tenantId))[key]) back("notice=off");
+}
+
 const postSchema = z.object({
   kind: z.enum(["WORK", "HELP", "AVAILABLE"]),
   title: z.string().trim().min(4).max(120),
@@ -47,6 +52,7 @@ const postSchema = z.object({
 export async function createPost(formData: FormData) {
   const { user, me } = await participant(await requireUser());
   if (!me) back("notice=members-only");
+  await mustBeOn(me!.tenantId, "communityBoard");
   if (!(await rateLimit("mutate", `post:${user.id}`)).success) back("notice=slow-down");
   const parsed = postSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) back("notice=post-details");
@@ -97,6 +103,7 @@ export async function closePost(formData: FormData) {
 export async function interestedInPost(formData: FormData) {
   const { user, me } = await participant(await requireUser());
   if (!me) back("notice=members-only");
+  await mustBeOn(me!.tenantId, "communityBoard");
   const post = await prisma.boardPost.findFirst({ where: { id: String(formData.get("postId") || ""), tenantId: me!.tenantId, status: "OPEN", kind: { in: ["WORK", "HELP"] } } });
   if (!post?.briefId || post.authorPersonId === me!.id) back("notice=post-gone");
   const note = String(formData.get("note") || "").trim().slice(0, 600) || "Interested, from the member board.";
@@ -112,6 +119,7 @@ const referSchema = z.object({ postId: z.string().max(40), name: z.string().trim
 export async function referToPost(formData: FormData) {
   const { user, me } = await participant(await requireUser());
   if (!me) back("notice=members-only");
+  await mustBeOn(me!.tenantId, "communityBoard");
   if (!(await rateLimit("mutate", `refer:${user.id}`)).success) back("notice=slow-down");
   const parsed = referSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) back("notice=refer-details");
@@ -129,6 +137,7 @@ export async function referToPost(formData: FormData) {
 export async function connect(formData: FormData) {
   const { user, me } = await participant(await requireUser());
   if (!me) back("notice=members-only");
+  await mustBeOn(me!.tenantId, "memberConnections");
   if (!privacyOf({ privacy: me!.privacy }).consents.memberDirectory) back("notice=directory-off");
   if (!(await rateLimit("mutate", `connect:${user.id}`)).success) back("notice=slow-down");
   const toId = String(formData.get("personId") || "");
@@ -151,6 +160,7 @@ export async function connect(formData: FormData) {
 export async function answerConnection(formData: FormData) {
   const { user, me } = await participant(await requireUser());
   if (!me) back("notice=members-only");
+  await mustBeOn(me!.tenantId, "memberConnections");
   const c = await prisma.connection.findFirst({ where: { id: String(formData.get("id") || ""), toPersonId: me!.id, status: "PENDING" } });
   if (!c) back("tab=connections");
   const yes = formData.get("answer") === "accept";

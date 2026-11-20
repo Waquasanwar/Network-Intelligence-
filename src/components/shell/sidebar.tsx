@@ -13,7 +13,7 @@ const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks 
 const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/community", label: "Community", icon: UsersRound }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Invite and refer", icon: UserPlus }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/portal/search", label: "Search the network", icon: Search }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 
-export function Sidebar({ user }: { user: { name: string; email: string; role: Role; tenantName: string } }) {
+export function Sidebar({ user, community = true }: { user: { name: string; email: string; role: Role; tenantName: string }; community?: boolean }) {
   const pathname = usePathname();
   const restricted = user.role === "PARTNER" || user.role === "CLIENT" || user.role === "MEMBER";
 
@@ -64,7 +64,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
         </button>
       </div>
       <nav aria-label="Main" className="px-3 flex-1 space-y-1 overflow-y-auto pt-3 pb-4">
-        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
+        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV.filter((i) => community || i.href !== "/community") : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {/* Six places. The pages inside each are the tabs across the top of the screen. */}
             {sections.filter((sec) => sec.key !== "settings").map((sec) => { const active = here?.section.key === sec.key; return (

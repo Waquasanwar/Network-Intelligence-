@@ -5,7 +5,8 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { z } from "zod";
 const PROVIDER = z.enum(["MICROSOFT_GRAPH", "CALENDLY", "MANUAL"]);
-import { requireAdminAction, requireInternalAction, requireUser } from "@/server/session";
+import { requireAdminAction, requireInternalAction, requireUser, requireOwnerAction } from "@/server/session";
+import { featuresOf, isFeatureKey } from "@/lib/features";
 import { rateLimit } from "@/lib/rate-limit";
 import { seal, unseal } from "@/lib/secrets";
 import { getSchedulingProvider } from "@/lib/scheduling";
@@ -111,4 +112,18 @@ export async function disableMfa(code: string): Promise<{ ok: boolean; error?: s
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "settings.security", entityType: "User", entityId: user.id, metadata: { mfaEnabled: false } });
   revalidatePath("/settings/security");
   return { ok: true };
+}
+
+// ---------- features ----------
+
+/** Switch one optional feature on or off for the whole network. Owner only, recorded in the audit log. */
+export async function setFeature(formData: FormData) {
+  const user = await requireOwnerAction();
+  const key = formData.get("key"); const on = formData.get("on") === "1";
+  if (!isFeatureKey(key)) throw new Error("Unknown feature");
+  const t = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { features: true } });
+  const next = { ...featuresOf(t?.features), [key]: on };
+  await prisma.tenant.update({ where: { id: user.tenantId }, data: { features: next } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "feature.update", entityType: "Tenant", entityId: user.tenantId, metadata: { feature: key, on } });
+  revalidatePath("/", "layout");
 }

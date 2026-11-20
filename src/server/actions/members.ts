@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { isKnownHow } from "@/lib/known";
 import { AUTO_ACCEPT_COMPLETENESS, screeningProfileUpdate } from "@/server/screening-apply";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -178,7 +179,8 @@ export async function submitReferral(formData: FormData) {
   // A referral can be attached to a requirement only if it is this network's and open to members.
   if (d.briefId && !(await prisma.brief.findFirst({ where: { id: d.briefId, tenantId: me.tenantId, ...(isInternal(user) ? {} : { openToMembers: true }) }, select: { id: true } }))) throw new Error("That opportunity is not open");
   const existing = await prisma.person.findFirst({ where: { tenantId: me.tenantId, firstName: { equals: d.name.split(" ")[0], mode: "insensitive" }, lastName: { equals: d.name.split(" ").slice(1).join(" "), mode: "insensitive" } }, select: { id: true } });
-  const r = await prisma.referral.create({ data: { tenantId: me.tenantId, referrerPersonId: me.id, referredPersonId: existing?.id ?? null, name: d.name, email: d.email || null, context: d.context, note: [d.note, d.tell ? "May be told who referred them." : "Do not reveal the referrer."].filter(Boolean).join(" "), briefId: d.briefId || null } });
+  const knownHow = isKnownHow(formData.get("knownHow")) ? String(formData.get("knownHow")) : null;
+  const r = await prisma.referral.create({ data: { tenantId: me.tenantId, referrerPersonId: me.id, referredPersonId: existing?.id ?? null, name: d.name, email: d.email || null, context: d.context, knownHow, note: [d.note, d.tell ? "May be told who referred them." : "Do not reveal the referrer."].filter(Boolean).join(" "), briefId: d.briefId || null } });
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "referral.create", entityType: "Referral", entityId: r.id, metadata: { referrerPersonId: me.id, briefId: d.briefId || null } });
   revalidatePath("/member"); revalidatePath("/referrals");
   redirect("/member?tab=refer&sent=1");

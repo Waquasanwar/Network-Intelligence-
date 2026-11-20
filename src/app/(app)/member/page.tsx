@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { isInternal, redactForPartner } from "@/lib/authz";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { InviteComposer, MyLinkShare, CopyInviteLink } from "@/components/domain/invite-share";
+import { InviteComposer, MyLinkShare, CopyInviteLink, KnownHowPicker } from "@/components/domain/invite-share";
 import { revokeInvite } from "@/server/actions/invites";
 import { mayInvite } from "@/server/invites";
 import { Badge, Chip } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ import { ProofLine } from "@/components/domain/standard";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
 import { privacyOf } from "@/lib/privacy";
-import { resolveMemberPerson, loadRateCard } from "@/server/queries";
+import { resolveMemberPerson, loadRateCard, loadFeatures } from "@/server/queries";
 import { UsersRound, Handshake, Megaphone, Briefcase, ArrowRight, Lock } from "lucide-react";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
@@ -60,17 +60,18 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: p.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
   // What the network does for a member, with real numbers: who they can connect with, what a referral
   // earns, what is on the board, and what is open to them.
-  const [peers, boardPosts, rateCard, myConnections, myShortlist] = await Promise.all([
+  const [peers, boardPosts, rateCard, myConnections, myShortlist, features] = await Promise.all([
     prisma.person.findMany({ where: { tenantId: p.tenantId, id: { not: p.id }, memberUser: { isNot: null } }, select: { memberSince: true, screeningStatus: true, screenedAt: true, privacy: true } }),
     prisma.boardPost.count({ where: { tenantId: p.tenantId, status: "OPEN" } }),
     loadRateCard(p.tenantId),
     prisma.connection.count({ where: { status: "ACCEPTED", OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] } }),
     // Where this member stands on each requirement: the stage only, never the client's name or notes.
     prisma.shortlistItem.findMany({ where: { personId: p.id }, select: { briefId: true, decision: true } }),
+    loadFeatures(p.tenantId),
   ]);
   // The member's own screening record, as they gave it: shown on Privacy & data, like a call log.
   const myScreenings = (sp.tab ?? "home") === "privacy" ? await prisma.conversation.findMany({ where: { personId: p.id, type: "SCREENING" }, select: { id: true, createdAt: true, approvalStatus: true, screening: true }, orderBy: { createdAt: "desc" }, take: 5 }) : [];
-  const earnings = rateCard.membersSeeEarnings === 1; // off until the owner switches it on in Commercials
+  const earnings = features.earnings; // off until the owner switches it on in Settings → Features
   const connectable = peers.filter((x) => mayInvite(x) && privacyOf({ privacy: x.privacy }).consents.memberDirectory).length;
   const credits = await prisma.referralCredit.findMany({ where: { personId: p.id }, include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } });
   const canInvite = mayInvite(p);
@@ -168,7 +169,8 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
               {internal ? <input type="hidden" name="asPersonId" value={p.id} /> : null}
               <p className="text-[12.5px] text-ink-muted">Only people you would genuinely stand behind. Your referral is anonymous to clients; we tell the person you sent them only if you say we can.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3"><Field label="Full name" required><Input name="name" required /></Field><Field label="Email or LinkedIn"><Input name="email" placeholder="so we can reach them" /></Field></div>
-              <Field label="How you know them and what you have seen them do" required><Textarea name="context" required className="min-h-[90px]" placeholder="e.g. Ran the requirements workstream for me on the payments hub. Precise, calm, well liked by the business." /></Field>
+              <KnownHowPicker name="knownHow" />
+              <Field label="What you have seen them do" required><Textarea name="context" required className="min-h-[90px]" placeholder="e.g. Ran the requirements workstream for me on the payments hub. Precise, calm, well liked by the business." /></Field>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3"><Field label="For an open opportunity?"><Select name="briefId" defaultValue={""}><option value="">— general referral —</option>{open.map((b) => <option key={b.id} value={b.id}>{b.roles[0] ?? "Requirement"} · {b.locations[0] ?? ""}</option>)}</Select></Field><Field label="Anything else"><Input name="note" /></Field></div>
               <Checkbox name="tell" label="You may tell them I referred them" defaultChecked />
               <div className="flex justify-end"><SubmitButton pendingText="Sending…">Send referral</SubmitButton></div>
@@ -250,13 +252,13 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
         <section className="mb-6" aria-labelledby="member-value">
           <h2 id="member-value" className="text-[15px] font-semibold">What the network does for you</h2>
           <p className="mt-1 text-[13px] text-ink-muted">Free for members. Your name is never shared without your yes.</p>
-          <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" data-member-value>
+          <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]" data-member-value>
             {[
               { key: "connect", icon: UsersRound, tone: "is-mint", title: "Connect with members", stat: myConnections ? `${myConnections} connected` : `${connectable} to meet`, body: "Senior people who have chosen to be found. Contact details are swapped only when you both say yes.", href: "/community?tab=members", cta: "Find people", locked: !canInvite || !privacy.consents.memberDirectory, lockText: !canInvite ? "Opens once your screening is approved." : "Switch on ‘Show me to other members’ in Privacy & data." },
               { key: "refer", icon: Handshake, tone: "is-coral", title: "Refer someone you know", stat: earnings ? `${Number(rateCard.memberReferralSharePct)}% of the fee` : `${accepted} accepted`, body: earnings ? "If someone you refer or introduce is placed, you receive a share of our fee. Only people you would stand behind." : "Bring in people you would stand behind. We tell you when they join, and when they are placed.", href: `/member?tab=refer${internal ? `&person=${p.id}` : ""}`, cta: "Refer someone", locked: false, lockText: "" },
               { key: "share", icon: Megaphone, tone: "is-blue", title: "Share work, ask for help", stat: `${boardPosts} on the board`, body: earnings ? "Post a role you heard about, ask for a specialist, or say you are free. Shared work that gets filled earns you a share." : "Post a role you heard about, ask for a specialist, or say you are free. Members see it and can refer people.", href: "/community", cta: "Open the board", locked: false, lockText: "" },
               { key: "work", icon: Briefcase, tone: "is-gold", title: "Work open to you", stat: `${open.length} open now`, body: "Roles and assignments opened to members, client names hidden. Put yourself forward, or refer someone better placed.", href: `/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`, cta: "See the work", locked: false, lockText: "" },
-            ].map((v) => (
+            ].filter((v) => (v.key !== "connect" || features.memberConnections) && (v.key !== "share" || features.communityBoard)).map((v) => (
               <Link key={v.key} href={v.locked ? `/member?tab=${v.key === "connect" && canInvite ? "privacy" : "home"}${internal ? `&person=${p.id}` : ""}` : v.href} className="group flex flex-col rounded-[16px] border border-line bg-surface p-4 transition-colors duration-150 hover:border-line-strong" data-value={v.key}>
                 <span className="flex items-center justify-between gap-3">
                   <span className={`tile ${v.tone}`}><v.icon className="h-4 w-4" aria-hidden="true" /></span>

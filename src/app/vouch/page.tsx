@@ -54,9 +54,14 @@ export default async function VouchPage({ searchParams }: { searchParams: Promis
               <div className="hidden" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
               {sp.error && ERRORS[sp.error] ? <div role="alert" className="rounded-[12px] bg-risk-100 px-3.5 py-2.5 text-[13px] text-risk">{ERRORS[sp.error]}</div> : null}
               <Field label="Your name" required><Input name="name" required minLength={2} maxLength={120} defaultValue={req!.refereeName} autoComplete="name" /></Field>
-              <Field label={`How do you know ${first}'s work?`} required>
-                <Select name="relation" defaultValue="peer" required>{REFERENCE_RELATIONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>
-              </Field>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_170px]">
+                <Field label={`How do you know ${first}'s work?`} required>
+                  <Select name="relation" defaultValue="peer" required>{REFERENCE_RELATIONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>
+                </Field>
+                <Field label="Known them since" hint="Optional">
+                  <Select name="knownSince" defaultValue=""><option value="">Rather not say</option>{Array.from({ length: 40 }, (_, i) => new Date().getFullYear() - i).map((y) => <option key={y} value={y}>{y}</option>)}</Select>
+                </Field>
+              </div>
               <Field label="Where, and roughly when" required hint={`${byTeam ? "We have it down as" : `${first} described it as`}: “${req!.context}”`}><Input name="where" required minLength={2} maxLength={160} placeholder="e.g. Core banking programme, 2022 to 2024" /></Field>
               <fieldset>
                 <legend className="text-[13px] font-medium text-ink mb-1.5">Would you recommend {first} to someone you know?</legend>

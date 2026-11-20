@@ -1,4 +1,5 @@
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { knownSinceLabel } from "@/lib/known";
 import { Badge, Chip } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Fold } from "@/components/ui/fold";
@@ -98,7 +99,7 @@ export function VouchList({ vouches }: { vouches: (Vouch & { voucherUser?: { nam
             {vouches.map((v) => { const attrs = (v.attributes as Record<string, number> | null) ?? null; return (
               <li key={v.id} className="py-2.5 first:pt-0 last:pb-0 text-[12.5px]">
                 <div className="flex items-center justify-between gap-2"><b>{v.voucherKind === "EXTERNAL" ? v.voucherName ?? "External" : v.voucherKind === "USER" ? v.voucherUser?.name ?? "Network owner" : v.voucherPerson ? `${v.voucherPerson.firstName} ${v.voucherPerson.lastName}` : "Network member"}</b><span className="flex gap-1.5">{v.voucherKind === "EXTERNAL" ? <Badge filled>{v.source ?? "external"}</Badge> : <Badge tone="teal" filled>{v.voucherKind === "USER" ? "network owner" : "network member"}</Badge>}{!v.wouldRecommend ? <Badge tone="amber" filled>would not recommend</Badge> : null}</span></div>
-                <div className="text-ink-muted">{v.context}</div>
+                <div className="text-ink-muted">{v.context}{knownSinceLabel(v.knownSince) ? <span className="text-ink-faint"> · {knownSinceLabel(v.knownSince)}</span> : null}</div>
                 {v.statement ? <p className="italic mt-1">“{v.statement}”</p> : null}
                 {attrs ? <div className="flex flex-wrap gap-1 mt-1">{Object.entries(attrs).filter(([, n]) => n >= 4).map(([k]) => <Chip key={k}>{ATTRIBUTES.find((a) => a.key === k)?.label.toLowerCase() ?? k}</Chip>)}</div> : null}
                 <div className="text-[12px] text-ink-faint mt-1"><DateText date={v.createdAt} relative /></div>

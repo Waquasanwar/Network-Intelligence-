@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
 import { privacyOf } from "@/lib/privacy";
 import { mayInvite } from "@/server/invites";
-import { resolveMemberPerson, loadRateCard } from "@/server/queries";
+import { resolveMemberPerson, loadFeatures } from "@/server/queries";
 import { standardFor } from "@/lib/standard-for";
 import { TRUST_SELECT } from "@/lib/trust-include";
 import { ROUTE_LABELS } from "@/lib/labels";
@@ -28,6 +28,7 @@ const KIND: Record<BoardPostKind, { label: string; tone: string }> = {
   AVAILABLE: { label: "Available", tone: "bg-navy-100 text-ink" },
 };
 const NOTICE: Record<string, string> = {
+  off: "That part of the community is not open yet.",
   posted: "Posted. Work you shared also reached the network team, who match it against everyone.",
   interested: "Done. The team has your interest and will come back to you.",
   referred: "Thank you. If they are placed, you receive a share of the fee.",
@@ -54,8 +55,20 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const base = internal ? null : await resolveMemberPerson(user, null);
   const me = base ? await prisma.person.findUnique({ where: { id: base.id }, select: { id: true, tenantId: true, memberSince: true, screeningStatus: true, screenedAt: true, privacy: true } }) : null;
   const tenantId = internal ? user.tenantId : me?.tenantId;
-  // Money talk to members is off until the owner switches earnings on in Commercials.
-  const earnings = tenantId ? (await loadRateCard(tenantId)).membersSeeEarnings === 1 : false;
+  // What the owner has switched on in Settings → Features: the board, member connections, and earnings.
+  const features = tenantId ? await loadFeatures(tenantId) : null;
+  const earnings = !!features?.earnings;
+  const board = internal || features?.communityBoard !== false;
+  const links = !internal && features?.memberConnections !== false;
+
+  if (!board && !links) {
+    return (
+      <>
+        <PageHeader title="Community" description="Share work, ask for someone, say when you are free, and connect with other members." />
+        <EmptyState title="The community is not open yet" description="The network will open it soon. Until then, refer people and see work open to you from your profile." action={<Link href="/member" className="inline-flex h-10 items-center rounded-full bg-navy px-5 text-[13.5px] font-semibold text-white dark:text-canvas">Back to my profile</Link>} />
+      </>
+    );
+  }
 
   if (!internal && (!me || !mayInvite(me))) {
     return (
@@ -67,10 +80,11 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   }
 
   const listed = me ? privacyOf({ privacy: me.privacy }).consents.memberDirectory : false;
-  const tab = internal ? "board" : sp.tab === "members" ? "members" : sp.tab === "connections" ? "connections" : "board";
+  const wanted = internal ? "board" : sp.tab === "members" ? "members" : sp.tab === "connections" ? "connections" : "board";
+  const tab = wanted === "board" && !board ? "members" : wanted !== "board" && !links ? "board" : wanted;
   const [posts, connections] = await Promise.all([
-    prisma.boardPost.findMany({ where: { tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } } }, orderBy: { createdAt: "desc" }, take: 60 }),
-    me ? prisma.connection.findMany({ where: { OR: [{ fromPersonId: me.id }, { toPersonId: me.id }] }, include: { from: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } }, to: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } } }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
+    !board ? Promise.resolve([]) : prisma.boardPost.findMany({ where: { tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } } }, orderBy: { createdAt: "desc" }, take: 60 }),
+    me && links ? prisma.connection.findMany({ where: { OR: [{ fromPersonId: me.id }, { toPersonId: me.id }] }, include: { from: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } }, to: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } } }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
   ]);
   const mine = me ? await prisma.pitch.findMany({ where: { personId: me.id, briefId: { in: posts.map((p) => p.briefId).filter((x): x is string => !!x) } }, select: { briefId: true } }) : [];
   const pitched = new Set(mine.map((m) => m.briefId));
@@ -86,9 +100,10 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="Community" description={internal ? "What members are sharing. Work and asks posted here are already leads in Requirements. You can take a post down." : "Share work you know about, ask for someone, say when you are free, and connect with other members. Free for members."} />
+      <PageHeader title="Community" description={internal ? "What members are sharing. Work and asks posted here are already leads in Requirements. You can take a post down." : !board ? "Find other members who chose to be seen, and connect. Free for members." : !links ? "Share work you know about, ask for someone, and say when you are free. Free for members." : "Share work you know about, ask for someone, say when you are free, and connect with other members. Free for members."} />
       {sp.notice && NOTICE[sp.notice] ? <div role="status" className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">{sp.notice === "referred" && !earnings ? "Thank you. We will tell you how it goes." : NOTICE[sp.notice]}</div> : null}
-      {internal ? null : <Tabs items={[{ key: "board", label: "Board", count: posts.length }, { key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length || undefined }]} current={tab} base="/community" />}
+      {internal || !board || !links ? null : <Tabs items={[{ key: "board", label: "Board", count: posts.length }, { key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length || undefined }]} current={tab} base="/community" />}
+      {!internal && !board ? <Tabs items={[{ key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length || undefined }]} current={tab} base="/community" /> : null}
 
       {tab === "board" ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -125,7 +140,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                               </details>
                             </div>
                           ) : null}
-                          {!own && !internal && p.kind === "AVAILABLE" && listed ? (() => { const c = linkWith(p.authorPersonId); return c ? <div className="mt-3 text-[12.5px] font-semibold text-ink-muted">{c.status === "ACCEPTED" ? "Connected" : c.status === "PENDING" ? "Request sent" : null}</div> : <form action={connect} className="mt-3"><input type="hidden" name="personId" value={p.authorPersonId} /><SubmitButton size="sm" variant="secondary" pendingText="…">Connect</SubmitButton></form>; })() : null}
+                          {!own && !internal && p.kind === "AVAILABLE" && listed && links ? (() => { const c = linkWith(p.authorPersonId); return c ? <div className="mt-3 text-[12.5px] font-semibold text-ink-muted">{c.status === "ACCEPTED" ? "Connected" : c.status === "PENDING" ? "Request sent" : null}</div> : <form action={connect} className="mt-3"><input type="hidden" name="personId" value={p.authorPersonId} /><SubmitButton size="sm" variant="secondary" pendingText="…">Connect</SubmitButton></form>; })() : null}
                         </li>
                       );
                     })}

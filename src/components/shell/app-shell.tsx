@@ -6,7 +6,7 @@ import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
 import { fullName } from "@/lib/utils";
-import { alertsFor } from "@/server/queries";
+import { alertsFor, loadFeatures } from "@/server/queries";
 
 export async function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
   const pages = [
@@ -24,6 +24,9 @@ export async function AppShell({ user, children }: { user: SessionUser; children
     { id: "p-security", label: "Security", href: "/settings/security", group: "Pages" },
   ];
 
+  // Members see Community only while the owner has the board or member connections switched on.
+  const f = user.role === "MEMBER" ? await loadFeatures(user.tenantId) : null;
+  const community = !f || f.communityBoard || f.memberConnections;
   let items = pages;
   const alerts = isInternal(user) ? (await alertsFor(user.tenantId)).map((a) => ({ ...a, when: a.when.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) })) : [];
   if (isInternal(user)) {
@@ -42,7 +45,7 @@ export async function AppShell({ user, children }: { user: SessionUser; children
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar user={user} />
+      <Sidebar user={user} community={community} />
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar alerts={alerts} user={{ name: user.name, role: user.role, tenantName: user.tenantName }} home={user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : user.role === "CLIENT" ? "/client-workspace" : "/overview"} />
         <main className="flex-1 min-w-0">

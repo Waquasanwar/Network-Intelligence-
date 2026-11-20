@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
+import { KNOWN_HOW, type KnownHow } from "@/lib/known";
 import { Check, Copy, Mail, MessageCircle, Send, Share2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/form";
@@ -66,10 +67,27 @@ export function MyLinkShare({ asPersonId, network, from }: { asPersonId?: string
  * Invite one named person. Creates a tracked, single-use invitation and then offers the ways to
  * send it. `personId` turns it into "claim the profile we already hold for you".
  */
+/** One optional tap: how you know the person you are bringing in. Shown to the team, never to clients. */
+export function KnownHowPicker({ value, onChange, name }: { value?: KnownHow | ""; onChange?: (v: KnownHow | "") => void; name?: string }) {
+  const [own, setOwn] = useState<KnownHow | "">(value ?? "");
+  const v = onChange ? (value ?? "") : own;
+  const set = (k: KnownHow | "") => (onChange ? onChange(k) : setOwn(k));
+  return (
+    <div role="group" aria-labelledby="known-how-label">
+      <div id="known-how-label" className="mb-1.5 text-[12.5px] font-semibold text-ink">How do you know them? <span className="font-normal text-ink-faint">Optional</span></div>
+      <div className="flex flex-wrap gap-1.5">
+        {(Object.keys(KNOWN_HOW) as KnownHow[]).map((k) => <button key={k} type="button" className="chip" aria-pressed={v === k} onClick={() => set(v === k ? "" : k)}>{KNOWN_HOW[k].label}</button>)}
+      </div>
+      {name ? <input type="hidden" name={name} value={v} /> : null}
+    </div>
+  );
+}
+
 export function InviteComposer({ network, from, asPersonId, person, onDone }: { network: string; from?: string; asPersonId?: string; person?: { id: string; name: string; email?: string | null }; onDone?: () => void }) {
   const [name, setName] = useState(person?.name ?? "");
   const [email, setEmail] = useState(person?.email ?? "");
   const [note, setNote] = useState("");
+  const [known, setKnown] = useState<KnownHow | "">("");
   const [made, setMade] = useState<{ url: string; name: string; email: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -77,7 +95,7 @@ export function InviteComposer({ network, from, asPersonId, person, onDone }: { 
   function submit(e: React.FormEvent) {
     e.preventDefault(); setErr(null);
     start(async () => {
-      const r = await createInvite({ name, email, note, personId: person?.id ?? "", asPersonId: asPersonId ?? "" });
+      const r = await createInvite({ name, email, note, knownHow: known, personId: person?.id ?? "", asPersonId: asPersonId ?? "" });
       if (!r.ok) { setErr(r.error); return; }
       setMade({ url: joinUrl(r.token), name: r.name, email });
       onDone?.();
@@ -92,7 +110,7 @@ export function InviteComposer({ network, from, asPersonId, person, onDone }: { 
         <div className="mb-3 flex items-center gap-2 text-[13.5px] font-semibold text-ink"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-ink"><Check className="h-3.5 w-3.5" /></span> {first}&apos;s invitation is ready. Send it however you normally talk.</div>
         <ShareKit url={made.url} message={message} email={made.email} />
         <p className="mt-3 text-[12px] text-ink-faint">Works once, for 30 days. You will see here when {first} opens it and when they join.</p>
-        {person ? null : <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={() => { setMade(null); setName(""); setEmail(""); setNote(""); }}><UserPlus className="h-3.5 w-3.5" /> Invite someone else</Button>}
+        {person ? null : <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={() => { setMade(null); setName(""); setEmail(""); setNote(""); setKnown(""); }}><UserPlus className="h-3.5 w-3.5" /> Invite someone else</Button>}
       </div>
     );
   }
@@ -103,6 +121,7 @@ export function InviteComposer({ network, from, asPersonId, person, onDone }: { 
         <Field label="Their name" required><Input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={120} placeholder="Sara Malik" /></Field>
         <Field label="Email" hint="Optional. Fills in the To line and their form."><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={200} placeholder="sara@example.com" /></Field>
       </div>
+      <KnownHowPicker value={known} onChange={setKnown} />
       <Field label="A line from you" hint="Optional. Added to the message."><Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} className="min-h-[64px]" placeholder="We worked together on the payments programme and I thought of you straight away." /></Field>
       {err ? <div role="alert" className="text-[12.5px] text-risk">{err}</div> : null}
       <div className="flex justify-end"><Button type="submit" disabled={pending || name.trim().length < 2}><Send className="h-3.5 w-3.5" /> {pending ? "Creating…" : person ? "Create their invitation" : "Create invitation"}</Button></div>

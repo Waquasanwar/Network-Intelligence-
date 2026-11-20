@@ -48,6 +48,7 @@ export type AuditAction =
   | "fee.create"
   | "fee.update"
   | "ratecard.update"
+  | "feature.update"
   | "portal.brief_submitted"
   | "portal.response"
   | "terms.accept"

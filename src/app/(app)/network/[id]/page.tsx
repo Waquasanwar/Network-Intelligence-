@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KNOWN_HOW, isKnownHow } from "@/lib/known";
 import { FrameworkCard } from "@/components/domain/framework";
 import { frameworkFor } from "@/lib/framework-for";
 import { INTRODUCER_SELECT } from "@/lib/trust-include";
@@ -85,6 +86,13 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
   const [trust, fit, users] = await Promise.all([trustFor(person), fitFor(person), prisma.user.findMany({ where: { tenantId: user.tenantId, role: { in: ["OWNER", "ADMIN", "CONTRIBUTOR"] } }, select: { id: true, name: true } })]);
   // What the profile's drawings show.
   const ring = circleOf({ worked: person.relationships.some((r) => r.workedTogether), screened: person.screeningStatus === "APPROVED" || !!person.screenedAt, trust: trust.score });
+  // How the person who brought them in knows them, in that person's own words (one tap when inviting or referring).
+  const [viaInvite, viaReferral] = await Promise.all([
+    prisma.invite.findFirst({ where: { joinedPersonId: person.id, knownHow: { not: null } }, select: { knownHow: true, inviterPerson: { select: { firstName: true } }, createdBy: { select: { name: true } } }, orderBy: { joinedAt: "desc" } }),
+    prisma.referral.findFirst({ where: { referredPersonId: person.id, knownHow: { not: null } }, select: { knownHow: true, referrer: { select: { firstName: true } } }, orderBy: { createdAt: "desc" } }),
+  ]);
+  const via = viaInvite ? { who: viaInvite.inviterPerson?.firstName ?? viaInvite.createdBy?.name.split(" ")[0] ?? null, how: viaInvite.knownHow } : viaReferral ? { who: viaReferral.referrer.firstName, how: viaReferral.knownHow } : null;
+  const broughtIn = via?.who && isKnownHow(via.how) ? `${via.who} ${KNOWN_HOW[via.how].phrase}` : null;
   const contactDates = [...person.conversations.map((c) => c.date), ...person.vouches.map((v) => v.createdAt), ...person.evidence.map((e) => e.dateObserved ?? e.createdAt), ...person.relationships.map((r) => r.lastContactDate).filter((d): d is Date => !!d)];
   const lastContact = contactDates.length ? new Date(Math.max(...contactDates.map((d) => d.getTime()))) : null;
   const daysQuiet = lastContact ? (Date.now() - lastContact.getTime()) / 86_400_000 : 999;
@@ -189,6 +197,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           <div className="mt-5 pt-4 border-t border-line flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span className="label-caps text-ink-faint">How you know them</span>
             <ProvenanceThread owner={person.relationships[0].networkOwner} introducer={person.relationships[0].introducedBy} person={person} workedTogether={person.relationships[0].workedTogether} />
+            {broughtIn ? <span className="text-[12.5px] text-ink-muted" data-known-how>· {broughtIn}</span> : null}
           </div>
         ) : null}
         </div>

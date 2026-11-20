@@ -12,6 +12,7 @@
  * `requireUser()` / `requireInternal()` first and passes the trusted session through.
  */
 import "server-only";
+import { featuresOf, type Features } from "@/lib/features";
 import { prisma } from "@/lib/db";
 import { assertSameTenant, isInternal, isMember } from "@/lib/authz";
 import { fmt, DEFAULT_RATE_CARD, type FeeStatus, type RateCard } from "@/lib/demand";
@@ -73,6 +74,12 @@ export async function alertsFor(tenantId: string) {
 export async function loadRateCard(tenantId: string): Promise<RateCard> {
   const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { rateCard: true } });
   return { ...DEFAULT_RATE_CARD, ...((t?.rateCard as Partial<RateCard> | null) ?? {}) };
+}
+
+/** Which optional features this network has switched on (see lib/features.ts). */
+export async function loadFeatures(tenantId: string): Promise<Features> {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { features: true } });
+  return featuresOf(t?.features);
 }
 
 /** The tenant's voice settings, plus whether the vendor key is present. Backend only: the

@@ -49,7 +49,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
   const accounts = internal ? await prisma.commercialAccount.findMany({ where: { tenantId: user.tenantId, portalEnabled: true }, orderBy: { createdAt: "asc" } }) : [];
   if (!account) return <EmptyState title="No portal account" description={internal ? "Enable the portal on an account in Requirements." : "Your account has not been connected to the portal yet. Ask your contact at Amana Network."} />;
   const [briefs, card] = await Promise.all([
-    prisma.brief.findMany({ where: { accountId: account.id }, include: { shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: { select: { wouldRecommend: true, voucherKind: true } }, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } } }, orderBy: { updatedAt: "desc" } }),
+    prisma.brief.findMany({ where: { accountId: account.id }, include: { shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: { select: { wouldRecommend: true, voucherKind: true, knownSince: true } }, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } } }, orderBy: { updatedAt: "desc" } }),
     loadRateCard(account.tenantId),
   ]);
   const preview = sp.q?.trim() ? parseBrief(sp.q) : null;
@@ -128,9 +128,10 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
                       // must-haves they meet, who stands behind them, and how we know them.
                       const met = checks.filter((c) => c.state === "met").length;
                       const vouchers = s.person.vouches.filter((v) => v.wouldRecommend).length;
+                      const longest = Math.min(...s.person.vouches.filter((v) => v.wouldRecommend && v.knownSince).map((v) => v.knownSince as number));
                       const why = [
                         met ? `Meets ${met} of ${checks.length} of your must-haves` : null,
-                        vouchers ? `Vouched for by ${vouchers} ${vouchers === 1 ? "person" : "people"} who would recommend them` : null,
+                        vouchers ? `Vouched for by ${vouchers} ${vouchers === 1 ? "person" : "people"} who would recommend them${Number.isFinite(longest) ? `, ${vouchers === 1 ? "who has" : "one has"} known them since ${longest}` : ""}` : null,
                         s.person.relationships.some((r) => r.introducedById) ? "Came to us through someone we know" : null,
                         s.person.relationships.some((r) => r.workedTogether) ? "We have delivered work alongside them" : null,
                       ].filter((x): x is string => !!x);
