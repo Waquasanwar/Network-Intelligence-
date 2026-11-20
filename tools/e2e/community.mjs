@@ -65,8 +65,7 @@ await step("community: another member says they are interested and refers someon
   assert(sql(`select count(*) from "Pitch" where "briefId"='${brief}' and "personId"='${cy[1]}'`) === "1", "interest recorded as a pitch on the lead");
   const p2 = m2.locator("[data-post]").filter({ hasText: TITLE });
   await p2.locator("summary").filter({ hasText: "Refer someone" }).click();
-  await p2.getByLabel("Their name").fill(`Omar Refer${STAMP}`); await p2.getByLabel("How you know their work").fill("Ran our finance systems change last year");
-  await p2.getByRole("button", { name: "Send referral" }).click(); await m2.waitForURL(/notice=referred/, { timeout: 30000 });
+  await walk(p2.locator("[data-guide]"), [`Omar Refer${STAMP}`, "Ran our finance systems change last year", null], "Send referral"); await m2.waitForURL(/notice=referred/, { timeout: 30000 });
   assert(sql(`select count(*) from "Referral" where "briefId"='${brief}' and "referrerPersonId"='${cy[1]}'`) === "1", "referral on the lead");
 });
 
@@ -82,7 +81,27 @@ await step("community: members who chose to be seen can connect, and only then s
   // The page is already on this tab, so wait for the acceptance to be saved rather than for a URL.
   assert(await until(() => sql(`select count(*) from "Connection" where status='ACCEPTED' and "toPersonId" in ('${ana[1]}','${cy[1]}')`) !== "0", 15000), "connection accepted");
   await m1.goto(`${BASE}/community?tab=connections`, { waitUntil: "networkidle" });
-  assert(new RegExp(cy[0].replace(/[.]/g, "\\.")).test(await m1.locator("[data-connection]").first().innerText()), "email shared once accepted");
+  assert(new RegExp(cy[0].replace(/[.]/g, "\\.")).test(await m1.locator("[data-thread]").innerText()), "email shared once accepted");
+});
+
+await step("community: connected members message each other privately, and replies on a post are open to all", null, async () => {
+  const words = `Good to meet you ${STAMP}`;
+  await m1.locator("[data-thread]").getByLabel(/^Message /).fill(words); await m1.getByRole("button", { name: "Send message" }).click();
+  await m1.waitForURL(/tab=connections&with=/, { timeout: 30000 });
+  assert(await m1.locator("[data-message]").filter({ hasText: words }).count(), "shown in the sender's thread");
+  assert(sql(`select count(*) from "AuditLog" where action='message.send' and metadata::text like '%${STAMP}%'`) === "0", "what was written is not in the audit log");
+  await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
+  assert(/1/.test(await m2.getByRole("link", { name: /^Connections/ }).first().innerText()), "unread shown on the tab");
+  await m2.goto(`${BASE}/community?tab=connections`, { waitUntil: "networkidle" });
+  assert(await m2.locator("[data-message]").filter({ hasText: words }).count(), "the other member reads it");
+  assert(sql(`select count(*) from "MemberMessage" where body='${words}' and "readAt" is not null`) === "1", "marked read once opened");
+  // A reply on the board, under the post, for every member.
+  await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
+  const post = m2.locator("[data-post]").filter({ hasText: TITLE });
+  await post.getByLabel(/^Reply to/).fill("I know two people for this. Sending them your way."); await post.getByRole("button", { name: "Send reply" }).click();
+  assert(await until(() => sql(`select count(*) from "BoardReply" r join "BoardPost" p on p.id=r."postId" where p.title='${TITLE}'`) === "1"), "reply saved");
+  await m1.goto(`${BASE}/community`, { waitUntil: "networkidle" });
+  assert(await m1.locator("[data-post]").filter({ hasText: TITLE }).locator("[data-reply]").filter({ hasText: "two people" }).count(), "the author sees the reply");
 });
 
 await step("referral share: placing someone from a member's lead credits that member, and you mark it paid", o, async () => {

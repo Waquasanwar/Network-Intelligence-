@@ -13,12 +13,13 @@ import { PageHeader, EmptyState, Tabs } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Chip } from "@/components/ui/badge";
-import { Field, Input } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ProofPips } from "@/components/domain/standard";
 import { DateText } from "@/components/domain/date";
 import { Guide } from "@/components/ui/guide";
-import { createPost, closePost, interestedInPost, referToPost, connect, answerConnection, setDirectory } from "@/server/actions/community";
+import { createPost, closePost, interestedInPost, referToPost, connect, answerConnection, setDirectory, replyToPost, sendMessage } from "@/server/actions/community";
+import { ArrowUp, Lock, Mail, Phone, ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { BoardPostKind, EngagementRoute } from "@prisma/client";
 
 export const metadata = { title: "Community" };
@@ -29,6 +30,9 @@ const KIND: Record<BoardPostKind, { label: string; tone: string }> = {
   AVAILABLE: { label: "Available", tone: "bg-navy-100 text-ink" },
 };
 const NOTICE: Record<string, string> = {
+  "reply-details": "Write a few words before sending.",
+  "message-details": "Write something before sending.",
+  "not-connected": "You can message members once you are connected.",
   off: "That part of the community is not open yet.",
   posted: "Posted. Work you shared also reached the network team, who match it against everyone.",
   interested: "Done. The team has your interest and will come back to you.",
@@ -49,7 +53,7 @@ const NOTICE: Record<string, string> = {
  * chose to be seen; and connections. The team sees the board too, to read it and to take a post
  * down, and every piece of work shared here is already a lead in Requirements.
  */
-export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ tab?: string; notice?: string }> }) {
+export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ tab?: string; notice?: string; with?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   const internal = isInternal(user);
@@ -84,7 +88,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const wanted = internal ? "board" : sp.tab === "members" ? "members" : sp.tab === "connections" ? "connections" : "board";
   const tab = wanted === "board" && !board ? "members" : wanted !== "board" && !links ? "board" : wanted;
   const [posts, connections] = await Promise.all([
-    !board ? Promise.resolve([]) : prisma.boardPost.findMany({ where: { tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } } }, orderBy: { createdAt: "desc" }, take: 60 }),
+    !board ? Promise.resolve([]) : prisma.boardPost.findMany({ where: { tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } }, replies: { include: { author: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" }, take: 50 } }, orderBy: { createdAt: "desc" }, take: 60 }),
     me && links ? prisma.connection.findMany({ where: { OR: [{ fromPersonId: me.id }, { toPersonId: me.id }] }, include: { from: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } }, to: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } } }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
   ]);
   const mine = me ? await prisma.pitch.findMany({ where: { personId: me.id, briefId: { in: posts.map((p) => p.briefId).filter((x): x is string => !!x) } }, select: { briefId: true } }) : [];
@@ -93,6 +97,21 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const incoming = connections.filter((c) => me && c.toPersonId === me.id && c.status === "PENDING");
   const accepted = connections.filter((c) => c.status === "ACCEPTED");
   const linkWith = (id: string) => connections.find((c) => c.fromPersonId === id || c.toPersonId === id);
+
+  // Conversations with connections: who has written, what is unread, and the open thread.
+  const ids = accepted.map((c) => c.id);
+  const [unreadBy, lastBy] = me && ids.length ? await Promise.all([
+    prisma.memberMessage.groupBy({ by: ["connectionId"], where: { connectionId: { in: ids }, fromPersonId: { not: me.id }, readAt: null }, _count: { _all: true } }),
+    prisma.memberMessage.findMany({ where: { connectionId: { in: ids } }, orderBy: { createdAt: "desc" }, distinct: ["connectionId"], select: { connectionId: true, body: true, fromPersonId: true, createdAt: true } }),
+  ]) : [[], []];
+  const unread = new Map(unreadBy.map((u) => [u.connectionId, u._count._all]));
+  const last = new Map(lastBy.map((m) => [m.connectionId, m]));
+  const unreadTotal = [...unread.values()].reduce((a, n) => a + n, 0);
+  const sorted = [...accepted].sort((a, b) => (last.get(b.id)?.createdAt.getTime() ?? b.createdAt.getTime()) - (last.get(a.id)?.createdAt.getTime() ?? a.createdAt.getTime()));
+  const open = tab === "connections" ? sorted.find((c) => c.id === sp.with) ?? sorted[0] ?? null : null;
+  const thread = open && me ? await prisma.memberMessage.findMany({ where: { connectionId: open.id }, orderBy: { createdAt: "asc" }, take: 200 }) : [];
+  // Opening a conversation reads it.
+  if (open && me && unread.get(open.id)) { await prisma.memberMessage.updateMany({ where: { connectionId: open.id, fromPersonId: { not: me.id }, readAt: null }, data: { readAt: new Date() } }); unread.delete(open.id); }
 
   // Only members who have chosen to be seen, and only for members who have chosen the same.
   const members = me && listed && tab === "members"
@@ -104,8 +123,8 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
     <>
       <PageHeader title="Community" description={internal ? "What members are sharing. Work and asks posted here are already leads in Requirements. You can take a post down." : !board ? "Find other members who chose to be seen, and connect. Free for members." : !links ? "Share work you know about, ask for someone, and say when you are free. Free for members." : "Share work you know about, ask for someone, say when you are free, and connect with other members. Free for members."} />
       {sp.notice && NOTICE[sp.notice] ? <div role="status" className="mb-4 rounded-[12px] border border-teal/30 bg-teal-50 px-4 py-3 text-[13px]">{sp.notice === "referred" && !earnings ? "Thank you. We will tell you how it goes." : NOTICE[sp.notice]}</div> : null}
-      {internal || !board || !links ? null : <Tabs items={[{ key: "board", label: "Board", count: posts.length }, { key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length || undefined }]} current={tab} base="/community" />}
-      {!internal && !board ? <Tabs items={[{ key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length || undefined }]} current={tab} base="/community" /> : null}
+      {internal || !board || !links ? null : <Tabs items={[{ key: "board", label: "Board", count: posts.length }, { key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length + unreadTotal || undefined }]} current={tab} base="/community" />}
+      {!internal && !board ? <Tabs items={[{ key: "members", label: "Members" }, { key: "connections", label: "Connections", count: incoming.length + unreadTotal || undefined }]} current={tab} base="/community" /> : null}
 
       {tab === "board" ? (
         <div className={empty ? "max-w-[760px]" : "grid grid-cols-1 xl:grid-cols-3 gap-4"}>
@@ -133,16 +152,41 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                             <div className="mt-3 flex flex-wrap items-start gap-2">
                               {p.briefId && pitched.has(p.briefId) ? <span className="inline-flex h-8 items-center text-[12.5px] font-semibold text-teal">You said you are interested</span> : <form action={interestedInPost}><input type="hidden" name="postId" value={p.id} /><SubmitButton size="sm" pendingText="…">I&apos;m interested</SubmitButton></form>}
                               <details className="min-w-0 flex-1"><summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden inline-flex h-8 items-center rounded-full border border-line bg-surface px-3 text-[12px] font-semibold">Refer someone</summary>
-                                <form action={referToPost} className="mt-3 space-y-2.5 max-w-[520px]">
-                                  <input type="hidden" name="postId" value={p.id} />
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5"><Field label="Their name" required><Input name="name" required minLength={2} maxLength={120} /></Field><Field label="Email or LinkedIn"><Input name="email" maxLength={200} /></Field></div>
-                                  <Field label="How you know their work" required><Input name="context" required minLength={5} maxLength={600} placeholder="Ran the data migration on our programme last year" /></Field>
-                                  <SubmitButton size="sm" pendingText="Sending…">Send referral</SubmitButton>
-                                </form>
+                                <Guide
+                                  className="mt-3 max-w-[560px]"
+                                  intro="Refer someone you would stand behind. Credited to you if they are placed."
+                                  action={referToPost}
+                                  hidden={{ postId: p.id }}
+                                  submit="Send referral"
+                                  review="Here is your referral"
+                                  steps={[
+                                    { name: "name", kind: "text", ask: "Who would you refer?", short: "Who", placeholder: "Their full name", min: 2, max: 120 },
+                                    { name: "context", kind: "text", ask: "How do you know {name}'s work?", short: "How you know them", placeholder: "Ran the data migration on our programme last year", min: 5, max: 600 },
+                                    { name: "email", kind: "text", ask: "How can we reach {name}?", short: "Contact", optional: true, placeholder: "Email or LinkedIn", max: 200 },
+                                  ]}
+                                />
                               </details>
                             </div>
                           ) : null}
                           {!own && !internal && p.kind === "AVAILABLE" && listed && links ? (() => { const c = linkWith(p.authorPersonId); return c ? <div className="mt-3 text-[12.5px] font-semibold text-ink-muted">{c.status === "ACCEPTED" ? "Connected" : c.status === "PENDING" ? "Request sent" : null}</div> : <form action={connect} className="mt-3"><input type="hidden" name="personId" value={p.authorPersonId} /><SubmitButton size="sm" variant="secondary" pendingText="…">Connect</SubmitButton></form>; })() : null}
+                          <div id={`post-${p.id}`} className="mt-3 space-y-2" data-replies>
+                            {p.replies.map((r) => (
+                              <div key={r.id} className="flex items-start gap-2.5" data-reply>
+                                <Avatar person={r.author} size="sm" />
+                                <div className="min-w-0 rounded-[14px] bg-surface-muted px-3 py-2">
+                                  <div className="text-[12px] text-ink-faint"><b className="font-semibold text-ink">{me?.id === r.authorPersonId ? "You" : fullName(r.author)}</b> · <DateText date={r.createdAt} relative /></div>
+                                  <p className="mt-0.5 whitespace-pre-line text-[13.5px] leading-[1.5] text-ink">{r.body}</p>
+                                </div>
+                              </div>
+                            ))}
+                            {internal ? null : (
+                              <form action={replyToPost} className="composer flex items-center gap-2 p-1 pl-4">
+                                <input type="hidden" name="postId" value={p.id} />
+                                <input name="body" required minLength={2} maxLength={1000} placeholder={own ? "Add to your post…" : `Reply to ${p.author.firstName}…`} aria-label={`Reply to ${own ? "your post" : p.author.firstName}`} className="h-9 min-w-0 flex-1 text-[13.5px]" />
+                                <button type="submit" className="send-btn !h-8 !w-8" aria-label="Send reply"><ArrowUp className="h-4 w-4" /></button>
+                              </form>
+                            )}
+                          </div>
                         </li>
                       );
                     })}
@@ -224,22 +268,50 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
               </CardBody>
             </Card>
           ) : null}
-          <Card>
-            <CardHeader title="Your connections" description="Members who accepted, or whose request you accepted." />
-            <CardBody className="pt-0">
-              {accepted.length === 0 ? <EmptyState title="No connections yet" description="Find people under Members, or connect with someone who says they are available on the board." /> : (
-                <ul className="divide-y divide-line">
-                  {accepted.map((c) => { const o = c.fromPersonId === me!.id ? c.to : c.from; return (
-                    <li key={c.id} className="flex flex-wrap items-center gap-3 py-3" data-connection>
+          {accepted.length === 0 ? <EmptyState title="No connections yet" description="Find people under Members, or connect with someone who says they are available on the board. Once you are connected you can message each other here." /> : (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[300px_1fr]" data-messages>
+              <ul className="space-y-0.5 self-start rounded-[16px] border border-line bg-surface p-1.5" aria-label="Your connections">
+                {sorted.map((c) => { const o = c.fromPersonId === me!.id ? c.to : c.from; const l = last.get(c.id); const n = unread.get(c.id) ?? 0; return (
+                  <li key={c.id} data-connection>
+                    <Link href={`/community?tab=connections&with=${c.id}`} aria-current={open?.id === c.id ? "true" : undefined} className={cn("flex items-center gap-3 rounded-[12px] px-2.5 py-2 transition-colors", open?.id === c.id ? "bg-surface-muted" : "hover:bg-surface-muted/60")}>
                       <Avatar person={o} />
-                      <div className="min-w-0 flex-1"><b className="block text-[14px] font-semibold">{fullName(o)}</b><span className="block text-[12.5px] text-ink-muted">{o.headline ?? ""}</span></div>
-                      <div className="text-[12.5px] text-ink-muted flex flex-wrap gap-x-4">{o.email ? <a className="underline underline-offset-2" href={`mailto:${o.email}`}>{o.email}</a> : null}{o.phone ? <span>{o.phone}</span> : null}{o.linkedinUrl ? <a className="underline underline-offset-2" href={o.linkedinUrl} target="_blank" rel="noopener noreferrer nofollow">LinkedIn</a> : null}</div>
-                    </li>
-                  ); })}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
+                      <span className="min-w-0 flex-1"><b className="block truncate text-[13.5px] font-semibold">{fullName(o)}</b><span className="block truncate text-[12px] text-ink-faint">{l ? `${l.fromPersonId === me!.id ? "You: " : ""}${l.body}` : o.headline ?? "Say hello"}</span></span>
+                      {n ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[var(--color-teal-400)] px-1.5 text-[11px] font-semibold text-white">{n}</span> : null}
+                    </Link>
+                  </li>
+                ); })}
+              </ul>
+              {open ? (() => { const o = open.fromPersonId === me!.id ? open.to : open.from; return (
+                <section className="flex min-h-[460px] flex-col rounded-[16px] border border-line bg-surface" aria-label={`Conversation with ${fullName(o)}`} data-thread>
+                  <header className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
+                    <Avatar person={o} />
+                    <div className="min-w-0 flex-1"><b className="block text-[14.5px] font-semibold">{fullName(o)}</b><span className="block truncate text-[12.5px] text-ink-muted">{o.headline ?? ""}</span></div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-ink-muted">
+                      {o.email ? <a className="inline-flex items-center gap-1 hover:text-ink" href={`mailto:${o.email}`}><Mail className="h-3.5 w-3.5" aria-hidden="true" />{o.email}</a> : null}
+                      {o.phone ? <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" aria-hidden="true" />{o.phone}</span> : null}
+                      {o.linkedinUrl ? <a className="inline-flex items-center gap-1 hover:text-ink" href={o.linkedinUrl} target="_blank" rel="noopener noreferrer nofollow"><ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />LinkedIn</a> : null}
+                    </div>
+                  </header>
+                  <ol className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 py-4" aria-label="Messages">
+                    {thread.length === 0 ? <li className="m-auto max-w-[36ch] text-center text-[13px] text-ink-muted">Say hello to {o.firstName}. Only the two of you can read this.</li> : thread.map((m) => { const mineMsg = m.fromPersonId === me!.id; return (
+                      <li key={m.id} className={cn("max-w-[78%]", mineMsg ? "self-end text-right" : "self-start")} data-message>
+                        <span className={cn("inline-block whitespace-pre-line rounded-[16px] px-3.5 py-2 text-left text-[13.5px] leading-[1.5]", mineMsg ? "bg-ink text-canvas" : "bg-surface-muted text-ink")}>{m.body}</span>
+                        <span className="mt-0.5 block text-[11px] text-ink-faint"><DateText date={m.createdAt} relative /></span>
+                      </li>
+                    ); })}
+                  </ol>
+                  <form action={sendMessage} className="border-t border-line p-3">
+                    <input type="hidden" name="connectionId" value={open.id} />
+                    <div className="composer flex items-center gap-2 p-1 pl-4">
+                      <input name="body" required maxLength={2000} placeholder={`Message ${o.firstName}…`} aria-label={`Message ${o.firstName}`} className="h-10 min-w-0 flex-1 text-[14px]" autoComplete="off" />
+                      <button type="submit" className="send-btn" aria-label="Send message"><ArrowUp className="h-4 w-4" /></button>
+                    </div>
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-[11.5px] text-ink-faint"><Lock className="h-3 w-3" aria-hidden="true" />Only the two of you see this conversation in Amana.</p>
+                  </form>
+                </section>
+              ); })() : null}
+            </div>
+          )}
         </div>
       )}
     </>

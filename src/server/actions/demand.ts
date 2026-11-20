@@ -69,6 +69,30 @@ export async function createBrief(formData: FormData) {
   redirect(`/requirements/${b.id}`);
 }
 
+const raiseSchema = z.object({ newName: z.string().trim().min(2).max(120), newKind: z.enum(["CLIENT", "AGENCY"]).default("CLIENT") });
+
+/**
+ * Raise a requirement on someone's behalf, from the guided intake. The account is one that already
+ * exists, or a new client or agency set up here in one step; then it is the same as createBrief.
+ */
+export async function raiseBrief(formData: FormData) {
+  const user = await requireInternalAction();
+  let accountId = String(formData.get("accountId") || "");
+  if (accountId === "new") {
+    const d = raiseSchema.parse({ newName: formData.get("newName"), newKind: formData.get("newKind") || undefined });
+    const existing = await prisma.commercialAccount.findFirst({ where: { tenantId: user.tenantId, name: { equals: d.newName, mode: "insensitive" } }, select: { id: true } });
+    if (existing) accountId = existing.id;
+    else {
+      const card = await loadRateCard(user.tenantId);
+      const a = await prisma.commercialAccount.create({ data: { tenantId: user.tenantId, name: d.newName, kind: d.newKind, status: "PROSPECT", currency: card.currency ?? "GBP" } });
+      await audit({ tenantId: user.tenantId, actorId: user.id, action: "account.create", entityType: "CommercialAccount", entityId: a.id, metadata: { kind: a.kind, via: "raise" } });
+      accountId = a.id;
+    }
+  }
+  formData.set("accountId", accountId);
+  return createBrief(formData);
+}
+
 export async function findForBrief(formData: FormData) {
   const user = await requireInternalAction();
   const b = await ownedBrief(user, String(formData.get("briefId")));

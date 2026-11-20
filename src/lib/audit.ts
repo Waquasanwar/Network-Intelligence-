@@ -79,6 +79,8 @@ export type AuditAction =
   | "board.close"
   | "connection.request"
   | "connection.answer"
+  | "board.reply"
+  | "message.send"
   | "credit.create"
   | "credit.update"
   | "portal.search"

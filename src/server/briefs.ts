@@ -9,8 +9,9 @@ import { matchBrief, estimateFee, defaultFeeModel, defaultTerms, type Brief, typ
 import { toDomain } from "@/lib/brief-domain";
 import type { Brief as DbBrief, CommercialAccount, EngagementRoute, Prisma } from "@prisma/client";
 
-export async function briefPeople(tenantId: string): Promise<BriefPerson[]> {
-  const people = await prisma.person.findMany({ where: { tenantId }, include: { relationships: true, evidence: true, conversations: { where: { approvalStatus: "APPROVED" }, select: { id: true } } } });
+/** Everyone the matcher can consider, or only these people when `ids` is given. */
+export async function briefPeople(tenantId: string, ids?: string[]): Promise<BriefPerson[]> {
+  const people = await prisma.person.findMany({ where: { tenantId, ...(ids ? { id: { in: ids } } : {}) }, include: { relationships: true, evidence: true, conversations: { where: { approvalStatus: "APPROVED" }, select: { id: true } } } });
   return people.map((p) => ({
     id: p.id, capabilities: p.capabilities, sectors: p.sectors, seniority: p.seniority, engagementPreferences: p.engagementPreferences, primaryCity: p.primaryCity, primaryCountry: p.primaryCountry, targetLocations: p.targetLocations,
     availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate, rateExpectation: p.rateExpectation, salaryExpectation: p.salaryExpectation,

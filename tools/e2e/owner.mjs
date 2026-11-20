@@ -1,4 +1,4 @@
-import { launch, session, step, assert, dialog, sql, BASE, DIR, summary } from "./lib.mjs";
+import { launch, session, step, assert, dialog, sql, BASE, DIR, summary, walk } from "./lib.mjs";
 const stamp = String(Date.now()).slice(-6);
 const b = await launch();
 const p = await session(b, "waqas@networkintelligence.local");
@@ -107,13 +107,10 @@ await step("requirements: new account", p, async () => {
 });
 await step("requirements: post a brief via co-pilot", p, async () => {
   await go("/requirements");
-  const box = p.locator('textarea[name="q"], input[name="q"]').first();
-  await box.fill(`E2E Client ${stamp} needs a fractional CFO two days a week in Dubai for six months, budget AED 5,000 a day`);
-  await p.getByRole("button", { name: /Read the need/i }).click();
-  await p.waitForTimeout(3500);
+  // Raised on the client's behalf, one question at a time.
+  await walk(p.locator("[data-guide]").first(), [{ pick: `E2E Client ${stamp}` }, "A fractional CFO two days a week for six months", { pick: "Fractional" }, "Dubai", { pick: "Within a month" }, "AED 5,000 a day", null], "Raise requirement");
+  await p.waitForURL(/\/requirements\/[a-z0-9]+$/, { timeout: 60000 });
   await p.screenshot({ path: `${DIR}/req-copilot.png` });
-  const create = p.getByRole("button", { name: /Create|Save|Log|Post/i }).first();
-  if (await create.count()) { await create.click(); await p.waitForTimeout(2500); }
   const m = p.url().match(/\/requirements\/([a-z0-9]+)/);
   briefId = m?.[1] ?? sql(`select id from "Brief" order by "createdAt" desc limit 1`);
   assert(briefId, "brief created");

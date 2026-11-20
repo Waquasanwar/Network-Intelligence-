@@ -16,8 +16,9 @@ import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { NewAccountDrawer } from "@/components/domain/demand-drawers";
+import { Guide } from "@/components/ui/guide";
 import { ReadCard, CheckList, TierBadge, KindBadge, BriefStatusBadge, FeeStatusBadge, FeeBox, routeLabel, KIND_LABEL } from "@/components/domain/demand";
-import { createBrief } from "@/server/actions/demand";
+import { createBrief, raiseBrief } from "@/server/actions/demand";
 import { toDomain } from "@/lib/brief-domain";
 import { loadRateCard, feeSummary } from "@/server/queries";
 import { parseBrief, matchBrief, estimateFee, defaultFeeModel, defaultTerms, fmt, PORTAL_VISIBLE, FEE_MODEL_LABELS, type BriefPerson, type AccountKind } from "@/lib/demand";
@@ -34,10 +35,11 @@ const EXAMPLES = [
   "BA or PM",
 ];
 
-export default async function RequirementsPage({ searchParams }: { searchParams: Promise<{ q?: string; kind?: string; tab?: string }> }) {
+export default async function RequirementsPage({ searchParams }: { searchParams: Promise<{ q?: string; kind?: string; tab?: string; paste?: string }> }) {
   const user = await requireInternal();
   const money = canSeeMoney(user);
   const sp = await searchParams;
+  const monthAhead = (n: number) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + n); return d.toLocaleString("en-GB", { month: "long" }); };
   const q = (sp.q ?? "").trim();
   const kind = sp.kind as AccountKind | undefined;
   const tab = sp.tab === "accounts" ? "accounts" : sp.tab === "fees" && canSeeMoney(user) ? "fees" : "briefs";
@@ -110,6 +112,30 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
         </Card>
       ) : null}
 
+      {!q && !sp.paste ? (
+        <div className="mb-5">
+          <Guide
+            intro="Raise a requirement for a client or agency. One question at a time, then I search the network for it."
+            action={raiseBrief}
+            compose={{ name: "text", parts: ["role", "route", "where", "when", "budget", "more"] }}
+            submit="Raise requirement"
+            pending="Raising…"
+            review="Here is the requirement"
+            steps={[
+              { name: "accountId", kind: "choice", ask: "Who is it for?", short: "For", options: [...accounts.map((a) => ({ value: a.id, label: a.name, hint: KIND_LABEL[a.kind] })), { value: "new", label: "Someone new", hint: "A client or agency we have not set up yet" }] },
+              { name: "newName", kind: "text", ask: "What are they called?", short: "New account", when: { name: "accountId", in: ["new"] }, placeholder: "Company or agency name", min: 2, max: 120 },
+              { name: "newKind", kind: "choice", ask: "Are they a client or an agency?", short: "Kind", when: { name: "accountId", in: ["new"] }, options: [{ value: "CLIENT", label: "A client", hint: "They hire the person themselves" }, { value: "AGENCY", label: "An agency", hint: "They place the person with their own client" }] },
+              { name: "role", kind: "text", ask: "Who do they need?", short: "Who", placeholder: "A fractional CFO for an energy group", min: 4, max: 300 },
+              { name: "route", kind: "choice", ask: "How would the person work with them?", short: "How", options: [{ value: "permanent", label: "Permanent" }, { value: "contract", label: "Contract" }, { value: "interim", label: "Interim" }, { value: "fractional", label: "Fractional, a few days a week" }, { value: "advisory", label: "Advisory or an expert call" }, { value: "", label: "Not sure yet" }] },
+              { name: "where", kind: "text", ask: "Where?", short: "Where", optional: true, placeholder: "City, or remote", max: 120, picks: ["Dubai", "Abu Dhabi", "Riyadh", "London", "Remote"] },
+              { name: "when", kind: "choice", ask: "When do they need them?", short: "When", optional: true, options: [{ value: "start ASAP", label: "As soon as possible" }, { value: `start in ${monthAhead(1)}`, label: "Within a month" }, { value: `start by ${monthAhead(3)}`, label: "In the next three months" }, { value: "", label: "Flexible" }] },
+              { name: "budget", kind: "text", ask: "What is the budget or rate?", short: "Budget", optional: true, placeholder: "AED 5,000 a day, or £120k", max: 120 },
+              { name: "more", kind: "long", ask: "Anything else?", short: "Also", optional: true, placeholder: "Sector, must-haves, languages, right to work, how long…", max: 2000 },
+            ]}
+          />
+          <p className="mt-2.5 text-[12.5px] text-ink-faint">Have the whole brief in an email? <Link href="/requirements?paste=1" className="font-medium text-ink-muted underline-offset-4 hover:text-ink hover:underline">Paste it instead</Link> and I will read it.</p>
+        </div>
+      ) : (
       <Card className="mb-5 border-navy-400/30 shadow-[var(--shadow-card),0_0_0_4px_rgba(79,111,214,0.06)]">
         <CardBody className="pt-4">
           <form method="get" action="/requirements" className="space-y-3">
@@ -157,6 +183,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
           ) : null}
         </CardBody>
       </Card>
+      )}
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {[["", "All"], ["CLIENT", "Clients"], ["AGENCY", "Agencies"], ["EXPERT_NETWORK", "Amana"]].map(([k, l]) => <Pill key={k} href={`/requirements${k ? `?kind=${k}` : ""}`} active={(sp.kind ?? "") === k}>{l}</Pill>)}

@@ -39,6 +39,10 @@ import { Constellation } from "@/components/ui/constellation";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 import { Guide } from "@/components/ui/guide";
 import { KNOWN_HOW } from "@/lib/known";
+import { memberNetwork, roleFits, type RoleFit } from "@/server/member-network";
+import { MemberNetwork } from "@/components/domain/member-network";
+import { AgentMark } from "@/components/ui/agent-mark";
+import { Check } from "lucide-react";
 
 export const metadata = { title: "My network profile" };
 
@@ -47,7 +51,7 @@ const SELF_STATUSES: AvailabilityStatus[] = ["AVAILABLE_NOW", "OPEN_TO_CONVERSAT
 const REF_STATUS: Record<string, string> = { NEW: "New", CONTACTED: "Contacted", SCREENING: "Screening booked", ACCEPTED: "In the network", DECLINED: "Not now" };
 const PITCH_STATUS: Record<string, string> = { SUBMITTED: "Submitted", SHORTLISTED: "On the shortlist", DECLINED: "Not this time" };
 
-export default async function MemberPage({ searchParams }: { searchParams: Promise<{ tab?: string; person?: string; sent?: string; screened?: string; welcome?: string }> }) {
+export default async function MemberPage({ searchParams }: { searchParams: Promise<{ tab?: string; person?: string; sent?: string; screened?: string; welcome?: string; name?: string; brief?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   const internal = isInternal(user);
@@ -81,6 +85,14 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const canInvite = mayInvite(p);
   const now = new Date();
   const tab = sp.tab ?? "home";
+  // Who this member knows here, and how the open work suits them and the people they know.
+  const net = ["home", "opportunities"].includes(tab) ? await memberNetwork(p.id, p.tenantId) : null;
+  const fits: Map<string, RoleFit> = net && open.length ? await roleFits(p.id, p.tenantId, await prisma.brief.findMany({ where: { id: { in: open.map((b) => b.id) } } }), [...net.broughtIn, ...net.connected]) : new Map();
+  const roleOf = (id: string) => { const b = open.find((x) => x.id === id); return b ? `${b.roles[0] ?? "a requirement"}${b.locations[0] ? ` in ${b.locations[0]}` : ""}` : "a requirement"; };
+  const best = [...fits.entries()].filter(([, f]) => f.mine && (f.mine.band === "strong" || f.mine.band === "good")).sort((a, b) => b[1].mine!.score - a[1].mine!.score)[0];
+  const nudge = [...fits.entries()].find(([, f]) => f.fromNetwork.length);
+  const qp = internal ? `&person=${p.id}` : "";
+  const forBrief = sp.brief ? open.find((b) => b.id === sp.brief) ?? null : null; // "Refer them for this", from a suggestion
   const t = trustFor(p, isInternal(user) ? "internal" : "self"); const fit = fitFor(p);
   const screened = p.screeningStatus === "APPROVED" || !!p.screenedAt; const submitted = p.screeningStatus === "SUBMITTED";
   const anon = redactForPartner({ ...p, evidence: p.evidence, relationships: p.relationships });
@@ -97,6 +109,8 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const pulse = ([
     !screened && !submitted ? { text: `Ready when you are: your ${SCREENING_MINUTES}-minute screening` } : null,
     submitted && !screened ? { text: "Reading your screening. We will confirm it shortly" } : null,
+    best ? { text: `You look a ${best[1].mine!.label.toLowerCase()} for ${roleOf(best[0])}`, href: `/member?tab=opportunities${qp}` } : null,
+    nudge ? { text: `${nudge[1].fromNetwork[0].firstName} from your network could suit ${roleOf(nudge[0])}`, href: `/member?tab=refer&name=${encodeURIComponent(`${nudge[1].fromNetwork[0].firstName} ${nudge[1].fromNetwork[0].lastName}`)}&brief=${nudge[0]}${qp}` } : null,
     open.length ? { text: `Watching ${open.length} ${open.length === 1 ? "opportunity" : "opportunities"} open to members`, href: `/member?tab=opportunities${q}` } : { text: "Watching for work that fits what you do" },
     withClients ? { text: `Your anonymous card is with ${withClients} ${withClients === 1 ? "client" : "clients"}. Your name stays hidden` } : null,
     openRefs[0] ? { text: `Waiting on a reference from ${openRefs[0].refereeName}${openRefs[0].opened ? ". They have opened the link" : ""}` } : null,
@@ -139,6 +153,25 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
             { label: "Placed", reached: at(["PLACED"]) },
           ], stopped)} />;
         })()}
+        {(() => { const f = fits.get(b.id); if (!f) return null; return (
+          <div className="mb-3 border-t border-line pt-3" data-fit={f.mine?.band ?? "none"}>
+            {f.mine ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+                <span className={`tag flex-none ${f.mine.band === "strong" ? "is-mint" : f.mine.band === "good" ? "is-blue" : f.mine.band === "worth a look" ? "is-gold" : ""}`}>{f.mine.label} for you</span>
+                <ul className="min-w-0 space-y-0.5 text-[12.5px]">
+                  {f.mine.why.map((w) => <li key={w} className="flex items-start gap-1.5 text-ink-muted"><Check className="mt-[3px] h-3 w-3 flex-none text-teal" strokeWidth={3} aria-hidden="true" />{w}</li>)}
+                  {f.mine.gaps.map((g) => <li key={g} className="flex items-start gap-1.5 text-ink-faint"><span className="mt-[7px] h-1 w-1 flex-none rounded-full bg-current" aria-hidden="true" />{g}</li>)}
+                </ul>
+              </div>
+            ) : <p className="text-[12.5px] text-ink-faint">Not a close match for what we know of you. Someone you know might be.</p>}
+            {f.fromNetwork.length ? (
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[12.5px]" data-from-network>
+                <AgentMark size={14} /><span className="text-ink-muted">From your network:</span>
+                {f.fromNetwork.map((n) => <Link key={n.id} href={`/member?tab=refer&name=${encodeURIComponent(fullName(n))}&brief=${b.id}${qp}`} className="chip !h-7">{fullName(n)} · {n.fit.label.toLowerCase()}<ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>)}
+              </div>
+            ) : null}
+          </div>
+        ); })()}
         <div className="flex flex-wrap items-center gap-2">{pitched ? <Badge tone={pitched.status === "SHORTLISTED" ? "teal" : "navy"} filled>You pitched · {PITCH_STATUS[pitched.status]}</Badge> : screened ? <PitchDrawer briefId={b.id} asPersonId={internal ? p.id : undefined} summary={summary} /> : <small className="text-ink-faint">Complete your screening to pitch.</small>}<Link href={`/member?tab=refer&for=${b.id}${internal ? `&person=${p.id}` : ""}`}><Button size="sm" variant="secondary" type="button">Refer someone</Button></Link>{refd ? <Badge tone="teal" filled>{refd} referred</Badge> : null}</div>
       </CardBody>
     </Card>
@@ -190,17 +223,17 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
               </CardBody>
             </Card>
             <Guide
-              intro="Recommend someone good. Only people you would stand behind."
+              intro={forBrief ? `Refer someone for ${forBrief.roles[0] ?? "this opportunity"}${forBrief.locations[0] ? ` in ${forBrief.locations[0]}` : ""}. Only people you would stand behind.` : "Recommend someone good. Only people you would stand behind."}
               action={submitReferral}
-              hidden={internal ? { asPersonId: p.id } : {}}
+              hidden={{ ...(internal ? { asPersonId: p.id } : {}), ...(forBrief ? { briefId: forBrief.id } : {}) }}
               submit="Send referral"
               review="Here is your referral"
               steps={[
-                { name: "name", kind: "text", ask: "Who would you like to recommend?", short: "Who", placeholder: "Their full name", min: 2, max: 120 },
+                { name: "name", kind: "text", ask: "Who would you like to recommend?", short: "Who", placeholder: "Their full name", initial: sp.name?.slice(0, 120), min: 2, max: 120 },
                 { name: "knownHow", kind: "choice", ask: "How do you know {name}?", short: "How you know them", options: (Object.keys(KNOWN_HOW) as (keyof typeof KNOWN_HOW)[]).map((k) => ({ value: k, label: KNOWN_HOW[k].label })) },
                 { name: "context", kind: "long", ask: "What have you seen {name} do?", short: "What you have seen", hint: "A line or two is plenty. Specifics help us place them well.", placeholder: "Ran the requirements workstream on our payments hub. Precise, calm, well liked by the business.", min: 5, max: 1000 },
                 { name: "email", kind: "text", ask: "How can we reach {name}?", short: "Contact", optional: true, placeholder: "Email or LinkedIn", max: 200 },
-                ...(open.length ? [{ name: "briefId", kind: "choice" as const, ask: "Is it for one of the open opportunities?", short: "For", optional: true, options: [{ value: "", label: "No, just someone good" }, ...open.map((b) => ({ value: b.id, label: `${b.roles[0] ?? "Requirement"}${b.locations[0] ? ` · ${b.locations[0]}` : ""}` }))] }] : []),
+                ...(open.length && !forBrief ? [{ name: "briefId", kind: "choice" as const, ask: "Is it for one of the open opportunities?", short: "For", optional: true, options: [{ value: "", label: "No, just someone good" }, ...open.map((b) => ({ value: b.id, label: `${b.roles[0] ?? "Requirement"}${b.locations[0] ? ` · ${b.locations[0]}` : ""}` }))] }] : []),
                 { name: "tell", kind: "confirm", ask: "May we tell {name} you referred them?", short: "Tell them", optional: true, yes: "Yes, tell them" },
               ]}
             />
@@ -301,6 +334,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           </div>
         </section>
 
+        {net ? <MemberNetwork broughtMeIn={net.broughtMeIn} broughtIn={net.broughtIn} connected={net.connected} inviteHref={`/member?tab=refer${qp}`} /> : null}
         {screened ? (
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           <TrustCard t={t} standard={standardFor(p, internal ? "internal" : "self")} firstName={p.firstName} self action={<ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} />} />

@@ -758,3 +758,19 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
 .guide-skip:hover { color: var(--color-ink); }
 @media (prefers-reduced-motion: no-preference) { .guide-q { animation: pulse-rise 380ms cubic-bezier(.2, .7, .2, 1); } }
 @media (prefers-reduced-motion: reduce) { .guide-bar > span { transition: none; } }
+
+/* A member's own network: them in the middle, the people they know around them, breathing slowly. */
+.mnet text { font: 600 10.5px var(--font-sans); text-anchor: middle; fill: var(--color-ink); }
+.mnet-orbit { fill: none; stroke: var(--color-line); stroke-dasharray: 2 5; }
+.mnet-line { stroke: var(--color-line-strong); stroke-width: 1.2; }
+.mnet-line.is-in { stroke: var(--color-teal-400); stroke-dasharray: 3 4; }
+.mnet-line.is-out { stroke: color-mix(in srgb, var(--color-teal-400) 55%, var(--color-line)); }
+.mnet-node circle { fill: var(--color-surface); stroke: var(--color-line-strong); stroke-width: 1.2; }
+.mnet-node.is-out circle { fill: color-mix(in srgb, var(--color-teal-400) 18%, var(--color-surface)); stroke: var(--color-teal-400); }
+.mnet-node.is-in circle { fill: var(--color-ink); stroke: var(--color-ink); }
+.mnet-node.is-in text { fill: var(--color-canvas); }
+.mnet-me circle { fill: var(--color-ink); }
+.mnet-me text { fill: var(--color-canvas); font-size: 11px; }
+.mnet-node { transform-box: fill-box; transform-origin: center; }
+@keyframes mnet-breathe { 0%, 100% { scale: 1; } 50% { scale: 1.08; } }
+@media (prefers-reduced-motion: no-preference) { .mnet-node { animation: mnet-breathe 5.5s ease-in-out infinite; } }

@@ -181,3 +181,40 @@ export async function setDirectory(formData: FormData) {
   revalidatePath("/community");
   back(`tab=members`);
 }
+
+const replySchema = z.object({ postId: z.string().max(40), body: z.string().trim().min(2).max(1000) });
+
+/** Answer a post in the open: every member who can see the board reads it. */
+export async function replyToPost(formData: FormData) {
+  const { user, me } = await participant(await requireUser());
+  if (!me) back("notice=members-only");
+  await mustBeOn(me!.tenantId, "communityBoard");
+  if (!(await rateLimit("mutate", `reply:${user.id}`)).success) back("notice=slow-down");
+  const parsed = replySchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) back("notice=reply-details");
+  const post = await prisma.boardPost.findFirst({ where: { id: parsed.data!.postId, tenantId: me!.tenantId, status: "OPEN" }, select: { id: true } });
+  if (!post) back("notice=post-gone");
+  const r = await prisma.boardReply.create({ data: { tenantId: me!.tenantId, postId: post!.id, authorPersonId: me!.id, body: parsed.data!.body } });
+  await audit({ tenantId: me!.tenantId, actorId: user.id, action: "board.reply", entityType: "BoardPost", entityId: post!.id, metadata: { replyId: r.id } });
+  revalidatePath("/community");
+  redirect(`/community#post-${post!.id}`);
+}
+
+const messageSchema = z.object({ connectionId: z.string().max(40), body: z.string().trim().min(1).max(2000) });
+
+/** A private message to someone you are connected with. Only the two of you can read it. */
+export async function sendMessage(formData: FormData) {
+  const { user, me } = await participant(await requireUser());
+  if (!me) back("notice=members-only");
+  await mustBeOn(me!.tenantId, "memberConnections");
+  if (!(await rateLimit("mutate", `message:${user.id}`)).success) back("tab=connections&notice=slow-down");
+  const parsed = messageSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) back("tab=connections&notice=message-details");
+  const c = await prisma.connection.findFirst({ where: { id: parsed.data!.connectionId, tenantId: me!.tenantId, status: "ACCEPTED", OR: [{ fromPersonId: me!.id }, { toPersonId: me!.id }] }, select: { id: true } });
+  if (!c) back("tab=connections&notice=not-connected");
+  await prisma.memberMessage.create({ data: { tenantId: me!.tenantId, connectionId: c!.id, fromPersonId: me!.id, body: parsed.data!.body } });
+  // Only that a message was sent is audited, never what it says.
+  await audit({ tenantId: me!.tenantId, actorId: user.id, action: "message.send", entityType: "Connection", entityId: c!.id });
+  revalidatePath("/community");
+  back(`tab=connections&with=${c!.id}`);
+}

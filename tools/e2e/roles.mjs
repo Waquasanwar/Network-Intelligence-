@@ -19,6 +19,9 @@ await stepIf("member: sees open opportunity (summary only) and pitches", m, asyn
   assert(briefId, "an open brief exists");
   await m.goto(`${BASE}/member?tab=opportunities`, { waitUntil: "networkidle" });
   const t = await m.locator("main").innerText(); assert(/client name hidden/i.test(t), "client hidden"); assert(!/E2E Client/.test(t), "client name leaked to member");
+  // Each opportunity says how it suits them, from what we know of them, never from the budget.
+  assert(await m.locator("[data-fit]").count(), "suitability shown on opportunities");
+  assert(!/AED 5,000|5,000 a day/.test(t), "the budget is not shown to members");
   await m.getByRole("button", { name: /Pitch with my profile/ }).first().click(); const d = dialog(m); await d.waitFor();
   await d.locator('[name="note"]').fill("I ran exactly this for a retail group last year and can start in March."); await d.getByRole("button", { name: "Send pitch" }).click(); await m.waitForTimeout(2000);
   assert(Number(sql(`select count(*) from "Pitch" where "personId"='${anaId}'`)) >= 1, "pitch row");

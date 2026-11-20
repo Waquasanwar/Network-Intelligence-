@@ -25,74 +25,76 @@ enum TenantType {
 }
 
 model Tenant {
-  id        String     @id @default(cuid())
-  slug      String     @unique
-  name      String
-  type      TenantType
-  brandName String?
-  rateCard  Json? // commercial defaults (see src/lib/demand.ts RateCard); configurable, never hard-coded
+  id                  String     @id @default(cuid())
+  slug                String     @unique
+  name                String
+  type                TenantType
+  brandName           String?
+  rateCard            Json? // commercial defaults (see src/lib/demand.ts RateCard); configurable, never hard-coded
   /// Which voice the AI interviewer speaks in (see src/lib/voice-config.ts). Never holds an API key.
-  voiceSettings Json?
-  features      Json? // owner switches for optional features (src/lib/features.ts)
+  voiceSettings       Json?
+  features            Json? // owner switches for optional features (src/lib/features.ts)
   /// Bumped to revoke every network invite link issued so far (see src/lib/invite.ts).
-  inviteVersion Int        @default(0)
+  inviteVersion       Int        @default(0)
   /// Accept a complete screening without a person reading it first. Off unless the owner turns it
   /// on; incomplete ones always wait for a person (see src/server/screening-apply.ts).
-  screeningAutoAccept Boolean @default(false)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  screeningAutoAccept Boolean    @default(false)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
-  accounts           CommercialAccount[]
-  briefs             Brief[]
-  feeLines           FeeLine[]
-  portalAccount      CommercialAccount? @relation("PortalTenant")
-  users              User[]
-  people             Person[]
-  opportunities      Opportunity[]
-  partnerProfile     Partner?            @relation("PartnerProfile")
-  partners           Partner[]           @relation("PartnerNetwork")
-  invites            Invite[]
-  auditLogs          AuditLog[]
-  savedViews         SavedView[]
-  introductions      Introduction[]
-  scheduledMeetings  ScheduledConversation[]
-  referenceRequests  ReferenceRequest[]
-  publicRequests     PublicRequest[]
-  boardPosts         BoardPost[]
-  connections        Connection[]
-  referralCredits    ReferralCredit[]
+  accounts          CommercialAccount[]
+  briefs            Brief[]
+  feeLines          FeeLine[]
+  portalAccount     CommercialAccount?      @relation("PortalTenant")
+  users             User[]
+  people            Person[]
+  opportunities     Opportunity[]
+  partnerProfile    Partner?                @relation("PartnerProfile")
+  partners          Partner[]               @relation("PartnerNetwork")
+  invites           Invite[]
+  auditLogs         AuditLog[]
+  savedViews        SavedView[]
+  introductions     Introduction[]
+  scheduledMeetings ScheduledConversation[]
+  referenceRequests ReferenceRequest[]
+  publicRequests    PublicRequest[]
+  boardPosts        BoardPost[]
+  connections       Connection[]
+  boardReplies      BoardReply[]
+  memberMessages    MemberMessage[]
+  referralCredits   ReferralCredit[]
 }
 
 enum Role {
-  OWNER        // platform owner / founder
+  OWNER // platform owner / founder
   ADMIN
-  CONTRIBUTOR  // e.g. Amana contributors
-  PARTNER      // recruitment partner user — restricted
-  CLIENT       // direct client user — restricted
-  MEMBER       // network member self-service (later phase)
+  CONTRIBUTOR // e.g. Amana contributors
+  PARTNER // recruitment partner user — restricted
+  CLIENT // direct client user — restricted
+  MEMBER // network member self-service (later phase)
 }
 
 model User {
-  id            String    @id @default(cuid())
-  tenantId      String
-  email         String    @unique
-  name          String
-  passwordHash  String?
-  role          Role      @default(CONTRIBUTOR)
-  personId      String?   @unique // MEMBER users are linked to their own person record
-  mfaEnabled    Boolean   @default(false)
-  mfaSecret         String?    // base32 TOTP secret, set during enrolment, held only while MFA is on
-  mfaRecoveryCodes  String[]   @default([]) // sha256 hashes of one-time recovery codes
-  mfaPendingSecret  String?    // a new authenticator being enrolled; promoted to mfaSecret only once a code verifies
-  mfaLastStep       Int?       // last accepted TOTP time-step, so a code cannot be replayed
-  sessionVersion    Int        @default(0) // bumped to sign every device out (role, MFA or erasure)
-  failedLogins      Int        @default(0)
-  lockedUntil       DateTime?  // temporary lock after repeated failed sign-ins
-  emailVerified DateTime?
-  image         String?
-  lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  tenantId         String
+  email            String    @unique
+  name             String
+  passwordHash     String?
+  role             Role      @default(CONTRIBUTOR)
+  personId         String?   @unique // MEMBER users are linked to their own person record
+  mfaEnabled       Boolean   @default(false)
+  mfaSecret        String? // base32 TOTP secret, set during enrolment, held only while MFA is on
+  mfaRecoveryCodes String[]  @default([]) // sha256 hashes of one-time recovery codes
+  mfaPendingSecret String? // a new authenticator being enrolled; promoted to mfaSecret only once a code verifies
+  mfaLastStep      Int? // last accepted TOTP time-step, so a code cannot be replayed
+  sessionVersion   Int       @default(0) // bumped to sign every device out (role, MFA or erasure)
+  failedLogins     Int       @default(0)
+  lockedUntil      DateTime? // temporary lock after repeated failed sign-ins
+  emailVerified    DateTime?
+  image            String?
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   tenant                Tenant                  @relation(fields: [tenantId], references: [id])
   accounts              Account[]
@@ -201,53 +203,53 @@ enum SourceType {
 }
 
 model Person {
-  id                     String             @id @default(cuid())
-  tenantId               String
-  firstName              String
-  lastName               String
-  preferredName          String?
-  email                  String?
-  phone                  String?
-  linkedinUrl            String?
-  headline               String?
-  currentCompany         String?
-  currentRole            String?
-  primaryCity            String?
-  primaryCountry         String?
-  targetLocations        String[]           @default([])
-  capabilities           String[]           @default([])
-  sectors                String[]           @default([])
-  workRights             String[]           @default([]) // visas / rights to work, checked against briefs; never nationality
-  screeningStatus        ScreeningStatus    @default(NONE)
-  screenedAt             DateTime?
-  referralConsent        String?            // yes | ask | no — the person decides whether they are on the radar
-  privacy                Json?              // Privacy (lib/privacy.ts): granular consents, retention, erasureRequestedAt
-  memberSince            DateTime?
-  attributes             Json?
+  id                      String             @id @default(cuid())
+  tenantId                String
+  firstName               String
+  lastName                String
+  preferredName           String?
+  email                   String?
+  phone                   String?
+  linkedinUrl             String?
+  headline                String?
+  currentCompany          String?
+  currentRole             String?
+  primaryCity             String?
+  primaryCountry          String?
+  targetLocations         String[]           @default([])
+  capabilities            String[]           @default([])
+  sectors                 String[]           @default([])
+  workRights              String[]           @default([]) // visas / rights to work, checked against briefs; never nationality
+  screeningStatus         ScreeningStatus    @default(NONE)
+  screenedAt              DateTime?
+  referralConsent         String? // yes | ask | no — the person decides whether they are on the radar
+  privacy                 Json? // Privacy (lib/privacy.ts): granular consents, retention, erasureRequestedAt
+  memberSince             DateTime?
+  attributes              Json?
   /// Framework checks only a person on the team can confirm: { key: { by, at, note } } (src/lib/framework.ts).
-  checks                 Json?              // self-assessed FitScores from the screening (working style, never protected characteristics)
-  seniority              Seniority?
-  languages              String[]           @default([])
-  engagementPreferences  EngagementRoute[]  @default([])
-  rateExpectation        String?
-  salaryExpectation      String?
-  noticePeriod           String?
-  availabilityStatus     AvailabilityStatus @default(NEEDS_REFRESH)
-  availabilityDate       DateTime?
+  checks                  Json? // self-assessed FitScores from the screening (working style, never protected characteristics)
+  seniority               Seniority?
+  languages               String[]           @default([])
+  engagementPreferences   EngagementRoute[]  @default([])
+  rateExpectation         String?
+  salaryExpectation       String?
+  noticePeriod            String?
+  availabilityStatus      AvailabilityStatus @default(NEEDS_REFRESH)
+  availabilityDate        DateTime?
   availabilityConfirmedAt DateTime?
-  availabilitySource     String?
-  availabilityConfidence Int                @default(50) // 0-100
-  nextCheckDate          DateTime?
-  opportunityInterest    String?
-  relocationInterest     Boolean            @default(false)
-  workingStyle           String?
-  constraints            String?
-  nextAction             String?
-  nextActionDate         DateTime?
-  amanaBench             Boolean            @default(false) // trusted expert for Amana SOW work
-  usedByAmana            Boolean            @default(false)
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
+  availabilitySource      String?
+  availabilityConfidence  Int                @default(50) // 0-100
+  nextCheckDate           DateTime?
+  opportunityInterest     String?
+  relocationInterest      Boolean            @default(false)
+  workingStyle            String?
+  constraints             String?
+  nextAction              String?
+  nextActionDate          DateTime?
+  amanaBench              Boolean            @default(false) // trusted expert for Amana SOW work
+  usedByAmana             Boolean            @default(false)
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
 
   tenant            Tenant                  @relation(fields: [tenantId], references: [id])
   relationships     Relationship[]
@@ -260,21 +262,23 @@ model Person {
   introducedPeople  Relationship[]          @relation("IntroducedBy")
   referenceRequests ReferenceRequest[]      @relation("ReferenceAbout")
   boardPosts        BoardPost[]             @relation("PostAuthor")
+  boardReplies      BoardReply[]            @relation("ReplyAuthor")
+  messagesSent      MemberMessage[]         @relation("MessageFrom")
   connectionsSent   Connection[]            @relation("ConnectionFrom")
   connectionsGot    Connection[]            @relation("ConnectionTo")
   referralCredits   ReferralCredit[]        @relation("CreditTo")
   teamMemberships   TeamShortlistMember[]
   shortlistItems    ShortlistItem[]
   feeLines          FeeLine[]
-  vouches           Vouch[]         @relation("VouchedPerson")
-  vouchesGiven      Vouch[]         @relation("VoucherPerson")
-  referralsMade     Referral[]      @relation("Referrer")
-  referredBy        Referral[]      @relation("ReferredPerson")
+  vouches           Vouch[]                 @relation("VouchedPerson")
+  vouchesGiven      Vouch[]                 @relation("VoucherPerson")
+  referralsMade     Referral[]              @relation("Referrer")
+  referredBy        Referral[]              @relation("ReferredPerson")
   pitches           Pitch[]
   memberUser        User?
-  invitesSent       Invite[]        @relation("InviteInviter")
-  invitesToClaim    Invite[]        @relation("InviteClaim")
-  invitesJoined     Invite[]        @relation("InviteJoined")
+  invitesSent       Invite[]                @relation("InviteInviter")
+  invitesToClaim    Invite[]                @relation("InviteClaim")
+  invitesJoined     Invite[]                @relation("InviteJoined")
 
   @@index([tenantId])
   @@index([tenantId, availabilityStatus])
@@ -327,9 +331,9 @@ enum EvidenceType {
 }
 
 enum Visibility {
-  PRIVATE       // owner tenant only
-  TENANT        // visible within owning tenant
-  PARTNER_SAFE  // may be summarised to partners after identity reveal
+  PRIVATE // owner tenant only
+  TENANT // visible within owning tenant
+  PARTNER_SAFE // may be summarised to partners after identity reveal
 }
 
 model Evidence {
@@ -377,10 +381,10 @@ model Conversation {
   date             DateTime
   type             ConversationType @default(INTRO_CALL)
   rawNotes         String?
-  transcript       String?          // untrusted input — never executed as instructions
-  aiSummary        Json?            // structured extraction, pending review
-  screening        Json?            // ScreeningResult (answers, profile suggestions, attributes) for SCREENING conversations
-  approvedSummary  Json?            // authoritative once approved
+  transcript       String? // untrusted input — never executed as instructions
+  aiSummary        Json? // structured extraction, pending review
+  screening        Json? // ScreeningResult (answers, profile suggestions, attributes) for SCREENING conversations
+  approvedSummary  Json? // authoritative once approved
   approvedById     String?
   approvalStatus   ApprovalStatus   @default(DRAFT)
   followUpDate     DateTime?
@@ -444,8 +448,8 @@ model Opportunity {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
-  partner       Partner?       @relation(fields: [partnerId], references: [id])
+  tenant        Tenant                @relation(fields: [tenantId], references: [id])
+  partner       Partner?              @relation(fields: [partnerId], references: [id])
   matches       Match[]
   introductions Introduction[]
   teamShortlist TeamShortlistMember[]
@@ -465,7 +469,7 @@ model Match {
   id                   String        @id @default(cuid())
   opportunityId        String
   personId             String
-  fitScore             Int           // 0-100, per-opportunity only; never a global ranking
+  fitScore             Int // 0-100, per-opportunity only; never a global ranking
   fitExplanation       String
   evidenceStrength     Int
   relationshipStrength Int
@@ -531,12 +535,12 @@ model Introduction {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  tenant            Tenant      @relation(fields: [tenantId], references: [id])
-  opportunity       Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  person            Person      @relation(fields: [personId], references: [id], onDelete: Cascade)
-  requestedBy       User        @relation("IntroRequester", fields: [requestedById], references: [id])
-  approvedBy        User?       @relation("IntroApprover", fields: [approvedById], references: [id])
-  recruitmentPartner Partner?   @relation(fields: [recruitmentPartnerId], references: [id])
+  tenant             Tenant      @relation(fields: [tenantId], references: [id])
+  opportunity        Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  person             Person      @relation(fields: [personId], references: [id], onDelete: Cascade)
+  requestedBy        User        @relation("IntroRequester", fields: [requestedById], references: [id])
+  approvedBy         User?       @relation("IntroApprover", fields: [approvedById], references: [id])
+  recruitmentPartner Partner?    @relation(fields: [recruitmentPartnerId], references: [id])
 
   @@index([tenantId])
   @@index([opportunityId])
@@ -567,23 +571,23 @@ enum SubscriptionStatus {
 }
 
 model Partner {
-  id                  String             @id @default(cuid())
-  tenantId            String             @unique
+  id                   String             @id @default(cuid())
+  tenantId             String             @unique
   /// The network that works with this agency. Every internal read and write is scoped by it.
-  networkTenantId     String?
-  name                String
-  contactName         String?
-  contactEmail        String?
-  subscriptionStatus  SubscriptionStatus @default(TRIAL)
-  subscriptionTier    String?
-  commercialModel     CommercialModel    @default(SUCCESS_SHARE)
-  commercialSharePct  Decimal?           @db.Decimal(5, 2)
-  monthlyFee          Decimal?           @db.Decimal(12, 2)
-  currency            String             @default("GBP")
-  licensedForPermanent Boolean           @default(true)
-  notes               String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  networkTenantId      String?
+  name                 String
+  contactName          String?
+  contactEmail         String?
+  subscriptionStatus   SubscriptionStatus @default(TRIAL)
+  subscriptionTier     String?
+  commercialModel      CommercialModel    @default(SUCCESS_SHARE)
+  commercialSharePct   Decimal?           @db.Decimal(5, 2)
+  monthlyFee           Decimal?           @db.Decimal(12, 2)
+  currency             String             @default("GBP")
+  licensedForPermanent Boolean            @default(true)
+  notes                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
   tenant        Tenant               @relation("PartnerProfile", fields: [tenantId], references: [id])
   networkTenant Tenant?              @relation("PartnerNetwork", fields: [networkTenantId], references: [id])
@@ -634,19 +638,19 @@ enum AdvisoryStatus {
 }
 
 model RelocationProfile {
-  personId                  String         @id
-  currentLocation           String?
-  targetLocation            String?
-  targetMoveWindow          String?
-  familyMove                Boolean        @default(false)
-  schoolGuidanceInterest    Boolean        @default(false)
-  housingGuidanceInterest   Boolean        @default(false)
-  relocationAdvisoryInterest Boolean       @default(false)
-  employerSponsored         Boolean        @default(false)
-  advisoryStatus            AdvisoryStatus @default(INTEREST_CAPTURED)
-  notes                     String?
-  createdAt                 DateTime       @default(now())
-  updatedAt                 DateTime       @updatedAt
+  personId                   String         @id
+  currentLocation            String?
+  targetLocation             String?
+  targetMoveWindow           String?
+  familyMove                 Boolean        @default(false)
+  schoolGuidanceInterest     Boolean        @default(false)
+  housingGuidanceInterest    Boolean        @default(false)
+  relocationAdvisoryInterest Boolean        @default(false)
+  employerSponsored          Boolean        @default(false)
+  advisoryStatus             AdvisoryStatus @default(INTEREST_CAPTURED)
+  notes                      String?
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
 
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 }
@@ -714,7 +718,7 @@ model SavedView {
   tenantId  String
   userId    String
   name      String
-  page      String   // e.g. "network"
+  page      String // e.g. "network"
   query     Json
   createdAt DateTime @default(now())
 
@@ -726,7 +730,7 @@ model AuditLog {
   id         String   @id @default(cuid())
   tenantId   String
   actorId    String?
-  action     String   // e.g. person.create, identity.reveal, summary.approve
+  action     String // e.g. person.create, identity.reveal, summary.approve
   entityType String
   entityId   String?
   metadata   Json?
@@ -838,7 +842,7 @@ model Brief {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+  tenant    Tenant            @relation(fields: [tenantId], references: [id])
   account   CommercialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   shortlist ShortlistItem[]
   feeLines  FeeLine[]
@@ -911,10 +915,10 @@ model FeeLine {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id])
-  brief   Brief   @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  tenant  Tenant            @relation(fields: [tenantId], references: [id])
+  brief   Brief             @relation(fields: [briefId], references: [id], onDelete: Cascade)
   account CommercialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  person  Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+  person  Person?           @relation(fields: [personId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, status])
 }
@@ -938,19 +942,19 @@ enum VouchKind {
 
 /// A person putting their name behind someone. Builds the trust score. EXTERNAL = e.g. a LinkedIn recommendation, weighted lower.
 model Vouch {
-  id             String    @id @default(cuid())
-  personId       String
-  voucherKind    VouchKind
-  voucherUserId  String?
+  id              String    @id @default(cuid())
+  personId        String
+  voucherKind     VouchKind
+  voucherUserId   String?
   voucherPersonId String?
-  voucherName    String?
-  source         String?
-  context        String
-  statement      String?
-  wouldRecommend Boolean   @default(true)
-  knownSince     Int? // the year the voucher first knew them, in their own words
-  attributes     Json? // observed FitScores
-  createdAt      DateTime  @default(now())
+  voucherName     String?
+  source          String?
+  context         String
+  statement       String?
+  wouldRecommend  Boolean   @default(true)
+  knownSince      Int? // the year the voucher first knew them, in their own words
+  attributes      Json? // observed FitScores
+  createdAt       DateTime  @default(now())
 
   person        Person  @relation("VouchedPerson", fields: [personId], references: [id], onDelete: Cascade)
   voucherUser   User?   @relation("VoucherUser", fields: [voucherUserId], references: [id], onDelete: SetNull)
@@ -1151,11 +1155,45 @@ model BoardPost {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  author Person @relation("PostAuthor", fields: [authorPersonId], references: [id], onDelete: Cascade)
-  brief  Brief? @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  tenant  Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author  Person       @relation("PostAuthor", fields: [authorPersonId], references: [id], onDelete: Cascade)
+  brief   Brief?       @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  replies BoardReply[]
 
   @@index([tenantId, status, createdAt])
+}
+
+/// A member answering a post on the board, in the open, for every member to read.
+model BoardReply {
+  id             String   @id @default(cuid())
+  tenantId       String
+  postId         String
+  authorPersonId String
+  body           String
+  createdAt      DateTime @default(now())
+
+  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  post   BoardPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author Person    @relation("ReplyAuthor", fields: [authorPersonId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+/// A private message between two members who are connected. Only the two of them can read it.
+model MemberMessage {
+  id           String    @id @default(cuid())
+  tenantId     String
+  connectionId String
+  fromPersonId String
+  body         String
+  readAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connection Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  from       Person     @relation("MessageFrom", fields: [fromPersonId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, createdAt])
 }
 
 enum ConnectionStatus {
@@ -1175,9 +1213,10 @@ model Connection {
   respondedAt  DateTime?
   createdAt    DateTime         @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  from   Person @relation("ConnectionFrom", fields: [fromPersonId], references: [id], onDelete: Cascade)
-  to     Person @relation("ConnectionTo", fields: [toPersonId], references: [id], onDelete: Cascade)
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  from     Person          @relation("ConnectionFrom", fields: [fromPersonId], references: [id], onDelete: Cascade)
+  to       Person          @relation("ConnectionTo", fields: [toPersonId], references: [id], onDelete: Cascade)
+  messages MemberMessage[]
 
   @@unique([fromPersonId, toPersonId])
   @@index([toPersonId, status])
