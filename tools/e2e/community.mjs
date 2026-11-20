@@ -88,7 +88,7 @@ await step("community: connected members message each other privately, and repli
   const words = `Good to meet you ${STAMP}`;
   await m1.locator("[data-thread]").getByLabel(/^Message /).fill(words); await m1.getByRole("button", { name: "Send message" }).click();
   await m1.waitForURL(/tab=connections&with=/, { timeout: 30000 });
-  assert(await m1.locator("[data-message]").filter({ hasText: words }).count(), "shown in the sender's thread");
+  await m1.locator("[data-message]").filter({ hasText: words }).waitFor({ timeout: 20000 }); // shown in the sender's thread
   assert(sql(`select count(*) from "AuditLog" where action='message.send' and metadata::text like '%${STAMP}%'`) === "0", "what was written is not in the audit log");
   await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
   assert(/1/.test(await m2.getByRole("link", { name: /^Connections/ }).first().innerText()), "unread shown on the tab");
