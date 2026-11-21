@@ -23,7 +23,7 @@ export default async function AmanaPage({ searchParams }: { searchParams: Promis
     prisma.introduction.findMany({ where: { tenantId: user.tenantId, commercialModel: "AMANA_SOW" }, include: { person: true, opportunity: { select: { title: true } } }, orderBy: { createdAt: "desc" } }),
     // The whole network, for the agent's read of who is free and where.
     prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { id: true, firstName: true, lastName: true, capabilities: true, availabilityStatus: true, availabilityDate: true, availabilityConfirmedAt: true, workPattern: true, primaryCity: true, primaryCountry: true, timeZone: true, amanaBench: true, usedByAmana: true } }),
-    prisma.brief.findMany({ where: { tenantId: user.tenantId, account: { kind: "EXPERT_NETWORK" }, status: { notIn: ["FILLED", "CLOSED"] } }, select: { id: true, title: true, capabilities: true, locations: true } }),
+    prisma.brief.findMany({ where: { tenantId: user.tenantId, account: { kind: "EXPERT_NETWORK" }, status: { notIn: ["FILLED", "CLOSED"] } }, select: { id: true, title: true, capabilities: true, locations: true, engagementRoute: true, shortlist: { where: { decision: { not: "NOT_FOR_THIS" } }, orderBy: { fitScore: "desc" }, take: 4, select: { id: true, tier: true, person: { select: { id: true, firstName: true, lastName: true } } } } }, orderBy: { updatedAt: "desc" } }),
   ]);
 
   const open = opps.filter((o) => !["CLOSED_WON", "CLOSED_LOST"].includes(o.status));
@@ -70,7 +70,17 @@ export default async function AmanaPage({ searchParams }: { searchParams: Promis
           <Card>
             <CardHeader title="Build team" description="Live Amana requirements and their proposal / SOW shortlists" />
             <CardBody>
-              {open.length === 0 ? <EmptyState title="No live Amana requirements" /> : (
+              {amanaBriefs.length ? (
+                <ul className="mb-2 divide-y divide-line" data-amana-briefs>
+                  {amanaBriefs.map((b) => (
+                    <li key={b.id} className="py-3">
+                      <div className="flex items-center justify-between gap-2"><Link href={`/requirements/${b.id}`} className="text-[13px] font-medium hover:underline underline-offset-4">{b.title}</Link>{b.engagementRoute ? <RouteBadge route={b.engagementRoute} /> : null}</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">{b.shortlist.length ? b.shortlist.map((t) => <Link key={t.id} href={`/network/${t.person.id}`} className="inline-flex items-center rounded-md border border-teal/30 bg-teal-100 px-2 py-0.5 text-[12px] text-teal">{fullName(t.person)}{t.tier === "meets" ? " · meets every requirement" : ""}</Link>) : <span className="text-[12px] text-ink-faint">Nobody found yet. <Link href={`/requirements/${b.id}`} className="text-navy hover:underline">Open the requirement</Link></span>}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {open.length === 0 ? (amanaBriefs.length ? null : <EmptyState title="No live Amana requirements" description="Raise one in Requirements for the Amana account." />) : (
                 <ul className="divide-y divide-line">
                   {open.map((o) => (
                     <li key={o.id} className="py-3">

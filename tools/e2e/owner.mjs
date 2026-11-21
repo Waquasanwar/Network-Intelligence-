@@ -228,6 +228,17 @@ await step("person: export + deletion request (owner)", p, async () => {
   await go(`/network/${personId}`);
   await p.screenshot({ path: `${DIR}/person.png`, fullPage: true });
 });
+await step("amana: the agent briefs on the bench, and home shows who is free", p, async () => {
+  await p.goto(`${BASE}/amana`, { waitUntil: "networkidle" });
+  const intel = p.locator("[data-amana-intel]");
+  assert(await intel.count(), "the briefing is on the Amana view");
+  assert(await intel.locator("[data-insights] li").count(), "the agent says something about the bench");
+  for (const k of ["readiness", "supply", "zones"]) assert(await intel.locator(`[data-intel="${k}"]`).count(), `the ${k} picture`);
+  await p.goto(`${BASE}/overview`, { waitUntil: "networkidle" });
+  if (Number(sql(`select count(*) from "Person" where "availabilityStatus" in ('AVAILABLE_NOW','FRACTIONAL_AVAILABILITY','FINISHING_ENGAGEMENT_SOON')`))) assert(await p.locator("[data-who-is-free]").count(), "home shows who is free");
+  await p.goto(`${BASE}/network/${personId}`, { waitUntil: "networkidle" });
+  assert(await p.locator("[data-availability-panel]").count(), "the profile shows availability as a panel");
+});
 console.log(JSON.stringify({ personId, briefId, oppId }));
 summary();
 await b.close();
