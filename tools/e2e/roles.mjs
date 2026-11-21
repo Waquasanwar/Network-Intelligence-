@@ -28,14 +28,6 @@ await stepIf("member: the agent asks whether to put them forward, and their yes 
   assert(Number(sql(`select count(*) from "Pitch" where "personId"='${anaId}' and "briefId"='${briefId}'`)) === 1, "their yes is a pitch on the requirement");
   assert(sql(`select count(*) from "AgentNote" where audience='OWNER' and key='answer:e2e-note-${stamp}'`) === "1", "the team is told");
 });
-  const t = await m.locator("main").innerText(); assert(/client name hidden/i.test(t), "client hidden"); assert(!/E2E Client/.test(t), "client name leaked to member");
-  // Each opportunity says how it suits them, from what we know of them, never from the budget.
-  assert(await m.locator("[data-fit]").count(), "suitability shown on opportunities");
-  assert(!/AED 5,000|5,000 a day/.test(t), "the budget is not shown to members");
-  await m.getByRole("button", { name: /Pitch with my profile/ }).first().click(); const d = dialog(m); await d.waitFor();
-  await d.locator('[name="note"]').fill("I ran exactly this for a retail group last year and can start in March."); await d.getByRole("button", { name: "Send pitch" }).click(); await m.waitForTimeout(2000);
-  assert(Number(sql(`select count(*) from "Pitch" where "personId"='${anaId}'`)) >= 1, "pitch row");
-});
 await stepIf("member: recommends someone", m, async () => {
   await m.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
   const f = m.locator("[data-guide]").filter({ hasText: "Recommend someone good" });
