@@ -896,3 +896,29 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
 .is-full { background: var(--color-teal-400); }
 .is-part { background: #6f8fd6; }
 .is-project { background: #d9a52c; }
+
+/* Amana intelligence: the agent's briefing, then three pictures of the bench. */
+.intel-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 8px; flex: none; }
+.intel-dot.is-good { background: #6ee7c5; }
+.intel-dot.is-watch { background: #f2c45c; }
+.intel-dot.is-act { background: #ff8f7a; }
+.intel-card { border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); padding: 18px 20px; min-width: 0; }
+.intel-title { font: 600 15px var(--font-display); color: var(--color-ink); }
+.intel-sub { margin-top: 2px; font-size: 12.5px; color: var(--color-ink-faint); }
+.intel-bar { display: flex; gap: 3px; height: 12px; margin-top: 14px; border-radius: 999px; overflow: hidden; background: var(--color-surface-muted); }
+.intel-bar i { display: block; border-radius: 999px; }
+.intel-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12.5px; color: var(--color-ink-muted); }
+.intel-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.intel-legend i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+.intel-legend b { color: var(--color-ink); font-weight: 600; }
+.r-now { background: var(--color-teal-400); } .r-soon { background: #d9a52c; } .r-later { background: #6f8fd6; } .r-unknown { background: var(--color-line-strong); } .r-no { background: color-mix(in srgb, var(--color-ink) 18%, transparent); } .r-net { background: #6f8fd6; }
+.intel-pair { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 3px 8px; margin-top: 6px; }
+.intel-pair span { height: 7px; border-radius: 999px; min-width: 3px; }
+.intel-pair span.is-bench { background: var(--color-teal-400); }
+.intel-pair span.is-net { background: #6f8fd6; }
+.intel-pair em { font-style: normal; font-size: 11.5px; color: var(--color-ink-muted); min-width: 1ch; text-align: right; }
+.intel-zone { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; }
+.intel-zone b { font: 600 14px var(--font-display); color: var(--color-ink); width: 44px; flex: none; }
+.intel-zone.is-work { background: color-mix(in srgb, var(--color-teal-400) 9%, transparent); }
+.intel-dots { display: inline-flex; gap: 3px; flex: none; }
+.intel-dots i { width: 7px; height: 7px; border-radius: 50%; display: block; }

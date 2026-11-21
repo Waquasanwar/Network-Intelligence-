@@ -38,3 +38,23 @@ export async function markNotesSeen() {
   const account = await resolvePortalAccount(user, null);
   if (account) await prisma.agentNote.updateMany({ where: { accountId: account.id, readAt: null }, data: { readAt: now } });
 }
+
+/**
+ * Ask the core circle members who have gone quiet to confirm when they are free. Members hear it on
+ * their home; everyone else stays on the team's list to call. Once a month at most per person.
+ */
+export async function askBenchToConfirm() {
+  const user = await requireUser();
+  if (!isInternal(user)) redirect("/forbidden");
+  const cutoff = new Date(Date.now() - 60 * 86_400_000);
+  const quiet = await prisma.person.findMany({ where: { tenantId: user.tenantId, OR: [{ amanaBench: true }, { usedByAmana: true }], AND: [{ OR: [{ availabilityConfirmedAt: null }, { availabilityConfirmedAt: { lt: cutoff } }] }], memberUser: { isNot: null } }, select: { id: true } });
+  const month = new Date().toISOString().slice(0, 7);
+  let asked = 0;
+  for (const p of quiet) {
+    const made = await prisma.agentNote.create({ data: { tenantId: user.tenantId, audience: "MEMBER", personId: p.id, key: `confirm:${p.id}:${month}`, kind: "update", href: "/member", title: "Is your availability still right?", body: "The Amana team is lining up work. Tap Still right, or Change, at the top of your home." } }).then(() => true).catch(() => false);
+    if (made) asked++;
+  }
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: "person.update", entityType: "Tenant", entityId: user.tenantId, metadata: { field: "availability-ask", asked } });
+  revalidatePath("/amana");
+  redirect(`/amana?asked=${asked}`);
+}

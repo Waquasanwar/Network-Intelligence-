@@ -3,40 +3,45 @@ import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Stat } from "@/components/ui/stat";
 import { Badge, Chip } from "@/components/ui/badge";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge, RouteBadge, StageBadge } from "@/components/domain/badges";
-import { ACTIVE_STATUSES, assessFreshness } from "@/lib/availability";
+import { assessFreshness } from "@/lib/availability";
 import { capabilityCoverage } from "@/lib/matching";
 import { fullName } from "@/lib/utils";
+import { amanaIntel } from "@/lib/amana-intel";
+import { AmanaIntelligence } from "@/components/domain/amana-intel";
 
 export const metadata = { title: "Amana Expert Network" };
 
-export default async function AmanaPage() {
+export default async function AmanaPage({ searchParams }: { searchParams: Promise<{ asked?: string }> }) {
   const user = await requireInternal();
-  const [bench, opps, introductions] = await Promise.all([
+  const sp = await searchParams;
+  const [bench, opps, introductions, everyone, amanaBriefs] = await Promise.all([
     prisma.person.findMany({ where: { tenantId: user.tenantId, OR: [{ amanaBench: true }, { usedByAmana: true }] }, include: { evidence: { select: { id: true } }, relationships: { select: { workedTogether: true } } }, orderBy: { lastName: "asc" } }),
     prisma.opportunity.findMany({ where: { tenantId: user.tenantId, isAmana: true }, include: { matches: { select: { humanDecision: true } }, teamShortlist: { include: { person: true } } }, orderBy: { updatedAt: "desc" } }),
     prisma.introduction.findMany({ where: { tenantId: user.tenantId, commercialModel: "AMANA_SOW" }, include: { person: true, opportunity: { select: { title: true } } }, orderBy: { createdAt: "desc" } }),
+    // The whole network, for the agent's read of who is free and where.
+    prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { id: true, firstName: true, lastName: true, capabilities: true, availabilityStatus: true, availabilityDate: true, availabilityConfirmedAt: true, workPattern: true, primaryCity: true, primaryCountry: true, timeZone: true, amanaBench: true, usedByAmana: true } }),
+    prisma.brief.findMany({ where: { tenantId: user.tenantId, account: { kind: "EXPERT_NETWORK" }, status: { notIn: ["FILLED", "CLOSED"] } }, select: { id: true, title: true, capabilities: true, locations: true } }),
   ]);
 
   const open = opps.filter((o) => !["CLOSED_WON", "CLOSED_LOST"].includes(o.status));
-  const sowReady = bench.filter((p) => (p.engagementPreferences.includes("SOW") || p.availabilityStatus === "SOW_ONLY") && ACTIVE_STATUSES.includes(p.availabilityStatus));
   const benchCaps = [...new Set(bench.flatMap((p) => p.capabilities))];
   const gaps = open.flatMap((o) => capabilityCoverage(o.requiredCapabilities, benchCaps).missing.map((c) => ({ capability: c, opportunity: o })));
+
+  // Live Amana work: Amana opportunities and requirements raised for the Amana account.
+  const demand = [
+    ...open.map((o) => ({ id: o.id, title: o.title, capabilities: o.requiredCapabilities, location: o.location, href: `/opportunities/${o.id}` })),
+    ...amanaBriefs.map((b) => ({ id: b.id, title: b.title, capabilities: b.capabilities, location: b.locations[0] ?? null, href: `/requirements/${b.id}` })),
+  ];
+  const intel = amanaIntel(everyone, demand);
 
   return (
     <>
       <PageHeader eyebrow="Exclusive workspace" title="Amana Expert Network" description="Who do we genuinely know who could solve this problem, and what evidence do we have? Consultants, associates, programme leaders, specialists, fractional executives and SOW teams." />
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <Stat label="Core circle" value={bench.filter((p) => p.amanaBench).length} />
-        <Stat label="Open to SOW now" value={sowReady.length} tone="teal" />
-        <Stat label="Used before" value={bench.filter((p) => p.usedByAmana).length} />
-        <Stat label="Live requirements" value={open.length} href="/opportunities?source=AMANA" />
-        <Stat label="Capability gaps" value={gaps.length} tone={gaps.length ? "amber" : "teal"} />
-      </div>
+      <AmanaIntelligence intel={intel} asked={sp.asked !== undefined ? Number(sp.asked) || 0 : undefined} />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 space-y-4">
