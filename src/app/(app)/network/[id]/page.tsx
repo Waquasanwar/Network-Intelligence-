@@ -15,7 +15,7 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Tabs, EmptyState, Section, Facts } from "@/components/ui/page";
 import { MoreMenu } from "@/components/ui/more-menu";
 import { Badge, Chip } from "@/components/ui/badge";
-import { AvailabilityBadge, DecisionBadge, RouteBadge, StageBadge } from "@/components/domain/badges";
+import { DecisionBadge, RouteBadge, StageBadge } from "@/components/domain/badges";
 import { DateText } from "@/components/domain/date";
 import { AvailabilityDrawer, EditProfileDrawer, AddRelationshipDrawer, AddEvidenceDrawer, ScheduleDrawer, CaptureConversationDrawer, RelocationDrawer } from "@/components/domain/person-drawers";
 import { fullName } from "@/lib/utils";
@@ -179,7 +179,6 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-4">
-          <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
           {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
           {person.amanaBench ? <Badge tone="teal" filled>Amana core circle</Badge> : null}
           {person.relocationInterest ? <Badge filled>relocation</Badge> : null}
