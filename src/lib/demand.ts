@@ -204,10 +204,10 @@ export function hardChecks(brief: Brief, person: BriefPerson): HardCheck[] {
     const fits = brief.locations.map((l) => placeFit(person, l));
     const local = fits.includes("here"); const near = fits.includes("country");
     const wants = brief.locations.some((l) => person.targetLocations.some((t) => norm(t) === norm(l) || COUNTRY_OF[norm(t)] === norm(l))) || person.relocationInterest;
-    if (local) checks.push({ label: `In ${brief.locations[0]}`, state: "met", note: `Based in ${person.primaryCity ?? person.primaryCountry}.` });
-    else if (near) checks.push({ label: `In ${brief.locations[0]}`, state: "unknown", note: `Based in ${person.primaryCity}, same country. Confirm they would work in ${brief.locations[0]}.` });
+    if (local) checks.push({ label: `In ${brief.locations[0]}`, state: "met", note: `Based in ${person.primaryCity ?? person.primaryCountry ?? "a place we have not recorded"}.` });
+    else if (near) checks.push({ label: `In ${brief.locations[0]}`, state: "unknown", note: `Based in ${person.primaryCity ?? "another city"}, same country. Confirm they would work in ${brief.locations[0]}.` });
     else if (brief.mustBeLocal) checks.push({ label: `In ${brief.locations[0]}`, state: "unmet", note: `Based in ${person.primaryCity ?? person.primaryCountry ?? "an unknown location"}${wants ? ", would relocate" : ""}; the brief needs someone already there.` });
-    else checks.push({ label: `In ${brief.locations[0]}`, state: wants ? "unknown" : "unmet", note: wants ? `Based in ${person.primaryCity ?? person.primaryCountry}; has expressed interest in ${brief.locations[0]}. Mobility to confirm.` : `Based in ${person.primaryCity ?? person.primaryCountry ?? "an unknown location"}; ${brief.locations[0]} not a stated target.` });
+    else checks.push({ label: `In ${brief.locations[0]}`, state: wants ? "unknown" : "unmet", note: wants ? `Based in ${person.primaryCity ?? person.primaryCountry ?? "a place we have not recorded"}; has expressed interest in ${brief.locations[0]}. Mobility to confirm.` : `Based in ${person.primaryCity ?? person.primaryCountry ?? "an unknown location"}; ${brief.locations[0]} not a stated target.` });
   }
   if (brief.workRights) {
     const need = norm(brief.workRights);

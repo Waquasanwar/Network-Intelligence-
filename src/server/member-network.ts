@@ -67,7 +67,7 @@ export async function roleFits(personId: string, tenantId: string, briefs: DbBri
     const results = matchBrief(toDomain(b), people, people.length);
     const mine = results.find((r) => r.match.personId === personId);
     const fromNetwork = results
-      .filter((r) => r.match.personId !== personId && known.has(r.match.personId) && r.tier !== "stretch" && r.match.fitScore >= 50)
+      .filter((r) => r.match.personId !== personId && known.has(r.match.personId) && r.tier !== "stretch" && r.match.fitScore >= 40)
       .slice(0, 2)
       .map((r) => ({ ...known.get(r.match.personId)!, fit: fitOf(r) }));
     out.set(b.id, { mine: mine ? fitOf(mine) : null, fromNetwork });
