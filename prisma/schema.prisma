@@ -62,6 +62,7 @@ model Tenant {
   connections       Connection[]
   boardReplies      BoardReply[]
   memberMessages    MemberMessage[]
+  agentNotes        AgentNote[]
   referralCredits   ReferralCredit[]
 }
 
@@ -1131,6 +1132,7 @@ enum BoardPostKind {
   WORK // a role or an assignment the member knows about
   HELP // the member is looking for someone
   AVAILABLE // the member is free for work
+  UPDATE // news, a thought, something learned: not a lead
 }
 
 enum BoardPostStatus {
@@ -1250,4 +1252,38 @@ model ReferralCredit {
 
   @@unique([briefId, placedId, personId])
   @@index([tenantId, status])
+}
+
+enum NoteAudience {
+  OWNER
+  MEMBER
+  ACCOUNT
+}
+
+/// Something the agent tells someone: the team, a member or a client account. Written by the agent
+/// as it works (a new requirement searched, a member put forward), read in the bell or a feed.
+/// `key` makes each note once-only, so running the agent again never repeats itself.
+model AgentNote {
+  id        String       @id @default(cuid())
+  tenantId  String
+  audience  NoteAudience
+  personId  String? // the member it is for
+  accountId String? // the client or agency it is for
+  key       String
+  kind      String // found | fit | forward | update | proposed | answer
+  title     String
+  body      String?
+  href      String?
+  briefId   String?
+  aboutId   String? // the person it is about, when not the reader
+  answer    String? // the reader's answer to a question note: yes | no
+  readAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId, audience, createdAt])
+  @@index([personId, createdAt])
+  @@index([accountId, createdAt])
 }

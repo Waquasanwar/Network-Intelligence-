@@ -7,28 +7,20 @@ import { mayInvite } from "@/server/invites";
 import { resolveMemberPerson, loadFeatures } from "@/server/queries";
 import { standardFor } from "@/lib/standard-for";
 import { TRUST_SELECT } from "@/lib/trust-include";
-import { ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import { PageHeader, EmptyState, Tabs } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { Chip } from "@/components/ui/badge";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ProofPips } from "@/components/domain/standard";
 import { DateText } from "@/components/domain/date";
-import { Guide } from "@/components/ui/guide";
-import { createPost, closePost, interestedInPost, referToPost, connect, answerConnection, setDirectory, replyToPost, sendMessage } from "@/server/actions/community";
+import { PostItem, ShareGuide } from "@/components/domain/board";
+import { connect, answerConnection, setDirectory, sendMessage } from "@/server/actions/community";
 import { ArrowUp, Lock, Mail, Phone, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { BoardPostKind, EngagementRoute } from "@prisma/client";
 
 export const metadata = { title: "Community" };
 
-const KIND: Record<BoardPostKind, { label: string; tone: string }> = {
-  WORK: { label: "Work I know about", tone: "bg-teal-50 text-ink" },
-  HELP: { label: "Looking for someone", tone: "bg-amber-100 text-ink" },
-  AVAILABLE: { label: "Available", tone: "bg-navy-100 text-ink" },
-};
 const NOTICE: Record<string, string> = {
   "reply-details": "Write a few words before sending.",
   "message-details": "Write something before sending.",
@@ -133,63 +125,11 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
               <CardBody className="pt-2">
                 {posts.length === 0 ? <div className="py-6"><EmptyState title="Nothing on the board yet" description={internal ? "When members share work, ask for someone or say they are free, it shows here." : "Be the first: share a piece of work you know about, or say when you are free."} /></div> : (
                   <ul className="divide-y divide-line">
-                    {posts.map((p) => {
-                      const own = me?.id === p.authorPersonId;
-                      return (
-                        <li key={p.id} className="py-4" data-post={p.kind}>
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${KIND[p.kind].tone}`}>{KIND[p.kind].label}</span>
-                              <h3 className="mt-1.5 text-[15px] font-semibold leading-snug">{p.title}</h3>
-                              <div className="mt-0.5 text-[12px] text-ink-faint">{own ? "You" : fullName(p.author)}{p.author.headline ? ` · ${p.author.headline}` : ""} · <DateText date={p.createdAt} relative /></div>
-                            </div>
-                            {own || internal ? <form action={closePost}><input type="hidden" name="postId" value={p.id} /><SubmitButton size="sm" variant="ghost" pendingText="…">{internal ? "Take down" : "Close"}</SubmitButton></form> : null}
-                          </div>
-                          <p className="mt-2 text-[13.5px] leading-[1.55] text-ink-muted whitespace-pre-line max-w-[75ch]">{p.body}</p>
-                          {p.route || p.location ? <div className="mt-2 flex flex-wrap gap-1">{p.route ? <Chip>{ROUTE_LABELS[p.route]}</Chip> : null}{p.location ? <Chip>{p.location}</Chip> : null}</div> : null}
-                          {internal && p.briefId ? <Link href={`/requirements/${p.briefId}`} className="mt-2 inline-block text-[12.5px] font-semibold text-ink underline underline-offset-2">Open the lead in Requirements</Link> : null}
-                          {!own && !internal && p.kind !== "AVAILABLE" ? (
-                            <div className="mt-3 flex flex-wrap items-start gap-2">
-                              {p.briefId && pitched.has(p.briefId) ? <span className="inline-flex h-8 items-center text-[12.5px] font-semibold text-teal">You said you are interested</span> : <form action={interestedInPost}><input type="hidden" name="postId" value={p.id} /><SubmitButton size="sm" pendingText="…">I&apos;m interested</SubmitButton></form>}
-                              <details className="min-w-0 flex-1"><summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden inline-flex h-8 items-center rounded-full border border-line bg-surface px-3 text-[12px] font-semibold">Refer someone</summary>
-                                <Guide
-                                  className="mt-3 max-w-[560px]"
-                                  intro="Refer someone you would stand behind. Credited to you if they are placed."
-                                  action={referToPost}
-                                  hidden={{ postId: p.id }}
-                                  submit="Send referral"
-                                  review="Here is your referral"
-                                  steps={[
-                                    { name: "name", kind: "text", ask: "Who would you refer?", short: "Who", placeholder: "Their full name", min: 2, max: 120 },
-                                    { name: "context", kind: "text", ask: "How do you know {name}'s work?", short: "How you know them", placeholder: "Ran the data migration on our programme last year", min: 5, max: 600 },
-                                    { name: "email", kind: "text", ask: "How can we reach {name}?", short: "Contact", optional: true, placeholder: "Email or LinkedIn", max: 200 },
-                                  ]}
-                                />
-                              </details>
-                            </div>
-                          ) : null}
-                          {!own && !internal && p.kind === "AVAILABLE" && listed && links ? (() => { const c = linkWith(p.authorPersonId); return c ? <div className="mt-3 text-[12.5px] font-semibold text-ink-muted">{c.status === "ACCEPTED" ? "Connected" : c.status === "PENDING" ? "Request sent" : null}</div> : <form action={connect} className="mt-3"><input type="hidden" name="personId" value={p.authorPersonId} /><SubmitButton size="sm" variant="secondary" pendingText="…">Connect</SubmitButton></form>; })() : null}
-                          <div id={`post-${p.id}`} className="mt-3 space-y-2" data-replies>
-                            {p.replies.map((r) => (
-                              <div key={r.id} className="flex items-start gap-2.5" data-reply>
-                                <Avatar person={r.author} size="sm" />
-                                <div className="min-w-0 rounded-[14px] bg-surface-muted px-3 py-2">
-                                  <div className="text-[12px] text-ink-faint"><b className="font-semibold text-ink">{me?.id === r.authorPersonId ? "You" : fullName(r.author)}</b> · <DateText date={r.createdAt} relative /></div>
-                                  <p className="mt-0.5 whitespace-pre-line text-[13.5px] leading-[1.5] text-ink">{r.body}</p>
-                                </div>
-                              </div>
-                            ))}
-                            {internal ? null : (
-                              <form action={replyToPost} className="composer flex items-center gap-2 p-1 pl-4">
-                                <input type="hidden" name="postId" value={p.id} />
-                                <input name="body" required minLength={2} maxLength={1000} placeholder={own ? "Add to your post…" : `Reply to ${p.author.firstName}…`} aria-label={`Reply to ${own ? "your post" : p.author.firstName}`} className="h-9 min-w-0 flex-1 text-[13.5px]" />
-                                <button type="submit" className="send-btn !h-8 !w-8" aria-label="Send reply"><ArrowUp className="h-4 w-4" /></button>
-                              </form>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
+                    {posts.map((p) => (
+                      <li key={p.id}>
+                        <PostItem p={p} me={me} internal={internal} pitched={!!p.briefId && pitched.has(p.briefId)} link={linkWith(p.authorPersonId) ?? null} canConnect={listed && links} />
+                      </li>
+                    ))}
                   </ul>
                 )}
               </CardBody>
@@ -197,25 +137,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
           </div>}
           {internal ? null : (
             <div>
-              <Guide
-                intro={empty ? "The board is empty, so you would be first. Your name is shown with what you share." : "Share something with members. Your name is shown with it."}
-                action={createPost}
-                submit="Post"
-                pending="Posting…"
-                review="Here is your post"
-                steps={[
-                  { name: "kind", kind: "choice", ask: "What would you like to share?", short: "What", options: [
-                    { value: "WORK", label: "Work I know about", hint: "A role or project someone needs filled" },
-                    { value: "HELP", label: "I am looking for someone", hint: "A specialist you need yourself" },
-                    { value: "AVAILABLE", label: "I am free for work", hint: "Let members know you can take something on" },
-                  ] },
-                  { name: "title", kind: "text", ask: "Give it a one-line title", short: "Title", placeholder: "Interim CFO, energy group, Dubai", min: 4, max: 120 },
-                  { name: "body", kind: "long", ask: "Tell members a little more", short: "Details", hint: "What it is, for how long, and anything fixed like budget or start date.", min: 10, max: 2000 },
-                  { name: "route", kind: "choice", ask: "What kind of work is it?", short: "Type", optional: true, options: [{ value: "", label: "Any, or not sure" }, ...(Object.keys(ROUTE_LABELS) as EngagementRoute[]).map((r) => ({ value: r, label: ROUTE_LABELS[r] }))] },
-                  { name: "location", kind: "text", ask: "Where is it?", short: "Where", optional: true, max: 120, placeholder: "City, or remote", picks: ["Dubai", "Abu Dhabi", "Riyadh", "London", "Remote"] },
-                  { name: "terms", kind: "confirm", ask: "One thing before it goes up", short: "Through the network", when: { name: "kind", in: ["WORK", "HELP"] }, hint: earnings ? "Work shared here is introduced through the network, so nobody is cut out. If someone you bring in is placed, you receive a share of the fee." : "Work shared here is introduced through the network, so nobody is cut out.", yes: "That is fine" },
-                ]}
-              />
+              <ShareGuide earnings={earnings} intro={empty ? "The board is empty, so you would be first. Your name is shown with what you share." : "Share something with members. Your name is shown with it."} />
             </div>
           )}
         </div>

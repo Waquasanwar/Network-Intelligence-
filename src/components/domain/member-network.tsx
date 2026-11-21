@@ -11,15 +11,15 @@ const initials = (p: NetPerson) => `${p.firstName[0] ?? ""}${p.lastName[0] ?? ""
  * The member's own corner of the network: who brought them in, who they brought in, and who they
  * are connected with, drawn around them, with the same people listed beside it in words.
  */
-export function MemberNetwork({ broughtMeIn, broughtIn, connected, inviteHref }: { broughtMeIn: NetPerson | null; broughtIn: NetTie[]; connected: NetTie[]; inviteHref: string }) {
+export function MemberNetwork({ broughtMeIn, broughtIn, connected, inviteHref, compact = false }: { compact?: boolean; broughtMeIn: NetPerson | null; broughtIn: NetTie[]; connected: NetTie[]; inviteHref: string }) {
   const ring = [...broughtIn, ...connected].slice(0, 12);
   const C = 120, R = 86;
   const at = (i: number, n: number) => { const a = -Math.PI / 2 + ((i + (broughtMeIn ? 0.5 : 0)) / Math.max(n, 1)) * Math.PI * 2; return { x: C + R * Math.cos(a), y: C + R * Math.sin(a) }; };
   const total = broughtIn.length + connected.length + (broughtMeIn ? 1 : 0);
   return (
-    <section className="mb-6" aria-labelledby="member-network" data-member-network>
+    <section className={compact ? "" : "mb-6"} aria-labelledby="member-network" data-member-network>
       <h2 id="member-network" className="section-title text-[18px]">Your network here</h2>
-      <div className="mt-3.5 grid grid-cols-1 items-center gap-6 rounded-[20px] border border-line bg-surface p-5 md:grid-cols-[240px_1fr]">
+      <div className={`mt-3.5 grid grid-cols-1 items-center gap-5 rounded-[20px] border border-line bg-surface p-5 ${compact ? "" : "md:grid-cols-[240px_1fr]"}`}>
         <svg viewBox="0 0 240 240" className="mnet mx-auto h-[220px] w-[220px]" role="img" aria-label={`You and ${total} ${total === 1 ? "person" : "people"} you know here`}>
           <circle cx={C} cy={C} r={R} className="mnet-orbit" />
           {broughtMeIn ? <line x1={C} y1={C} x2={C} y2={C - R - 6} className="mnet-line is-in" /> : null}

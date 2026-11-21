@@ -183,8 +183,8 @@ await step("features: you switch the board off and members lose it at once, then
     assert(!(await m2.locator("[data-guide]").count()), "nothing to post");
     assert(!(await m2.getByRole("link", { name: /^Board/ }).count()), "no board tab");
     await m2.goto(`${BASE}/member`, { waitUntil: "networkidle" });
-    assert(!(await m2.locator('[data-value="share"]').count()), "no share card");
-    assert(await m2.locator('[data-value="connect"]').count(), "connections still offered");
+    assert(!(await m2.locator("[data-share]").count()), "no sharing on their home");
+    assert(await m2.locator('a[href="/community?tab=members"]').count(), "connections still offered");
     // And it comes straight back.
     await o.locator('[data-feature="communityBoard"]').getByRole("switch").click();
     assert(await until(() => state() === "true"), "stored as on");

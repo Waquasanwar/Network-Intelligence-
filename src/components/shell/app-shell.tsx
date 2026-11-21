@@ -6,7 +6,8 @@ import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
 import { fullName } from "@/lib/utils";
-import { alertsFor, loadFeatures } from "@/server/queries";
+import { alertsFor, loadFeatures, resolveMemberPerson, resolvePortalAccount } from "@/server/queries";
+import { notesFor } from "@/server/agent";
 
 export async function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
   const pages = [
@@ -24,11 +25,20 @@ export async function AppShell({ user, children }: { user: SessionUser; children
     { id: "p-security", label: "Security", href: "/settings/security", group: "Pages" },
   ];
 
-  // Members see Community only while the owner has the board or member connections switched on.
   const f = user.role === "MEMBER" ? await loadFeatures(user.tenantId) : null;
-  const community = !f || f.communityBoard || f.memberConnections;
+  // Messages and People live on Community; the board itself is on the member home.
+  const community = !f || f.memberConnections;
   let items = pages;
-  const alerts = isInternal(user) ? (await alertsFor(user.tenantId)).map((a) => ({ ...a, when: a.when.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) })) : [];
+  // The bell: what is waiting on the team, and what the agent has told this reader.
+  const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const reader = isInternal(user) ? { tenantId: user.tenantId, audience: "OWNER" as const }
+    : user.role === "MEMBER" ? await resolveMemberPerson(user, null).then((m) => (m ? { personId: m.id } : null))
+    : await resolvePortalAccount(user, null).then((a) => (a ? { accountId: a.id } : null));
+  const notes = reader ? await notesFor(reader, 12) : [];
+  const alerts = [
+    ...notes.map((n) => ({ kind: "Amana", text: n.title, href: n.href ?? (user.role === "MEMBER" ? "/member#from-amana" : "/"), when: day(n.when), tone: "teal" as const, unread: n.unread || (n.question && !n.answer) })),
+    ...(isInternal(user) ? (await alertsFor(user.tenantId)).map((a) => ({ ...a, when: day(a.when) })) : []),
+  ];
   if (isInternal(user)) {
     const [people, opps] = await Promise.all([
       prisma.person.findMany({ where: { tenantId: user.tenantId }, select: { id: true, firstName: true, lastName: true, preferredName: true, headline: true }, take: 500, orderBy: { updatedAt: "desc" } }),

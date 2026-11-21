@@ -1,5 +1,6 @@
 "use client";
 import { signOutAction } from "@/server/actions/session";
+import { markNotesSeen } from "@/server/actions/agent-notes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bell, Menu, ChevronRight, ChevronDown, LogOut } from "lucide-react";
@@ -34,7 +35,8 @@ export function SectionTabs({ role, className = "" }: { role: string; className?
   );
 }
 
-export type Alert = { kind: string; text: string; href: string; when: string; tone: "teal" | "amber" | "navy" };
+/** A thing waiting on you, or something the agent has told you. `unread: false` is a note already seen. */
+export type Alert = { kind: string; text: string; href: string; when: string; tone: "teal" | "amber" | "navy"; unread?: boolean };
 
 function useCrumbs(crumbs?: { label: string; href?: string }[]) {
   const pathname = usePathname();
@@ -71,6 +73,7 @@ export function Crumbs({ crumbs }: { crumbs?: { label: string; href?: string }[]
  */
 export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { name: string; role: string; tenantName: string }; home: string }) {
   const [open, setOpen] = React.useState<"alerts" | "account" | null>(null);
+  const waiting = alerts.filter((a) => a.unread !== false).length;
   const pathname = usePathname();
   React.useEffect(() => { setOpen(null); }, [pathname]);
   React.useEffect(() => {
@@ -94,13 +97,13 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
       <ThemeToggle className="h-10 w-10 flex-none" />
 
       <div className="relative flex-none">
-        <button type="button" onClick={() => setOpen(open === "alerts" ? null : "alerts")} aria-label={`Alerts${alerts.length ? `, ${alerts.length} waiting` : ""}`} aria-expanded={open === "alerts"} className="relative h-10 w-10 rounded-full border border-line bg-surface grid place-items-center text-ink shadow-[var(--shadow-card)] hover:border-line-strong transition-colors duration-200 cursor-pointer">
+        <button type="button" onClick={() => { if (open !== "alerts" && waiting) void markNotesSeen(); setOpen(open === "alerts" ? null : "alerts"); }} aria-label={`Updates${waiting ? `, ${waiting} new` : ""}`} aria-expanded={open === "alerts"} className="relative h-10 w-10 rounded-full border border-line bg-surface grid place-items-center text-ink shadow-[var(--shadow-card)] hover:border-line-strong transition-colors duration-200 cursor-pointer">
           <Bell className="h-[18px] w-[18px]" />
-          {alerts.length ? <span className="absolute top-0.5 right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-coral text-accent-ink text-[10px] font-bold leading-[17px] text-center ring-2 ring-canvas">{alerts.length}</span> : null}
+          {waiting ? <span className="absolute top-0.5 right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-coral text-accent-ink text-[10px] font-bold leading-[17px] text-center ring-2 ring-canvas">{waiting}</span> : null}
         </button>
         {open === "alerts" ? (
           <div className="absolute right-0 top-12 z-50 w-[380px] max-w-[calc(100vw-24px)] widget text-ink shadow-[var(--shadow-pop)] overflow-hidden anim-fade">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-line text-[13px]"><b>Needs your attention</b><small className="text-ink-faint">{alerts.length} item{alerts.length === 1 ? "" : "s"}</small></div>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-line text-[13px]"><b>Updates</b><small className="text-ink-faint">{waiting ? `${waiting} new` : "All caught up"}</small></div>
             {alerts.length ? <ul className="p-1.5 max-h-[60vh] overflow-auto">{alerts.map((a, i) => <li key={i}><Link href={a.href} onClick={() => setOpen(null)} className="grid grid-cols-[auto_1fr_auto] gap-2.5 items-center px-2.5 py-2 rounded-[12px] text-[12.5px] hover:bg-surface-muted"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${a.tone === "teal" ? "bg-teal-100 text-teal" : a.tone === "amber" ? "bg-amber-100 text-amber" : "bg-navy-100 text-navy"}`}>{a.kind}</span><span>{a.text}</span><small className="text-ink-faint whitespace-nowrap">{a.when}</small></Link></li>)}</ul> : <p className="px-4 py-3.5 text-[12.5px] text-ink-muted">Nothing waiting. New registrations, screenings, referrals, pitches and client requests appear here.</p>}
           </div>
         ) : null}

@@ -13,6 +13,7 @@ import { requireUser } from "@/server/session";
 import { resolveMemberPerson, loadRateCard, loadFeatures } from "@/server/queries";
 import { mayInvite } from "@/server/invites";
 import { boardAccount, briefData, termsFor, forecastFee, runShortlist } from "@/server/briefs";
+import { agentOnBrief } from "@/server/agent";
 
 /**
  * The members' community board. Members share work they know about, say when they are looking for
@@ -42,7 +43,7 @@ async function mustBeOn(tenantId: string, key: "communityBoard" | "memberConnect
 }
 
 const postSchema = z.object({
-  kind: z.enum(["WORK", "HELP", "AVAILABLE"]),
+  kind: z.enum(["WORK", "HELP", "AVAILABLE", "UPDATE"]),
   title: z.string().trim().min(4).max(120),
   body: z.string().trim().min(10).max(2000),
   route: z.enum(ROUTES).optional().or(z.literal("")),
@@ -57,7 +58,7 @@ export async function createPost(formData: FormData) {
   const parsed = postSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) back("notice=post-details");
   const d = parsed.data!;
-  const lead = d.kind !== "AVAILABLE";
+  const lead = d.kind === "WORK" || d.kind === "HELP"; // updates and "I am free" are not leads
   if (lead && formData.get("terms") !== "on") back("notice=post-terms");
   const open = await prisma.boardPost.count({ where: { authorPersonId: me!.id, status: "OPEN" } });
   if (open >= 10) back("notice=too-many");
@@ -74,6 +75,7 @@ export async function createPost(formData: FormData) {
     const b = await prisma.brief.create({ data: { tenantId: me!.tenantId, accountId: account.id, submittedVia: "BOARD", status: "NEW", ...briefData({ ...p, title: d.title, engagementRoute: route, rawText: `Shared on the member board by ${me!.firstName} ${me!.lastName} (${d.kind === "WORK" ? "work they know about" : "looking for someone"}):\n\n${said}` }, terms) } });
     await forecastFee(b, me!.tenantId, card);
     await runShortlist(b, me!.tenantId);
+    await agentOnBrief(b.id);
     briefId = b.id;
   }
   const post = await prisma.boardPost.create({ data: { tenantId: me!.tenantId, authorPersonId: me!.id, kind: d.kind, title: d.title, body: d.body, route: (d.route || null) as EngagementRoute | null, location: d.location || null, briefId } });

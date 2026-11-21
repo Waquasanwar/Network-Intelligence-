@@ -15,9 +15,19 @@ const briefId = sql(`select id from "Brief" where "openToMembers" and "memberSum
 const anaId = sql(`select "personId" from "User" where email='${ana}'`);
 
 const ONLY = process.env.ONLY; const realStep = step; const stepIf = (n, p, f) => (!ONLY || new RegExp(ONLY).test(n)) ? realStep(n, p, f) : null;
-await stepIf("member: sees open opportunity (summary only) and pitches", m, async () => {
+await stepIf("member: the agent asks whether to put them forward, and their yes reaches the team", m, async () => {
   assert(briefId, "an open brief exists");
+  // Members do not browse roles or pitch: the agent brings a match to them and asks.
+  sql(`delete from "AgentNote" where key='fit:${briefId}:${anaId}'`);
+  sql(`insert into "AgentNote" (id,"tenantId",audience,"personId",key,kind,title,body,"briefId") values ('e2e-note-${stamp}','${tenant}','MEMBER','${anaId}','fit:${briefId}:${anaId}','fit','A role has come in that fits you: Fractional CFO · Dubai','Shall I put you forward? Your name is only shared with your yes.','${briefId}')`);
   await m.goto(`${BASE}/member?tab=opportunities`, { waitUntil: "networkidle" });
+  const t = await m.locator("main").innerText();
+  assert(!/Pitch with my profile/.test(t), "no pitching for members"); assert(!/E2E Client/.test(t), "client name leaked to member"); assert(!/AED 5,000|5,000 a day/.test(t), "the budget is not shown to members");
+  const ask = m.locator('[data-note="fit"]').first(); assert(await ask.count(), "the agent's question is on their home");
+  await ask.getByRole("button", { name: "Yes, put me forward" }).click(); await m.waitForLoadState("networkidle"); await m.waitForTimeout(1200);
+  assert(Number(sql(`select count(*) from "Pitch" where "personId"='${anaId}' and "briefId"='${briefId}'`)) === 1, "their yes is a pitch on the requirement");
+  assert(sql(`select count(*) from "AgentNote" where audience='OWNER' and key='answer:e2e-note-${stamp}'`) === "1", "the team is told");
+});
   const t = await m.locator("main").innerText(); assert(/client name hidden/i.test(t), "client hidden"); assert(!/E2E Client/.test(t), "client name leaked to member");
   // Each opportunity says how it suits them, from what we know of them, never from the budget.
   assert(await m.locator("[data-fit]").count(), "suitability shown on opportunities");

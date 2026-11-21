@@ -14,6 +14,7 @@ import { toDomain } from "@/lib/brief-domain";
 import type { Brief as DbBrief, EngagementRoute, Seniority, Prisma } from "@prisma/client";
 import { resolvePortalAccount, loadRateCard } from "@/server/queries";
 import { briefData, briefPeople, termsFor, forecastFee, runShortlist, creditReferrers } from "@/server/briefs";
+import { agentOnBrief, agentOnDecision } from "@/server/agent";
 
 // ---------- shared helpers (also used by pages) ----------
 
@@ -65,6 +66,7 @@ export async function createBrief(formData: FormData) {
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "brief.create", entityType: "Brief", entityId: b.id, metadata: { account: account.name, title } });
   await forecastFee(b, user.tenantId, card);
   await runShortlist(b, user.tenantId);
+  await agentOnBrief(b.id);
   revalidatePath("/requirements");
   redirect(`/requirements/${b.id}`);
 }
@@ -97,6 +99,7 @@ export async function findForBrief(formData: FormData) {
   const user = await requireInternalAction();
   const b = await ownedBrief(user, String(formData.get("briefId")));
   const n = await runShortlist(b, user.tenantId);
+  await agentOnBrief(b.id);
   if (b.status === "NEW" || b.status === "QUALIFYING") await prisma.brief.update({ where: { id: b.id }, data: { status: "SEARCHING" } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "brief.search", entityType: "Brief", entityId: b.id, metadata: { retrieved: n } });
   revalidatePath(`/requirements/${b.id}`);
@@ -205,6 +208,7 @@ export async function decideShortlist(formData: FormData) {
   const placed = await prisma.shortlistItem.count({ where: { briefId: item.briefId, decision: "PLACED" } });
   const next: BriefStatus | null = placed >= item.brief.headcount ? "FILLED" : decision === "INTRODUCED" ? "INTRODUCING" : decision === "PROPOSED" && ["NEW", "QUALIFYING", "SEARCHING"].includes(item.brief.status) ? "SHORTLISTED" : null;
   if (next && next !== item.brief.status) await prisma.brief.update({ where: { id: item.briefId }, data: { status: next } });
+  await agentOnDecision(item.id);
   revalidatePath(`/requirements/${item.briefId}`); revalidatePath("/requirements"); revalidatePath("/portal");
 }
 
@@ -353,6 +357,9 @@ export async function portalSubmitBrief(formData: FormData) {
   const b = await prisma.brief.create({ data: { tenantId: account.tenantId, accountId: account.id, submittedVia: "PORTAL", status: "NEW", ...briefData(parsed, terms) } });
   await audit({ tenantId: account.tenantId, actorId: user.id, action: "portal.brief_submitted", entityType: "Brief", entityId: b.id, metadata: { account: account.name, title: parsed.title } });
   await forecastFee(b, account.tenantId, card);
+  // The agent searches straight away. Nothing reaches the client until the team proposes someone.
+  await runShortlist(b, account.tenantId);
+  await agentOnBrief(b.id);
   revalidatePath("/portal"); revalidatePath("/requirements");
 }
 

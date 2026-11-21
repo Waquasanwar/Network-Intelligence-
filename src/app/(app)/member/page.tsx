@@ -9,12 +9,11 @@ import { InviteComposer, MyLinkShare, CopyInviteLink } from "@/components/domain
 import { revokeInvite } from "@/server/actions/invites";
 import { mayInvite } from "@/server/invites";
 import { Badge, Chip } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyState } from "@/components/ui/page";
 import { TrustCard, FitCard } from "@/components/domain/trust";
-import { BookScreeningDrawer, PitchDrawer } from "@/components/domain/member-drawers";
+import { BookScreeningDrawer } from "@/components/domain/member-drawers";
 import { startScreening, setConsent, submitReferral, confirmMyAvailability } from "@/server/actions/members";
 import type { AvailabilityStatus } from "@prisma/client";
 import { trustFor, fitFor } from "@/lib/trust-for";
@@ -24,32 +23,34 @@ import { ProofLine } from "@/components/domain/standard";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
 import { privacyOf } from "@/lib/privacy";
-import { resolveMemberPerson, loadRateCard, loadFeatures } from "@/server/queries";
-import { UsersRound, Handshake, Megaphone, Briefcase, ArrowRight, Lock } from "lucide-react";
+import { resolveMemberPerson, loadFeatures } from "@/server/queries";
+import { UsersRound, ArrowRight } from "lucide-react";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { TRUST_BAND_LABEL } from "@/lib/trust";
 import { fitHighlights, ATTRIBUTES } from "@/lib/fit";
 import { rateBand, fmt } from "@/lib/demand";
 import { SCREENING_MINUTES, SCREENING_SCRIPT } from "@/lib/screening";
 import { ShieldCheck, EyeOff, PenLine } from "lucide-react";
-import { ROUTE_LABELS, AVAILABILITY_LABELS } from "@/lib/labels";
+import { AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
-import { Tracker, stepsFrom } from "@/components/ui/tracker";
 import { Constellation } from "@/components/ui/constellation";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 import { Guide } from "@/components/ui/guide";
 import { KNOWN_HOW } from "@/lib/known";
-import { memberNetwork, roleFits, type RoleFit } from "@/server/member-network";
+import { memberNetwork } from "@/server/member-network";
+import { notesFor } from "@/server/agent";
+import { answerFit } from "@/server/actions/agent-notes";
+import { DateText } from "@/components/domain/date";
+import { PostItem, ShareBox } from "@/components/domain/board";
+import { UserPlus, MessageCircle, BadgeCheck } from "lucide-react";
 import { MemberNetwork } from "@/components/domain/member-network";
 import { AgentMark } from "@/components/ui/agent-mark";
-import { Check } from "lucide-react";
 
 export const metadata = { title: "My network profile" };
 
 const SELF_STATUSES: AvailabilityStatus[] = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "TAKING_A_BREAK"];
 
 const REF_STATUS: Record<string, string> = { NEW: "New", CONTACTED: "Contacted", SCREENING: "Screening booked", ACCEPTED: "In the network", DECLINED: "Not now" };
-const PITCH_STATUS: Record<string, string> = { SUBMITTED: "Submitted", SHORTLISTED: "On the shortlist", DECLINED: "Not this time" };
 
 export default async function MemberPage({ searchParams }: { searchParams: Promise<{ tab?: string; person?: string; sent?: string; screened?: string; welcome?: string; name?: string; brief?: string }> }) {
   const user = await requireUser();
@@ -59,19 +60,14 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   if (!base) return <EmptyState title="No member profile" description={internal ? "Nobody has joined as a member yet. Share the join link." : "Your login is not linked to a profile yet. Ask your contact at Amana Network."} />;
   const p = await prisma.person.findUnique({ where: { id: base.id }, include: { ...TRUST_INCLUDE, referralsMade: { include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } }, pitches: { include: { brief: { select: { id: true, roles: true } } } } } });
   if (!p) redirect("/forbidden");
-  const [members, open, myInvites] = await Promise.all([
+  const [members, myInvites] = await Promise.all([
     internal ? prisma.person.findMany({ where: { tenantId: p.tenantId, memberSince: { not: null } }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: "asc" } }) : Promise.resolve([]),
-    // Members read the summary written for them — select only what the card shows, never the client's own words or terms.
-    prisma.brief.findMany({ where: { tenantId: p.tenantId, openToMembers: true, memberSummary: { not: null }, status: { notIn: ["FILLED", "CLOSED"] } }, select: { id: true, roles: true, headcount: true, engagementRoute: true, locations: true, sectors: true, capabilities: true, workRights: true, memberSummary: true }, orderBy: { updatedAt: "desc" } }),
     prisma.invite.findMany({ where: { inviterPersonId: p.id }, select: { id: true, name: true, status: true, expiresAt: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 25 }),
   ]);
   const openRefs = (await prisma.referenceRequest.findMany({ where: { personId: p.id, status: "SENT", expiresAt: { gt: new Date() } }, select: { id: true, refereeName: true, openedAt: true, createdAt: true }, orderBy: { createdAt: "desc" } })).map((r) => ({ id: r.id, refereeName: r.refereeName, opened: !!r.openedAt, sentLabel: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(r.createdAt) }));
-  // What the network does for a member, with real numbers: who they can connect with, what a referral
-  // earns, what is on the board, and what is open to them.
-  const [peers, boardPosts, rateCard, myConnections, myShortlist, features] = await Promise.all([
+  // Who they can meet, who they are connected with, where they stand, and what is switched on.
+  const [peers, myConnections, myShortlist, features] = await Promise.all([
     prisma.person.findMany({ where: { tenantId: p.tenantId, id: { not: p.id }, memberUser: { isNot: null } }, select: { memberSince: true, screeningStatus: true, screenedAt: true, privacy: true } }),
-    prisma.boardPost.count({ where: { tenantId: p.tenantId, status: "OPEN" } }),
-    loadRateCard(p.tenantId),
     prisma.connection.count({ where: { status: "ACCEPTED", OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] } }),
     // Where this member stands on each requirement: the stage only, never the client's name or notes.
     prisma.shortlistItem.findMany({ where: { personId: p.id }, select: { briefId: true, decision: true } }),
@@ -85,20 +81,23 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const canInvite = mayInvite(p);
   const now = new Date();
   const tab = sp.tab ?? "home";
-  // Who this member knows here, and how the open work suits them and the people they know.
-  const net = ["home", "opportunities"].includes(tab) ? await memberNetwork(p.id, p.tenantId) : null;
-  const fits: Map<string, RoleFit> = net && open.length ? await roleFits(p.id, p.tenantId, await prisma.brief.findMany({ where: { id: { in: open.map((b) => b.id) } } }), [...net.broughtIn, ...net.connected]) : new Map();
-  const roleOf = (id: string) => { const b = open.find((x) => x.id === id); return b ? `${b.roles[0] ?? "a requirement"}${b.locations[0] ? ` in ${b.locations[0]}` : ""}` : "a requirement"; };
-  const best = [...fits.entries()].filter(([, f]) => f.mine && (f.mine.band === "strong" || f.mine.band === "good")).sort((a, b) => b[1].mine!.score - a[1].mine!.score)[0];
-  const nudge = [...fits.entries()].find(([, f]) => f.fromNetwork.length);
+  // Who this member knows here, and what the agent has told them.
+  const net = ["home", "profile"].includes(tab) ? await memberNetwork(p.id, p.tenantId) : null;
+  const notes = await notesFor({ personId: p.id }, 8);
+  const asks = notes.filter((n) => n.question && !n.answer);
   const qp = internal ? `&person=${p.id}` : "";
-  const forBrief = sp.brief ? open.find((b) => b.id === sp.brief) ?? null : null; // "Refer them for this", from a suggestion
   const t = trustFor(p, isInternal(user) ? "internal" : "self"); const fit = fitFor(p);
   const screened = p.screeningStatus === "APPROVED" || !!p.screenedAt; const submitted = p.screeningStatus === "SUBMITTED";
   const anon = redactForPartner({ ...p, evidence: p.evidence, relationships: p.relationships });
   const highlights = fitHighlights(fit); const band = rateBand(p.rateExpectation ?? p.salaryExpectation);
   const privacy = privacyOf(p);
   const accepted = p.referralsMade.filter((r) => r.status === "ACCEPTED").length;
+  // The members' board, read here like any feed: what people are sharing, and the replies.
+  const boardOn = features.communityBoard && canInvite && tab === "home";
+  const feed = boardOn ? await prisma.boardPost.findMany({ where: { tenantId: p.tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } }, replies: { include: { author: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" }, take: 30 } }, orderBy: { createdAt: "desc" }, take: 15 }) : [];
+  const feedPitched = new Set((feed.length ? await prisma.pitch.findMany({ where: { personId: p.id, briefId: { in: feed.map((x) => x.briefId).filter((x): x is string => !!x) } }, select: { briefId: true } }) : []).map((x) => x.briefId));
+  const feedLinks = feed.length ? await prisma.connection.findMany({ where: { OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] }, select: { fromPersonId: true, toPersonId: true, status: true } }) : [];
+  const linkTo = (id: string) => feedLinks.find((c) => c.fromPersonId === id || c.toPersonId === id) ?? null;
 
   // What the member is told about where they stand, in one plain line.
   const status = screened ? (p.referralConsent === "no" ? "Not being put forward for now" : p.referralConsent === "yes" ? "On the radar. We come to you when work fits" : "On the radar. We ask you before putting you forward")
@@ -109,9 +108,9 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const pulse = ([
     !screened && !submitted ? { text: `Ready when you are: your ${SCREENING_MINUTES}-minute screening` } : null,
     submitted && !screened ? { text: "Reading your screening. We will confirm it shortly" } : null,
-    best ? { text: `You look a ${best[1].mine!.label.toLowerCase()} for ${roleOf(best[0])}`, href: `/member?tab=opportunities${qp}` } : null,
-    nudge ? { text: `${nudge[1].fromNetwork[0].firstName} from your network could suit ${roleOf(nudge[0])}`, href: `/member?tab=refer&name=${encodeURIComponent(`${nudge[1].fromNetwork[0].firstName} ${nudge[1].fromNetwork[0].lastName}`)}&brief=${nudge[0]}${qp}` } : null,
-    open.length ? { text: `Watching ${open.length} ${open.length === 1 ? "opportunity" : "opportunities"} open to members`, href: `/member?tab=opportunities${q}` } : { text: "Watching for work that fits what you do" },
+    asks.length ? { text: `${asks.length === 1 ? "A role has come in that fits you" : `${asks.length} roles have come in that fit you`}. Shall I put you forward?`, href: "#from-amana" } : null,
+    notes.find((n) => !n.question) ? { text: notes.find((n) => !n.question)!.title, href: "#from-amana" } : null,
+    screened && !asks.length ? { text: "Watching for work that fits what you do. I will ask you first" } : null,
     withClients ? { text: `Your anonymous card is with ${withClients} ${withClients === 1 ? "client" : "clients"}. Your name stays hidden` } : null,
     openRefs[0] ? { text: `Waiting on a reference from ${openRefs[0].refereeName}${openRefs[0].opened ? ". They have opened the link" : ""}` } : null,
     features.memberConnections && canInvite && connectable ? { text: `${connectable} ${connectable === 1 ? "member" : "members"} you can connect with`, href: "/community?tab=members" } : null,
@@ -133,49 +132,25 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       action: <form action={confirmMyAvailability} className="flex flex-wrap items-center gap-2"><input type="hidden" name="personId" value={p.id} /><Select name="status" aria-label="When you are free" defaultValue={SELF_STATUSES.includes(p.availabilityStatus) ? p.availabilityStatus : "OPEN_TO_CONVERSATIONS"} className="h-9 w-[230px] text-[13px]">{SELF_STATUSES.map((k) => <option key={k} value={k}>{AVAILABILITY_LABELS[k]}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="Saving…">{has("current") ? "Update" : "Confirm"}</SubmitButton></form> },
   ];
   const todo = checklist.filter((c) => !c.done && !(screened && c.key === "availability")).length;
-
-  const OppCard = ({ b }: { b: (typeof open)[number] }) => { const pitched = p.pitches.find((x) => x.briefId === b.id); const refd = p.referralsMade.filter((r) => r.briefId === b.id).length; const summary = `${b.roles[0] ?? "Requirement"}${b.headcount > 1 ? ` × ${b.headcount}` : ""} · ${b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"} · ${b.locations.join(" / ") || "location flexible"}`; return (
-    <Card key={b.id}>
-      <CardBody className="pt-4">
-        <div className="flex items-start justify-between gap-3"><div><div className="text-[14px] font-semibold">{b.roles[0] ?? "Requirement"}{b.headcount > 1 ? ` × ${b.headcount}` : ""}</div><div className="text-[12px] text-ink-faint">{b.engagementRoute ? ROUTE_LABELS[b.engagementRoute] : "route to confirm"} · {b.locations.join(" / ") || "location flexible"} · {b.sectors.join(", ") || "any sector"}</div></div><Badge filled>client name hidden</Badge></div>
-        <p className="text-[13.5px] leading-6 my-2.5">{b.memberSummary}</p>
-        <div className="flex flex-wrap gap-1 mb-3">{b.capabilities.map((c) => <Chip key={c}>{c}</Chip>)}{b.workRights ? <Chip>{b.workRights}</Chip> : null}</div>
-        {(() => {
-          const sl = myShortlist.find((x) => x.briefId === b.id)?.decision;
-          if (!pitched && !sl) return null;
-          const at = (ds: string[]) => !!sl && ds.includes(sl);
-          const stopped = pitched?.status === "DECLINED" || at(["CLIENT_PASSED", "NOT_FOR_THIS"]);
-          return <Tracker className="mb-3" label="Where you stand" steps={stepsFrom([
-            { label: pitched ? "You put yourself forward" : "Considered", reached: true },
-            { label: "On the shortlist", reached: pitched?.status === "SHORTLISTED" || at(["SHORTLISTED", "PROPOSED", "CLIENT_INTERESTED", "CLIENT_PASSED", "INTRODUCED", "PLACED"]) },
-            { label: "Shown to the client", reached: at(["PROPOSED", "CLIENT_INTERESTED", "CLIENT_PASSED", "INTRODUCED", "PLACED"]) },
-            { label: "Introduced", reached: at(["INTRODUCED", "PLACED"]) },
-            { label: "Placed", reached: at(["PLACED"]) },
-          ], stopped)} />;
-        })()}
-        {(() => { const f = fits.get(b.id); if (!f) return null; return (
-          <div className="mb-3 border-t border-line pt-3" data-fit={f.mine?.band ?? "none"}>
-            {f.mine ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-                <span className={`tag flex-none ${f.mine.band === "strong" ? "is-mint" : f.mine.band === "good" ? "is-blue" : f.mine.band === "worth a look" ? "is-gold" : ""}`}>{f.mine.label} for you</span>
-                <ul className="min-w-0 space-y-0.5 text-[12.5px]">
-                  {f.mine.why.map((w) => <li key={w} className="flex items-start gap-1.5 text-ink-muted"><Check className="mt-[3px] h-3 w-3 flex-none text-teal" strokeWidth={3} aria-hidden="true" />{w}</li>)}
-                  {f.mine.gaps.map((g) => <li key={g} className="flex items-start gap-1.5 text-ink-faint"><span className="mt-[7px] h-1 w-1 flex-none rounded-full bg-current" aria-hidden="true" />{g}</li>)}
-                </ul>
+  const checklistCard = (
+    <Card data-checklist>
+      <CardHeader title={screened ? `${todo} ${todo === 1 ? "thing" : "things"} left` : "Three things, then you are on the radar"} description={screened ? undefined : "That is all we need from you. When work comes up that fits, I come to you first, and your name is never shared without your yes."} />
+      <CardBody className="pt-0">
+        <ol className="divide-y divide-line">
+          {checklist.filter((c) => !screened || (!c.done && c.key !== "availability")).map((c, n) => (
+            <li key={c.key} className="flex flex-col gap-3 py-4 first:pt-1" data-step={c.key} data-done={c.done || undefined}>
+              <div className="flex gap-3 min-w-0">
+                <span className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full text-[12px] font-semibold ${c.done ? "bg-teal text-white dark:text-canvas" : c.waiting ? "bg-amber-100 text-ink" : "border border-line-strong text-ink-muted"}`} aria-hidden="true">{c.done ? "✓" : n + 1}</span>
+                <div className="min-w-0"><b className={`block text-[14.5px] font-semibold ${c.done ? "text-ink-muted" : "text-ink"}`}>{c.title}<span className="sr-only">{c.done ? " (done)" : ""}</span></b><span className="block text-[13px] text-ink-muted leading-[1.5]">{c.detail}</span></div>
               </div>
-            ) : <p className="text-[12.5px] text-ink-faint">Not a close match for what we know of you. Someone you know might be.</p>}
-            {f.fromNetwork.length ? (
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[12.5px]" data-from-network>
-                <AgentMark size={14} /><span className="text-ink-muted">From your network:</span>
-                {f.fromNetwork.map((n) => <Link key={n.id} href={`/member?tab=refer&name=${encodeURIComponent(fullName(n))}&brief=${b.id}${qp}`} className="chip !h-7">{fullName(n)} · {n.fit.label.toLowerCase()}<ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>)}
-              </div>
-            ) : null}
-          </div>
-        ); })()}
-        <div className="flex flex-wrap items-center gap-2">{pitched ? <Badge tone={pitched.status === "SHORTLISTED" ? "teal" : "navy"} filled>You pitched · {PITCH_STATUS[pitched.status]}</Badge> : screened ? <PitchDrawer briefId={b.id} asPersonId={internal ? p.id : undefined} summary={summary} /> : <small className="text-ink-faint">Complete your screening to pitch.</small>}<Link href={`/member?tab=refer&for=${b.id}${internal ? `&person=${p.id}` : ""}`}><Button size="sm" variant="secondary" type="button">Refer someone</Button></Link>{refd ? <Badge tone="teal" filled>{refd} referred</Badge> : null}</div>
+              {c.action && !(c.done && c.key !== "availability") ? <div className="pl-9">{c.action}</div> : null}
+            </li>
+          ))}
+        </ol>
       </CardBody>
     </Card>
-  ); };
+  );
+
 
   return (
     <>
@@ -198,14 +173,42 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
               </div>
             </div>
             {screened ? <div className="mt-4" data-step="availability">{checklist[2].action}</div> : null}
-            <AgentPulse lines={pulse} onInk className="mt-6 max-w-[580px]" />
+            <form method="get" action="/member" className="composer mt-6 flex max-w-[580px] items-center gap-2 p-1.5 pl-4" data-who-do-you-know>
+              <input type="hidden" name="tab" value="refer" />
+              {internal ? <input type="hidden" name="person" value={p.id} /> : null}
+              <UserPlus className="h-4 w-4 flex-none text-ink-faint" aria-hidden="true" />
+              <input name="name" maxLength={120} placeholder="Who do you know who is good? Their name…" aria-label="Who do you know who is good? Their name" className="h-10 min-w-0 flex-1 text-[15px] text-ink" autoComplete="off" />
+              <button type="submit" className="send-btn" aria-label="Recommend them"><ArrowRight className="h-4 w-4" /></button>
+            </form>
+            <AgentPulse lines={pulse} onInk className="mt-3 max-w-[580px]" />
           </div>
-          {screened ? <dl className="grid grid-cols-2 gap-x-9 gap-y-4 sm:flex sm:flex-wrap">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Open to you", open.length, "opportunities"]].map(([l, v, h]) => <div key={String(l)}><dt className="text-[12.5px] stage-muted">{l}</dt><dd className="figure-num mt-1 text-[34px] leading-none text-white">{v}</dd><dd className="mt-1 text-[12px] stage-muted">{h}</dd></div>)}</dl> : null}
+          {net && (net.broughtIn.length || net.connected.length || net.broughtMeIn) ? (
+            <div className="hidden lg:block text-right">
+              <div className="flex justify-end -space-x-1.5">{[...(net.broughtMeIn ? [net.broughtMeIn] : []), ...net.broughtIn, ...net.connected].slice(0, 6).map((x) => <Avatar key={x.id} person={x} className="ring-2 ring-[#0c1d42]" />)}</div>
+              <p className="mt-2 text-[13px] stage-muted">You know {[net.broughtMeIn, ...net.broughtIn, ...net.connected].filter(Boolean).length} {([net.broughtMeIn, ...net.broughtIn, ...net.connected].filter(Boolean).length === 1) ? "person" : "people"} here</p>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      {tab === "opportunities" ? (
-        <><div className="mb-3"><h2 className="text-[15px] font-semibold">Opportunities open to members</h2><p className="text-[12.5px] text-ink-muted">Anonymised. Pitch with your own profile, or refer someone you would put your name behind. You are only ever named to a client with your consent.</p></div>{open.length ? <div className="space-y-3">{open.map((b) => <OppCard key={b.id} b={b} />)}</div> : <EmptyState title="Nothing open right now" description="When a requirement is opened to members, it appears here." />}</>
+      {tab === "profile" ? (
+        <div className="space-y-5" data-member-profile>
+          {screened ? <dl className="flex flex-wrap gap-x-10 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Connections", myConnections, "members"]].map(([l, v, h]) => <div key={String(l)}><dt className="text-[12.5px] text-ink-muted">{l}</dt><dd className="figure-num mt-1 text-[30px] leading-none">{v}</dd><dd className="mt-1 text-[12px] text-ink-faint">{h}</dd></div>)}</dl> : null}
+          {screened ? (
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+            <TrustCard t={t} standard={standardFor(p, internal ? "internal" : "self")} firstName={p.firstName} self action={<ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} />} />
+            <div className="space-y-4">
+              <Card><CardHeader title="How the network sees you" description="This is the anonymised card a client or agency sees. Your name only after you consent." /><CardBody>
+                <div className="flex items-center gap-2 min-w-0"><code className="text-[12px] bg-surface-muted rounded px-1.5 py-0.5">{anon.ref}</code><b className="text-[13px] truncate">{anon.headlineSummary || p.headline || "Profile"}</b></div>
+                <div className="flex flex-wrap gap-1 mt-1.5"><Chip>{anon.region ?? "region undisclosed"}</Chip><Chip>availability: {anon.availabilityBand}</Chip>{highlights.map((h) => <Chip key={h}>{h}</Chip>)}{band ? <Chip>{band}</Chip> : null}</div>
+                <ProofLine proofs={anon.proofs} className="mt-2" />
+                {anon.proofs.length ? null : <div className="text-[12px] text-ink-muted mt-1.5">Nothing on record yet. Your screening and a reference are the quickest two.</div>}
+              </CardBody></Card>
+              {fit.some((r) => r.combined !== null) ? <FitCard rows={fit} self /> : null}
+            </div>
+          </div>
+          ) : <EmptyState title="Your profile fills in after your screening" description="Start it from Home. It takes about fifteen minutes, by voice or in writing." />}
+        </div>
       ) : tab === "refer" ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4">
@@ -223,9 +226,9 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
               </CardBody>
             </Card>
             <Guide
-              intro={forBrief ? `Refer someone for ${forBrief.roles[0] ?? "this opportunity"}${forBrief.locations[0] ? ` in ${forBrief.locations[0]}` : ""}. Only people you would stand behind.` : "Recommend someone good. Only people you would stand behind."}
+              intro="Recommend someone good. Only people you would stand behind. I will find the right work for them."
               action={submitReferral}
-              hidden={{ ...(internal ? { asPersonId: p.id } : {}), ...(forBrief ? { briefId: forBrief.id } : {}) }}
+              hidden={internal ? { asPersonId: p.id } : {}}
               submit="Send referral"
               review="Here is your referral"
               steps={[
@@ -233,7 +236,6 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
                 { name: "knownHow", kind: "choice", ask: "How do you know {name}?", short: "How you know them", options: (Object.keys(KNOWN_HOW) as (keyof typeof KNOWN_HOW)[]).map((k) => ({ value: k, label: KNOWN_HOW[k].label })) },
                 { name: "context", kind: "long", ask: "What have you seen {name} do?", short: "What you have seen", hint: "A line or two is plenty. Specifics help us place them well.", placeholder: "Ran the requirements workstream on our payments hub. Precise, calm, well liked by the business.", min: 5, max: 1000 },
                 { name: "email", kind: "text", ask: "How can we reach {name}?", short: "Contact", optional: true, placeholder: "Email or LinkedIn", max: 200 },
-                ...(open.length && !forBrief ? [{ name: "briefId", kind: "choice" as const, ask: "Is it for one of the open opportunities?", short: "For", optional: true, options: [{ value: "", label: "No, just someone good" }, ...open.map((b) => ({ value: b.id, label: `${b.roles[0] ?? "Requirement"}${b.locations[0] ? ` · ${b.locations[0]}` : ""}` }))] }] : []),
                 { name: "tell", kind: "confirm", ask: "May we tell {name} you referred them?", short: "Tell them", optional: true, yes: "Yes, tell them" },
               ]}
             />
@@ -292,64 +294,58 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           </div>
         </div>
       ) : (
-        <>
-        {todo ? (
-          <Card className="mb-5" data-checklist>
-            <CardHeader title={screened ? `${todo} ${todo === 1 ? "thing" : "things"} left to strengthen your profile` : "Three things, then you are on the radar"} description={screened ? undefined : "That is all we need from you. When work comes up that fits, we come to you first, and your name is never shared without your yes."} />
-            <CardBody className="pt-0">
-              <ol className="divide-y divide-line">
-                {/* Once screened, only what is left: "when you are free" lives in the header. */}
-                {checklist.filter((c) => !screened || (!c.done && c.key !== "availability")).map((c, n) => (
-                  <li key={c.key} className="flex flex-col gap-3 py-4 first:pt-1 sm:flex-row sm:items-center sm:justify-between" data-step={c.key} data-done={c.done || undefined}>
-                    <div className="flex gap-3 min-w-0">
-                      <span className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full text-[12px] font-semibold ${c.done ? "bg-teal text-white dark:text-canvas" : c.waiting ? "bg-amber-100 text-ink" : "border border-line-strong text-ink-muted"}`} aria-hidden="true">{c.done ? "✓" : n + 1}</span>
-                      <div className="min-w-0"><b className={`block text-[14.5px] font-semibold ${c.done ? "text-ink-muted" : "text-ink"}`}>{c.title}<span className="sr-only">{c.done ? " (done)" : ""}</span></b><span className="block text-[13px] text-ink-muted leading-[1.5] max-w-[62ch]">{c.detail}</span></div>
-                    </div>
-                    {c.action && !(c.done && c.key !== "availability") ? <div className="flex-none sm:pl-4 pl-9">{c.action}</div> : null}
-                  </li>
-                ))}
-              </ol>
-            </CardBody>
-          </Card>
-        ) : null}
-        <section className="mb-6" aria-labelledby="member-value">
-          <h2 id="member-value" className="section-title text-[18px]">What the network does for you</h2>
-          <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]" data-member-value>
-            {[
-              { key: "connect", icon: UsersRound, tone: "is-mint", title: "Connect with members", stat: myConnections ? `${myConnections} connected` : `${connectable} to meet`, body: "People who chose to be found. Details swap only when you both say yes.", href: "/community?tab=members", cta: "Find people", locked: !canInvite || !privacy.consents.memberDirectory, lockText: !canInvite ? "Opens once your screening is approved." : "Switch on ‘Show me to other members’ in Privacy & data." },
-              { key: "refer", icon: Handshake, tone: "is-coral", title: "Refer someone you know", stat: earnings ? `${Number(rateCard.memberReferralSharePct)}% of the fee` : `${accepted} accepted`, body: earnings ? "A share of our fee when someone you bring in is placed." : "We tell you when they join, and when they are placed.", href: `/member?tab=refer${internal ? `&person=${p.id}` : ""}`, cta: "Refer someone", locked: false, lockText: "" },
-              { key: "share", icon: Megaphone, tone: "is-blue", title: "Share work, ask for help", stat: `${boardPosts} on the board`, body: "Post work you hear about, ask for a specialist, or say you are free.", href: "/community", cta: "Open the board", locked: false, lockText: "" },
-              { key: "work", icon: Briefcase, tone: "is-gold", title: "Work open to you", stat: `${open.length} open now`, body: "Client names hidden. Put yourself forward, or refer someone.", href: `/member?tab=opportunities${internal ? `&person=${p.id}` : ""}`, cta: "See the work", locked: false, lockText: "" },
-            ].filter((v) => (v.key !== "connect" || features.memberConnections) && (v.key !== "share" || features.communityBoard)).map((v) => (
-              <Link key={v.key} href={v.locked ? `/member?tab=${v.key === "connect" && canInvite ? "privacy" : "home"}${internal ? `&person=${p.id}` : ""}` : v.href} className="group flex flex-col rounded-[16px] border border-line bg-surface p-4 transition-colors duration-150 hover:border-line-strong" data-value={v.key}>
-                <span className="flex items-center justify-between gap-3">
-                  <span className={`tile ${v.tone}`}><v.icon className="h-4 w-4" aria-hidden="true" /></span>
-                  <span className="text-[12.5px] font-semibold text-ink">{v.stat}</span>
-                </span>
-                <b className="mt-3.5 text-[14.5px] font-semibold text-ink">{v.title}</b>
-                <span className="mt-1 flex-1 text-[13px] leading-[1.5] text-ink-muted">{v.locked ? v.lockText : v.body}</span>
-                <span className="mt-3.5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink">{v.locked ? <><Lock className="h-3.5 w-3.5" aria-hidden="true" /> {v.key === "connect" && canInvite ? "Change it" : "Not yet"}</> : <>{v.cta} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></>}</span>
-              </Link>
-            ))}
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="min-w-0 space-y-6">
+            {!screened ? checklistCard : null}
+            {notes.length ? (
+              <section id="from-amana" aria-labelledby="from-amana-h" data-from-amana>
+                <h2 id="from-amana-h" className="section-title text-[18px]">From Amana</h2>
+                <ul className="mt-3 space-y-2.5">
+                  {notes.map((n) => (
+                    <li key={n.id} className={`note-card ${n.question && !n.answer ? "is-ask" : ""}`} data-note={n.kind}>
+                      <span className="guide-orb flex-none" aria-hidden="true"><AgentMark size={14} busy={n.question && !n.answer} /></span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-semibold leading-snug text-ink">{n.title}</p>
+                        {n.body ? <p className="mt-1 text-[13px] leading-[1.5] text-ink-muted">{n.body}</p> : null}
+                        {n.question && !n.answer ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <form action={answerFit}><input type="hidden" name="noteId" value={n.id} /><input type="hidden" name="answer" value="yes" />{internal ? <input type="hidden" name="asPersonId" value={p.id} /> : null}<SubmitButton size="sm" pendingText="…">Yes, put me forward</SubmitButton></form>
+                            <form action={answerFit}><input type="hidden" name="noteId" value={n.id} /><input type="hidden" name="answer" value="no" />{internal ? <input type="hidden" name="asPersonId" value={p.id} /> : null}<SubmitButton size="sm" variant="ghost" pendingText="…">Not now</SubmitButton></form>
+                          </div>
+                        ) : n.answer ? <p className="mt-1.5 text-[12.5px] font-semibold text-teal">{n.answer === "yes" ? "You said yes. I have told the team." : "You said not now."}</p> : null}
+                        <p className="mt-1.5 text-[11.5px] text-ink-faint"><DateText date={n.when} relative /></p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {boardOn ? (
+              <>
+                <ShareBox me={p} earnings={earnings} />
+                <section aria-labelledby="feed-h" data-feed>
+                  <h2 id="feed-h" className="section-title text-[18px]">What members are sharing</h2>
+                  {feed.length ? (
+                    <ul className="feed mt-3 divide-y divide-line">
+                      {feed.map((x) => <li key={x.id}><PostItem p={x} me={p} pitched={!!x.briefId && feedPitched.has(x.briefId)} link={linkTo(x.authorPersonId)} canConnect={features.memberConnections && privacy.consents.memberDirectory} /></li>)}
+                    </ul>
+                  ) : <p className="mt-3 text-[14px] text-ink-muted">Quiet so far. Share something above and start the conversation.</p>}
+                </section>
+              </>
+            ) : null}
           </div>
-        </section>
-
-        {net ? <MemberNetwork broughtMeIn={net.broughtMeIn} broughtIn={net.broughtIn} connected={net.connected} inviteHref={`/member?tab=refer${qp}`} /> : null}
-        {screened ? (
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-          <TrustCard t={t} standard={standardFor(p, internal ? "internal" : "self")} firstName={p.firstName} self action={<ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} />} />
-          <div className="space-y-4">
-            <Card><CardHeader title="How the network sees you" description="This is the anonymised card a client or agency sees. Your name only after you consent." /><CardBody>
-              <div className="flex items-center gap-2 min-w-0"><code className="text-[12px] bg-surface-muted rounded px-1.5 py-0.5">{anon.ref}</code><b className="text-[13px] truncate">{anon.headlineSummary || p.headline || "Profile"}</b></div>
-              <div className="flex flex-wrap gap-1 mt-1.5"><Chip>{anon.region ?? "region undisclosed"}</Chip><Chip>availability: {anon.availabilityBand}</Chip>{highlights.map((h) => <Chip key={h}>{h}</Chip>)}{band ? <Chip>{band}</Chip> : null}</div>
-              <ProofLine proofs={anon.proofs} className="mt-2" />
-              {anon.proofs.length ? null : <div className="text-[12px] text-ink-muted mt-1.5">Nothing on record yet. Your screening and a reference are the quickest two.</div>}
-            </CardBody></Card>
-            {fit.some((r) => r.combined !== null) ? <FitCard rows={fit} self /> : null}
-          </div>
+          <aside className="space-y-5">
+            {screened && todo ? checklistCard : null}
+            {net ? <MemberNetwork compact broughtMeIn={net.broughtMeIn} broughtIn={net.broughtIn} connected={net.connected} inviteHref={`/member?tab=refer${qp}`} /> : null}
+            {features.memberConnections && canInvite ? (
+              <div className="side-links">
+                <Link href="/community?tab=connections" className="side-link"><MessageCircle className="h-4 w-4" aria-hidden="true" /><span className="flex-1">Messages</span><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                <Link href="/community?tab=members" className="side-link"><UsersRound className="h-4 w-4" aria-hidden="true" /><span className="flex-1">{connectable ? `${connectable} ${connectable === 1 ? "member" : "members"} to meet` : "Find members"}</span><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+                <Link href={`/member?tab=profile${qp}`} className="side-link"><BadgeCheck className="h-4 w-4" aria-hidden="true" /><span className="flex-1">Your profile and trust</span><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+              </div>
+            ) : null}
+          </aside>
         </div>
-        ) : null}
-        </>
       )}
     </>
   );

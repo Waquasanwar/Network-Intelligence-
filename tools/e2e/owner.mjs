@@ -110,6 +110,8 @@ await step("requirements: post a brief via co-pilot", p, async () => {
   // Raised on the client's behalf, one question at a time.
   await walk(p.locator("[data-guide]").first(), [{ pick: `E2E Client ${stamp}` }, "A fractional CFO two days a week for six months", { pick: "Fractional" }, "Dubai", { pick: "Within a month" }, "AED 5,000 a day", null], "Raise requirement");
   await p.waitForURL(/\/requirements\/[a-z0-9]+$/, { timeout: 60000 });
+  // The agent searched straight away and told the team what it found.
+  assert(/I searched the network for/.test(sql(`select title from "AgentNote" where audience='OWNER' and "briefId"='${p.url().split("/").pop()}' order by "createdAt" desc limit 1`)), "the agent reported what it found");
   await p.screenshot({ path: `${DIR}/req-copilot.png` });
   const m = p.url().match(/\/requirements\/([a-z0-9]+)/);
   briefId = m?.[1] ?? sql(`select id from "Brief" order by "createdAt" desc limit 1`);

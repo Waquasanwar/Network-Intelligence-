@@ -774,3 +774,21 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
 .mnet-node { transform-box: fill-box; transform-origin: center; }
 @keyframes mnet-breathe { 0%, 100% { scale: 1; } 50% { scale: 1.08; } }
 @media (prefers-reduced-motion: no-preference) { .mnet-node { animation: mnet-breathe 5.5s ease-in-out infinite; } }
+
+/* ---------- Member feed ----------
+   Posts read like posts anywhere on the web: a face, a name, what they said, the conversation under
+   it. Amana's notes sit above, quietly, with a question to answer when there is one. */
+.post { padding: 18px 0; }
+.feed { border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); padding: 0 20px; }
+.note-card { display: flex; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--color-line); background: var(--color-surface); }
+.note-card.is-ask { border-color: color-mix(in srgb, var(--color-teal-400) 55%, var(--color-line)); background: color-mix(in srgb, var(--color-teal-400) 6%, var(--color-surface)); }
+.side-links { border-radius: 18px; border: 1px solid var(--color-line); background: var(--color-surface); padding: 6px; }
+.side-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 13.5px; font-weight: 600; color: var(--color-ink); transition: background-color 150ms ease; }
+.side-link:hover { background: var(--color-surface-muted); }
+.side-link svg:last-child { opacity: .45; transition: transform 150ms ease, opacity 150ms ease; }
+.side-link:hover svg:last-child { opacity: 1; transform: translateX(2px); }
+[data-member-hero] .composer input { background: transparent; }
+.share-box { border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); padding: 12px 14px; }
+.share-box[open] { padding-bottom: 14px; }
+.share-box[open] > summary .chip { display: none; }
+.share-box .guide { box-shadow: none; }

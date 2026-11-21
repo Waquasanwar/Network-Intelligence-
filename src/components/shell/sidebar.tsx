@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Search, Briefcase, Handshake, ShieldCheck, ListChecks, UserPlus, BadgeCheck, Lock, UsersRound } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Search, Briefcase, Handshake, ShieldCheck, ListChecks, UserPlus, BadgeCheck, Lock, UsersRound, Home, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { APP_NAME } from "@/lib/brand";
@@ -10,11 +10,12 @@ import { sectionsFor, locate } from "./nav";
 import type { Role } from "@prisma/client";
 
 const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/portal/search", label: "Search the network", icon: Search }, { href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
-const MEMBER_NAV = [{ href: "/member", label: "My network profile", icon: BadgeCheck }, { href: "/community", label: "Community", icon: UsersRound }, { href: "/member?tab=opportunities", label: "Opportunities", icon: Briefcase }, { href: "/member?tab=refer", label: "Invite and refer", icon: UserPlus }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
+const MEMBER_NAV = [{ href: "/member", label: "Home", icon: Home }, { href: "/community?tab=connections", label: "Messages", icon: MessageCircle }, { href: "/community?tab=members", label: "People", icon: UsersRound }, { href: "/member?tab=refer", label: "Invite and refer", icon: UserPlus }, { href: "/member?tab=profile", label: "My profile", icon: BadgeCheck }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/portal/search", label: "Search the network", icon: Search }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 
 export function Sidebar({ user, community = true }: { user: { name: string; email: string; role: Role; tenantName: string }; community?: boolean }) {
   const pathname = usePathname();
+  const tab = useSearchParams().get("tab");
   const restricted = user.role === "PARTNER" || user.role === "CLIENT" || user.role === "MEMBER";
 
   // Below the desktop breakpoint the rail becomes a drawer, opened from the top bar's menu button.
@@ -36,7 +37,8 @@ export function Sidebar({ user, community = true }: { user: { name: string; emai
     active ? "nav-active font-semibold" : "text-rail-ink font-medium hover:bg-rail-active hover:text-rail-ink-strong",
   );
   const Item = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) => {
-    const active = pathname === href.split("?")[0] && (!href.includes("?") || href === "/member");
+    const [base, query] = href.split("?"); const want = new URLSearchParams(query ?? "").get("tab");
+    const active = pathname === base && (want ? want === tab : !tab || (base !== "/member" && base !== "/community"));
     return <Link href={href} aria-current={active ? "page" : undefined} className={row(active)}><Icon className="h-[18px] w-[18px] flex-none" /><span className="flex-1 truncate">{label}</span></Link>;
   };
   const home = restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview";
@@ -64,7 +66,7 @@ export function Sidebar({ user, community = true }: { user: { name: string; emai
         </button>
       </div>
       <nav aria-label="Main" className="px-3 flex-1 space-y-1 overflow-y-auto pt-3 pb-4">
-        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV.filter((i) => community || i.href !== "/community") : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
+        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV.filter((i) => community || !i.href.startsWith("/community")) : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {/* Six places. The pages inside each are the tabs across the top of the screen. */}
             {sections.filter((sec) => sec.key !== "settings").map((sec) => { const active = here?.section.key === sec.key; return (
