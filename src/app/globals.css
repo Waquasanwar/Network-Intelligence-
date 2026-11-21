@@ -844,3 +844,55 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
 .world-tag { position: absolute; top: -9px; right: 10px; padding: 1px 8px; border-radius: 999px; background: var(--color-teal-400); color: #fff; font-size: 11px; font-weight: 600; }
 [data-member-hero] .avail-edit > summary { color: #ffffff; border-color: rgba(255, 255, 255, .32); background: rgba(255, 255, 255, .06); }
 [data-member-hero] .avail-edit > summary:hover { border-color: rgba(255, 255, 255, .55); }
+
+/* The availability panel on a profile: status orb, working week, where, and their day against yours. */
+.avail-panel { display: grid; gap: 16px; }
+.ready-orb { position: relative; width: 14px; height: 14px; border-radius: 50%; background: var(--color-line-strong); flex: none; }
+.ready-orb.is-now { background: var(--color-teal-400); }
+.ready-orb.is-soon { background: #d9a52c; }
+.ready-orb.is-later { background: #6f8fd6; }
+.ready-orb.is-now::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid var(--color-teal-400); opacity: 0; }
+@media (prefers-reduced-motion: no-preference) { .ready-orb.is-now::after { animation: pulse-halo 2.8s ease-out infinite; } }
+.avail-panel-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.avail-week { display: inline-flex; gap: 5px; }
+.avail-day { display: grid; place-items: center; width: 30px; height: 34px; border-radius: 9px; background: var(--color-surface-muted); color: var(--color-ink-faint); font-size: 11px; font-weight: 600; }
+.avail-day i { font-style: normal; }
+.avail-day[data-on] { background: var(--color-teal-400); color: #fff; }
+.avail-day[data-project] { background: transparent; border: 1.5px dashed color-mix(in srgb, var(--color-teal-400) 70%, var(--color-line)); color: var(--color-ink-muted); }
+.avail-where { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.avail-where-item { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 10px; font-size: 13px; color: var(--color-ink-faint); background: var(--color-surface-muted); }
+.avail-where-item[data-on] { color: var(--color-ink); background: color-mix(in srgb, var(--color-teal-400) 14%, var(--color-surface)); font-weight: 600; }
+.together { display: flex; align-items: center; gap: 14px; padding-top: 14px; border-top: 1px solid var(--color-line); }
+.together-clock { width: 46px; height: 46px; flex: none; }
+.together-face { fill: var(--color-surface); stroke: var(--color-line-strong); stroke-width: 1.5; }
+.together-tick { stroke: var(--color-ink-faint); stroke-width: 1.2; stroke-linecap: round; }
+.together-hour { stroke: var(--color-ink); stroke-width: 2.6; stroke-linecap: round; }
+.together-min { stroke: var(--color-teal-400); stroke-width: 1.8; stroke-linecap: round; }
+.together-pin { fill: var(--color-ink); }
+.together-bar { position: relative; margin-top: 8px; height: 10px; border-radius: 999px; background: var(--color-surface-muted); overflow: hidden; }
+.together-bar > span { position: absolute; top: 0; bottom: 0; }
+.together-mine { box-shadow: inset 0 0 0 1.5px var(--color-line-strong); border-radius: 999px; }
+.together-theirs { background: color-mix(in srgb, #6f8fd6 35%, transparent); border-radius: 999px; }
+.together-shared { background: var(--color-teal-400); border-radius: 999px; }
+.together-now { width: 2px; margin-left: -1px; background: var(--color-ink); }
+
+/* Home: who is free. One card, read left to right: counts, faces, how they want to work. */
+.free-card { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 32px; padding: 20px 24px; border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); transition: border-color 150ms ease; }
+.free-card:hover { border-color: var(--color-line-strong); }
+.free-count { display: grid; gap: 2px; }
+.free-count b { font-size: 38px; line-height: 1; color: var(--color-ink); }
+.free-count > span { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-ink-muted); }
+.free-count .ready-dot { display: inline-block; }
+.is-now-dot { background: var(--color-teal-400) !important; }
+.is-soon-dot { background: #d9a52c !important; }
+.free-faces { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.free-split { display: grid; gap: 6px; flex: 1 1 220px; min-width: 0; }
+.free-bar { display: flex; gap: 3px; height: 8px; border-radius: 999px; overflow: hidden; }
+.free-bar i, .free-legend i { display: block; }
+.free-bar i { border-radius: 999px; }
+.free-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--color-ink-muted); }
+.free-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.free-legend i { width: 8px; height: 8px; border-radius: 50%; }
+.is-full { background: var(--color-teal-400); }
+.is-part { background: #6f8fd6; }
+.is-project { background: #d9a52c; }

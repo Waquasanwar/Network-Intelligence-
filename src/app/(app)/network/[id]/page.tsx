@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AvailabilityView } from "@/components/domain/availability";
+import { AvailabilityPanel, ReadyPill } from "@/components/domain/availability";
 import { KNOWN_HOW, isKnownHow } from "@/lib/known";
 import { FrameworkCard } from "@/components/domain/framework";
 import { frameworkFor } from "@/lib/framework-for";
@@ -164,7 +164,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4 min-w-0">
             <div className="-mt-[58px] flex-none rounded-full bg-surface p-1 shadow-[var(--shadow-card)]"><TrustHalo score={trust.score}><Avatar person={person} size="xl" /></TrustHalo></div>
-            <div className="min-w-0 pt-3 text-[13.5px] text-ink-muted">{[person.currentRole, person.currentCompany].filter(Boolean).join(" at ") || "Role not recorded yet"}</div>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 pt-3 text-[13.5px] text-ink-muted"><ReadyPill p={person} /><span className="min-w-0">{[[person.currentRole, person.currentCompany].filter(Boolean).join(" at "), person.primaryCity].filter(Boolean).join(" · ") || "Role not recorded yet"}</span></div>
           </div>
           <div className="flex flex-none flex-wrap items-center gap-2 lg:pt-3">
             <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} showFees={money} />
@@ -178,7 +178,6 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             </MoreMenu>
           </div>
         </div>
-        <AvailabilityView p={person} className="mt-4" />
         <div className="flex flex-wrap items-center gap-2 mt-4">
           <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
           {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}
@@ -247,14 +246,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
                     ]} />
                   </div>
                   <div>
-                    <div className="label-caps text-ink-faint mb-2">Availability</div>
-                    <Facts rows={[
-                      { label: "Status", value: <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} /> },
-                      { label: "Last confirmed", value: person.availabilityConfirmedAt ? <DateText date={person.availabilityConfirmedAt} relative /> : null },
-                      { label: "Told us by", value: person.availabilitySource },
-                      { label: "Next check", value: person.nextCheckDate ? <DateText date={person.nextCheckDate} relative /> : null },
-                      { label: "How current", value: freshness === "fresh" ? <span className="text-teal">Fresh</span> : freshness === "aging" ? "Ageing" : <span className="text-amber capitalize">{freshness}</span> },
-                    ]} />
+                    <div className="label-caps text-ink-faint mb-3">Availability</div>
+                    <AvailabilityPanel p={person} confirmed={person.availabilityConfirmedAt ? <>Confirmed <DateText date={person.availabilityConfirmedAt} relative />{person.availabilitySource === "self" ? " by them" : ""}{freshness !== "fresh" ? <span className="text-amber"> · worth checking again</span> : null}</> : <span className="text-amber">Not confirmed yet</span>} />
                     {person.nextAction ? <div className="mt-4 rounded-[12px] bg-surface-muted px-3 py-2.5 text-[13px]"><span className="text-ink-muted">Next action: </span><span className="font-medium">{person.nextAction}</span> <DateText date={person.nextActionDate} relative className="text-ink-faint" /></div> : null}
                   </div>
                 </div>

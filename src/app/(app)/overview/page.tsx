@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Upload, UserSearch, ListChecks, FileCheck2, RefreshCw, Handshake, ArrowRight, Users, Briefcase, TrendingUp, UserCheck } from "lucide-react";
 import { AgentComposer } from "@/components/domain/agent-composer";
 import { Constellation } from "@/components/ui/constellation";
+import { Avatar } from "@/components/ui/avatar";
+import { readiness, zoneFor } from "@/lib/place";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 
 // What the agent has queued for you, by the kind of decision it needs.
@@ -69,6 +71,17 @@ export default async function OverviewPage() {
   for (const c of needsReview.slice(0, 2)) suggestions.push({ kind: "approve", text: `Approve the structured summary for ${fullName(c.person)}.`, href: `/conversations?tab=review&open=${c.id}` });
   for (const p of reconnect.slice(0, 2)) suggestions.push({ kind: "reconnect", text: p.availabilityConfirmedAt ? `Reconnect with ${fullName(p)}. They last told us they were free on ${p.availabilityConfirmedAt.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.` : `Reconnect with ${fullName(p)}. They have not told us when they are free yet.`, href: `/network/${p.id}` });
   for (const r of partnerReqs.filter((r) => r.status === "INTRO_REQUESTED").slice(0, 1)) suggestions.push({ kind: "intro", text: `${r.partner.name} has requested an introduction on "${r.title}".`, href: "/partners" });
+
+  // Who can start now or soon, how they want to work, and where they are.
+  const free = people.map((p) => ({ ...p, ready: readiness(p, now) })).filter((p) => p.ready === "now" || p.ready === "soon").sort((a, b) => (a.ready === b.ready ? 0 : a.ready === "now" ? -1 : 1));
+  const freeNow = free.filter((p) => p.ready === "now").length, freeSoon = free.length - freeNow;
+  const splits = [
+    { k: "full", label: "Full time", n: free.filter((p) => p.workPattern.includes("full_time")).length },
+    { k: "part", label: "Part time", n: free.filter((p) => p.workPattern.includes("part_time")).length },
+    { k: "project", label: "Per project", n: free.filter((p) => p.workPattern.includes("per_project")).length },
+  ];
+  const zoneCount = new Set(free.map((p) => zoneFor(p)).filter(Boolean)).size;
+  const cities = [...new Set(free.map((p) => p.primaryCity).filter((c): c is string => !!c))];
 
   // The same living map as /network/map — real trust scores and real role matches — in a compact frame.
   const { nodes: mapNodes, links: mapLinks } = await buildNetworkMap(user, now);
@@ -136,6 +149,26 @@ export default async function OverviewPage() {
           </Link>
         ))}
       </div>
+
+      {/* Who can start: the count, their faces, how they want to work, and how far they are spread. */}
+      {free.length ? (
+        <section className="mb-10" aria-labelledby="home-free" data-who-is-free>
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <h2 id="home-free" className="section-title text-[20px]">Who is free</h2>
+            <Link href="/network/availability" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink">See them all <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+          </div>
+          <Link href="/network/availability" className="free-card group">
+            <span className="free-count"><b className="figure-num">{freeNow}</b><span><i className="ready-dot is-now-dot" aria-hidden="true" />free now</span></span>
+            <span className="free-count"><b className="figure-num">{freeSoon}</b><span><i className="ready-dot is-soon-dot" aria-hidden="true" />free soon</span></span>
+            <span className="free-faces" aria-hidden="true">{free.slice(0, 7).map((x) => <span key={x.id} className={`world-face is-${x.ready}`}><Avatar person={x} size="sm" /></span>)}{free.length > 7 ? <span className="world-more">+{free.length - 7}</span> : null}</span>
+            <span className="free-split">
+              <span className="free-bar" aria-hidden="true">{splits.map((x) => x.n ? <i key={x.k} className={`is-${x.k}`} style={{ flexGrow: x.n }} /> : null)}</span>
+              <span className="free-legend">{splits.filter((x) => x.n).map((x) => <span key={x.k}><i className={`is-${x.k}`} aria-hidden="true" />{x.label} {x.n}</span>)}</span>
+              <span className="text-[12px] text-ink-faint">{zoneCount} {zoneCount === 1 ? "time zone" : "time zones"}{cities.length ? `, ${cities.slice(0, 3).join(", ")}${cities.length > 3 ? " and more" : ""}` : ""}</span>
+            </span>
+          </Link>
+        </section>
+      ) : null}
 
       <section className="mb-10" aria-labelledby="home-queue">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">

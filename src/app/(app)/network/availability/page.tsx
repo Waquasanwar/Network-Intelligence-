@@ -113,7 +113,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               <Avatar person={x} />
               <span className="min-w-0"><b className="block truncate text-[14px] font-semibold text-ink">{fullName(x)}</b><span className="block truncate text-[12px] text-ink-faint">{x.headline ?? ""}</span></span>
             </Link>
-            <AvailabilityView p={x} project={project} compact className="min-w-0 flex-1" />
+            <AvailabilityView p={x} project={project} compact chips={false} className="min-w-0 flex-1" />
             {x.amanaBench ? <span className="tag is-mint flex-none">Bench</span> : null}
           </li>
         ))}

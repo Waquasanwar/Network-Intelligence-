@@ -115,7 +115,7 @@ export default async function RequirementPage({ params, searchParams }: { params
                           <AvailabilityBadge status={s.person.availabilityStatus} confirmedAt={s.person.availabilityConfirmedAt} nextCheckDate={s.person.nextCheckDate} />
                           <Link href={`/network/${s.person.id}`} className="ml-auto font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">Open profile</Link>
                         </div>
-                        <AvailabilityView p={s.person} project={project} compact className="mt-3" />
+                        <AvailabilityView p={s.person} project={project} compact chips={false} className="mt-3" />
                         <CheckList checks={checks} />
                         <FitChecks checks={fitChecks(traits, fitProfile((s.person.attributes as FitScores | null) ?? null, s.person.vouches.map((v) => v.attributes as FitScores | null).filter((x): x is FitScores => !!x)))} />
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name} className="min-w-0"><div className="label-caps text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>
