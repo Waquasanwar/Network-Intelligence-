@@ -6,8 +6,6 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Chip } from "@/components/ui/badge";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge, RouteBadge, StageBadge } from "@/components/domain/badges";
-import { assessFreshness } from "@/lib/availability";
-import { capabilityCoverage } from "@/lib/matching";
 import { fullName } from "@/lib/utils";
 import { amanaIntel } from "@/lib/amana-intel";
 import { AmanaIntelligence } from "@/components/domain/amana-intel";
@@ -27,8 +25,6 @@ export default async function AmanaPage({ searchParams }: { searchParams: Promis
   ]);
 
   const open = opps.filter((o) => !["CLOSED_WON", "CLOSED_LOST"].includes(o.status));
-  const benchCaps = [...new Set(bench.flatMap((p) => p.capabilities))];
-  const gaps = open.flatMap((o) => capabilityCoverage(o.requiredCapabilities, benchCaps).missing.map((c) => ({ capability: c, opportunity: o })));
 
   // Live Amana work: Amana opportunities and requirements raised for the Amana account.
   const demand = [
@@ -101,22 +97,6 @@ export default async function AmanaPage({ searchParams }: { searchParams: Promis
         </div>
 
         <div className="space-y-4">
-          <Card>
-            <CardHeader title="Current capability gaps" description="Required by live opportunities, not covered by the core circle" />
-            <CardBody>
-              {gaps.length === 0 ? <div className="text-xs text-ink-faint">The core circle covers every live requirement.</div> : (
-                <ul className="space-y-1.5">{gaps.map((g, i) => <li key={i} className="text-xs"><Badge tone="amber">{g.capability}</Badge> <span className="text-ink-faint">for</span> <Link href={`/opportunities/${g.opportunity.id}`} className="text-navy hover:underline">{g.opportunity.title}</Link></li>)}</ul>
-              )}
-            </CardBody>
-          </Card>
-          <Card>
-            <CardHeader title="Needs a status check" description="Core circle members whose availability is stale" />
-            <CardBody>
-              <ul className="space-y-1.5">
-                {bench.filter((p) => assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }) !== "fresh").map((p) => <li key={p.id}><PersonLink person={p} sub={null} /></li>)}
-              </ul>
-            </CardBody>
-          </Card>
           <Card>
             <CardHeader title="Engagement history" description="Amana SOW introductions" />
             <CardBody>
