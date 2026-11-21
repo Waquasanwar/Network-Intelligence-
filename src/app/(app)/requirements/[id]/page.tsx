@@ -15,6 +15,8 @@ import { parseFitTraits, fitChecks, fitProfile, type FitScores } from "@/lib/fit
 import { SubmitButton } from "@/components/ui/submit-button";
 import { PersonLink } from "@/components/domain/person-link";
 import { AvailabilityBadge } from "@/components/domain/badges";
+import { AvailabilityView, ReadyPill } from "@/components/domain/availability";
+import { zoneFor } from "@/lib/place";
 import { DateText } from "@/components/domain/date";
 import { EditBriefDrawer, AddFeeDrawer } from "@/components/domain/demand-drawers";
 import { BriefChips, CheckList, TierBadge, ShortlistBadge, BriefStatusBadge, FeeStatusBadge, FeeBox, AnonCard, routeLabel, budgetLabel, KIND_LABEL } from "@/components/domain/demand";
@@ -46,6 +48,9 @@ export default async function RequirementPage({ params, searchParams }: { params
   const { id } = await params;
   const credits = money ? await prisma.referralCredit.findMany({ where: { briefId: id, tenantId: user.tenantId }, include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" } }) : [];
   const b = await prisma.brief.findUnique({ where: { id }, include: { account: true, shortlist: { include: { person: { include: { evidence: true, relationships: true, vouches: true, conversations: { select: { approvalStatus: true, type: true, approvedById: true } } } } } }, pitches: { include: { person: { select: { id: true, firstName: true, lastName: true, headline: true } } } }, referrals: { include: { referrer: { select: { firstName: true, lastName: true } } } }, feeLines: { include: { person: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } } } });
+  // Where the work is, so everyone on the shortlist shows the hours apart and the working day shared.
+  const projectZone = b?.locations[0] ? zoneFor(b.locations[0]) : null;
+  const project = b && projectZone ? { zone: projectZone, label: b.locations[0] } : null;
   if (!b || b.tenantId !== user.tenantId) notFound();
   const [card, audit] = await Promise.all([loadRateCard(user.tenantId), prisma.auditLog.findMany({ where: { tenantId: user.tenantId, entityId: id }, include: { actor: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 8 })]);
   const d = toDomain(b);
@@ -97,6 +102,7 @@ export default async function RequirementPage({ params, searchParams }: { params
                       <span className="flex min-w-0 items-center gap-3">
                         <Avatar person={s.person} size="md" />
                         <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-ink">{fullName(s.person)}</span><span className="block truncate text-[12.5px] text-ink-muted">{s.person.headline ?? "No headline yet"}</span></span>
+                        <span className="hidden flex-none lg:block"><ReadyPill p={s.person} /></span>
                         <span className="hidden flex-none md:block"><TierBadge tier={s.tier} /></span>
                         <span className="w-8 flex-none text-right font-display text-[17px] tabular text-ink" title="Fit, out of 100">{Math.round(s.fitScore)}</span>
                         <span className="hidden flex-none sm:block"><ShortlistBadge decision={s.decision} /></span>
@@ -109,6 +115,7 @@ export default async function RequirementPage({ params, searchParams }: { params
                           <AvailabilityBadge status={s.person.availabilityStatus} confirmedAt={s.person.availabilityConfirmedAt} nextCheckDate={s.person.nextCheckDate} />
                           <Link href={`/network/${s.person.id}`} className="ml-auto font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">Open profile</Link>
                         </div>
+                        <AvailabilityView p={s.person} project={project} compact className="mt-3" />
                         <CheckList checks={checks} />
                         <FitChecks checks={fitChecks(traits, fitProfile((s.person.attributes as FitScores | null) ?? null, s.person.vouches.map((v) => v.attributes as FitScores | null).filter((x): x is FitScores => !!x)))} />
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">{dims.map((x) => <div key={x.name} className="min-w-0"><div className="label-caps text-ink-faint truncate">{x.name}</div><Score value={x.score} /></div>)}</div>

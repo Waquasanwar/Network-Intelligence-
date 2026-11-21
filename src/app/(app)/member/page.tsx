@@ -43,12 +43,14 @@ import { answerFit } from "@/server/actions/agent-notes";
 import { DateText } from "@/components/domain/date";
 import { PostItem, ShareBox } from "@/components/domain/board";
 import { UserPlus, MessageCircle, BadgeCheck } from "lucide-react";
+import { AvailabilityView } from "@/components/domain/availability";
+import { AvailabilityGuide } from "@/components/domain/availability-guide";
 import { MemberNetwork } from "@/components/domain/member-network";
 import { AgentMark } from "@/components/ui/agent-mark";
 
 export const metadata = { title: "My network profile" };
 
-const SELF_STATUSES: AvailabilityStatus[] = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "TAKING_A_BREAK"];
+const SELF_STATUSES: AvailabilityStatus[] = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "TAKING_A_BREAK", "UNAVAILABLE_UNTIL"];
 
 const REF_STATUS: Record<string, string> = { NEW: "New", CONTACTED: "Contacted", SCREENING: "Screening booked", ACCEPTED: "In the network", DECLINED: "Not now" };
 
@@ -172,7 +174,15 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
                 <p className="mt-2 inline-flex items-center gap-2 text-[13px] stage-muted" data-member-status><span className={`h-2 w-2 rounded-full ${screened && p.referralConsent !== "no" ? "bg-[var(--color-teal-400)]" : submitted ? "bg-amber" : "bg-white/40"}`} aria-hidden="true" />{status}</p>
               </div>
             </div>
-            {screened ? <div className="mt-4" data-step="availability">{checklist[2].action}</div> : null}
+            {screened ? (
+              <div className="mt-4 space-y-3" data-step="availability">
+                <AvailabilityView p={p} onInk />
+                <div className="flex flex-wrap items-center gap-2">
+                  <form action={confirmMyAvailability}><input type="hidden" name="personId" value={p.id} /><input type="hidden" name="status" value={SELF_STATUSES.includes(p.availabilityStatus) ? p.availabilityStatus : "OPEN_TO_CONVERSATIONS"} /><SubmitButton size="sm" variant="secondary" pendingText="…">Still right</SubmitButton></form>
+                  <details className="avail-edit"><summary className="chip !h-8 cursor-pointer list-none [&::-webkit-details-marker]:hidden">Change</summary><AvailabilityGuide personId={p.id} className="mt-3 max-w-[560px]" /></details>
+                </div>
+              </div>
+            ) : null}
             <form method="get" action="/member" className="composer mt-6 flex max-w-[580px] items-center gap-2 p-1.5 pl-4" data-who-do-you-know>
               <input type="hidden" name="tab" value="refer" />
               {internal ? <input type="hidden" name="person" value={p.id} /> : null}

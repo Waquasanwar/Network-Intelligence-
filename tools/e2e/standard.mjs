@@ -169,11 +169,33 @@ await step("member: sees their own proofs, confirms availability in one tap, and
   await m.goto(`${BASE}/member?tab=profile`, { waitUntil: "networkidle" });
   const s = m.locator("[data-standard]").first(); assert((await s.locator("[data-proof]").count()) === 6, "six proofs for the member");
   assert(!/Waqas Anwar has delivered/.test(await s.innerText()), "the member is not shown who on the team said what");
-  await m.locator('[data-step="availability"]').getByRole("button", { name: /^(Confirm|Update)$/ }).click(); await m.waitForLoadState("networkidle"); await m.waitForTimeout(800);
+  await m.locator('[data-step="availability"]').getByRole("button", { name: /^(Confirm|Update|Still right)$/ }).click(); await m.waitForLoadState("networkidle"); await m.waitForTimeout(800);
   assert(/confirmed today/.test(await m.locator('[data-proof="current"]').first().innerText()), "availability confirmed by the member themselves");
   assert(await m.getByRole("button", { name: "Ask for a reference" }).first().isVisible(), "member can ask for a reference");
   await m.screenshot({ path: `${DIR}/member-proofs.png`, fullPage: true });
   if (m.errs.length) throw new Error(m.errs.join("; ")); await m.context().close();
+});
+
+await step("availability: a member sets when and how they work in a few taps, and the team sees it on the map of who is free", null, async () => {
+  const email = sql(`select u.email from "User" u join "Person" p on p.id=u."personId" where u.role='MEMBER' and p."screeningStatus"='APPROVED' order by u."createdAt" desc limit 1`);
+  const pid = sql(`select "personId" from "User" where email='${email}'`);
+  const m = await session(b, email, NEWPW);
+  await m.goto(`${BASE}/member`, { waitUntil: "networkidle" });
+  const box = m.locator('[data-step="availability"]');
+  await box.locator("summary").filter({ hasText: "Change" }).click();
+  await walk(box.locator("[data-guide]"), [{ pick: "Yes, now" }, { pick: "Part time" }, { pick: "3 days" }, { pick: "Remote" }], "Save");
+  assert(await until(() => sql(`select "availabilityStatus" || '|' || array_to_string("workPattern", ',') || '|' || coalesce("daysPerWeek"::text, '') || '|' || array_to_string("workSetting", ',') from "Person" where id='${pid}'`) === "AVAILABLE_NOW|part_time|3|remote"), "saved as free now, part time three days, remote");
+  await m.goto(`${BASE}/member`, { waitUntil: "networkidle" });
+  assert(/Part time/.test(await m.locator('[data-step="availability"] [data-availability]').innerText()), "shown back to them as chips");
+  if (m.errs.length) throw new Error(m.errs.join("; ")); await m.context().close();
+  await o.goto(`${BASE}/network/availability?when=now`, { waitUntil: "networkidle" });
+  assert(await o.locator("[data-world-strip] .world-col").count(), "the team sees who is free, by time zone");
+  assert(await o.locator(`[data-availability-list] a[href="/network/${pid}"]`).count(), "the member is on the list of who is free");
+  const req = sql(`select id from "Brief" where locations[1] is not null and status not in ('FILLED','CLOSED') order by "updatedAt" desc limit 1`);
+  if (req) {
+    await o.goto(`${BASE}/network/availability?when=all&req=${req}`, { waitUntil: "networkidle" });
+    assert(await o.locator(".avail-fit").count(), "measured against a requirement: hours apart and working day shared");
+  }
 });
 
 await step("a client's card shows the proofs held and names nobody", null, async () => {

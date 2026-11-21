@@ -240,6 +240,14 @@ model Person {
   availabilityConfirmedAt DateTime?
   availabilitySource      String?
   availabilityConfidence  Int                @default(50) // 0-100
+  /// How they want to work: full_time | part_time | per_project (any of them).
+  workPattern             String[]           @default([])
+  /// For part time: days a week, 1 to 5.
+  daysPerWeek             Int?
+  /// Where they will work: remote | hybrid | onsite (any of them).
+  workSetting             String[]           @default([])
+  /// IANA time zone, worked out from where they live unless they say otherwise.
+  timeZone                String?
   nextCheckDate           DateTime?
   opportunityInterest     String?
   relocationInterest      Boolean            @default(false)

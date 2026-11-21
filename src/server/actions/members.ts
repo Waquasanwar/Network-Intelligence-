@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { isPattern, isSetting } from "@/lib/place";
 import { isKnownHow } from "@/lib/known";
 import { AUTO_ACCEPT_COMPLETENESS, screeningProfileUpdate } from "@/server/screening-apply";
 import { revalidatePath } from "next/cache";
@@ -56,7 +57,7 @@ export async function createVouch(formData: FormData) {
 // ---------- availability ----------
 
 /** The statuses a person can set for themselves in one tap. Anything needing a date goes through the team. */
-const SELF_STATUSES = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "TAKING_A_BREAK"] as const;
+const SELF_STATUSES = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLORING", "RIGHT_OPPORTUNITY_ONLY", "FINISHING_ENGAGEMENT_SOON", "FRACTIONAL_AVAILABILITY", "HAPPY_WHERE_I_AM", "NOT_LOOKING_KEEP_IN_TOUCH", "TAKING_A_BREAK", "UNAVAILABLE_UNTIL"] as const;
 
 /**
  * A member says where they stand, themselves. It is the freshest source there is, and it keeps the
@@ -70,6 +71,31 @@ export async function confirmMyAvailability(formData: FormData) {
   await prisma.person.update({ where: { id: p.id }, data: { availabilityStatus: status, availabilityConfirmedAt: now, availabilitySource: isInternal(user) ? "manual" : "self", availabilityConfidence: 90, nextCheckDate: suggestNextCheck(status, now) } });
   await audit({ tenantId: p.tenantId, actorId: user.id, action: "person.update", entityType: "Person", entityId: p.id, metadata: { field: "availability", status, by: isInternal(user) ? "team" : "self" } });
   revalidatePath("/member"); revalidatePath(`/network/${p.id}`); revalidatePath("/network");
+}
+
+/**
+ * A member says when they are free and how they want to work, from the availability guide.
+ * when: now | from (with a date) | open | no. pattern and setting: one value, or "any".
+ */
+export async function setMyAvailability(formData: FormData) {
+  const user = await requireUser();
+  const p = await screeningPersonFor(user, String(formData.get("personId") || ""));
+  const when = z.enum(["now", "from", "open", "no"]).parse(formData.get("when"));
+  const fromRaw = String(formData.get("from") || "");
+  const from = when === "from" && /^\d{4}-\d{2}-\d{2}$/.test(fromRaw) ? new Date(`${fromRaw}T00:00:00Z`) : null;
+  const pattern = String(formData.get("pattern") || "");
+  const setting = String(formData.get("setting") || "");
+  const workPattern = pattern === "any" ? ["full_time", "part_time", "per_project"] : isPattern(pattern) ? [pattern] : p.workPattern;
+  const workSetting = setting === "any" ? ["remote", "hybrid", "onsite"] : isSetting(setting) ? [setting] : p.workSetting;
+  const days = Number(formData.get("days"));
+  const status = when === "now" ? "AVAILABLE_NOW" : when === "from" ? (from ? "UNAVAILABLE_UNTIL" : "FINISHING_ENGAGEMENT_SOON") : when === "open" ? "OPEN_TO_CONVERSATIONS" : "NOT_LOOKING_KEEP_IN_TOUCH";
+  const now = new Date();
+  await prisma.person.update({ where: { id: p.id }, data: {
+    availabilityStatus: status, availabilityDate: from, availabilityConfirmedAt: now, availabilitySource: isInternal(user) ? "manual" : "self", availabilityConfidence: 100, nextCheckDate: new Date(now.getTime() + 60 * 86_400_000),
+    workPattern, workSetting, daysPerWeek: workPattern.includes("part_time") && days >= 1 && days <= 5 ? days : null,
+  } });
+  await audit({ tenantId: p.tenantId, actorId: user.id, action: "person.update", entityType: "Person", entityId: p.id, metadata: { field: "availability", status, by: isInternal(user) ? "team" : "self" } });
+  revalidatePath("/member"); revalidatePath(`/network/${p.id}`); revalidatePath("/network"); revalidatePath("/network/availability");
 }
 
 // ---------- screening ----------

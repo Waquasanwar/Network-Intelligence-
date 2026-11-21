@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AvailabilityView } from "@/components/domain/availability";
 import { KNOWN_HOW, isKnownHow } from "@/lib/known";
 import { FrameworkCard } from "@/components/domain/framework";
 import { frameworkFor } from "@/lib/framework-for";
@@ -163,9 +164,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4 min-w-0">
             <div className="-mt-[58px] flex-none rounded-full bg-surface p-1 shadow-[var(--shadow-card)]"><TrustHalo score={trust.score}><Avatar person={person} size="xl" /></TrustHalo></div>
-            <div className="min-w-0 pt-3 text-[13.5px] text-ink-muted">
-              {[[person.currentRole, person.currentCompany].filter(Boolean).join(" at "), [person.primaryCity, person.primaryCountry].filter(Boolean).join(", ")].filter(Boolean).join(" · ") || "Role and location not recorded yet"}
-            </div>
+            <div className="min-w-0 pt-3 text-[13.5px] text-ink-muted">{[person.currentRole, person.currentCompany].filter(Boolean).join(" at ") || "Role not recorded yet"}</div>
           </div>
           <div className="flex flex-none flex-wrap items-center gap-2 lg:pt-3">
             <ReferDrawer personId={person.id} personName={fullName(person)} targets={referTargets} suggestion={referSuggestion} showFees={money} />
@@ -179,6 +178,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             </MoreMenu>
           </div>
         </div>
+        <AvailabilityView p={person} className="mt-4" />
         <div className="flex flex-wrap items-center gap-2 mt-4">
           <AvailabilityBadge status={person.availabilityStatus} confirmedAt={person.availabilityConfirmedAt} nextCheckDate={person.nextCheckDate} />
           {person.engagementPreferences.map((r) => <RouteBadge key={r} route={r} />)}

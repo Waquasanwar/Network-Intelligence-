@@ -13,6 +13,7 @@ import "server-only";
 import { Prisma, type ShortlistDecision } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { ROUTE_LABELS } from "@/lib/labels";
+import { zoneFor, apart, readiness } from "@/lib/place";
 
 type NoteIn = { audience: "OWNER" | "MEMBER" | "ACCOUNT"; key: string; kind: string; title: string; body?: string | null; href?: string | null; personId?: string | null; accountId?: string | null; briefId?: string | null; aboutId?: string | null };
 
@@ -26,7 +27,7 @@ export function roleLine(b: { roles: string[]; engagementRoute: keyof typeof ROU
   return [b.roles[0] ?? "A role", b.engagementRoute ? ROUTE_LABELS[b.engagementRoute].toLowerCase() : null, b.locations[0] ?? null].filter(Boolean).join(" · ");
 }
 
-const PERSON = { id: true, firstName: true, lastName: true, referralConsent: true, memberUser: { select: { id: true } } } as const;
+const PERSON = { id: true, firstName: true, lastName: true, referralConsent: true, memberUser: { select: { id: true } }, availabilityStatus: true, availabilityDate: true, primaryCity: true, primaryCountry: true, timeZone: true } as const;
 
 /** The members who brought this person into the network: by invitation, referral or introduction. */
 async function broughtInBy(personId: string, tenantId: string) {
@@ -47,10 +48,14 @@ export async function agentOnBrief(briefId: string) {
   const items = b.shortlist.filter((s) => s.decision !== "NOT_FOR_THIS");
   const meets = items.filter((s) => s.tier === "meets").length;
   const top = items.slice(0, 3).map((s) => `${s.person.firstName} ${s.person.lastName}`);
+  // Who can start, and who keeps hours that work for where the work is.
+  const free = items.filter((s) => ["now", "soon"].includes(readiness(s.person))).length;
+  const where = b.locations[0] ? zoneFor(b.locations[0]) : null;
+  const close = where ? items.filter((s) => { const z = zoneFor(s.person); return z && apart(z, where).overlap >= 5; }).length : null;
   await say(b.tenantId, {
     audience: "OWNER", key: `found:${b.id}:${items.length}`, kind: "found", briefId: b.id, href: `/requirements/${b.id}`,
     title: items.length ? `I searched the network for “${b.title}” and found ${items.length} ${items.length === 1 ? "person" : "people"} worth a look` : `I searched the network for “${b.title}” and found nobody obvious yet`,
-    body: items.length ? `${meets} meet every hard requirement. Strongest: ${top.join(", ")}.` : "Add capabilities or a location to the requirement, or bring more people in.",
+    body: items.length ? `${meets} meet every hard requirement, ${free} can start now or soon${close !== null ? `, and ${close} keep hours that work with ${b.locations[0]}` : ""}. Strongest: ${top.join(", ")}.` : "Add capabilities or a location to the requirement, or bring more people in.",
   });
   if (b.submittedVia === "PORTAL") await say(b.tenantId, { audience: "ACCOUNT", accountId: b.accountId, key: `received:${b.id}`, kind: "update", briefId: b.id, href: "/portal", title: `We are searching people we know for “${b.title}”`, body: "You will see anonymised people here as soon as we propose them." });
 

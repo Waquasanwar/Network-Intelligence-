@@ -13,7 +13,7 @@ const SHOW_PHASE23 = process.env.NEXT_PUBLIC_FEATURE_PHASE23 !== "false";
 
 const SECTIONS: NavSection[] = [
   { key: "home", label: "Home", icon: LayoutDashboard, pages: [{ href: "/overview", label: "Home" }] },
-  { key: "network", label: "Network", icon: Users, pages: [{ href: "/network", label: "People" }, { href: "/network/map", label: "Map" }, { href: "/invite", label: "Grow" }, { href: "/community", label: "Community" }, { href: "/network/import", label: "Import" }] },
+  { key: "network", label: "Network", icon: Users, pages: [{ href: "/network", label: "People" }, { href: "/network/map", label: "Map" }, { href: "/network/availability", label: "Availability" }, { href: "/invite", label: "Grow" }, { href: "/community", label: "Community" }, { href: "/network/import", label: "Import" }] },
   { key: "conversations", label: "Conversations", icon: MessagesSquare, pages: [{ href: "/conversations", label: "Conversations" }] },
   { key: "work", label: "Work", icon: Briefcase, phase23: true, pages: [{ href: "/requirements", label: "Requirements" }, { href: "/opportunities", label: "Opportunities" }, { href: "/referrals", label: "Referrals and pitches" }, { href: "/relocation", label: "Relocation" }] },
   { key: "clients", label: "Clients", icon: Building2, phase23: true, pages: [{ href: "/portal", label: "Client and agency portal" }, { href: "/partners", label: "Agencies" }, { href: "/amana", label: "Amana Expert Network" }] },

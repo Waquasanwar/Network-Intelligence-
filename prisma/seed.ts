@@ -426,6 +426,19 @@ async function main() {
     for (const r of results) await prisma.shortlistItem.create({ data: { briefId: b1.id, personId: r.match.personId, fitScore: r.match.fitScore, fitExplanation: r.match.fitExplanation, dimensions: r.match.dimensions, uncertainty: r.match.uncertainty, checks: r.checks, tier: r.tier, decision: r.match.personId === people["nadia"].id ? "PROPOSED" : "CANDIDATE", clientNote: r.match.personId === people["nadia"].id ? "Ran the payments BA workstream we saw first hand." : null } });
   }
 
+  // How each person wants to work, from the routes they are open to, so availability reads at a glance.
+  await prisma.$executeRawUnsafe(`UPDATE "Person" SET
+      "workPattern" = (CASE WHEN 'FRACTIONAL' = ANY("engagementPreferences") THEN ARRAY['part_time'] ELSE '{}'::text[] END)
+        || (CASE WHEN "engagementPreferences" && ARRAY['PERMANENT','CONTRACT','INTERIM']::"EngagementRoute"[] THEN ARRAY['full_time'] ELSE '{}'::text[] END)
+        || (CASE WHEN "engagementPreferences" && ARRAY['ADVISORY','SOW']::"EngagementRoute"[] THEN ARRAY['per_project'] ELSE '{}'::text[] END),
+      "daysPerWeek" = CASE WHEN 'FRACTIONAL' = ANY("engagementPreferences") THEN 2 + (abs(hashtext(id)) % 2) END,
+      "workSetting" = CASE abs(hashtext(id)) % 3 WHEN 0 THEN ARRAY['remote','hybrid'] WHEN 1 THEN ARRAY['hybrid','onsite'] ELSE ARRAY['remote','hybrid','onsite'] END
+    WHERE cardinality("workPattern") = 0`);
+  await prisma.$executeRawUnsafe(`UPDATE "Person" SET
+      "workPattern" = CASE abs(hashtext(id || 'p')) % 3 WHEN 0 THEN ARRAY['full_time'] WHEN 1 THEN ARRAY['per_project','part_time'] ELSE ARRAY['full_time','per_project'] END,
+      "daysPerWeek" = CASE WHEN abs(hashtext(id || 'p')) % 3 = 1 THEN 2 + (abs(hashtext(id)) % 3) END
+    WHERE cardinality("workPattern") = 0`);
+
   console.log(`Seeded ${PEOPLE.length} people, 6 opportunities, 4 requirements, 3 tenants, member logins and vouches.`);
   console.log(`Demo password for all users: ${DEMO_PASSWORD}`);
 }
