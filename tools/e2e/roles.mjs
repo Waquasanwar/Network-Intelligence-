@@ -31,8 +31,7 @@ await stepIf("member: the agent asks whether to put them forward, and their yes 
 await stepIf("member: recommends someone", m, async () => {
   await m.goto(`${BASE}/member?tab=refer`, { waitUntil: "networkidle" });
   const f = m.locator("[data-guide]").filter({ hasText: "Recommend someone good" });
-  const opps = sql(`select count(*) from "Brief" where "openToMembers" and "memberSummary" is not null and status not in ('FILLED','CLOSED')`) !== "0";
-  await walk(f, ["Rae Stone" + stamp, { pick: "Seen their work" }, "Led the data migration for me. Careful, quick and well liked.", null, ...(opps ? [null] : []), { yes: true }], "Send referral");
+  await walk(f, ["Rae Stone" + stamp, { pick: "Seen their work" }, "Led the data migration for me. Careful, quick and well liked.", null, { yes: true }], "Send referral"); // the agent matches them to work, so no role is asked for
   await m.waitForURL(/sent=1/, { timeout: 15000 });
   assert(sql(`select count(*) from "Referral" where name='Rae Stone${stamp}'`) === "1", "referral row");
   assert(sql(`select "knownHow" from "Referral" where name='Rae Stone${stamp}'`) === "seen", "how the member knows them is kept");
