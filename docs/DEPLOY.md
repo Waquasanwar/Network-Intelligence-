@@ -99,6 +99,7 @@ production). Never reuse the demo value.
 | Variable | Purpose |
 |---|---|
 | `ANTHROPIC_API_KEY`, `AI_MODEL` | The Claude co-pilot (agentic search over the network), conversation structuring, profile drafts, outreach drafts. `AI_MODEL` defaults to `claude-opus-5-5`. Set the key as a Vercel environment variable (Production, encrypted). |
+| `BLOB_READ_WRITE_TOKEN` | Member photos. In Vercel: **Storage → Create → Blob**, connect it to this project, and Vercel adds the token for you. Without it, photos still work and are kept (small and resized) on the person record. |
 | `AUTH_MICROSOFT_ENTRA_ID_ID/SECRET/ISSUER` | Microsoft Entra (Azure AD) SSO |
 | `MICROSOFT_GRAPH_*`, `CALENDLY_*` | calendar scheduling providers |
 | `ELEVENLABS_API_KEY` | screening-call voice (server-side only; never exposed to the member) |
