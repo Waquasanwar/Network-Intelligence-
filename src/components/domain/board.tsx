@@ -8,9 +8,9 @@ import { Guide } from "@/components/ui/guide";
 import { DateText } from "@/components/domain/date";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
-import { canShowPhoto } from "@/lib/privacy";
+import { photoSrc } from "@/lib/photo-src";
 
-const pic = (x: Who) => (canShowPhoto(x, "internal") ? x.photoUrl ?? null : null);
+const pic = (x: Who) => photoSrc(x);
 import { closePost, interestedInPost, referToPost, connect, replyToPost, createPost } from "@/server/actions/community";
 
 export const KIND: Record<BoardPostKind, { label: string; tone: string }> = {

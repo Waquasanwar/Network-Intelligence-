@@ -43,7 +43,7 @@ import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, 
 import type { ExtractedSummary } from "@/lib/ai";
 import { CitySky } from "@/components/domain/city-sky";
 import { zoneFor, localTime } from "@/lib/place";
-import { canShowPhoto } from "@/lib/privacy";
+import { photoSrc } from "@/lib/photo-src";
 import { removePersonPhoto } from "@/server/actions/privacy";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -167,7 +167,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         <div className="px-5 pb-5 sm:px-6 sm:pb-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="-mt-[58px] flex-none rounded-full bg-surface p-1 shadow-[var(--shadow-card)]"><TrustHalo score={trust.score}><Avatar person={person} size="xl" src={canShowPhoto(person, "internal") ? person.photoUrl : null} /></TrustHalo></div>
+            <div className="-mt-[58px] flex-none rounded-full bg-surface p-1 shadow-[var(--shadow-card)]"><TrustHalo score={trust.score}><Avatar person={person} size="xl" src={photoSrc(person)} /></TrustHalo></div>
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 pt-3 text-[13.5px] text-ink-muted"><ReadyPill p={person} /><span className="min-w-0">{[[person.currentRole, person.currentCompany].filter(Boolean).join(" at "), person.primaryCity].filter(Boolean).join(" · ") || "Role not recorded yet"}</span></div>
           </div>
           <div className="flex flex-none flex-wrap items-center gap-2 lg:pt-3">

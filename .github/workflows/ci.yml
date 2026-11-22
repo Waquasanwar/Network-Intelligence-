@@ -23,6 +23,8 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/network_intelligence?schema=public
+      # Migrations use the direct (unpooled) connection; in CI it is the same database.
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/network_intelligence?schema=public
       AUTH_SECRET: ci-only-secret-not-for-production
       AUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: "true"

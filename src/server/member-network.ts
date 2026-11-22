@@ -4,14 +4,14 @@ import "server-only";
  * connected with. Nobody else's details are shown.
  */
 import { prisma } from "@/lib/db";
-import { canShowPhoto } from "@/lib/privacy";
+import { photoSrc } from "@/lib/photo-src";
 
 const SEL = { id: true, firstName: true, lastName: true, headline: true, photoUrl: true, privacy: true } as const;
 type Row = { id: string; firstName: string; lastName: string; headline: string | null; photoUrl: string | null; privacy: unknown };
 /** `photo` is set only where that person agreed to show it. Their privacy record never leaves the server. */
 export type NetPerson = { id: string; firstName: string; lastName: string; headline: string | null; photo: string | null };
 const slim = (r: Row | null | undefined): NetPerson | null =>
-  r ? { id: r.id, firstName: r.firstName, lastName: r.lastName, headline: r.headline, photo: canShowPhoto(r, "internal") ? r.photoUrl : null } : null;
+  r ? { id: r.id, firstName: r.firstName, lastName: r.lastName, headline: r.headline, photo: photoSrc(r) } : null;
 export type NetTie = NetPerson & { how: "invited" | "referred" | "introduced" | "connected"; knownHow: string | null };
 
 export async function memberNetwork(personId: string, tenantId: string) {

@@ -8,7 +8,7 @@ import { toDomain } from "@/lib/brief-domain";
 import { AVAILABILITY_LABELS, ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import type { FitScores } from "@/lib/fit";
-import { canShowPhoto } from "@/lib/privacy";
+import { photoSrcFromRow } from "@/lib/photo-src";
 import type { GNode, GLink, GRole } from "@/components/domain/network-graph";
 
 const HUB = "__hub__";
@@ -20,10 +20,7 @@ const HUB = "__hub__";
  * matching engine the shortlists use. "Stretch" matches (a hard check unmet) are left out here so
  * "roles they fit" stays honest; they still appear on the requirement itself.
  */
-/** Inline photos (no file store connected) travel with the page, so only this many are sent. */
-const INLINE_PHOTOS = 40;
-
-export async function buildNetworkMap(user: { tenantId: string; name: string }, now = new Date(), opts: { photos?: boolean } = {}): Promise<{ nodes: GNode[]; links: GLink[]; openRoles: number }> {
+export async function buildNetworkMap(user: { tenantId: string; name: string }, now = new Date(), opts: { photos?: boolean } = {}): Promise<{ nodes: GNode[]; links: GLink[]; openRoles: number; total: number }> {
   const [people, briefs] = await Promise.all([
     prisma.person.findMany({
       where: { tenantId: user.tenantId },
@@ -39,6 +36,8 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
         conversations: { select: { approvalStatus: true, type: true, approvedById: true } },
         referralsMade: { select: { status: true } },
       },
+      // A big network is drawn from the people most recently active; `total` keeps the real count.
+      orderBy: { updatedAt: "desc" },
       take: 400,
     }),
     prisma.brief.findMany({ where: { tenantId: user.tenantId, status: { notIn: ["FILLED", "CLOSED"] } }, orderBy: { updatedAt: "desc" }, take: 20 }),
@@ -72,17 +71,18 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
   const nodes: GNode[] = [{ id: HUB, name: `${user.name.split(" ")[0]}’s network`, headline: "You — the centre of the network", trust: 100, worked: true, hub: true }];
   const links: GLink[] = [];
   // Photos are fetched only for the view that draws faces, and shown only where the person agreed.
-  const withPhoto = opts.photos ? await prisma.person.findMany({ where: { tenantId: user.tenantId, photoUrl: { not: null } }, select: { id: true, photoUrl: true, privacy: true }, take: 400 }) : [];
-  const photoOf = new Map(withPhoto.filter((x) => canShowPhoto(x, "internal")).map((x) => [x.id, x.photoUrl]));
-  let inline = 0;
+  const withPhoto = opts.photos ? await prisma.$queryRaw<{ id: string; privacy: unknown; inline: boolean; url: string | null; v: string }[]>`
+    SELECT id, privacy, ("photoUrl" LIKE 'data:%') AS inline, CASE WHEN "photoUrl" LIKE 'data:%' THEN NULL ELSE "photoUrl" END AS url, md5("photoUrl") AS v
+    FROM "Person" WHERE "tenantId" = ${user.tenantId} AND "photoUrl" IS NOT NULL` : [];
+  // Each face is a short link (see photoSrc), so even a full network adds little to the page.
+  const photoOf = new Map(withPhoto.map((x) => [x.id, photoSrcFromRow(x)]));
 
   for (const p of people) {
     const worked = p.relationships.some((r) => r.workedTogether);
     const freshness = assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now);
     const t = trustFor(p);
     const open = ACTIVE_STATUSES.includes(p.availabilityStatus);
-    let photo = photoOf.get(p.id) ?? null;
-    if (photo?.startsWith("data:") && ++inline > INLINE_PHOTOS) photo = null;
+    const photo = photoOf.get(p.id) ?? null;
     nodes.push({
       id: p.id, name: p.preferredName || fullName(p), headline: p.headline ?? "", trust: t.score, worked, photo,
       band: TRUST_BAND_LABEL[trustBand(t.score)], vouchedBy: t.vouchedBy,
@@ -98,5 +98,6 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
     links.push({ source: introducer ?? HUB, target: p.id, worked: !!primary?.workedTogether });
   }
 
-  return { nodes, links, openRoles: briefs.length };
+  const total = people.length < 400 ? people.length : await prisma.person.count({ where: { tenantId: user.tenantId } });
+  return { nodes, links, openRoles: briefs.length, total };
 }

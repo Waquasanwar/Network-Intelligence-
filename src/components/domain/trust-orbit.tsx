@@ -18,6 +18,8 @@ export type OrbitPerson = {
   href?: string | null;
   /** What the link on their card says. Defaults to "Open profile". */
   hrefLabel?: string;
+  /** Who to show first when a circle is too full to draw everyone (higher first, e.g. trust). */
+  weight?: number;
 };
 export type OrbitGroup = { key: string; label: string; hint?: string };
 /** Who knows whom. Drawn only for the person in focus, and listed on their card. */
@@ -27,6 +29,8 @@ export type OrbitLink = { source: string; target: string };
 const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
 const initials = (name: string) => name.split(/\s+/).map((s) => s[0] ?? "").join("").slice(0, 2).toUpperCase();
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+/** 2,140 → "2.1k", 12,600 → "13k": a count you read at a glance. */
+const compactCount = (n: number) => (n < 1000 ? String(n) : n < 10_000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${Math.round(n / 1000)}k`);
 
 // Each person carries one of the brand's own lights: it tints their glass, their glow and their initials.
 const TINTS: [string][] = [["#9af2cf"], ["#ffb9ab"], ["#b4d0ff"], ["#f2d594"], ["#cfccff"]];
@@ -59,13 +63,17 @@ function Face({ p, size }: { p: { name: string; photo?: string | null }; size: n
  * swarm, and choosing a face pulls it forward, names it, and lights up the people it knows.
  * Used for the team's view of the whole network and for a member's own circle.
  */
-export function TrustOrbit({ centre, people, groups, links = [], caption, label, heightClass = "h-[calc(100vh-270px)] min-h-[520px]", compact = false }: {
+export function TrustOrbit({ centre, people, groups, links = [], caption, label, moreHref, total, heightClass = "h-[calc(100vh-270px)] min-h-[520px]", compact = false }: {
   centre: { name: string; photo?: string | null };
   people: OrbitPerson[]; groups: OrbitGroup[]; links?: OrbitLink[];
   /** One plain line across the top of the stage. */
   caption?: string;
   /** What a screen reader hears for the whole picture. */
   label: string;
+  /** Where "+N more" leads, for everyone the orbit does not draw. */
+  moreHref?: string;
+  /** The real size of the network, when `people` is only part of it. */
+  total?: number;
   heightClass?: string; compact?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -102,11 +110,25 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
     const rx = Math.min(Math.max(50, box.w / 2 - pad - base[2] / 2), ry * 2.1);
     const hub = Math.round(clamp(Math.min(rx, ry) * 0.36, 40, compact ? 68 : 104));
     const placed: Placed[] = [];
+    // A full network is not drawn face by face: each circle shows the people who matter most (and
+    // whoever is chosen), and everyone else is counted in one quiet "+N" instead of a wall of tiles.
+    const cap = (small ? [8, 12, 16] : [14, 22, 30]);
+    const pool = group ? people.filter((p) => p.groups.includes(group)) : people;
+    const shownIds = new Set<string>();
+    let hidden = 0;
+    for (const ring of [0, 1, 2] as const) {
+      const all = pool.filter((p) => p.ring === ring).sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0) || hash(a.id) - hash(b.id));
+      all.slice(0, cap[ring]).forEach((p) => shownIds.add(p.id));
+      hidden += Math.max(0, all.length - cap[ring]);
+    }
+    if (!group && total && total > people.length) hidden += total - people.length;
+    if (selected && !shownIds.has(selected) && people.some((p) => p.id === selected)) shownIds.add(selected);
+    const visible = people.filter((p) => shownIds.has(p.id));
     // A handful of people share one turn of the circle, so they spread out instead of bunching by ring.
-    const few = people.length <= 12;
+    const few = visible.length <= 12;
     let k = 0;
     for (const ring of [0, 1, 2] as const) {
-      const inRing = people.filter((p) => p.ring === ring).sort((a, b) => hash(a.id) - hash(b.id));
+      const inRing = visible.filter((p) => p.ring === ring).sort((a, b) => hash(a.id) - hash(b.id));
       const n = inRing.length;
       if (!n) continue;
       const [lo, hi] = BANDS[ring];
@@ -115,7 +137,7 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
       const step = (Math.PI * 2) / n, start = hash(`ring${ring}`) * Math.PI * 2;
       inRing.forEach((p, i) => {
         // Evenly round the circle, then nudged along it and across the band, so it reads as a swarm, not a clock face.
-        const th = few ? -Math.PI / 2 + (k++ * Math.PI * 2) / people.length : start + i * step + (hash(`${p.id}a`) - 0.5) * step * 0.7;
+        const th = few ? -Math.PI / 2 + (k++ * Math.PI * 2) / visible.length : start + i * step + (hash(`${p.id}a`) - 0.5) * step * 0.7;
         // Never closer than a clear gap from the centre, however small the stage.
         const f = Math.max(n <= 3 ? (lo + hi) / 2 : lo + hash(`${p.id}r`) * (hi - lo), (hub / 2 + size / 2 + (few ? 26 : 10)) / Math.min(rx, ry));
         // The orbits are tilted towards you: faces at the front read larger than faces at the back.
@@ -123,8 +145,23 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
         placed.push({ ...p, x: cx + rx * f * Math.cos(th), y: cy + ry * f * Math.sin(th), size: Math.round(size * (0.82 + 0.32 * depth)), depth });
       });
     }
-    return { cx, cy, rx, ry, hub, placed, narrow };
-  }, [box, people, compact, caption]);
+    // Ease touching faces apart, a few passes, keeping them clear of the centre and inside the frame.
+    const gap = small ? 4 : 7, top0 = top + 6;
+    for (let pass = 0; pass < 36; pass++) {
+      let moved = false;
+      for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) {
+        const a = placed[i], b = placed[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01, min = (a.size + b.size) / 2 + gap;
+        if (d < min) { const push = (min - d) / 2, ux = dx / d, uy = dy / d; a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push; moved = true; }
+      }
+      for (const q of placed) {
+        const dx = q.x - cx, dy = q.y - cy, d = Math.hypot(dx, dy) || 0.01, min = hub / 2 + q.size / 2 + 10;
+        if (d < min) { q.x = cx + (dx / d) * min; q.y = cy + (dy / d) * min; }
+        q.x = clamp(q.x, q.size / 2 + 4, box.w - q.size / 2 - 4); q.y = clamp(q.y, top0 + q.size / 2, box.h - q.size / 2 - 4);
+      }
+      if (!moved) break;
+    }
+    return { cx, cy, rx, ry, hub, placed, narrow, hidden };
+  }, [box, people, compact, caption, group, selected, total]);
 
   const byId = useMemo(() => new Map((layout?.placed ?? []).map((p) => [p.id, p])), [layout]);
   const focus = hover ?? selected;
@@ -132,7 +169,7 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
   const chosen = selected ? people.find((p) => p.id === selected) ?? null : null;
   const inGroup = (p: OrbitPerson) => !group || p.groups.includes(group);
   const lit = (id: string) => !focus || id === focus || !!neighbours.get(focus)?.has(id);
-  const showNames = people.length <= 12;
+  const showNames = (layout?.placed.length ?? 0) <= 12;
   const stacked = compact; // the counters sit above the stage and the card below it
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
 
@@ -144,7 +181,7 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
     <div className={cn("ink-stage swarm-shell flex w-full flex-col overflow-hidden rounded-[20px]", !stacked && "lg:flex-row")} data-trust-orbit onKeyDown={(e) => { if (e.key === "Escape") setSelected(null); }}>
       <div className={cn("flex flex-wrap gap-1.5 p-3", !stacked && "lg:w-[216px] lg:flex-none lg:flex-col lg:flex-nowrap lg:gap-2 lg:p-4")} role="group" aria-label="Show">
         {[{ key: "", label: "Everyone", hint: undefined as string | undefined }, ...groups].map((g) => {
-          const on = (group ?? "") === g.key, n = g.key ? counts.get(g.key) ?? 0 : people.length;
+          const on = (group ?? "") === g.key, n = g.key ? counts.get(g.key) ?? 0 : Math.max(total ?? 0, people.length);
           return (
             <button key={g.key || "all"} type="button" aria-pressed={on} disabled={!n && !on} onClick={() => { setGroup(g.key || null); setSelected(null); }}
               className={cn("swarm-count relative flex min-h-11 cursor-pointer items-center gap-2.5 overflow-hidden rounded-[14px] px-3 py-2 text-left transition-[border-color,background-color,box-shadow] duration-300 disabled:cursor-default disabled:opacity-45", on && "is-on", !stacked && "lg:min-h-[64px] lg:gap-3")}>
@@ -154,7 +191,7 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
                 {g.hint ? <span className={cn("hidden text-[11.5px] leading-snug text-ink-muted", !stacked && "lg:block")}>{g.hint}</span> : null}
               </span>
               {/* How much of the network this is, as a thin line of light along the bottom. */}
-              {people.length ? <span className="swarm-share" style={{ width: `${Math.round((n / people.length) * 100)}%` }} aria-hidden="true" /> : null}
+              {people.length ? <span className="swarm-share" style={{ width: `${Math.min(100, Math.round((n / Math.max(total ?? 0, people.length)) * 100))}%` }} aria-hidden="true" /> : null}
             </button>
           );
         })}
@@ -205,7 +242,7 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
 
               {layout.placed.map((p, i) => {
                 const active = focus === p.id, picked = selected === p.id;
-                const dim = !inGroup(p) || !lit(p.id);
+                const dim = (!inGroup(p) && selected !== p.id) || !lit(p.id);
                 const named = picked || active || showNames;
                 return (
                   <button key={p.id} type="button" aria-pressed={picked} aria-label={`${p.name}, ${RING_WORDS[p.ring]}${p.note ? `. ${p.note}` : ""}`}
@@ -225,6 +262,13 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
                 );
               })}
 
+              {layout.hidden > 0 ? (() => {
+                const at = { left: layout.cx + layout.rx * 0.74, top: layout.cy + layout.ry * 0.86 };
+                const inner = <><b className="font-display text-[15px] font-light leading-none tabular text-ink">+{compactCount(layout.hidden)}</b><span className="text-[11px] leading-tight text-ink-muted">{group ? "more here" : "more in your network"}</span></>;
+                return moreHref
+                  ? <Link href={moreHref} className="swarm-more" style={at} onClick={(e) => e.stopPropagation()} aria-label={`${layout.hidden} more people not drawn. See them all`}>{inner}</Link>
+                  : <span className="swarm-more" style={at} aria-label={`${layout.hidden} more people not drawn`}>{inner}</span>;
+              })() : null}
               {!people.length ? <p className="absolute inset-x-6 bottom-6 text-center text-[13px] text-ink-muted">Nobody here yet. This fills in as people join and connect.</p> : null}
             </>
           ) : null}

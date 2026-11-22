@@ -16,7 +16,7 @@ export default async function NetworkMapPage({ searchParams }: { searchParams: P
   const user = await requireInternal();
   const { view } = await searchParams;
   const circles = view === "circles", orbit = view === "orbit";
-  const { nodes, links, openRoles } = await buildNetworkMap(user, new Date(), { photos: orbit });
+  const { nodes, links, openRoles, total } = await buildNetworkMap(user, new Date(), { photos: orbit });
 
   // The orbit: the same people and the same circles, drawn as faces, with who knows whom on each card.
   const hub = nodes.find((n) => n.hub);
@@ -28,7 +28,7 @@ export default async function NetworkMapPage({ searchParams }: { searchParams: P
       id: n.id, name: n.name, headline: n.headline, photo: n.photo, ring,
       groups: [`c${ring}`, ...(n.open ? ["open"] : [])],
       note: [n.worked ? "You have worked together" : CIRCLES[ring].hint, via ? `Came through ${nameOf.get(via) ?? "someone in the network"}` : null].filter(Boolean).join(" · "),
-      chips: n.capabilities?.slice(0, 4), href: `/network/${n.id}`,
+      chips: n.capabilities?.slice(0, 4), href: `/network/${n.id}`, weight: n.trust + (n.worked ? 50 : 0),
     };
   }) : [];
   const tab = (on: boolean) => cn("inline-flex h-8 items-center rounded-full px-3.5 text-[13px]", on ? "bg-ink font-semibold text-canvas" : "text-ink-muted hover:text-ink");
@@ -53,15 +53,15 @@ export default async function NetworkMapPage({ searchParams }: { searchParams: P
         <EmptyState title="No one to map yet" description="Add people to the network and their connections appear here." />
       ) : orbit ? (
         <TrustOrbit
-          centre={{ name: user.name }} people={faces} links={links.filter((l) => l.source !== hub?.id)}
+          centre={{ name: user.name }} people={faces} links={links.filter((l) => l.source !== hub?.id)} moreHref="/network" total={total}
           groups={[...CIRCLES.map((c, i) => ({ key: `c${i}`, label: c.label, hint: c.hint })), { key: "open", label: "Open to work", hint: "Available now or soon" }]}
-          caption={`${faces.length} ${faces.length === 1 ? "person" : "people"} · closer means you know them better`}
+          caption={`${total.toLocaleString("en-GB")} ${total === 1 ? "person" : "people"} · closer means you know them better`}
           label={`Your network as faces in three circles around you: ${CIRCLES.map((c, i) => `${faces.filter((f) => f.ring === i).length} ${c.label.toLowerCase()}`).join(", ")}`}
         />
       ) : circles ? (
-        <NetworkGraph nodes={nodes} links={links} openRoles={openRoles} />
+        <NetworkGraph nodes={nodes} links={links} openRoles={openRoles} total={total} />
       ) : (
-        <NetworkSky nodes={nodes} links={links} openRoles={openRoles} />
+        <NetworkSky nodes={nodes} links={links} openRoles={openRoles} total={total} />
       )}
     </>
   );
