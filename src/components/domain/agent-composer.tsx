@@ -21,33 +21,22 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<AgentAnswer | null>(null);
   const [typed, setTyped] = useState("");
-  const [hint, setHint] = useState(0);
+  const hint = 0;
   const run = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // The placeholder rotates through real questions while the box is empty and idle.
-  useEffect(() => {
-    if (phase !== "idle" || value || suggestions.length < 2) return;
-    const t = setInterval(() => setHint((h) => (h + 1) % suggestions.length), 3600);
-    return () => clearInterval(t);
-  }, [phase, value, suggestions.length]);
 
   // The answer arrives as text being written, then the people appear.
   const answerText = result?.ok ? result.answer : "";
   useEffect(() => {
     if (phase !== "answer" || !answerText) return;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { setTyped(answerText); return; }
-    let i = 0;
-    setTyped("");
-    const t = setInterval(() => { i = Math.min(answerText.length, i + 3); setTyped(answerText.slice(0, i)); if (i >= answerText.length) clearInterval(t); }, 16);
-    return () => clearInterval(t);
+    setTyped(answerText); // the whole answer at once: still by design
   }, [phase, answerText]);
 
   async function ask(question: string) {
     const q = question.trim();
     if (!q || phase === "thinking") return;
     const id = ++run.current;
-    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = true; // no staged pauses: each step shows as soon as it is true
     setValue(q); setResult(null); setTyped(""); setStep(0); setPhase("thinking");
     const started = performance.now();
     const pending = askNetwork(q).catch((): AgentAnswer => ({ ok: false, error: "The agent could not reach the network just now. Try again." }));

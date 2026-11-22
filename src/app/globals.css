@@ -1139,3 +1139,14 @@ a.rail-row:hover { background: var(--color-surface-muted); }
 .sky-more:hover { border-color: rgba(126, 227, 188, .55); background: rgba(15, 29, 64, .75); }
 .sky-more:focus-visible { outline: 2px solid #7ee3bc; outline-offset: 3px; }
 @media (max-width: 639px) { .sky-more { top: auto; bottom: 188px; right: 12px; padding: 6px 12px; } }
+
+/* ---------- Still by design ----------
+   Nothing on screen moves on its own: no pulses, drifts, twinkles, comets, counting or drawing in.
+   Everything is shown in its final, resting state, so the interface reads as calm and exact.
+   Hover and focus still answer instantly (colour and opacity), which is response, not motion. */
+*, *::before, *::after { animation: none !important; scroll-behavior: auto !important; }
+/* Changes of state are instant for position and size (nothing slides, lifts or grows); only colour
+   and opacity ease, briefly, so a hover still reads as a response. */
+*, *::before, *::after { transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, opacity, box-shadow !important; transition-duration: 120ms !important; }
+.sky-arc { stroke-dasharray: none; stroke-dashoffset: 0; }
+.trace-pulse, .swarm-comet, .swarm-pulse, .orbit-ripple, .orbit-glow, .sky-trail { display: none; }

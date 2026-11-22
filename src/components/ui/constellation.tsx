@@ -21,7 +21,7 @@ export function Constellation({ className = "", density = 1, focus = 0.62 }: { c
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = true; // still by design: one frame, drawn once
     let w = 0, h = 0, dpr = 1, nodes: Node[] = [], edges: [number, number][] = [], pulses: Pulse[] = [];
     let raf = 0, visible = true, last = performance.now(), spawn = 0;
 

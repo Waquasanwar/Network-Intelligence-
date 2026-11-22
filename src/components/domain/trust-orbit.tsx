@@ -223,7 +223,6 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
                 {focused ? (
                   <>
                     <line x1={layout.cx} y1={layout.cy} x2={focused.x} y2={focused.y} stroke={`url(#${uid}-beam)`} strokeWidth={1.6} strokeLinecap="round" />
-                    <circle r={2.6} fill="#ffffff" className="swarm-spark"><animateMotion dur="1.6s" repeatCount="indefinite" path={`M${layout.cx.toFixed(1)},${layout.cy.toFixed(1)} L${focused.x.toFixed(1)},${focused.y.toFixed(1)}`} /></circle>
                     {[...(neighbours.get(focused.id) ?? [])].map((id) => { const q = byId.get(id); return q ? <line key={id} x1={focused.x} y1={focused.y} x2={q.x} y2={q.y} className="orbit-flow" stroke="var(--color-coral)" strokeWidth={1.4} strokeLinecap="round" /> : null; })}
                   </>
                 ) : null}

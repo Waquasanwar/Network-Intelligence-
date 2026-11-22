@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowUp, Check } from "lucide-react";
 import { AgentMark } from "@/components/ui/agent-mark";
 
@@ -31,22 +31,17 @@ const PLAN: Record<Mode, string[]> = {
 export function NeedComposer() {
   const [mode, setMode] = useState<Mode>("need");
   const [value, setValue] = useState("");
-  const [hint, setHint] = useState(0);
+  const hint = 0;
   const [step, setStep] = useState(-1);
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (value) return;
-    const t = setInterval(() => setHint((h) => (h + 1) % EXAMPLES[mode].length), 3200);
-    return () => clearInterval(t);
-  }, [value, mode]);
 
   const grow = (el: HTMLTextAreaElement) => { el.style.height = "0px"; el.style.height = `${Math.min(el.scrollHeight, 200)}px`; };
 
   async function go(text: string) {
     const words = text.trim();
     if (!words) return;
-    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = true; // still by design
     for (let i = 0; i <= PLAN[mode].length; i++) { setStep(i); if (!calm) await new Promise((r) => setTimeout(r, 420)); }
     const form = document.querySelector<HTMLElement>(mode === "need" ? "#need" : "#join");
     const field = form?.querySelector<HTMLTextAreaElement>('textarea[name="message"]');
@@ -58,7 +53,7 @@ export function NeedComposer() {
     setTimeout(() => form?.querySelector<HTMLInputElement>('input[name="name"]')?.focus({ preventScroll: true }), calm ? 0 : 500);
   }
 
-  const switchTo = (m: Mode) => { setMode(m); setStep(-1); setHint(0); ref.current?.focus(); };
+  const switchTo = (m: Mode) => { setMode(m); setStep(-1); ref.current?.focus(); };
 
   return (
     <div className="mx-auto mt-10 w-full max-w-[680px] text-left">

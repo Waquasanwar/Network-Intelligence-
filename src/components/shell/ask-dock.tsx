@@ -24,11 +24,6 @@ export function AskDock() {
 
   React.useEffect(() => { setI(0); }, [pathname]);
   React.useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = window.setInterval(() => setI((n) => n + 1), 6000);
-    return () => window.clearInterval(t);
-  }, []);
-  React.useEffect(() => {
     let last = window.scrollY, rest = 0;
     const onScroll = () => {
       const y = window.scrollY;
