@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowUpRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,26 +28,29 @@ const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; 
 const initials = (name: string) => name.split(/\s+/).map((s) => s[0] ?? "").join("").slice(0, 2).toUpperCase();
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-// Initials sit on the brand's own lights, dark on light, so they read at any size.
-const TINTS: [string, string, string][] = [
-  ["#9af2cf", "#27a57d", "#04392a"], ["#ffc4b8", "#e2705c", "#4a130a"], ["#bcd3f4", "#5f86c9", "#0c2247"],
-  ["#ecd8b0", "#b9933f", "#3d2a05"], ["#c9c6ff", "#6f6bd8", "#15124a"],
-];
+// Each person carries one of the brand's own lights: it tints their glass, their glow and their initials.
+const TINTS: [string][] = [["#9af2cf"], ["#ffb9ab"], ["#b4d0ff"], ["#f2d594"], ["#cfccff"]];
 const tintOf = (name: string) => TINTS[Math.floor(hash(name) * TINTS.length)];
 
 // Each circle is a band round the centre, as a share of the stage's half-width and half-height.
 const BANDS: [number, number][] = [[0.34, 0.52], [0.58, 0.78], [0.84, 1]];
 const RING_WORDS = ["closest to you", "in your middle circle", "on the edge"];
 
-type Placed = OrbitPerson & { x: number; y: number; size: number };
+type Placed = OrbitPerson & { x: number; y: number; size: number; depth: number };
+
+// The four corners of a viewfinder, drawn round the chosen face.
+function Brackets() {
+  return <span className="swarm-focus pointer-events-none absolute -inset-[5px]" aria-hidden="true"><i /><i /><i /><i /></span>;
+}
 
 function Face({ p, size }: { p: { name: string; photo?: string | null }; size: number }) {
   if (p.photo) {
     // eslint-disable-next-line @next/next/no-img-element -- a small user photo from our own store or inline; no optimiser needed
     return <img src={p.photo} alt="" className="h-full w-full object-cover" draggable={false} />;
   }
-  const [a, b, ink] = tintOf(p.name);
-  return <span className="grid h-full w-full place-items-center font-semibold leading-none" style={{ background: `linear-gradient(150deg, ${a}, ${b})`, color: ink, fontSize: Math.max(8, Math.round(size * 0.36)) }}>{size >= 20 ? initials(p.name) : ""}</span>;
+  // Dark glass lit from one corner in the person's own tint, with their initials in that light.
+  const [a] = tintOf(p.name);
+  return <span className="grid h-full w-full place-items-center font-semibold leading-none tracking-[0.02em]" style={{ background: `radial-gradient(130% 120% at 26% 14%, ${a}80 0%, ${a}26 42%, transparent 70%), linear-gradient(160deg, #1d3266 0%, #0b1736 100%)`, color: a, fontSize: Math.max(8, Math.round(size * 0.36)) }}>{size >= 20 ? initials(p.name) : ""}</span>;
 }
 
 /**
@@ -115,10 +118,12 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
         const th = few ? -Math.PI / 2 + (k++ * Math.PI * 2) / people.length : start + i * step + (hash(`${p.id}a`) - 0.5) * step * 0.7;
         // Never closer than a clear gap from the centre, however small the stage.
         const f = Math.max(n <= 3 ? (lo + hi) / 2 : lo + hash(`${p.id}r`) * (hi - lo), (hub / 2 + size / 2 + (few ? 26 : 10)) / Math.min(rx, ry));
-        placed.push({ ...p, x: cx + rx * f * Math.cos(th), y: cy + ry * f * Math.sin(th), size });
+        // The orbits are tilted towards you: faces at the front read larger than faces at the back.
+        const depth = (Math.sin(th) + 1) / 2;
+        placed.push({ ...p, x: cx + rx * f * Math.cos(th), y: cy + ry * f * Math.sin(th), size: Math.round(size * (0.82 + 0.32 * depth)), depth });
       });
     }
-    return { cx, cy, hub, placed, narrow };
+    return { cx, cy, rx, ry, hub, placed, narrow };
   }, [box, people, compact, caption]);
 
   const byId = useMemo(() => new Map((layout?.placed ?? []).map((p) => [p.id, p])), [layout]);
@@ -129,24 +134,27 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
   const lit = (id: string) => !focus || id === focus || !!neighbours.get(focus)?.has(id);
   const showNames = people.length <= 12;
   const stacked = compact; // the counters sit above the stage and the card below it
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
 
   const card = chosen ? (
     <PersonCard p={chosen} knows={[...(neighbours.get(chosen.id) ?? [])].map((id) => people.find((x) => x.id === id)).filter((x): x is OrbitPerson => !!x)} onPick={setSelected} onClose={() => setSelected(null)} />
   ) : null;
 
   return (
-    <div className={cn("ink-stage flex w-full flex-col overflow-hidden rounded-[20px]", !stacked && "lg:flex-row")} data-trust-orbit onKeyDown={(e) => { if (e.key === "Escape") setSelected(null); }}>
+    <div className={cn("ink-stage swarm-shell flex w-full flex-col overflow-hidden rounded-[20px]", !stacked && "lg:flex-row")} data-trust-orbit onKeyDown={(e) => { if (e.key === "Escape") setSelected(null); }}>
       <div className={cn("flex flex-wrap gap-1.5 p-3", !stacked && "lg:w-[216px] lg:flex-none lg:flex-col lg:flex-nowrap lg:gap-2 lg:p-4")} role="group" aria-label="Show">
         {[{ key: "", label: "Everyone", hint: undefined as string | undefined }, ...groups].map((g) => {
           const on = (group ?? "") === g.key, n = g.key ? counts.get(g.key) ?? 0 : people.length;
           return (
             <button key={g.key || "all"} type="button" aria-pressed={on} disabled={!n && !on} onClick={() => { setGroup(g.key || null); setSelected(null); }}
-              className={cn("flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[14px] border px-3 py-2 text-left transition-colors duration-200 disabled:cursor-default disabled:opacity-45", on ? "border-teal bg-teal-50" : "border-line bg-surface-muted hover:border-line-strong", !stacked && "lg:min-h-[60px] lg:gap-3")}>
-              <span className={cn("font-display text-[18px] leading-none tabular", on ? "text-teal" : "text-ink", !stacked && "lg:min-w-[40px] lg:text-[24px]")}>{n}</span>
+              className={cn("swarm-count relative flex min-h-11 cursor-pointer items-center gap-2.5 overflow-hidden rounded-[14px] px-3 py-2 text-left transition-[border-color,background-color,box-shadow] duration-300 disabled:cursor-default disabled:opacity-45", on && "is-on", !stacked && "lg:min-h-[64px] lg:gap-3")}>
+              <span className={cn("font-display text-[18px] font-light leading-none tabular", on ? "text-teal" : "num-grad", !stacked && "lg:min-w-[44px] lg:text-[28px]")}>{n}</span>
               <span className="min-w-0">
                 <span className="block text-[12.5px] font-semibold leading-tight text-ink">{g.label}</span>
                 {g.hint ? <span className={cn("hidden text-[11.5px] leading-snug text-ink-muted", !stacked && "lg:block")}>{g.hint}</span> : null}
               </span>
+              {/* How much of the network this is, as a thin line of light along the bottom. */}
+              {people.length ? <span className="swarm-share" style={{ width: `${Math.round((n / people.length) * 100)}%` }} aria-hidden="true" /> : null}
             </button>
           );
         })}
@@ -158,9 +166,27 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
           {layout ? (
             <>
               <svg className="absolute inset-0 h-full w-full" role="img" aria-label={label}>
+                <defs>
+                  <linearGradient id={`${uid}-ring`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#7ee3bc" stopOpacity="0.55" /><stop offset="0.5" stopColor="#8fb0ff" stopOpacity="0.12" /><stop offset="1" stopColor="#a9a6ff" stopOpacity="0.45" /></linearGradient>
+                  <linearGradient id={`${uid}-beam`} gradientUnits="userSpaceOnUse" x1={layout.cx} y1={layout.cy} x2={focused?.x ?? layout.cx} y2={focused?.y ?? layout.cy}><stop offset="0" stopColor="#7ee3bc" stopOpacity="0" /><stop offset="0.25" stopColor="#7ee3bc" /><stop offset="1" stopColor="#ffffff" /></linearGradient>
+                </defs>
+                {/* Dust: a still, evenly scattered field of faint points, a few of which twinkle. */}
+                {Array.from({ length: layout.narrow || compact ? 28 : 64 }, (_, i) => <circle key={i} cx={((((i + 1) * 0.7548776662) % 1) * (box?.w ?? 0)).toFixed(1)} cy={((((i + 1) * 0.5698402910) % 1) * (box?.h ?? 0)).toFixed(1)} r={i % 6 ? 0.7 : 1.2} fill="#dfe9ff" opacity={0.1 + hash(`do${i}`) * 0.3} className={i % 5 === 0 ? "swarm-twinkle" : undefined} style={i % 5 === 0 ? { animationDelay: `${(hash(`dt${i}`) * 5).toFixed(1)}s` } : undefined} />)}
+                {/* The three orbits, each with a point of light travelling round it. */}
+                {BANDS.map(([lo, hi], r) => {
+                  const a = layout.rx * (lo + hi) / 2, b = layout.ry * (lo + hi) / 2;
+                  const round = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b))); // the orbit's length
+                  return (
+                    <g key={r}>
+                      <ellipse cx={layout.cx} cy={layout.cy} rx={a} ry={b} fill="none" stroke={`url(#${uid}-ring)`} strokeWidth={1} opacity={[0.9, 0.6, 0.4][r]} />
+                      <ellipse cx={layout.cx} cy={layout.cy} rx={a} ry={b} fill="none" className={`swarm-comet is-${r}`} style={{ strokeDasharray: `${(round * 0.045).toFixed(1)} ${(round * 0.955).toFixed(1)}`, "--round": `${round.toFixed(1)}px` } as CSSProperties} />
+                    </g>
+                  );
+                })}
                 {focused ? (
                   <>
-                    <line x1={layout.cx} y1={layout.cy} x2={focused.x} y2={focused.y} stroke="#7ee3bc" strokeWidth={1.4} strokeOpacity={0.8} strokeLinecap="round" />
+                    <line x1={layout.cx} y1={layout.cy} x2={focused.x} y2={focused.y} stroke={`url(#${uid}-beam)`} strokeWidth={1.6} strokeLinecap="round" />
+                    <circle r={2.6} fill="#ffffff" className="swarm-spark"><animateMotion dur="1.6s" repeatCount="indefinite" path={`M${layout.cx.toFixed(1)},${layout.cy.toFixed(1)} L${focused.x.toFixed(1)},${focused.y.toFixed(1)}`} /></circle>
                     {[...(neighbours.get(focused.id) ?? [])].map((id) => { const q = byId.get(id); return q ? <line key={id} x1={focused.x} y1={focused.y} x2={q.x} y2={q.y} className="orbit-flow" stroke="var(--color-coral)" strokeWidth={1.4} strokeLinecap="round" /> : null; })}
                   </>
                 ) : null}
@@ -169,6 +195,9 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
               {/* Whoever is looking, at the centre. */}
               <div className="pointer-events-none absolute z-[6] -translate-x-1/2 -translate-y-1/2" style={{ left: layout.cx, top: layout.cy, width: layout.hub, height: layout.hub }}>
                 <span className="organism-halo absolute -inset-[70%] rounded-full" />
+                <span className="swarm-pulse absolute inset-0 rounded-full" />
+                <span className="swarm-pulse is-late absolute inset-0 rounded-full" />
+                <span className="swarm-core-ring absolute -inset-[14%] rounded-full" />
                 <span className="organism-nucleus absolute inset-0 grid place-items-center overflow-hidden rounded-full">
                   {centre.photo ? <Face p={centre} size={layout.hub} /> : <span className="label-caps" style={layout.hub < 48 ? { fontSize: 9.5 } : undefined}>You</span>}
                 </span>
@@ -183,10 +212,13 @@ export function TrustOrbit({ centre, people, groups, links = [], caption, label,
                     onClick={(e) => { e.stopPropagation(); setSelected(picked ? null : p.id); }}
                     onPointerEnter={() => setHover(p.id)} onPointerLeave={() => setHover(null)} onFocus={() => setHover(p.id)} onBlur={() => setHover(null)}
                     className={cn("absolute left-0 top-0 cursor-pointer transition-[opacity,transform] duration-300", dim ? "opacity-15" : "opacity-100")}
-                    style={{ width: p.size, height: p.size, transform: `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, -50%) scale(${picked ? 1.8 : active ? 1.25 : 1})`, zIndex: picked ? 60 : active ? 50 : 10 + (2 - p.ring) * 10 }}>
-                    <span className="swarm-drift block h-full w-full" style={{ animationDelay: `${(-hash(`${p.id}d`) * 7).toFixed(2)}s`, animationDuration: `${(6 + (i % 5) * 0.6).toFixed(1)}s` }}>
-                      <span className={cn("swarm-tile block h-full w-full", `is-${p.ring}`, picked && "is-selected")}><Face p={p} size={p.size} /></span>
+                    style={{ width: p.size, height: p.size, transform: `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, -50%) scale(${picked ? 1.8 : active ? 1.25 : 1})`, zIndex: picked ? 60 : active ? 50 : 10 + Math.round(p.depth * 30) }}>
+                    <span className="swarm-in block h-full w-full" style={{ animationDelay: `${Math.min(i * 9, 700)}ms` }}>
+                      <span className="swarm-drift block h-full w-full" style={{ animationDelay: `${(-hash(`${p.id}d`) * 7).toFixed(2)}s`, animationDuration: `${(6 + (i % 5) * 0.6).toFixed(1)}s` }}>
+                        <span className={cn("swarm-tile block h-full w-full", `is-${p.ring}`, picked && "is-selected")} style={{ "--tint": tintOf(p.name)[0], opacity: picked || active ? 1 : 0.72 + 0.28 * p.depth } as CSSProperties}><Face p={p} size={p.size} /></span>
+                      </span>
                     </span>
+                    {picked ? <Brackets /> : null}
                     {/* The chosen face is drawn 1.8 times larger, so its name is set small to land at about 12.5px. */}
                     {named ? <span className={cn("pointer-events-none absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap leading-none", picked ? "orbit-tag mt-1.5 px-2 py-[3px] text-[7px] font-semibold text-ink" : "mt-1.5 text-[11px] text-ink-muted")}>{picked ? p.name : p.name.split(/\s+/)[0]}</span> : null}
                   </button>
@@ -208,7 +240,7 @@ function PersonCard({ p, knows, onPick, onClose }: { p: OrbitPerson; knows: Orbi
   return (
     <div>
       <div className="flex items-start gap-3 p-4">
-        <span className="swarm-tile is-0 block h-12 w-12 flex-none"><Face p={p} size={48} /></span>
+        <span className="swarm-tile is-0 block h-12 w-12 flex-none" style={{ "--tint": tintOf(p.name)[0] } as CSSProperties}><Face p={p} size={48} /></span>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[15px] font-semibold tracking-[-0.01em]">{p.name}</div>
           <div className="line-clamp-2 text-[12px] leading-[1.4] text-ink-muted">{p.headline || "No headline yet"}</div>
