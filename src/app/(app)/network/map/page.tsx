@@ -3,7 +3,6 @@ import { requireInternal } from "@/server/session";
 import { buildNetworkMap } from "@/server/network-map";
 import { PageHeader, EmptyState } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
-import { NetworkGraph } from "@/components/domain/network-graph";
 import { NetworkSky } from "@/components/domain/network-sky";
 import { TrustOrbit, type OrbitPerson } from "@/components/domain/trust-orbit";
 import { CIRCLES, circleOf } from "@/lib/circles";
@@ -15,7 +14,9 @@ export const metadata = { title: "Network map" };
 export default async function NetworkMapPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const user = await requireInternal();
   const { view } = await searchParams;
-  const circles = view === "circles", orbit = view === "orbit";
+  // Two views: the sky (where people are, trust and introductions) and the orbit (who you know, as
+  // faces). The old circles view is folded into the orbit, which draws the same three circles.
+  const orbit = view === "orbit" || view === "circles";
   const { nodes, links, openRoles, total } = await buildNetworkMap(user, new Date(), { photos: orbit });
 
   // The orbit: the same people and the same circles, drawn as faces, with who knows whom on each card.
@@ -37,12 +38,11 @@ export default async function NetworkMapPage({ searchParams }: { searchParams: P
     <>
       <PageHeader
         title="Network map"
-        description={orbit ? "Everyone you know, as faces around you. The closer someone sits, the better you know them. Choose a face to see who they know." : circles ? "Your network in circles, with you at the centre. The closer someone is, the better you know them." : "Your network over the places it lives. People rise above their city as trust grows, arcs show who introduced whom, and each city shows its own time of day."}
+        description={orbit ? "Everyone you know, as faces around you. The closer someone sits, the better you know them. Choose a face to see who they know." : "Your network over the places it lives. People rise above their city as trust grows, arcs show who introduced whom, and each city shows its own time of day."}
         actions={
           <div className="flex items-center gap-2">
             <div className="inline-flex rounded-full border border-line bg-surface p-1" role="group" aria-label="View">
-              <Link href="/network/map" aria-current={!circles && !orbit ? "page" : undefined} className={tab(!circles && !orbit)}>Sky</Link>
-              <Link href="/network/map?view=circles" aria-current={circles ? "page" : undefined} className={tab(circles)}>Circles</Link>
+              <Link href="/network/map" aria-current={!orbit ? "page" : undefined} className={tab(!orbit)}>Sky</Link>
               <Link href="/network/map?view=orbit" aria-current={orbit ? "page" : undefined} className={tab(orbit)}>Orbit</Link>
             </div>
             <Link href="/network"><Button variant="secondary"><List className="h-3.5 w-3.5" /> List</Button></Link>
@@ -58,8 +58,6 @@ export default async function NetworkMapPage({ searchParams }: { searchParams: P
           caption={`${total.toLocaleString("en-GB")} ${total === 1 ? "person" : "people"} · closer means you know them better`}
           label={`Your network as faces in three circles around you: ${CIRCLES.map((c, i) => `${faces.filter((f) => f.ring === i).length} ${c.label.toLowerCase()}`).join(", ")}`}
         />
-      ) : circles ? (
-        <NetworkGraph nodes={nodes} links={links} openRoles={openRoles} total={total} />
       ) : (
         <NetworkSky nodes={nodes} links={links} openRoles={openRoles} total={total} />
       )}

@@ -34,10 +34,10 @@ await step("navigation, next step and ask bar", null, async () => {
   // growth on the map: everyone added in the last 30 days carries a ring, and one filter shows only them
   const fresh = Number(sql(`select count(*) from "Person" where "tenantId"=(select "tenantId" from "User" where email='waqas@networkintelligence.local') and "createdAt" > now() - interval '30 days'`));
   assert((await p.locator("[data-sky] .sky-star.is-new").count()) === fresh, `a gold star for each of the ${fresh} people added this month, found ${await p.locator("[data-sky] .sky-star.is-new").count()}`);
-  // The circles view is still there, one tap away.
-  await p.getByRole("link", { name: "Circles", exact: true }).click(); await p.waitForURL(/view=circles/); await p.locator(".orbit-stage").waitFor();
-  assert((await p.locator(".orbit-stage .orbit-bud").count()) === fresh, "the circles view marks the same people");
-  await p.getByRole("link", { name: "Sky", exact: true }).click(); await p.waitForURL((u) => !/view=circles/.test(u.search)); await p.locator("[data-sky] .sky-star").first().waitFor();
+  // The orbit is one tap away: the same people as faces in three circles. Old circles links land there.
+  await p.getByRole("link", { name: "Orbit", exact: true }).click(); await p.waitForURL(/view=orbit/); await p.locator("[data-trust-orbit] .swarm-tile").first().waitFor();
+  await p.goto(`${BASE}/network/map?view=circles`, { waitUntil: "networkidle" }); assert(await p.locator("[data-trust-orbit]").count(), "an old circles link opens the orbit");
+  await p.getByRole("link", { name: "Sky", exact: true }).click(); await p.waitForURL((u) => !/view=/.test(u.search)); await p.locator("[data-sky] .sky-star").first().waitFor();
   if (fresh) { await p.getByRole("button", { name: /New this month/ }).click(); assert((await p.getByRole("button", { name: /New this month/ }).getAttribute("aria-pressed")) === "true", "growth filter on"); await p.getByRole("button", { name: /New this month/ }).click(); }
   assert(await p.getByRole("img", { name: /People added in each of the last six months/ }).count(), "growth chart");
   await p.locator("aside").getByRole("link", { name: "Work", exact: true }).click(); await p.waitForURL(/\/requirements/);

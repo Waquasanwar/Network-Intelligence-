@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { longitudeOf, cityName } from "@/lib/geo";
 import { zoneFor, localTime } from "@/lib/place";
@@ -20,6 +21,8 @@ const isFresh = (n: GNode) => n.addedDays != null && n.addedDays < FRESH_DAYS;
 const unit = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h >>> 0) / 4294967295; };
 const shortName = (name: string) => { const [first, ...rest] = name.split(/\s+/); return rest.length ? `${first} ${rest[rest.length - 1][0]}.` : first; };
 const ELSEWHERE = "elsewhere";
+/** 2,140 → "2.1k": a count read at a glance. */
+const compactCount = (n: number) => (n < 1000 ? String(n) : n < 10_000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${Math.round(n / 1000)}k`);
 
 type City = { key: string; label: string; lon: number | null; x: number; zone: string | null; people: GNode[] };
 type Star = GNode & { x: number; y: number; r: number; city: string };
@@ -57,6 +60,19 @@ export function NetworkSky({ nodes, links, openRoles, total, compact = false, he
     return [...seen.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, compact ? 2 : 4).map(([key, v]) => ({ key, label: v.label }));
   }, [people, compact]);
   const matches = (n: GNode) => filter === "all" ? true : filter === "open" ? !!n.open : filter === "fresh" ? isFresh(n) : (n.capabilities ?? []).some((c) => c.trim().toLowerCase() === filter);
+  // A full network is not drawn star by star. The sky shows the people who matter most (worked
+  // with, new, open to work, most trusted), or the best of whoever the filter picks, plus whoever
+  // is chosen; everyone else is counted in their city's glow and one "+N more".
+  const drawn = useMemo(() => {
+    const cap = !box ? 90 : box.w < 640 ? 36 : compact ? 48 : 90;
+    const fits = (n: GNode) => filter === "all" ? true : filter === "open" ? !!n.open : filter === "fresh" ? isFresh(n) : (n.capabilities ?? []).some((c) => c.trim().toLowerCase() === filter);
+    const score = (n: GNode) => (n.worked ? 1000 : 0) + (isFresh(n) ? 300 : 0) + (n.open ? 50 : 0) + n.trust;
+    const ids = new Set(people.filter(fits).sort((a, b) => score(b) - score(a)).slice(0, cap).map((p) => p.id));
+    if (selected) ids.add(selected);
+    return ids;
+  }, [people, filter, selected, box, compact]);
+  const everyone = Math.max(total ?? 0, people.length);
+  const notDrawn = everyone - drawn.size;
 
   const sky = useMemo(() => {
     if (!box || box.w < 200 || box.h < 200) return null;
@@ -88,7 +104,7 @@ export function NetworkSky({ nodes, links, openRoles, total, compact = false, he
     const alt = (trust: number) => 30 + Math.pow(Math.max(0, Math.min(ceil, trust)) / ceil, 0.85) * (skyH - 44);
     list.forEach((c, ci) => {
       const room = Math.min(ci > 0 ? c.x - list[ci - 1].x : gap, ci < list.length - 1 ? list[ci + 1].x - c.x : gap) * 0.9;
-      const sorted = [...c.people].sort((a, b) => b.trust - a.trust);
+      const sorted = c.people.filter((p) => drawn.has(p.id)).sort((a, b) => b.trust - a.trust);
       const step = Math.min(narrow ? 18 : 30, room / Math.max(1, sorted.length));
       sorted.forEach((p, i) => {
         const side = i === 0 ? 0 : Math.ceil(i / 2) * (i % 2 ? -1 : 1);
@@ -121,7 +137,7 @@ export function NetworkSky({ nodes, links, openRoles, total, compact = false, he
     const named = new Set<string>(); const placed: number[] = [];
     for (const c of [...list].sort((a, b) => b.people.length - a.people.length)) { if (placed.every((x) => Math.abs(x - c.x) > (narrow ? 62 : 74))) { named.add(c.key); placed.push(c.x); } }
     return { w, h, narrow, horizon, bend, cities: list, stars, at, you, labels, trustedY, named };
-  }, [box, people, compact]);
+  }, [box, people, compact, drawn]);
 
   // The chain of introductions from someone back to you.
   const chain = useMemo(() => {
@@ -171,7 +187,8 @@ export function NetworkSky({ nodes, links, openRoles, total, compact = false, he
               <path d={`M0,${sky.bend(0)} Q${sky.w / 2},${2 * sky.horizon - (sky.bend(0) + sky.bend(sky.w)) / 2} ${sky.w},${sky.bend(sky.w)}`} fill="none" stroke="url(#sky-rim)" strokeWidth="1.5" />
               {sky.cities.map((c) => { const day = dayAt(c.zone), y = sky.bend(c.x); return (
                 <g key={c.key} className="sky-city">
-                  <circle cx={c.x} cy={y} r={day ? 14 : 10} className={day ? "is-day" : "is-night"} />
+                  {/* The glow grows with how many people live there, drawn or not. */}
+                  <circle cx={c.x} cy={y} r={(day ? 9 : 7) + 16 * Math.sqrt(c.people.length / Math.max(1, ...sky.cities.map((k) => k.people.length)))} className={day ? "is-day" : "is-night"} />
                   <circle cx={c.x} cy={y} r={2.6} fill={day ? "#f2c46d" : "#a9c6ff"} />
                 </g>
               ); })}
@@ -233,6 +250,7 @@ export function NetworkSky({ nodes, links, openRoles, total, compact = false, he
 
         {selectedNode ? <div onClick={(e) => e.stopPropagation()} className="orbit-card absolute right-3 top-3 z-[80] w-[310px] max-w-[calc(100%-24px)] max-h-[calc(100%-24px)] overflow-y-auto rounded-[22px] text-ink"><PersonCard n={selectedNode} connections={links.filter((l) => l.source === selectedNode.id || l.target === selectedNode.id).length} onClose={() => setSelected(null)} /></div> : null}
 
+        {notDrawn > 0 && sky ? <Link href="/network" className="sky-more" onClick={(e) => e.stopPropagation()} aria-label={`${notDrawn} more people not drawn. See them all`}><b>+{compactCount(notDrawn)}</b><span>{filter === "all" ? "more in your network" : "more like this"}</span></Link> : null}
         <div className="pointer-events-none absolute inset-x-4 bottom-3 z-[65] flex items-end justify-between gap-3 sm:inset-x-5 sm:bottom-4">
           <div className="pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto" onClick={(e) => e.stopPropagation()} role="group" aria-label="Show">
             {[["all", "Everyone"], ["open", "Open to work"], ...(stats.fresh ? [["fresh", "New this month"]] : []), ...topCaps.map((c) => [c.key, c.label])].map(([k, l]) => (

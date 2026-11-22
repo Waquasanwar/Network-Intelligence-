@@ -1133,3 +1133,9 @@ a.rail-row:hover { background: var(--color-surface-muted); }
 .photo-picker-face { position: relative; flex: none; border-radius: 999px; cursor: pointer; }
 .photo-picker-face:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 3px; }
 .photo-picker-badge { position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--color-ink); color: var(--color-canvas); border: 2px solid var(--color-canvas); }
+.sky-more { position: absolute; top: 18px; right: 18px; z-index: 66; display: inline-flex; align-items: baseline; gap: 7px; padding: 8px 14px; border-radius: 999px; white-space: nowrap; background: rgba(15, 29, 64, .55); border: 1px solid rgba(207, 220, 255, .18); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 12px 30px -14px rgba(1, 5, 18, .9); backdrop-filter: blur(10px) saturate(1.2); transition: border-color .2s, background-color .2s; }
+.sky-more b { font-family: var(--font-display, inherit); font-size: 15px; font-weight: 300; color: #fff; font-variant-numeric: tabular-nums; }
+.sky-more span { font-size: 11px; color: rgba(255, 255, 255, .6); }
+.sky-more:hover { border-color: rgba(126, 227, 188, .55); background: rgba(15, 29, 64, .75); }
+.sky-more:focus-visible { outline: 2px solid #7ee3bc; outline-offset: 3px; }
+@media (max-width: 639px) { .sky-more { top: auto; bottom: 188px; right: 12px; padding: 6px 12px; } }
