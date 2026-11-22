@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
-import { privacyOf, canShowPhoto } from "@/lib/privacy";
+import { privacyOf } from "@/lib/privacy";
+import { photoSrc } from "@/lib/photo-src";
 import { mayInvite } from "@/server/invites";
 import { resolveMemberPerson, loadFeatures } from "@/server/queries";
 import { standardFor } from "@/lib/standard-for";
@@ -115,7 +116,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const kind = KINDS.find((k) => k === sp.kind) ?? null;
   const shown = kind ? posts.filter((p) => p.kind === kind) : posts;
   const other = (c: (typeof accepted)[number]) => (c.fromPersonId === me!.id ? c.to : c.from);
-  const pic = (x: { photoUrl?: string | null; privacy?: unknown }) => (canShowPhoto(x, "internal") ? x.photoUrl ?? null : null);
+  const pic = photoSrc;
   const toMeet = members.filter((m) => !linkWith(m.id)).slice(0, 3);
   const notice = sp.notice && NOTICE[sp.notice] ? (sp.notice === "referred" && !earnings ? "Thank you. We will tell you how it goes." : NOTICE[sp.notice]) : null;
   const tabs = [

@@ -22,7 +22,8 @@ import { ReferenceDrawer } from "@/components/domain/reference-request";
 import { ProofLine } from "@/components/domain/standard";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
-import { privacyOf, canShowPhoto } from "@/lib/privacy";
+import { privacyOf } from "@/lib/privacy";
+import { photoSrc } from "@/lib/photo-src";
 import { resolveMemberPerson, loadFeatures } from "@/server/queries";
 import { UsersRound, ArrowRight } from "lucide-react";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
@@ -171,7 +172,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
         <div className="grid grid-cols-1 items-end gap-7 lg:grid-cols-[1fr_auto]">
           <div className="min-w-0">
             <div className="flex items-center gap-4 min-w-0">
-              <Avatar person={p} size="xl" ring src={canShowPhoto(p, "internal") ? p.photoUrl : null} />
+              <Avatar person={p} size="xl" ring src={photoSrc(p)} />
               <div className="min-w-0">
                 <h1 className="hero-title text-[28px] sm:text-[38px]">{sp.welcome && !screened ? `Welcome, ${p.preferredName ?? p.firstName}` : fullName(p)}</h1>
                 {p.headline ? <p className="stage-muted text-[15px] mt-1.5">{p.headline}</p> : null}
@@ -207,7 +208,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
 
       {tab === "profile" ? (
         <div className="space-y-5" data-member-profile>
-          {internal ? null : <PhotoPicker person={p} photo={canShowPhoto(p, "internal") ? p.photoUrl : null} />}
+          {internal ? null : <PhotoPicker person={p} photo={photoSrc(p)} />}
           {screened ? <dl className="flex flex-wrap gap-x-10 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Connections", myConnections, "members"]].map(([l, v, h]) => <div key={String(l)}><dt className="text-[12.5px] text-ink-muted">{l}</dt><dd className="figure-num mt-1 text-[30px] leading-none">{v}</dd><dd className="mt-1 text-[12px] text-ink-faint">{h}</dd></div>)}</dl> : null}
           {screened ? (
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
@@ -351,7 +352,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           </div>
           <aside className="space-y-5">
             {screened && todo ? checklistCard : null}
-            {net ? <MemberNetwork compact broughtMeIn={net.broughtMeIn} broughtIn={net.broughtIn} connected={net.connected} inviteHref={`/member?tab=refer${qp}`} /> : null}
+            {net ? <MemberNetwork compact me={{ name: p.firstName, photo: photoSrc(p) }} broughtMeIn={net.broughtMeIn} broughtIn={net.broughtIn} connected={net.connected} inviteHref={`/member?tab=refer${qp}`} /> : null}
             {features.memberConnections && canInvite ? (
               <div className="side-links">
                 <Link href="/community?tab=connections" className="side-link"><MessageCircle className="h-4 w-4" aria-hidden="true" /><span className="flex-1">Messages</span><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>

@@ -24,7 +24,7 @@ const ELSEWHERE = "elsewhere";
 type City = { key: string; label: string; lon: number | null; x: number; zone: string | null; people: GNode[] };
 type Star = GNode & { x: number; y: number; r: number; city: string };
 
-export function NetworkSky({ nodes, links, openRoles, compact = false, heightClass = "h-[calc(100vh-250px)] min-h-[580px]" }: { nodes: GNode[]; links: GLink[]; openRoles?: number; compact?: boolean; heightClass?: string }) {
+export function NetworkSky({ nodes, links, openRoles, total, compact = false, heightClass = "h-[calc(100vh-250px)] min-h-[580px]" }: { nodes: GNode[]; links: GLink[]; openRoles?: number; total?: number; compact?: boolean; heightClass?: string }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export function NetworkSky({ nodes, links, openRoles, compact = false, heightCla
   const people = useMemo(() => nodes.filter((n) => !n.hub), [nodes]);
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const introducer = useMemo(() => new Map(links.map((l) => [l.target, l.source])), [links]);
-  const stats = useMemo(() => ({ total: people.length, open: people.filter((n) => n.open).length, fresh: people.filter(isFresh).length }), [people]);
+  const stats = useMemo(() => ({ total: Math.max(total ?? 0, people.length), open: people.filter((n) => n.open).length, fresh: people.filter(isFresh).length }), [people, total]);
   const growth = useMemo(() => {
     const d = new Date(), months = Array.from({ length: 6 }, (_, i) => ({ label: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - (5 - i), 1)).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }), n: 0 }));
     for (const p of people) { if (p.addedDays == null) continue; const a = new Date(d.getTime() - p.addedDays * 86_400_000), back = (d.getUTCFullYear() - a.getUTCFullYear()) * 12 + d.getUTCMonth() - a.getUTCMonth(); if (back >= 0 && back < 6) months[5 - back].n++; }

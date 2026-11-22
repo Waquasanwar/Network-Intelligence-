@@ -12,6 +12,8 @@ export type GNode = {
   band?: string; vouchedBy?: number; capabilities?: string[]; city?: string | null;
   availability?: string; availabilityTone?: "teal" | "amber" | "neutral"; open?: boolean;
   member?: boolean; screened?: boolean; roles?: GRole[];
+  /** Their photo, sent only for the orbit view and only where they agreed to show it. */
+  photo?: string | null;
   /** Days since they were added. Under 30 counts as new growth. */
   addedDays?: number;
 };
@@ -60,7 +62,7 @@ const swayOf = (ring: number, t: number) => SWAY[ring].amp * Math.sin((t / SWAY[
  * at the back, and each circle drifts slowly. A mint arc shows trust; a mint dot means open to work.
  * Hover to trace who introduced whom; filter by capability; click a person for the roles they fit.
  */
-export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)] min-h-[560px]", openRoles, compact = false }: { nodes: GNode[]; links: GLink[]; heightClass?: string; openRoles?: number; compact?: boolean }) {
+export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)] min-h-[560px]", openRoles, total, compact = false }: { nodes: GNode[]; links: GLink[]; heightClass?: string; openRoles?: number; total?: number; compact?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -83,7 +85,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
 
   const hub = useMemo(() => nodes.find((n) => n.hub) ?? null, [nodes]);
   const people = useMemo(() => nodes.filter((n) => !n.hub), [nodes]);
-  const stats = useMemo(() => ({ total: people.length, trusted: people.filter((n) => n.trust >= TRUSTED).length, open: people.filter((n) => n.open).length, fresh: people.filter(isFresh).length }), [people]);
+  const stats = useMemo(() => ({ total: Math.max(total ?? 0, people.length), trusted: people.filter((n) => n.trust >= TRUSTED).length, open: people.filter((n) => n.open).length, fresh: people.filter(isFresh).length }), [people, total]);
   // People added in each of the last six months, oldest first: where the network has been growing.
   const growth = useMemo(() => {
     const now = new Date(), months = Array.from({ length: 6 }, (_, i) => ({ label: new Date(now.getFullYear(), now.getMonth() - (5 - i), 1).toLocaleDateString("en-GB", { month: "short" }), n: 0 }));
