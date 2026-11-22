@@ -3,7 +3,7 @@ import { requireInternal } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { canSeeMoney } from "@/lib/authz";
 import { assessFreshness, ACTIVE_STATUSES } from "@/lib/availability";
-import { NetworkGraph } from "@/components/domain/network-graph";
+import { NetworkSky } from "@/components/domain/network-sky";
 import { buildNetworkMap } from "@/server/network-map";
 import { EmptyState } from "@/components/ui/page";
 import { formatMoneyCompact, fullName } from "@/lib/utils";
@@ -204,7 +204,7 @@ export default async function OverviewPage() {
             <h2 id="home-map" className="section-title text-[20px]">Your network</h2>
             <Link href="/network/map" className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink">Open the full map <ArrowRight className="arrow-badge h-3.5 w-3.5" /></Link>
           </div>
-          <NetworkGraph nodes={mapNodes} links={mapLinks} heightClass="h-[460px]" compact />
+          <NetworkSky nodes={mapNodes} links={mapLinks} heightClass="h-[500px]" compact />
         </section>
       ) : null}
 

@@ -352,7 +352,7 @@ export function NetworkGraph({ nodes, links, heightClass = "h-[calc(100vh-270px)
   );
 }
 
-function PersonCard({ n, connections, onClose }: { n: GNode; connections: number; onClose: () => void }) {
+export function PersonCard({ n, connections, onClose }: { n: GNode; connections: number; onClose: () => void }) {
   const roles = n.roles ?? [];
   return (
     <div>

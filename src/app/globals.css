@@ -779,7 +779,7 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
    Posts read like posts anywhere on the web: a face, a name, what they said, the conversation under
    it. Amana's notes sit above, quietly, with a question to answer when there is one. */
 .post { padding: 18px 0; }
-.feed { border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); padding: 0 20px; }
+.feed { padding: 0 2px; } /* an open column, posts divided by hairlines, not a card */
 .note-card { display: flex; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--color-line); background: var(--color-surface); }
 .note-card.is-ask { border-color: color-mix(in srgb, var(--color-teal-400) 55%, var(--color-line)); background: color-mix(in srgb, var(--color-teal-400) 6%, var(--color-surface)); }
 .side-links { border-radius: 18px; border: 1px solid var(--color-line); background: var(--color-surface); padding: 6px; }
@@ -1008,3 +1008,74 @@ a.rail-row:hover { background: var(--color-surface-muted); }
   .chat-run { max-width: 88%; }
 }
 @media (prefers-reduced-motion: reduce) { .chat-scroll { scroll-behavior: auto; } }
+
+/* ---------- The network sky ----------
+   Night over the places the network lives: stars are people (height = trust), arcs are introductions,
+   cities sit on the horizon at their own local time. Always dark, in both themes, like the hero. */
+.sky-stage { border-radius: 24px; color: #fff; background:
+  radial-gradient(120% 70% at 50% 108%, rgba(126, 227, 188, .16), transparent 60%),
+  radial-gradient(80% 60% at 18% 0%, rgba(88, 120, 214, .22), transparent 70%),
+  linear-gradient(180deg, #050b1c 0%, #0a1a3a 58%, #0d2547 100%); box-shadow: 0 30px 60px -40px rgba(5, 11, 28, .8); }
+.sky.is-compact .sky-stage { border-radius: 20px; }
+.sky-flicker { animation: sky-flicker 4.5s ease-in-out infinite; }
+@keyframes sky-flicker { 0%, 100% { opacity: .15 } 50% { opacity: .7 } }
+.sky-guide line { stroke: rgba(242, 196, 109, .22); stroke-dasharray: 2 6; }
+.sky-guide text { fill: rgba(242, 196, 109, .6); font: 600 10.5px var(--font-sans, system-ui); letter-spacing: .08em; text-transform: uppercase; }
+.sky-arc { fill: none; stroke: rgba(169, 198, 255, .32); stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 1; animation: sky-draw 2.4s ease-out forwards; transition: opacity .25s, stroke .25s; }
+.sky-arc.is-worked { stroke: rgba(126, 227, 188, .5); stroke-width: 1.3; }
+.sky-arc.is-lit { stroke: #f7e2ab; stroke-width: 1.8; opacity: 1; animation: none; stroke-dashoffset: 0; filter: drop-shadow(0 0 4px rgba(242, 196, 109, .8)); }
+.sky-arc.is-dim { opacity: .12; }
+@keyframes sky-draw { to { stroke-dashoffset: 0; } }
+.sky-city .is-day { fill: rgba(242, 196, 109, .22); }
+.sky-city .is-night { fill: rgba(169, 198, 255, .14); }
+.sky-you-glow { animation: sky-breathe 7s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes sky-breathe { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+.sky-you { position: absolute; transform: translate(-50%, -50%); font: 700 11px/1 var(--font-sans, system-ui); letter-spacing: .1em; text-transform: uppercase; color: #3a2700; pointer-events: none; z-index: 2; }
+.sky-city-label { position: absolute; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center; white-space: nowrap; pointer-events: none; z-index: 2; }
+.sky-city-label b { font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, .92); }
+.sky-city-label span { font-size: 10.5px; color: rgba(255, 255, 255, .5); font-variant-numeric: tabular-nums; }
+.sky-star { position: absolute; transform: translate(-50%, -50%); display: grid; place-items: center; border-radius: 999px; background: transparent; cursor: pointer; z-index: 3; transition: opacity .25s; }
+.sky-star:focus-visible { outline: 2px solid #f7e2ab; outline-offset: 2px; }
+.sky-dot { width: calc(var(--r) * 2); height: calc(var(--r) * 2); border-radius: 999px; background: radial-gradient(circle at 35% 35%, #ffffff, #cfdcff 60%, #8fa8e6); box-shadow: 0 0 calc(var(--r) * 1.6) rgba(207, 220, 255, .55); transition: transform .2s, box-shadow .2s; }
+.sky-star.is-worked .sky-dot { background: radial-gradient(circle at 35% 35%, #ffffff, #bff3dd 55%, #5fd3a6); box-shadow: 0 0 calc(var(--r) * 2.2) rgba(126, 227, 188, .7); }
+.sky-star.is-new .sky-dot { background: radial-gradient(circle at 35% 35%, #fffaf0, #f7d892 55%, #e0a83e); box-shadow: 0 0 calc(var(--r) * 2.2) rgba(242, 196, 109, .75); }
+.sky-trail { position: absolute; right: 55%; top: 55%; width: 26px; height: 1.5px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(242, 196, 109, .85)); transform-origin: right center; transform: rotate(-28deg); pointer-events: none; }
+.sky-star.is-open::after { content: ""; position: absolute; inset: 1px; border-radius: 999px; border: 1.5px solid rgba(126, 227, 188, .9); animation: sky-twinkle 3.2s ease-in-out infinite; animation-delay: inherit; pointer-events: none; }
+@keyframes sky-twinkle { 0%, 100% { opacity: .25; transform: scale(.75); } 50% { opacity: 1; transform: scale(1.05); } }
+.sky-star:hover .sky-dot, .sky-star.is-lit .sky-dot, .sky-star.is-selected .sky-dot { transform: scale(1.35); box-shadow: 0 0 18px rgba(247, 226, 171, .9); }
+.sky-star.is-dim { opacity: .22; }
+.sky-name { position: absolute; transform: translateX(-50%); font-size: 11px; font-weight: 500; color: rgba(255, 255, 255, .7); white-space: nowrap; pointer-events: none; z-index: 2; transition: opacity .25s; }
+.sky-name.is-dim { opacity: .2; }
+.sky-tip { position: absolute; z-index: 70; transform: translate(-50%, -100%); max-width: 260px; padding: 8px 12px; border-radius: 14px; background: var(--color-surface); color: var(--color-ink); box-shadow: var(--shadow-pop); pointer-events: none; font-size: 12px; }
+.sky-tip b { display: block; font-size: 12.5px; font-weight: 600; }
+.sky-tip span { color: var(--color-ink-muted); font-size: 11.5px; }
+.sky-tip small { display: block; margin-top: 3px; color: var(--color-ink-faint); font-size: 11px; }
+.sky-filter { flex: none; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, .7); background: rgba(255, 255, 255, .07); border: 1px solid transparent; cursor: pointer; transition: background-color .15s, color .15s; }
+.sky-filter:hover { background: rgba(255, 255, 255, .13); color: #fff; }
+.sky-filter.is-on { background: #fff; color: #0a1a3a; font-weight: 600; }
+.sky-filter.is-gold.is-on { background: #f2c46d; color: #2b1d00; }
+.sky-legend { flex: none; align-items: center; gap: 16px; font-size: 11.5px; color: rgba(255, 255, 255, .55); }
+.sky-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sky-legend i { display: inline-block; flex: none; }
+.sky-legend .is-height { width: 2px; height: 12px; border-radius: 2px; background: linear-gradient(#f2c46d, transparent); }
+.sky-legend .is-arc { width: 16px; height: 8px; border: 1.3px solid rgba(169, 198, 255, .6); border-bottom: 0; border-radius: 16px 16px 0 0; }
+.sky-legend .is-open { width: 10px; height: 10px; border-radius: 999px; border: 1.5px solid #7ee3bc; }
+.sky-legend .is-new { width: 8px; height: 8px; border-radius: 999px; background: #f2c46d; box-shadow: 0 0 6px #f2c46d; }
+@media (prefers-reduced-motion: reduce) { .sky-flicker, .sky-arc, .sky-you-glow, .sky-star.is-open::after { animation: none; } .sky-arc { stroke-dashoffset: 0; } }
+
+/* The member's own small sky, beside their network in words. */
+.msky { display: block; width: 100%; max-width: 360px; height: auto; border-radius: 20px; }
+.msky text { font: 600 10px var(--font-sans, system-ui); fill: rgba(255, 255, 255, .78); text-anchor: middle; }
+.msky .msky-you { font-size: 9px; letter-spacing: .12em; fill: #3a2700; font-weight: 700; }
+.msky .msky-empty { fill: rgba(255, 255, 255, .6); font-weight: 500; font-size: 11px; }
+.msky-sun { animation: sky-breathe 7s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.msky-arc { fill: none; stroke: rgba(169, 198, 255, .45); stroke-width: 1.2; stroke-dasharray: 1; stroke-dashoffset: 1; animation: sky-draw 1.8s ease-out forwards; }
+.msky-arc.is-out { stroke: rgba(126, 227, 188, .7); }
+.msky-arc.is-in { stroke: rgba(242, 196, 109, .75); stroke-width: 1.4; }
+.msky-arc.is-link { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; opacity: .55; }
+.msky-star circle { fill: #e8eeff; filter: drop-shadow(0 0 4px rgba(207, 220, 255, .8)); }
+.msky-star.is-out circle { fill: #bff3dd; filter: drop-shadow(0 0 5px rgba(126, 227, 188, .9)); animation: msky-glow 4s ease-in-out infinite; animation-delay: inherit; }
+.msky-star.is-in circle { fill: #f7d892; filter: drop-shadow(0 0 6px rgba(242, 196, 109, .95)); }
+.msky-star.is-in text { fill: rgba(247, 226, 171, .9); }
+@keyframes msky-glow { 0%, 100% { opacity: .75 } 50% { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .msky-sun, .msky-arc, .msky-star.is-out circle { animation: none; } .msky-arc { stroke-dashoffset: 0; } }

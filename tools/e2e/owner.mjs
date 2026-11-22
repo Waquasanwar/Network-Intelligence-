@@ -8,7 +8,7 @@ let personId, briefId, oppId;
 await step("home: four blocks, and the invite link is under Grow", p, async () => {
   await go("/overview");
   // Home is the question box, the headline figures, the network and what needs you. Nothing else.
-  assert(await p.locator("#agent-ask").count(), "ask box"); assert((await p.locator(".figures .figure").count()) === 4, "four headline figures"); assert(await p.locator(".orbit-stage").count(), "the network"); assert(await p.getByText("Waiting on you").count(), "what needs you");
+  assert(await p.locator("#agent-ask").count(), "ask box"); assert((await p.locator(".figures .figure").count()) === 4, "four headline figures"); assert(await p.locator("[data-sky]").count(), "the network"); assert(await p.getByText("Waiting on you").count(), "what needs you");
   assert(!(await p.locator('input[aria-label="Your invite link"]').count()), "the invite card is no longer on Home");
   await go("/invite");
   const v = await p.locator('input[aria-label="Invitation link"]').first().inputValue();
@@ -222,7 +222,7 @@ await step("intake: summarise a conversation", p, async () => {
 });
 await step("network: search + filters", p, async () => {
   await go("/network?q=cyber"); assert(await p.getByText(/Hassan Ali/).count(), "search finds cyber person");
-  await go("/network/map"); await p.locator(".orbit-stage").waitFor();
+  await go("/network/map"); await p.locator("[data-sky] .sky-star").first().waitFor();
 });
 await step("person: export + deletion request (owner)", p, async () => {
   await go(`/network/${personId}`);
