@@ -33,7 +33,7 @@ export function ReadyPill({ p, onInk = false }: { p: AvailabilityPerson; onInk?:
 
 /** Days a week as five dots, filled for the days they give. */
 function DayDots({ n }: { n: number }) {
-  return <span className="day-dots" aria-label={`${n} ${n === 1 ? "day" : "days"} a week`}>{[1, 2, 3, 4, 5].map((d) => <span key={d} data-on={d <= n || undefined} />)}</span>;
+  return <span className="day-dots" role="img" aria-label={`${n} ${n === 1 ? "day" : "days"} a week`}>{[1, 2, 3, 4, 5].map((d) => <span key={d} data-on={d <= n || undefined} />)}</span>;
 }
 
 const PATTERN_ICON = { full_time: Briefcase, part_time: Clock3, per_project: Layers };

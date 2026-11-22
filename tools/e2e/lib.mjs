@@ -40,7 +40,7 @@ export async function session(b, email, pw = PW) {
   await ctx.grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
   const p = await ctx.newPage();
   p.errs = [];
-  p.on("pageerror", (e) => p.errs.push("PAGEERROR " + e.message.slice(0, 160)));
+  p.on("pageerror", (e) => p.errs.push(`PAGEERROR on ${new URL(p.url()).pathname}${new URL(p.url()).search}: ${e.message.slice(0, 160)}`));
   p.on("response", (r) => { if (r.status() >= 500) p.errs.push(`HTTP ${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`); });
   if (email) {
     await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
