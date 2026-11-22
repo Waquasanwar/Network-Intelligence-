@@ -34,6 +34,7 @@ import { ShieldCheck, EyeOff, PenLine } from "lucide-react";
 import { AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import { CitySky } from "@/components/domain/city-sky";
+import { Constellation } from "@/components/ui/constellation";
 import { PhotoPicker } from "@/components/domain/photo-picker";
 import { zoneFor, localTime } from "@/lib/place";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
@@ -165,6 +166,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
       {/* Who you are and what the agent is doing for you, on the brand stage. */}
       <section className="stage-ink mb-6 rounded-[24px] px-5 py-7 sm:px-9 sm:py-8" data-member-hero>
         <CitySky className="absolute inset-0 -z-10" city={p.primaryCity ?? p.primaryCountry} zone={zoneFor(p)} initialTime={zoneFor(p) ? localTime(zoneFor(p)!) : null} />
+        <Constellation focus={0.8} density={0.7} />
         <span className="stage-scrim" aria-hidden="true" />
         <div className="grid grid-cols-1 items-end gap-7 lg:grid-cols-[1fr_auto]">
           <div className="min-w-0">

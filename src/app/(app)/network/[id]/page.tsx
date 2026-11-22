@@ -42,6 +42,7 @@ import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
 import { CitySky } from "@/components/domain/city-sky";
+import { Constellation } from "@/components/ui/constellation";
 import { zoneFor, localTime } from "@/lib/place";
 import { canShowPhoto } from "@/lib/privacy";
 import { removePersonPhoto } from "@/server/actions/privacy";
@@ -159,6 +160,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         <div className="stage-ink flex min-h-[132px] items-end pl-[136px] pr-5 pb-4 sm:pl-[154px] sm:pr-6">
           <CitySky className="absolute inset-0 -z-10" city={person.primaryCity ?? person.primaryCountry} zone={zoneFor(person)} initialTime={zoneFor(person) ? localTime(zoneFor(person)!) : null} />
           <span className="city-sky-shade -z-10" aria-hidden="true" />
+          <Constellation focus={0.82} density={0.7} />
           <div className="min-w-0">
             <h1 className="font-display text-[24px] sm:text-[32px] leading-[1.08] text-white">{fullName(person)}</h1>
             <div className="mt-1 text-[14px] text-white/75 line-clamp-2">{person.headline ?? "No headline yet"}</div>
