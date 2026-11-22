@@ -107,11 +107,11 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
           <Search className="h-4 w-4 text-ink-faint absolute left-3.5 top-3" />
           <Input name="q" defaultValue={filters.q ?? ""} placeholder='e.g. "programme director available soon who we have worked with, open to Dubai"' className="pl-9 h-10" />
         </div>
-        <Select name="status" defaultValue={filters.status ?? ""} className="flex-1 min-w-[130px] lg:flex-none lg:w-[200px] h-10">
+        <Select name="status" aria-label="Availability" defaultValue={filters.status ?? ""} className="flex-1 min-w-[130px] lg:flex-none lg:w-[200px] h-10">
           <option value="">Any status</option>
           {Object.entries(AVAILABILITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Select name="route" defaultValue={filters.route ?? ""} className="flex-1 min-w-[120px] lg:flex-none lg:w-[150px] h-10">
+        <Select name="route" aria-label="Engagement route" defaultValue={filters.route ?? ""} className="flex-1 min-w-[120px] lg:flex-none lg:w-[150px] h-10">
           <option value="">Any route</option>
           {Object.entries(ROUTE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>

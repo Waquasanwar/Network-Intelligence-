@@ -59,7 +59,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
         <div className="xl:col-span-2 space-y-4">
           <Card>
             <CardHeader title="Users & roles" description="Your internal team. Members, clients and agencies sign in to their own areas and are not listed here." />
-            <CardBody className="px-0 pb-0">
+            <CardBody className="px-0 pb-0" tabIndex={0} role="region" aria-label="Users and roles">
               <table className="data">
                 <thead><tr><th className="pl-4">User</th><th>Role</th><th>MFA</th><th>Last sign-in</th>{canManage && internal ? <th></th> : null}</tr></thead>
                 <tbody>
@@ -69,7 +69,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
                       <td><Badge tone={u.role === "OWNER" ? "navy" : "neutral"}>{u.role.toLowerCase()}</Badge></td>
                       <td>{u.mfaEnabled ? <Badge tone="teal">enabled</Badge> : <Badge tone="amber">off</Badge>}</td>
                       <td className="text-xs"><DateText date={u.lastLoginAt} relative /></td>
-                      {canManage && internal ? <td className="text-right">{u.id !== user.id && (isOwner || u.role !== "OWNER") ? <form action={changeUserRole} className="inline-flex items-center gap-1.5"><input type="hidden" name="userId" value={u.id} /><Select name="role" defaultValue={u.role} className="h-7 text-[12px] w-[130px]">{isOwner ? <option value="OWNER">Owner</option> : null}<option value="ADMIN">Admin</option><option value="CONTRIBUTOR">Contributor</option></Select><SubmitButton size="sm" variant="secondary" pendingText="…">Set</SubmitButton></form> : <span className="text-[12px] text-ink-faint">you</span>}</td> : null}
+                      {canManage && internal ? <td className="text-right">{u.id !== user.id && (isOwner || u.role !== "OWNER") ? <form action={changeUserRole} className="inline-flex items-center gap-1.5"><input type="hidden" name="userId" value={u.id} /><Select name="role" aria-label={`Role for ${u.name ?? u.email}`} defaultValue={u.role} className="h-7 text-[12px] w-[130px]">{isOwner ? <option value="OWNER">Owner</option> : null}<option value="ADMIN">Admin</option><option value="CONTRIBUTOR">Contributor</option></Select><SubmitButton size="sm" variant="secondary" pendingText="…">Set</SubmitButton></form> : <span className="text-[12px] text-ink-faint">you</span>}</td> : null}
                     </tr>
                   ))}
                 </tbody>
@@ -78,7 +78,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
           </Card>
           <Card>
             <CardHeader title="Audit log" description="Login, record changes, exports, identity reveals, approvals, permission changes and integrations." action={
-              <form className="flex items-center gap-1.5"><Select name="action" defaultValue={sp.action ?? ""} className="h-7 text-[12px] w-[180px]"><option value="">All actions</option>{sensitive.map((s) => <option key={s} value={s}>{s}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Filter</SubmitButton></form>
+              <form className="flex items-center gap-1.5"><Select name="action" aria-label="Filter by action" defaultValue={sp.action ?? ""} className="h-7 text-[12px] w-[180px]"><option value="">All actions</option>{sensitive.map((s) => <option key={s} value={s}>{s}</option>)}</Select><SubmitButton size="sm" variant="secondary" pendingText="…">Filter</SubmitButton></form>
             } />
             <CardBody className="px-0 pb-0">
               {visibleAudit.length === 0 ? <div className="px-6 pb-6"><EmptyState icon={ShieldCheck} title="Nothing logged yet" description="Sign-ins, record changes, exports and approvals appear here as they happen." /></div> : (

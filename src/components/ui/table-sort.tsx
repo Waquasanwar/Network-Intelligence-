@@ -49,7 +49,6 @@ export function TableSort() {
       const key = th.getAttribute("data-sort");
       if (!key) continue;
       th.style.cursor = "pointer";
-      th.setAttribute("role", "button");
       th.setAttribute("tabindex", "0");
       th.setAttribute("aria-sort", "none");
       const onClick = () => apply(key);

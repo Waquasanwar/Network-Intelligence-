@@ -60,7 +60,7 @@ export function Crumbs({ crumbs }: { crumbs?: { label: string; href?: string }[]
       {items.map((c, i) => (
         <span key={i} className="flex items-center gap-1.5 min-w-0">
           {i > 0 ? <ChevronRight className="h-3 w-3 flex-none text-ink-faint" aria-hidden="true" /> : null}
-          {i < items.length - 1 && c.href ? <Link href={c.href} className="hover:text-ink hover:underline underline-offset-4 truncate">{c.label}</Link> : <span className="text-ink font-medium truncate">{c.label}</span>}
+          {i < items.length - 1 && c.href ? <Link href={c.href} className="inline-block py-1 hover:text-ink hover:underline underline-offset-4 truncate">{c.label}</Link> : <span className="text-ink font-medium truncate">{c.label}</span>}
         </span>
       ))}
     </nav>
@@ -88,7 +88,7 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
       <button type="button" aria-label="Open menu" aria-controls="app-nav" onClick={() => window.dispatchEvent(new CustomEvent("ni:toggle-nav"))} className="lg:hidden h-10 w-10 flex-none grid place-items-center rounded-full border border-line bg-surface text-ink shadow-[var(--shadow-card)] cursor-pointer">
         <Menu className="h-5 w-5" />
       </button>
-      <Link href={home} className="lg:hidden flex flex-none items-center" aria-label="Home"><BrandMark className="h-[20px] w-auto text-ink" /></Link>
+      <Link href={home} className="lg:hidden flex h-10 flex-none items-center" aria-label="Home"><BrandMark className="h-[20px] w-auto text-ink" /></Link>
       <div className="hidden lg:block min-w-0 flex-1"><SectionTabs role={user.role} /></div>
       <div className="flex-1 lg:hidden" />
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ni:open-palette"))} aria-label="Search people and opportunities" className="lg:hidden h-10 w-10 flex-none grid place-items-center rounded-full border border-line bg-surface text-ink shadow-[var(--shadow-card)] cursor-pointer">

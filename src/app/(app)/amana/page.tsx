@@ -70,7 +70,7 @@ export default async function AmanaPage({ searchParams }: { searchParams: Promis
                 <ul className="mb-2 divide-y divide-line" data-amana-briefs>
                   {amanaBriefs.map((b) => (
                     <li key={b.id} className="py-3">
-                      <div className="flex items-center justify-between gap-2"><Link href={`/requirements/${b.id}`} className="text-[13px] font-medium hover:underline underline-offset-4">{b.title}</Link>{b.engagementRoute ? <RouteBadge route={b.engagementRoute} /> : null}</div>
+                      <div className="flex items-center justify-between gap-2"><Link href={`/requirements/${b.id}`} className="inline-block py-1 text-[13px] font-medium hover:underline underline-offset-4">{b.title}</Link>{b.engagementRoute ? <RouteBadge route={b.engagementRoute} /> : null}</div>
                       <div className="mt-2 flex flex-wrap gap-1.5">{b.shortlist.length ? b.shortlist.map((t) => <Link key={t.id} href={`/network/${t.person.id}`} className="inline-flex items-center rounded-md border border-teal/30 bg-teal-100 px-2 py-0.5 text-[12px] text-teal">{fullName(t.person)}{t.tier === "meets" ? " · meets every requirement" : ""}</Link>) : <span className="text-[12px] text-ink-faint">Nobody found yet. <Link href={`/requirements/${b.id}`} className="text-navy hover:underline">Open the requirement</Link></span>}</div>
                     </li>
                   ))}
@@ -81,7 +81,7 @@ export default async function AmanaPage({ searchParams }: { searchParams: Promis
                   {open.map((o) => (
                     <li key={o.id} className="py-3">
                       <div className="flex items-center justify-between gap-2">
-                        <div><Link href={`/opportunities/${o.id}`} className="text-[13px] font-medium hover:underline underline-offset-4">{o.title}</Link><div className="text-[12px] text-ink-faint">{o.clientName} · {o.matches.length} suggestions · {o.matches.filter((m) => m.humanDecision === "RECOMMEND").length} recommended</div></div>
+                        <div><Link href={`/opportunities/${o.id}`} className="inline-block py-1 text-[13px] font-medium hover:underline underline-offset-4">{o.title}</Link><div className="text-[12px] text-ink-faint">{o.clientName} · {o.matches.length} suggestions · {o.matches.filter((m) => m.humanDecision === "RECOMMEND").length} recommended</div></div>
                         <div className="flex items-center gap-1.5"><RouteBadge route={o.engagementRoute} /><StageBadge status={o.status} /></div>
                       </div>
                       <div className="flex flex-wrap gap-1.5 mt-2">

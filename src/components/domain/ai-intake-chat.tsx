@@ -97,7 +97,7 @@ export function AiIntakeChat() {
         {error ? <div className="text-[12px] text-risk mb-2 px-1">{error}</div> : null}
         <div className="flex items-end gap-2">
           <Textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} rows={2} className="min-h-[44px]" placeholder="Type your answer… (Enter to send)" />
-          <Button type="button" onClick={send} disabled={!input.trim()} className="flex-none"><Send className="h-3.5 w-3.5" /></Button>
+          <Button type="button" onClick={send} disabled={!input.trim()} className="flex-none" aria-label="Send"><Send className="h-3.5 w-3.5" aria-hidden="true" /></Button>
         </div>
         <div className="flex items-center justify-between mt-2 px-1">
           <span className="text-[12px] text-ink-faint">{answers} answer{answers === 1 ? "" : "s"} so far</span>

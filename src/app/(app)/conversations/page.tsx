@@ -171,7 +171,7 @@ function QuickCapture({ people }: { people: { id: string; firstName: string; las
   // Lightweight entry point: pick a person then capture. Implemented as a small form that jumps to the profile drawer.
   return (
     <form action="/conversations/capture" method="get" className="flex items-center gap-2">
-      <Select name="personId" className="w-[220px]" defaultValue="">
+      <Select name="personId" aria-label="Who the conversation is with" className="w-[220px]" defaultValue="">
         <option value="" disabled>Capture for…</option>
         {people.map((p) => <option key={p.id} value={p.id}>{fullName(p)}</option>)}
       </Select>

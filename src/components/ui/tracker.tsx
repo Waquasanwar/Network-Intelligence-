@@ -10,7 +10,7 @@ export type TrackerStep = { label: string; count?: number; state: "done" | "curr
  */
 export function Tracker({ steps, label, className }: { steps: TrackerStep[]; label: string; className?: string }) {
   return (
-    <ol className={cn("tracker", className)} aria-label={label} data-tracker>
+    <ol className={cn("tracker", className)} aria-label={label} tabIndex={0} data-tracker>
       {steps.map((s, i) => (
         <li key={s.label + i} className="tracker-step" data-state={s.state}>
           <span className="tracker-dot" aria-hidden="true">{s.state === "done" ? <Check className="h-2.5 w-2.5" strokeWidth={3.4} /> : null}</span>

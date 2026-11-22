@@ -66,7 +66,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <div className="flex items-center gap-3.5">
               <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-[#1d3a75] text-[13px] font-semibold text-white/80" aria-hidden="true">· ·</span>
               <span className="min-w-0 flex-1">
-                <span className="block h-3 w-36 rounded-full bg-white/20" aria-label="Name hidden until they say yes" />
+                <span className="block h-3 w-36 rounded-full bg-white/20" role="img" aria-label="Name hidden until they say yes" />
                 <span className="mt-2 block text-[13.5px] stage-muted">Interim CFO · energy · Dubai · <span className="text-mint">open to work</span></span>
               </span>
               <span className="text-right"><b className="figure-num block text-[28px]">72</b><span className="text-[11.5px] stage-faint">trusted</span></span>

@@ -818,7 +818,7 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
 .avail.on-ink .avail-place { background: rgba(255, 255, 255, .08); color: #fff; }
 .avail-place time { font-weight: 600; }
 .avail-sep { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .35; flex: none; }
-.avail-faint { opacity: .6; }
+.avail-faint { opacity: .78; }
 .avail-fit { font-weight: 600; white-space: nowrap; }
 .avail-fit.is-good { color: var(--color-teal); }
 .avail-fit.is-ok { color: #b8860b; }
@@ -922,3 +922,11 @@ a.pulse-line:hover .pulse-go { opacity: 1; transform: translateX(2px); }
 .intel-zone.is-work { background: color-mix(in srgb, var(--color-teal-400) 9%, transparent); }
 .intel-dots { display: inline-flex; gap: 3px; flex: none; }
 .intel-dots i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+
+/* Touch targets: standalone links, buttons and disclosure rows are at least 24px tall (WCAG 2.5.8),
+   so a thumb lands on them on a phone. Links inside sentences keep their line height. In the base
+   layer, so any utility class on an element still wins. */
+@layer base {
+  summary, a.inline-flex, button { min-height: 24px; }
+  table.data td a { display: inline-block; padding-block: 4px; }
+}

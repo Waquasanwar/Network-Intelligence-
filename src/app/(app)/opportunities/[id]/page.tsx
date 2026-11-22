@@ -60,7 +60,7 @@ export default async function OpportunityPage({ params, searchParams }: { params
         actions={
           <form action={setOpportunityStatus} className="flex items-center gap-2">
             <input type="hidden" name="opportunityId" value={opp.id} />
-            <Select name="status" defaultValue={opp.status} className="w-[160px]">{Object.entries(OPPORTUNITY_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
+            <Select name="status" aria-label="Opportunity status" defaultValue={opp.status} className="w-[160px]">{Object.entries(OPPORTUNITY_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
             <SubmitButton variant="secondary" pendingText="…">Set stage</SubmitButton>
           </form>
         }
@@ -180,8 +180,8 @@ export default async function OpportunityPage({ params, searchParams }: { params
                       {i.notes ? <div className="mt-1 text-ink-muted">{i.notes}</div> : null}
                       <form action={updateIntroductionStatus} className="flex items-center gap-1.5 mt-2">
                         <input type="hidden" name="introductionId" value={i.id} />
-                        <Select name="consentStatus" defaultValue={i.consentStatus} className="h-7 text-[12px]"><option value="NOT_REQUESTED">Consent not requested</option><option value="REQUESTED">Consent requested</option><option value="GRANTED">Consent granted</option><option value="DECLINED">Consent declined</option></Select>
-                        <Select name="status" defaultValue={i.status} className="h-7 text-[12px]">{Object.entries(INTRO_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
+                        <Select name="consentStatus" aria-label="Consent" defaultValue={i.consentStatus} className="h-7 text-[12px]"><option value="NOT_REQUESTED">Consent not requested</option><option value="REQUESTED">Consent requested</option><option value="GRANTED">Consent granted</option><option value="DECLINED">Consent declined</option></Select>
+                        <Select name="status" aria-label="Introduction status" defaultValue={i.status} className="h-7 text-[12px]">{Object.entries(INTRO_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select>
                         <SubmitButton size="sm" variant="secondary" pendingText="…">Update</SubmitButton>
                       </form>
                     </li>

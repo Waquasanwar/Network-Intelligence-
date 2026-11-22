@@ -82,7 +82,7 @@ export function AmanaIntelligence({ intel, asked }: { intel: Intel; asked?: numb
               <li key={z.offset} className={cn("intel-zone", workOffsets.has(z.offset) && "is-work")}>
                 <b className="tabular">{localTime(z.zone)}</b>
                 <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-muted">{utcLabel(z.offset)} · {[...z.cities].slice(0, 2).join(", ")}</span>
-                <span className="intel-dots" aria-label={`${z.bench} bench, ${z.network} wider network`}>{Array.from({ length: Math.min(z.bench, 8) }).map((_, i) => <i key={`b${i}`} className="r-now" />)}{Array.from({ length: Math.min(z.network, 8) }).map((_, i) => <i key={`n${i}`} className="r-net" />)}</span>
+                <span className="intel-dots" role="img" aria-label={`${z.bench} bench, ${z.network} wider network`}>{Array.from({ length: Math.min(z.bench, 8) }).map((_, i) => <i key={`b${i}`} className="r-now" />)}{Array.from({ length: Math.min(z.network, 8) }).map((_, i) => <i key={`n${i}`} className="r-net" />)}</span>
                 {workOffsets.has(z.offset) ? <span className="tag is-mint">{workPlaces.filter((w) => offsetHours(w.zone) === z.offset).map((w) => w.label).join(", ")} work</span> : null}
               </li>
             ))}
