@@ -98,7 +98,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const boardOn = features.communityBoard && canInvite && tab === "home";
   const feed = boardOn ? await prisma.boardPost.findMany({ where: { tenantId: p.tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } }, replies: { include: { author: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" }, take: 30 } }, orderBy: { createdAt: "desc" }, take: 15 }) : [];
   const feedPitched = new Set((feed.length ? await prisma.pitch.findMany({ where: { personId: p.id, briefId: { in: feed.map((x) => x.briefId).filter((x): x is string => !!x) } }, select: { briefId: true } }) : []).map((x) => x.briefId));
-  const feedLinks = feed.length ? await prisma.connection.findMany({ where: { OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] }, select: { fromPersonId: true, toPersonId: true, status: true } }) : [];
+  const feedLinks = feed.length ? await prisma.connection.findMany({ where: { OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] }, select: { id: true, fromPersonId: true, toPersonId: true, status: true } }) : [];
   const linkTo = (id: string) => feedLinks.find((c) => c.fromPersonId === id || c.toPersonId === id) ?? null;
 
   // What the member is told about where they stand, in one plain line.

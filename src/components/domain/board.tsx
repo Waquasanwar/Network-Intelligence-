@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUp, MessageCircle } from "lucide-react";
+import { ArrowUp, MessageCircle, Send, Check, UserPlus } from "lucide-react";
 import type { BoardPostKind, EngagementRoute } from "@prisma/client";
 import { Avatar } from "@/components/ui/avatar";
 import { Chip } from "@/components/ui/badge";
@@ -31,7 +31,7 @@ export type FeedPost = {
 export function PostItem({ p, me, internal = false, pitched = false, link = null, canConnect = false }: {
   p: FeedPost; me: { id: string } | null; internal?: boolean; pitched?: boolean;
   /** Where the reader stands with the author, for "free for work" posts. */
-  link?: { status: string } | null; canConnect?: boolean;
+  link?: { id: string; status: string } | null; canConnect?: boolean;
 }) {
   const own = me?.id === p.authorPersonId;
   const lead = p.kind === "WORK" || p.kind === "HELP";
@@ -54,32 +54,36 @@ export function PostItem({ p, me, internal = false, pitched = false, link = null
       {p.route || p.location ? <div className="mt-2.5 flex flex-wrap gap-1">{p.route ? <Chip>{ROUTE_LABELS[p.route]}</Chip> : null}{p.location ? <Chip>{p.location}</Chip> : null}</div> : null}
       {internal && p.briefId ? <Link href={`/requirements/${p.briefId}`} className="mt-2 inline-block text-[12.5px] font-semibold text-ink underline underline-offset-2">Open the lead in Requirements</Link> : null}
 
-      {!own && !internal && lead ? (
-        <div className="mt-3.5 flex flex-wrap items-start gap-2">
-          {p.briefId && pitched ? <span className="inline-flex h-8 items-center text-[12.5px] font-semibold text-teal">You said you are interested</span> : <form action={interestedInPost}><input type="hidden" name="postId" value={p.id} /><SubmitButton size="sm" pendingText="…">I&apos;m interested</SubmitButton></form>}
-          <details className="min-w-0 flex-1"><summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden inline-flex h-8 items-center rounded-full border border-line bg-surface px-3 text-[12px] font-semibold">Refer someone</summary>
-            <Guide
-              className="mt-3 max-w-[560px]"
-              intro="Refer someone you would stand behind. Credited to you if they are placed."
-              action={referToPost}
-              hidden={{ postId: p.id }}
-              submit="Send referral"
-              review="Here is your referral"
-              steps={[
-                { name: "name", kind: "text", ask: "Who would you refer?", short: "Who", placeholder: "Their full name", min: 2, max: 120 },
-                { name: "context", kind: "text", ask: "How do you know {name}'s work?", short: "How you know them", placeholder: "Ran the data migration on our programme last year", min: 5, max: 600 },
-                { name: "email", kind: "text", ask: "How can we reach {name}?", short: "Contact", optional: true, placeholder: "Email or LinkedIn", max: 200 },
-              ]}
-            />
-          </details>
+      {!own && !internal ? (
+        <div className="post-actions">
+          {lead ? (p.briefId && pitched
+            ? <span className="post-act is-done"><Check className="h-3.5 w-3.5" aria-hidden="true" />You said you are interested</span>
+            : <form action={interestedInPost}><input type="hidden" name="postId" value={p.id} /><SubmitButton size="sm" pendingText="…">I&apos;m interested</SubmitButton></form>) : null}
+          {link?.status === "ACCEPTED"
+            ? <Link href={`/community?tab=connections&with=${link.id}`} className="post-act"><Send className="h-3.5 w-3.5" aria-hidden="true" />Message {p.author.firstName}</Link>
+            : link?.status === "PENDING" ? <span className="post-act is-done">Request sent</span>
+            : canConnect && (p.kind === "AVAILABLE" || p.kind === "HELP") ? <form action={connect}><input type="hidden" name="personId" value={p.authorPersonId} /><button type="submit" className="post-act"><UserPlus className="h-3.5 w-3.5" aria-hidden="true" />Connect</button></form> : null}
+          {lead ? (
+            <details className="w-full sm:w-auto sm:flex-1"><summary className="post-act list-none [&::-webkit-details-marker]:hidden">Refer someone</summary>
+              <Guide
+                className="mt-3 max-w-[560px]"
+                intro="Refer someone you would stand behind. Credited to you if they are placed."
+                action={referToPost}
+                hidden={{ postId: p.id }}
+                submit="Send referral"
+                review="Here is your referral"
+                steps={[
+                  { name: "name", kind: "text", ask: "Who would you refer?", short: "Who", placeholder: "Their full name", min: 2, max: 120 },
+                  { name: "context", kind: "text", ask: "How do you know {name}'s work?", short: "How you know them", placeholder: "Ran the data migration on our programme last year", min: 5, max: 600 },
+                  { name: "email", kind: "text", ask: "How can we reach {name}?", short: "Contact", optional: true, placeholder: "Email or LinkedIn", max: 200 },
+                ]}
+              />
+            </details>
+          ) : null}
         </div>
       ) : null}
-      {!own && !internal && p.kind === "AVAILABLE" && canConnect ? (
-        link ? <div className="mt-3 text-[12.5px] font-semibold text-ink-muted">{link.status === "ACCEPTED" ? "Connected" : link.status === "PENDING" ? "Request sent" : null}</div>
-          : <form action={connect} className="mt-3"><input type="hidden" name="personId" value={p.authorPersonId} /><SubmitButton size="sm" variant="secondary" pendingText="…">Connect</SubmitButton></form>
-      ) : null}
 
-      <div id={`post-${p.id}`} className="mt-3.5 space-y-2 border-t border-line pt-3" data-replies>
+      <div id={`post-${p.id}`} className="mt-3 space-y-2" data-replies>
         {p.replies.length ? <div className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint"><MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />{p.replies.length} {p.replies.length === 1 ? "reply" : "replies"}</div> : null}
         {p.replies.map((r) => (
           <div key={r.id} className="flex items-start gap-2.5" data-reply>

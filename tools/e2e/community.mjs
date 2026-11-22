@@ -45,6 +45,8 @@ await step("community: a member shares work, and it lands in your Requirements a
   m1 = await session(b, ana[0], NEWPW);
   await m1.goto(`${BASE}/community`, { waitUntil: "networkidle" });
   // One question at a time. Work goes up only once they agree it is introduced through the network.
+  // When the feed has posts, sharing sits behind one quiet line at the top; open it.
+  const share = m1.locator("[data-share] summary"); if (await share.count()) await share.click();
   const g = m1.locator("[data-guide]").first();
   await walk(g, [{ pick: "Work I know about" }, TITLE, "An energy group needs an interim finance transformation lead for six months in Dubai.", { pick: "Interim" }, null]);
   assert(/before it goes up/.test(await g.locator(".guide-ask").innerText()), "asked to agree first");
@@ -91,7 +93,7 @@ await step("community: connected members message each other privately, and repli
   await m1.locator("[data-message]").filter({ hasText: words }).waitFor({ timeout: 20000 }); // shown in the sender's thread
   assert(sql(`select count(*) from "AuditLog" where action='message.send' and metadata::text like '%${STAMP}%'`) === "0", "what was written is not in the audit log");
   await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
-  assert(/1/.test(await m2.getByRole("link", { name: /^Connections/ }).first().innerText()), "unread shown on the tab");
+  assert(/1/.test(await m2.locator("main").getByRole("link", { name: /^Messages/ }).first().innerText()), "unread shown on the tab");
   await m2.goto(`${BASE}/community?tab=connections`, { waitUntil: "networkidle" });
   assert(await m2.locator("[data-message]").filter({ hasText: words }).count(), "the other member reads it");
   assert(sql(`select count(*) from "MemberMessage" where body='${words}' and "readAt" is not null`) === "1", "marked read once opened");
@@ -181,7 +183,7 @@ await step("features: you switch the board off and members lose it at once, then
     // The member sees no board, no post form, and no "share" card on their profile.
     await m2.goto(`${BASE}/community`, { waitUntil: "networkidle" });
     assert(!(await m2.locator("[data-guide]").count()), "nothing to post");
-    assert(!(await m2.getByRole("link", { name: /^Board/ }).count()), "no board tab");
+    assert(!(await m2.locator("main").getByRole("link", { name: /^Feed/ }).count()), "no feed tab");
     await m2.goto(`${BASE}/member`, { waitUntil: "networkidle" });
     assert(!(await m2.locator("[data-share]").count()), "no sharing on their home");
     assert(await m2.locator('a[href="/community?tab=members"]').count(), "connections still offered");
