@@ -8,6 +8,9 @@ import { Guide } from "@/components/ui/guide";
 import { DateText } from "@/components/domain/date";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
+import { canShowPhoto } from "@/lib/privacy";
+
+const pic = (x: Who) => (canShowPhoto(x, "internal") ? x.photoUrl ?? null : null);
 import { closePost, interestedInPost, referToPost, connect, replyToPost, createPost } from "@/server/actions/community";
 
 export const KIND: Record<BoardPostKind, { label: string; tone: string }> = {
@@ -17,7 +20,7 @@ export const KIND: Record<BoardPostKind, { label: string; tone: string }> = {
   UPDATE: { label: "Sharing", tone: "" },
 };
 
-type Who = { id: string; firstName: string; lastName: string };
+type Who = { id: string; firstName: string; lastName: string; photoUrl?: string | null; privacy?: unknown };
 export type FeedPost = {
   id: string; kind: BoardPostKind; title: string; body: string; route: EngagementRoute | null; location: string | null; briefId: string | null; createdAt: Date; authorPersonId: string;
   author: Who & { headline: string | null };
@@ -38,7 +41,7 @@ export function PostItem({ p, me, internal = false, pitched = false, link = null
   return (
     <article className="post" data-post={p.kind}>
       <header className="flex items-start gap-3">
-        <Avatar person={p.author} />
+        <Avatar person={p.author} src={pic(p.author)} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
             <b className="font-semibold text-ink">{own ? "You" : fullName(p.author)}</b>
@@ -87,7 +90,7 @@ export function PostItem({ p, me, internal = false, pitched = false, link = null
         {p.replies.length ? <div className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint"><MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />{p.replies.length} {p.replies.length === 1 ? "reply" : "replies"}</div> : null}
         {p.replies.map((r) => (
           <div key={r.id} className="flex items-start gap-2.5" data-reply>
-            <Avatar person={r.author} size="sm" />
+            <Avatar person={r.author} size="sm" src={pic(r.author)} />
             <div className="min-w-0 rounded-[14px] bg-surface-muted px-3 py-2">
               <div className="text-[12px] text-ink-faint"><b className="font-semibold text-ink">{me?.id === r.authorPersonId ? "You" : fullName(r.author)}</b> · <DateText date={r.createdAt} relative /></div>
               <p className="mt-0.5 whitespace-pre-line text-[13.5px] leading-[1.5] text-ink">{r.body}</p>
@@ -139,7 +142,7 @@ export function ShareBox({ me, earnings = false }: { me: Who; earnings?: boolean
   return (
     <details className="share-box" data-share>
       <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
-        <Avatar person={me} />
+        <Avatar person={me} src={pic(me)} />
         <span className="flex-1 text-[14.5px] text-ink-faint">Share something with the network…</span>
         <span className="chip !h-8 font-semibold text-ink">Share</span>
       </summary>

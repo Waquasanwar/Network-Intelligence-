@@ -41,7 +41,10 @@ import { ClipboardList, GitMerge } from "lucide-react";
 import { ProvenanceThread } from "@/components/domain/provenance";
 import { SENIORITY_LABELS, SOURCE_LABELS, RELATIONSHIP_LABELS, EVIDENCE_LABELS, ADVISORY_LABELS } from "@/lib/labels";
 import type { ExtractedSummary } from "@/lib/ai";
-import { Constellation } from "@/components/ui/constellation";
+import { CitySky } from "@/components/domain/city-sky";
+import { zoneFor, localTime } from "@/lib/place";
+import { canShowPhoto } from "@/lib/privacy";
+import { removePersonPhoto } from "@/server/actions/privacy";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -154,7 +157,8 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       <div className="widget overflow-hidden mb-5">
         {/* A band of the brand's dark surface behind the name: the profile opens like a cover. */}
         <div className="stage-ink flex min-h-[132px] items-end pl-[136px] pr-5 pb-4 sm:pl-[154px] sm:pr-6">
-          <Constellation focus={0.82} density={0.7} />
+          <CitySky className="absolute inset-0 -z-10" city={person.primaryCity ?? person.primaryCountry} zone={zoneFor(person)} initialTime={zoneFor(person) ? localTime(zoneFor(person)!) : null} />
+          <span className="city-sky-shade -z-10" aria-hidden="true" />
           <div className="min-w-0">
             <h1 className="font-display text-[24px] sm:text-[32px] leading-[1.08] text-white">{fullName(person)}</h1>
             <div className="mt-1 text-[14px] text-white/75 line-clamp-2">{person.headline ?? "No headline yet"}</div>
@@ -163,7 +167,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
         <div className="px-5 pb-5 sm:px-6 sm:pb-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="-mt-[58px] flex-none rounded-full bg-surface p-1 shadow-[var(--shadow-card)]"><TrustHalo score={trust.score}><Avatar person={person} size="xl" /></TrustHalo></div>
+            <div className="-mt-[58px] flex-none rounded-full bg-surface p-1 shadow-[var(--shadow-card)]"><TrustHalo score={trust.score}><Avatar person={person} size="xl" src={canShowPhoto(person, "internal") ? person.photoUrl : null} /></TrustHalo></div>
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 pt-3 text-[13.5px] text-ink-muted"><ReadyPill p={person} /><span className="min-w-0">{[[person.currentRole, person.currentCompany].filter(Boolean).join(" at "), person.primaryCity].filter(Boolean).join(" · ") || "Role not recorded yet"}</span></div>
           </div>
           <div className="flex flex-none flex-wrap items-center gap-2 lg:pt-3">
@@ -173,6 +177,7 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
               <form action={startScreening}><input type="hidden" name="personId" value={person.id} /><SubmitButton size="sm" variant="secondary" pendingText="Starting…"><ClipboardList className="h-3.5 w-3.5" /> Start screening call</SubmitButton></form>
               <CaptureConversationDrawer personId={person.id} />
               <AvailabilityDrawer person={person} />
+              {person.photoUrl ? <form action={removePersonPhoto}><input type="hidden" name="personId" value={person.id} /><SubmitButton size="sm" variant="ghost" pendingText="Removing…">Remove their photo</SubmitButton></form> : null}
               <EditProfileDrawer person={person} />
               {person.memberUser ? null : <InviteContactDrawer person={{ id: person.id, name: fullName(person), email: person.email }} network={user.tenantName} from={user.name.split(" ")[0]} label="Invite to join" />}
             </MoreMenu>

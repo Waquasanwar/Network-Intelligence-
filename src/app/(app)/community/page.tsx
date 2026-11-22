@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
-import { privacyOf } from "@/lib/privacy";
+import { privacyOf, canShowPhoto } from "@/lib/privacy";
 import { mayInvite } from "@/server/invites";
 import { resolveMemberPerson, loadFeatures } from "@/server/queries";
 import { standardFor } from "@/lib/standard-for";
@@ -49,7 +49,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const internal = isInternal(user);
   const base = internal ? null : await resolveMemberPerson(user, null);
-  const me = base ? await prisma.person.findUnique({ where: { id: base.id }, select: { id: true, firstName: true, lastName: true, tenantId: true, memberSince: true, screeningStatus: true, screenedAt: true, privacy: true } }) : null;
+  const me = base ? await prisma.person.findUnique({ where: { id: base.id }, select: { id: true, firstName: true, lastName: true, tenantId: true, memberSince: true, screeningStatus: true, screenedAt: true, privacy: true, photoUrl: true } }) : null;
   const tenantId = internal ? user.tenantId : me?.tenantId;
   // What the owner has switched on in Settings → Features: the board, member connections, and earnings.
   const features = tenantId ? await loadFeatures(tenantId) : null;
@@ -79,8 +79,8 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const wanted = internal ? "board" : sp.tab === "members" ? "members" : sp.tab === "connections" ? "connections" : "board";
   const tab = wanted === "board" && !board ? "members" : wanted !== "board" && !links ? "board" : wanted;
   const [posts, connections] = await Promise.all([
-    !board ? Promise.resolve([]) : prisma.boardPost.findMany({ where: { tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } }, replies: { include: { author: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" }, take: 50 } }, orderBy: { createdAt: "desc" }, take: 60 }),
-    me && links ? prisma.connection.findMany({ where: { OR: [{ fromPersonId: me.id }, { toPersonId: me.id }] }, include: { from: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } }, to: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true } } }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
+    !board ? Promise.resolve([]) : prisma.boardPost.findMany({ where: { tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true, photoUrl: true, privacy: true } }, replies: { include: { author: { select: { id: true, firstName: true, lastName: true, photoUrl: true, privacy: true } } }, orderBy: { createdAt: "asc" }, take: 50 } }, orderBy: { createdAt: "desc" }, take: 60 }),
+    me && links ? prisma.connection.findMany({ where: { OR: [{ fromPersonId: me.id }, { toPersonId: me.id }] }, include: { from: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true, photoUrl: true, privacy: true } }, to: { select: { id: true, firstName: true, lastName: true, headline: true, email: true, phone: true, linkedinUrl: true, photoUrl: true, privacy: true } } }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
   ]);
   const mine = me ? await prisma.pitch.findMany({ where: { personId: me.id, briefId: { in: posts.map((p) => p.briefId).filter((x): x is string => !!x) } }, select: { briefId: true } }) : [];
   const pitched = new Set(mine.map((m) => m.briefId));
@@ -106,7 +106,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
 
   // Only members who have chosen to be seen, and only for members who have chosen the same.
   const members = me && listed && (tab === "members" || (tab === "board" && links))
-    ? (await prisma.person.findMany({ where: { tenantId, id: { not: me.id }, memberUser: { isNot: null } }, select: { id: true, firstName: true, lastName: true, headline: true, memberSince: true, ...TRUST_SELECT }, orderBy: { memberSince: "asc" }, take: 200 }))
+    ? (await prisma.person.findMany({ where: { tenantId, id: { not: me.id }, memberUser: { isNot: null } }, select: { id: true, firstName: true, lastName: true, headline: true, memberSince: true, photoUrl: true, ...TRUST_SELECT }, orderBy: { memberSince: "asc" }, take: 200 }))
         .filter((p) => mayInvite(p) && privacyOf({ privacy: p.privacy }).consents.memberDirectory)
     : [];
 
@@ -115,6 +115,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const kind = KINDS.find((k) => k === sp.kind) ?? null;
   const shown = kind ? posts.filter((p) => p.kind === kind) : posts;
   const other = (c: (typeof accepted)[number]) => (c.fromPersonId === me!.id ? c.to : c.from);
+  const pic = (x: { photoUrl?: string | null; privacy?: unknown }) => (canShowPhoto(x, "internal") ? x.photoUrl ?? null : null);
   const toMeet = members.filter((m) => !linkWith(m.id)).slice(0, 3);
   const notice = sp.notice && NOTICE[sp.notice] ? (sp.notice === "referred" && !earnings ? "Thank you. We will tell you how it goes." : NOTICE[sp.notice]) : null;
   const tabs = [
@@ -164,7 +165,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                   {sorted.length ? (
                     <ul className="mt-2 space-y-0.5">
                       {sorted.slice(0, 4).map((c) => { const o = other(c); const l = last.get(c.id); const n = unread.get(c.id) ?? 0; return (
-                        <li key={c.id}><Link href={`/community?tab=connections&with=${c.id}`} className="rail-row"><Avatar person={o} size="sm" /><span className="min-w-0 flex-1"><b className="block truncate text-[13px] font-semibold text-ink">{fullName(o)}</b><span className="block truncate text-[12px] text-ink-faint">{l ? `${l.fromPersonId === me!.id ? "You: " : ""}${l.body}` : "Say hello"}</span></span>{n ? <span className="chat-unread">{n}</span> : null}</Link></li>
+                        <li key={c.id}><Link href={`/community?tab=connections&with=${c.id}`} className="rail-row"><Avatar person={o} size="sm" src={pic(o)} /><span className="min-w-0 flex-1"><b className="block truncate text-[13px] font-semibold text-ink">{fullName(o)}</b><span className="block truncate text-[12px] text-ink-faint">{l ? `${l.fromPersonId === me!.id ? "You: " : ""}${l.body}` : "Say hello"}</span></span>{n ? <span className="chat-unread">{n}</span> : null}</Link></li>
                       ); })}
                     </ul>
                   ) : <p className="mt-2 text-[13px] leading-[1.5] text-ink-muted">Connect with a member to message them here.</p>}
@@ -175,7 +176,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                   <div className="flex items-baseline justify-between"><h2 id="rail-meet" className="text-[14px] font-semibold text-ink">People to meet</h2><Link href="/community?tab=members" className="text-[12.5px] font-semibold text-ink-muted hover:text-ink">All</Link></div>
                   <ul className="mt-2 space-y-1">
                     {toMeet.map((m) => (
-                      <li key={m.id} className="rail-row"><Avatar person={m} size="sm" /><span className="min-w-0 flex-1"><b className="block truncate text-[13px] font-semibold text-ink">{fullName(m)}</b><span className="block truncate text-[12px] text-ink-faint">{m.headline ?? ""}</span></span><form action={connect}><input type="hidden" name="personId" value={m.id} /><SubmitButton size="sm" variant="secondary" pendingText="…">Connect</SubmitButton></form></li>
+                      <li key={m.id} className="rail-row"><Avatar person={m} size="sm" src={pic(m)} /><span className="min-w-0 flex-1"><b className="block truncate text-[13px] font-semibold text-ink">{fullName(m)}</b><span className="block truncate text-[12px] text-ink-faint">{m.headline ?? ""}</span></span><form action={connect}><input type="hidden" name="personId" value={m.id} /><SubmitButton size="sm" variant="secondary" pendingText="…">Connect</SubmitButton></form></li>
                     ))}
                   </ul>
                 </section>
@@ -208,7 +209,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                   const s = standardFor(m, "outside"); const c = linkWith(m.id);
                   return (
                     <li key={m.id} className="person-tile" data-member>
-                      <div className="flex items-start gap-3"><Avatar person={m} size="lg" /><div className="min-w-0 flex-1"><b className="block truncate text-[14.5px] font-semibold text-ink">{fullName(m)}</b><span className="line-clamp-2 text-[12.5px] leading-[1.45] text-ink-muted">{m.headline ?? ""}</span></div></div>
+                      <div className="flex items-start gap-3"><Avatar person={m} size="lg" src={pic(m)} /><div className="min-w-0 flex-1"><b className="block truncate text-[14.5px] font-semibold text-ink">{fullName(m)}</b><span className="line-clamp-2 text-[12.5px] leading-[1.45] text-ink-muted">{m.headline ?? ""}</span></div></div>
                       <span className="mt-2.5 flex items-center gap-2 text-[12px] text-ink-faint"><ProofPips s={s} /><span className="truncate">{s.line}</span></span>
                       {m.capabilities.length ? <div className="mt-2 flex flex-wrap gap-1">{m.capabilities.slice(0, 3).map((x) => <span key={x} className="tag">{x}</span>)}</div> : null}
                       <div className="mt-auto pt-3.5">
@@ -237,7 +238,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 <p className="px-3 pb-1 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-ink-faint">{incoming.length} {incoming.length === 1 ? "request" : "requests"}</p>
                 {incoming.map((c) => (
                   <div key={c.id} className="chat-request">
-                    <Avatar person={c.from} />
+                    <Avatar person={c.from} src={pic(c.from)} />
                     <div className="min-w-0 flex-1"><b className="block truncate text-[13.5px] font-semibold text-ink">{fullName(c.from)}</b><span className="block truncate text-[12px] text-ink-muted">{c.message ?? c.from.headline ?? "Wants to connect"}</span>
                       <div className="mt-2 flex gap-1.5">
                         <form action={answerConnection}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="answer" value="accept" /><SubmitButton size="sm" pendingText="…">Accept</SubmitButton></form>
@@ -253,7 +254,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                 {sorted.map((c) => { const o = other(c); const l = last.get(c.id); const n = unread.get(c.id) ?? 0; return (
                   <li key={c.id} data-connection data-name={fullName(o).toLowerCase()}>
                     <Link href={`/community?tab=connections&with=${c.id}`} aria-current={open?.id === c.id ? "true" : undefined} className={cn("chat-row", n && "is-unread")}>
-                      <Avatar person={o} size="lg" />
+                      <Avatar person={o} size="lg" src={pic(o)} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-baseline justify-between gap-2"><b className="truncate text-[14px] font-semibold text-ink">{fullName(o)}</b>{l ? <span className="flex-none text-[11.5px] text-ink-faint"><ShortTime iso={l.createdAt.toISOString()} /></span> : null}</span>
                         <span className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate text-[13px] text-ink-muted">{l ? `${l.fromPersonId === me!.id ? "You: " : ""}${l.body}` : `Say hello to ${o.firstName}`}</span>{n ? <span className="chat-unread">{n}</span> : null}</span>
@@ -275,7 +276,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
             <section className="chat-main" aria-label={`Conversation with ${fullName(o)}`} data-thread>
               <header className="chat-head">
                 <Link href="/community?tab=connections" className="chat-back" aria-label="Back to all messages"><ChevronLeft className="h-5 w-5" aria-hidden="true" /></Link>
-                <Avatar person={o} />
+                <Avatar person={o} src={pic(o)} />
                 <div className="min-w-0 flex-1">
                   <b className="block truncate text-[15px] font-semibold text-ink">{fullName(o)}</b>
                   <span className="block truncate text-[12.5px] text-ink-muted">{[o.headline, o.email].filter(Boolean).join(" · ")}</span>
@@ -289,7 +290,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
               <ChatScroll count={thread.length} label="Messages">
                 {thread.length === 0 ? (
                   <li className="m-auto max-w-[34ch] py-10 text-center">
-                    <Avatar person={o} size="xl" className="mx-auto" />
+                    <Avatar person={o} size="xl" className="mx-auto" src={pic(o)} />
                     <p className="mt-3 text-[15px] font-semibold text-ink">You and {o.firstName} are connected</p>
                     <p className="mt-1 text-[13px] leading-[1.5] text-ink-muted">Say hello. Only the two of you can read this conversation.</p>
                   </li>
@@ -298,7 +299,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
                     <p className="chat-day-label"><DayLabel iso={g.iso} /></p>
                     {g.runs.map((r) => (
                       <div key={r.key} className={cn("chat-run", r.mine ? "is-mine" : "is-theirs")}>
-                        {r.mine ? null : <Avatar person={o} size="sm" className="chat-run-face" />}
+                        {r.mine ? null : <Avatar person={o} size="sm" className="chat-run-face" src={pic(o)} />}
                         <div className="chat-run-body">
                           {r.items.map((m) => <p key={m.id} className="chat-bubble" data-message>{m.body}</p>)}
                           <span className="chat-time"><ShortTime iso={r.items[r.items.length - 1].createdAt.toISOString()} mode="clock" /></span>

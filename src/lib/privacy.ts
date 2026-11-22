@@ -64,9 +64,9 @@ export const DEFAULT_CONSENTS: Consents = {
 
 /** A photo is never assumed. It shows inside the network only with consent, and outside only
  *  on a profile the person has agreed to unlock. */
-export function canShowPhoto(p: { photoUrl?: string | null; privacy?: Partial<Privacy> | null }, audience: "internal" | "partner", unlocked = false): boolean {
+export function canShowPhoto(p: { photoUrl?: string | null; privacy?: unknown }, audience: "internal" | "partner", unlocked = false): boolean {
   if (!p.photoUrl) return false;
-  const v = privacyOf(p);
+  const v = privacyOf({ privacy: p.privacy as Partial<Privacy> | null });
   if (!v.consents.showPhoto || v.erasureRequestedAt) return false;
   return audience === "internal" ? true : unlocked && v.consents.shareAnonymised;
 }

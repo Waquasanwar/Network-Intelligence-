@@ -248,6 +248,8 @@ model Person {
   workSetting             String[]           @default([])
   /// IANA time zone, worked out from where they live unless they say otherwise.
   timeZone                String?
+  /// Their own photo, only ever uploaded by them, shown only with their consent (privacy.consents.showPhoto). A Vercel Blob URL, or an inline image where no blob store is set up.
+  photoUrl                String?
   nextCheckDate           DateTime?
   opportunityInterest     String?
   relocationInterest      Boolean            @default(false)

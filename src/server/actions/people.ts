@@ -3,6 +3,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { discardPhoto } from "@/server/photos";
 import { audit } from "@/lib/audit";
 import { requireInternalAction } from "@/server/session";
 import { parseList } from "@/lib/utils";
@@ -258,14 +259,15 @@ export async function requestDeletion(formData: FormData) {
   const user = await requireInternalAction();
   const personId = String(formData.get("personId"));
   const reason = String(formData.get("reason") || "").slice(0, 500);
-  const person = await prisma.person.findUnique({ where: { id: personId }, select: { tenantId: true, privacy: true } });
+  const person = await prisma.person.findUnique({ where: { id: personId }, select: { tenantId: true, privacy: true, photoUrl: true } });
   if (!person) throw new Error("Not found");
   assertSameTenant(user, person.tenantId);
   // Recording the request is what takes them off every client and agency view straight away
   // (see src/lib/reveal.ts) and puts the profile in the retention queue for deletion.
   const current = privacyOf({ privacy: person.privacy });
   if (!current.erasureRequestedAt) {
-    await prisma.person.update({ where: { id: personId }, data: { referralConsent: "no", privacy: { ...current, erasureRequestedAt: new Date().toISOString() } as unknown as Prisma.InputJsonValue } });
+    await prisma.person.update({ where: { id: personId }, data: { referralConsent: "no", photoUrl: null, privacy: { ...current, erasureRequestedAt: new Date().toISOString() } as unknown as Prisma.InputJsonValue } });
+    await discardPhoto(person.photoUrl);
   }
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "data.deletion_request", entityType: "Person", entityId: personId, metadata: { reason } });
   revalidatePath(`/network/${personId}`); revalidatePath("/portal");

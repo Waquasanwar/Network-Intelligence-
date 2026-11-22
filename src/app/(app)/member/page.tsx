@@ -22,7 +22,7 @@ import { ReferenceDrawer } from "@/components/domain/reference-request";
 import { ProofLine } from "@/components/domain/standard";
 import { updateMyConsents } from "@/server/actions/privacy";
 import { DataRights, ConsentToggles } from "@/components/domain/data-rights";
-import { privacyOf } from "@/lib/privacy";
+import { privacyOf, canShowPhoto } from "@/lib/privacy";
 import { resolveMemberPerson, loadFeatures } from "@/server/queries";
 import { UsersRound, ArrowRight } from "lucide-react";
 import { TRUST_INCLUDE } from "@/lib/trust-include";
@@ -33,7 +33,9 @@ import { SCREENING_MINUTES, SCREENING_SCRIPT } from "@/lib/screening";
 import { ShieldCheck, EyeOff, PenLine } from "lucide-react";
 import { AVAILABILITY_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
-import { Constellation } from "@/components/ui/constellation";
+import { CitySky } from "@/components/domain/city-sky";
+import { PhotoPicker } from "@/components/domain/photo-picker";
+import { zoneFor, localTime } from "@/lib/place";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 import { Guide } from "@/components/ui/guide";
 import { KNOWN_HOW } from "@/lib/known";
@@ -96,7 +98,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const accepted = p.referralsMade.filter((r) => r.status === "ACCEPTED").length;
   // The members' board, read here like any feed: what people are sharing, and the replies.
   const boardOn = features.communityBoard && canInvite && tab === "home";
-  const feed = boardOn ? await prisma.boardPost.findMany({ where: { tenantId: p.tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true } }, replies: { include: { author: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: "asc" }, take: 30 } }, orderBy: { createdAt: "desc" }, take: 15 }) : [];
+  const feed = boardOn ? await prisma.boardPost.findMany({ where: { tenantId: p.tenantId, status: "OPEN" }, include: { author: { select: { id: true, firstName: true, lastName: true, headline: true, photoUrl: true, privacy: true } }, replies: { include: { author: { select: { id: true, firstName: true, lastName: true, photoUrl: true, privacy: true } } }, orderBy: { createdAt: "asc" }, take: 30 } }, orderBy: { createdAt: "desc" }, take: 15 }) : [];
   const feedPitched = new Set((feed.length ? await prisma.pitch.findMany({ where: { personId: p.id, briefId: { in: feed.map((x) => x.briefId).filter((x): x is string => !!x) } }, select: { briefId: true } }) : []).map((x) => x.briefId));
   const feedLinks = feed.length ? await prisma.connection.findMany({ where: { OR: [{ fromPersonId: p.id }, { toPersonId: p.id }] }, select: { id: true, fromPersonId: true, toPersonId: true, status: true } }) : [];
   const linkTo = (id: string) => feedLinks.find((c) => c.fromPersonId === id || c.toPersonId === id) ?? null;
@@ -162,12 +164,12 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
 
       {/* Who you are and what the agent is doing for you, on the brand stage. */}
       <section className="stage-ink mb-6 rounded-[24px] px-5 py-7 sm:px-9 sm:py-8" data-member-hero>
-        <Constellation focus={0.8} density={0.7} />
+        <CitySky className="absolute inset-0 -z-10" city={p.primaryCity ?? p.primaryCountry} zone={zoneFor(p)} initialTime={zoneFor(p) ? localTime(zoneFor(p)!) : null} />
         <span className="stage-scrim" aria-hidden="true" />
         <div className="grid grid-cols-1 items-end gap-7 lg:grid-cols-[1fr_auto]">
           <div className="min-w-0">
             <div className="flex items-center gap-4 min-w-0">
-              <Avatar person={p} size="xl" ring />
+              <Avatar person={p} size="xl" ring src={canShowPhoto(p, "internal") ? p.photoUrl : null} />
               <div className="min-w-0">
                 <h1 className="hero-title text-[28px] sm:text-[38px]">{sp.welcome && !screened ? `Welcome, ${p.preferredName ?? p.firstName}` : fullName(p)}</h1>
                 {p.headline ? <p className="stage-muted text-[15px] mt-1.5">{p.headline}</p> : null}
@@ -203,6 +205,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
 
       {tab === "profile" ? (
         <div className="space-y-5" data-member-profile>
+          {internal ? null : <PhotoPicker person={p} photo={canShowPhoto(p, "internal") ? p.photoUrl : null} />}
           {screened ? <dl className="flex flex-wrap gap-x-10 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Connections", myConnections, "members"]].map(([l, v, h]) => <div key={String(l)}><dt className="text-[12.5px] text-ink-muted">{l}</dt><dd className="figure-num mt-1 text-[30px] leading-none">{v}</dd><dd className="mt-1 text-[12px] text-ink-faint">{h}</dd></div>)}</dl> : null}
           {screened ? (
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">

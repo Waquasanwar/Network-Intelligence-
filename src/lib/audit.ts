@@ -68,6 +68,8 @@ export type AuditAction =
   | "pitch.create"
   | "pitch.update"
   | "consent.update"
+  | "photo.set"
+  | "photo.remove"
   | "member.register"
   | "brief.members"
   | "brief.on_spec"

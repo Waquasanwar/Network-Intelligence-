@@ -231,6 +231,25 @@ await step("the public page and the reference page do not scroll sideways on a p
 
 // Leave the shared demo data as it was.
 sql(`delete from "Invite" where email in ('${APPLY}')`);
+await step("photo: a member adds their own photo, it shows inside the network only, and removing it deletes it", null, async () => {
+  const email = sql(`select u.email from "User" u join "Person" p on p.id=u."personId" where u.role='MEMBER' and p."screeningStatus"='APPROVED' order by u."createdAt" desc limit 1`);
+  const pid = sql(`select "personId" from "User" where email='${email}'`);
+  const m = await session(b, email, NEWPW);
+  await m.goto(`${BASE}/member?tab=profile`, { waitUntil: "networkidle" });
+  // Any picture will do: the browser crops it square and makes a small JPEG before sending it.
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAMklEQVR4nG3CgRAAIAAEwccJIogggjiIIIII4rESuJ3NoDqT6iyqs6kOVOdQnUt1HtUfWlFrgWgxPgwAAAAASUVORK5CYII=", "base64");
+  await m.locator("[data-photo-input]").setInputFiles({ name: "me.png", mimeType: "image/png", buffer: png });
+  assert(await until(() => sql(`select ("photoUrl" is not null)::text || '|' || coalesce(privacy->'consents'->>'showPhoto', '') from "Person" where id='${pid}'`) === "true|true"), "saved, and adding it is the consent to show it");
+  await m.goto(`${BASE}/member`, { waitUntil: "networkidle" });
+  assert(await m.locator("[data-member-hero] img").count(), "their photo on their own page");
+  await o.goto(`${BASE}/network/${pid}`, { waitUntil: "networkidle" });
+  assert(await o.locator("main img").count(), "the team sees it on their profile");
+  await m.goto(`${BASE}/member?tab=profile`, { waitUntil: "networkidle" });
+  await m.locator("[data-photo-picker]").getByRole("button", { name: "Remove" }).click();
+  assert(await until(() => sql(`select ("photoUrl" is null)::text || '|' || coalesce(privacy->'consents'->>'showPhoto', '') from "Person" where id='${pid}'`) === "true|false"), "removing it deletes it");
+  if (m.errs.length) throw new Error(m.errs.join("; ")); await m.context().close();
+});
+
 sql(`delete from "PublicRequest" where email like 'e2e-%@example.com'`);
 sql(`delete from "Vouch" where "voucherName"='${REFEREE}'`);
 sql(`delete from "ReferenceRequest" where "refereeName"='${REFEREE}'`);

@@ -16,9 +16,14 @@ function hue(p: { firstName: string; lastName: string }) {
   return PALETTES[h % PALETTES.length];
 }
 
-export function Avatar({ person, size = "md", className, ring = false }: { person: { firstName: string; lastName: string }; size?: "sm" | "md" | "lg" | "xl"; className?: string; ring?: boolean }) {
+/**
+ * A person as their initials, or as their photo when `src` is given. Callers pass `src` only where
+ * the person agreed to show it (see canShowPhoto), so a photo never appears by accident.
+ */
+export function Avatar({ person, size = "md", className, ring = false, src }: { person: { firstName: string; lastName: string }; size?: "sm" | "md" | "lg" | "xl"; className?: string; ring?: boolean; src?: string | null }) {
   const s = size === "sm" ? "h-7 w-7 text-[11px]" : size === "lg" ? "h-12 w-12 text-[15px]" : size === "xl" ? "h-[72px] w-[72px] text-[22px]" : "h-9 w-9 text-[12.5px]";
-  const core = (
+  // eslint-disable-next-line @next/next/no-img-element -- a small user photo from our own store or inline; no optimiser needed
+  const core = src ? <img src={src} alt="" className={cn("rounded-full object-cover shrink-0 bg-surface-muted", s, className)} /> : (
     <span className={cn("inline-flex items-center justify-center rounded-full font-semibold shrink-0 shadow-[inset_0_0_0_1px_rgba(12,27,51,0.06)]", hue(person), s, className)}>
       {initials(person)}
     </span>

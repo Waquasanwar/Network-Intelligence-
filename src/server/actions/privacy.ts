@@ -8,6 +8,9 @@ import { limitOrThrow } from "@/lib/rate-limit";
 import { requireUser } from "@/server/session";
 import { resolveMemberPerson } from "@/server/queries";
 import { CONSENTS, privacyOf, type Consents, type ConsentKey, type Privacy } from "@/lib/privacy";
+import { isInternal } from "@/lib/authz";
+import { requireInternalAction } from "@/server/session";
+import { storePhoto, discardPhoto, looksLikeJpeg, MAX_PHOTO_BYTES } from "@/server/photos";
 
 /**
  * A member's own control over their data — the GDPR / UAE PDPL rights made real for the person,
@@ -77,10 +80,13 @@ export async function updateMyConsents(formData: FormData) {
   }
   const hideRateBand = formData.get("hideRateBand") === "on";
   const hideRegion = formData.get("hideRegion") === "on";
+  // Switching the photo off deletes it, as the consent promises.
+  const dropPhoto = !next.showPhoto && !!me.photoUrl;
   await prisma.person.update({
     where: { id: me.id },
-    data: { privacy: writePrivacy(current, { consents: next, hideRateBand, hideRegion, reviewedAt: new Date().toISOString() }) },
+    data: { privacy: writePrivacy(current, { consents: next, hideRateBand, hideRegion, reviewedAt: new Date().toISOString() }), ...(dropPhoto ? { photoUrl: null } : {}) },
   });
+  if (dropPhoto) await discardPhoto(me.photoUrl);
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "consent.update", entityType: "Person", entityId: me.id, metadata: { on: (Object.keys(next) as ConsentKey[]).filter((k) => next[k]).length } });
   revalidatePath("/member"); revalidatePath("/settings/privacy"); revalidatePath(`/network/${me.id}`);
 }
@@ -101,8 +107,9 @@ export async function requestMyErasure(formData: FormData) {
   const current = privacyOf({ privacy: me.privacy as Partial<Privacy> | null });
   await prisma.person.update({
     where: { id: me.id },
-    data: { privacy: writePrivacy(current, { erasureRequestedAt: new Date().toISOString() }), referralConsent: "no" },
+    data: { privacy: writePrivacy(current, { erasureRequestedAt: new Date().toISOString() }), referralConsent: "no", photoUrl: null },
   });
+  await discardPhoto(me.photoUrl); // a photo goes at once; it is never needed for the records that must be kept
   // Their open invitations stop working too: nobody should be joining on the word of someone leaving.
   await prisma.invite.updateMany({ where: { inviterPersonId: me.id, status: { in: ["SENT", "OPENED"] } }, data: { status: "REVOKED" } });
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "data.deletion_request", entityType: "Person", entityId: me.id, metadata: { self: true, reason: d.reason ?? null } });
@@ -118,4 +125,52 @@ export async function cancelMyErasure(formData: FormData) {
   await prisma.person.update({ where: { id: me.id }, data: { privacy: writePrivacy(current, { erasureRequestedAt: null }), ...(me.referralConsent === "no" ? { referralConsent: "ask" } : {}) } });
   await audit({ tenantId: me.tenantId, actorId: user.id, action: "consent.update", entityType: "Person", entityId: me.id, metadata: { erasureCancelled: true } });
   revalidatePath("/member"); revalidatePath("/settings/privacy"); revalidatePath(`/network/${me.id}`);
+}
+
+/**
+ * A member adds their own photo. Only the person themselves can: nobody else puts a face to a name.
+ * The browser sends a small square JPEG it made; adding it is also the consent to show it, inside
+ * the network only, and it can be removed (and is deleted) at any time.
+ */
+export async function setMyPhoto(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireUser();
+  if (isInternal(user)) return { ok: false, error: "Only the member can add their own photo." };
+  const me = await selfPerson(user, null);
+  await limitOrThrow("mutate", `photo:${user.id}`);
+  const file = formData.get("photo");
+  if (!(file instanceof Blob) || file.size === 0) return { ok: false, error: "Choose a photo first." };
+  if (file.size > MAX_PHOTO_BYTES || file.type !== "image/jpeg") return { ok: false, error: "That photo could not be used. Try a different one." };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!looksLikeJpeg(bytes)) return { ok: false, error: "That photo could not be used. Try a different one." };
+  const url = await storePhoto(me.id, bytes);
+  const current = privacyOf({ privacy: me.privacy as Partial<Privacy> | null });
+  await prisma.person.update({ where: { id: me.id }, data: { photoUrl: url, privacy: writePrivacy(current, { consents: { ...current.consents, showPhoto: true } }) } });
+  await discardPhoto(me.photoUrl);
+  await audit({ tenantId: me.tenantId, actorId: user.id, action: "photo.set", entityType: "Person", entityId: me.id });
+  revalidatePath("/member"); revalidatePath("/community"); revalidatePath(`/network/${me.id}`);
+  return { ok: true };
+}
+
+/** The member removes their photo. It is deleted, and they show as their initials again. */
+export async function removeMyPhoto() {
+  const user = await requireUser();
+  if (isInternal(user)) return;
+  const me = await selfPerson(user, null);
+  const current = privacyOf({ privacy: me.privacy as Partial<Privacy> | null });
+  await prisma.person.update({ where: { id: me.id }, data: { photoUrl: null, privacy: writePrivacy(current, { consents: { ...current.consents, showPhoto: false } }) } });
+  await discardPhoto(me.photoUrl);
+  await audit({ tenantId: me.tenantId, actorId: user.id, action: "photo.remove", entityType: "Person", entityId: me.id, metadata: { self: true } });
+  revalidatePath("/member"); revalidatePath("/community"); revalidatePath(`/network/${me.id}`);
+}
+
+/** The team takes down a member's photo (it is not right for a professional network). */
+export async function removePersonPhoto(formData: FormData) {
+  const user = await requireInternalAction();
+  const personId = String(formData.get("personId") ?? "");
+  const p = await prisma.person.findFirst({ where: { id: personId, tenantId: user.tenantId }, select: { id: true, tenantId: true, photoUrl: true } });
+  if (!p?.photoUrl) return;
+  await prisma.person.update({ where: { id: p.id }, data: { photoUrl: null } });
+  await discardPhoto(p.photoUrl);
+  await audit({ tenantId: p.tenantId, actorId: user.id, action: "photo.remove", entityType: "Person", entityId: p.id, metadata: { self: false } });
+  revalidatePath(`/network/${p.id}`); revalidatePath("/community");
 }

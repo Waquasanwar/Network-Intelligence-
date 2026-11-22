@@ -20,7 +20,7 @@ function cspFor(nonce: string): string {
     "default-src 'self'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com", // member photos live in the Vercel Blob store
     "font-src 'self' data:",
     "connect-src 'self'",
     "frame-ancestors 'none'",
