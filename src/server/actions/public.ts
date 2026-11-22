@@ -8,6 +8,7 @@ import { audit } from "@/lib/audit";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { requireInternalAction } from "@/server/session";
 import { publicNetwork, MAX_WAITING } from "@/server/public";
+import { loadFeatures } from "@/server/queries";
 import { INVITE_DAYS } from "@/server/invites";
 
 /**
@@ -31,6 +32,8 @@ async function receive(kind: "JOIN" | "NEED", formData: FormData, limited: boole
   const back = (error: string) => redirect(`/?form=${anchor}&error=${error}#${anchor}`);
   if (limited) back("throttled");
   if (!network) redirect("/login");
+  // Closed until the owner releases public applications: nothing is stored.
+  if (!(await loadFeatures(network.id)).publicApplications) redirect("/");
   // A filled-in trap field means a script, not a person. Thank it and store nothing.
   if (String(formData.get("website") || "")) redirect(`/?sent=${anchor}#${anchor}`);
   if (formData.get("consent") !== "on") back("consent");

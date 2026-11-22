@@ -6,7 +6,7 @@ import { audit } from "@/lib/audit";
 import { z } from "zod";
 const PROVIDER = z.enum(["MICROSOFT_GRAPH", "CALENDLY", "MANUAL"]);
 import { requireAdminAction, requireInternalAction, requireUser, requireOwnerAction } from "@/server/session";
-import { featuresOf, isFeatureKey } from "@/lib/features";
+import { storedFeaturesOf, isFeatureKey } from "@/lib/features";
 import { rateLimit } from "@/lib/rate-limit";
 import { seal, unseal } from "@/lib/secrets";
 import { getSchedulingProvider } from "@/lib/scheduling";
@@ -122,7 +122,7 @@ export async function setFeature(formData: FormData) {
   const key = formData.get("key"); const on = formData.get("on") === "1";
   if (!isFeatureKey(key)) throw new Error("Unknown feature");
   const t = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { features: true } });
-  const next = { ...featuresOf(t?.features), [key]: on };
+  const next = { ...storedFeaturesOf(t?.features), [key]: on };
   await prisma.tenant.update({ where: { id: user.tenantId }, data: { features: next } });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: "feature.update", entityType: "Tenant", entityId: user.tenantId, metadata: { feature: key, on } });
   revalidatePath("/", "layout");

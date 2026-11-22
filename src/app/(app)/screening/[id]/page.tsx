@@ -7,7 +7,8 @@ import { Input, Textarea } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { answerScreening, startScreening } from "@/server/actions/members";
-import { resolveMemberPerson, loadFeatures } from "@/server/queries";
+import { resolveMemberPerson, loadFeatures, isReleased } from "@/server/queries";
+import { NotOpen } from "@/components/domain/not-open";
 import { SCREENING_SCRIPT, SCREENING_MINUTES, type ScreeningAnswers, type ReferredPerson } from "@/lib/screening";
 import { fullName, cn } from "@/lib/utils";
 import { ScreeningVoice } from "@/components/domain/screening-voice";
@@ -23,6 +24,8 @@ export default async function ScreeningPage({ params, searchParams }: { params: 
   if (!person) notFound();
   if (isInternal(user)) { if (person.tenantId !== user.tenantId) notFound(); } else { const me = await resolveMemberPerson(user); if (!me || me.id !== person.id) redirect("/forbidden"); }
   const member = !isInternal(user);
+  // Members take the screening on their own only once the owner releases it; until then it is a call.
+  if (member && !(await isReleased(user, "memberScreening"))) return <NotOpen member privacyHref="/member?tab=privacy" title="Your screening is a call with us" body="We will arrange a short call with you to do your screening together. You do not need to do anything here." />;
   const readAloud = member && (await loadFeatures(person.tenantId)).readAloud;
   // We open with what we already know, as a good interviewer would, so nobody repeats themselves.
   const intro = await prisma.relationship.findFirst({ where: { personId: id, introducedById: { not: null } }, select: { introducedById: true } });

@@ -1,4 +1,5 @@
 "use server";
+import { requireReleased } from "@/server/queries";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
@@ -61,6 +62,7 @@ const requirementSchema = z.object({
 /** Partner submits a requirement from the restricted portal. Internal users may also log one on a partner's behalf. */
 export async function submitPartnerRequirement(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "agencyPortal", "/partner-portal"); // not until the owner releases it
   const d = requirementSchema.parse(Object.fromEntries(formData));
   let partnerId: string;
   if (isPartner(user)) {
@@ -113,6 +115,7 @@ export async function setRequirementStatus(formData: FormData) {
 /** Partner asks for an introduction to an anonymised result. Creates a REQUESTED introduction for internal approval. */
 export async function requestIntroductionFromPortal(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "agencyPortal", "/partner-portal"); // not until the owner releases it
   if (!isPartner(user)) throw new Error("Not permitted");
   const requirementId = String(formData.get("requirementId"));
   const ref = String(formData.get("ref")).slice(0, 20);

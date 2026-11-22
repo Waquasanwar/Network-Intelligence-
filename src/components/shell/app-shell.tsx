@@ -1,12 +1,15 @@
 import { Sidebar } from "./sidebar";
 import { CommandPalette } from "./command-palette";
 import { AskDock } from "./ask-dock";
+import { CoreBar } from "./core-bar";
+import { Suspense } from "react";
 import { TopBar, Crumbs, SectionTabs } from "./topbar";
 import type { SessionUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { isInternal } from "@/lib/authz";
 import { fullName } from "@/lib/utils";
-import { alertsFor, loadFeatures, resolveMemberPerson, resolvePortalAccount } from "@/server/queries";
+import { alertsFor, releasedFor, portalFeature, resolveMemberPerson, resolvePortalAccount } from "@/server/queries";
+import type { Released } from "./sidebar";
 import { notesFor } from "@/server/agent";
 
 export async function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
@@ -25,9 +28,10 @@ export async function AppShell({ user, children }: { user: SessionUser; children
     { id: "p-security", label: "Security", href: "/settings/security", group: "Pages" },
   ];
 
-  const f = user.role === "MEMBER" ? await loadFeatures(user.tenantId) : null;
-  // Messages and People live on Community; the board itself is on the member home.
-  const community = !f || f.memberConnections;
+  // Members, clients and agencies see links only to what the owner has released (Settings → Release).
+  const r = await releasedFor(user);
+  const released: Released = r === "all" ? { home: true, connections: true, referrals: true, portal: true }
+    : { home: r.memberArea, connections: r.memberConnections, referrals: r.memberReferrals, portal: r[portalFeature(user)] };
   let items = pages;
   // The bell: what is waiting on the team, and what the agent has told this reader.
   const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -55,11 +59,11 @@ export async function AppShell({ user, children }: { user: SessionUser; children
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar user={user} community={community} />
+      <Sidebar user={user} released={released} />
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar alerts={alerts} user={{ name: user.name, role: user.role, tenantName: user.tenantName }} home={user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : user.role === "CLIENT" ? "/client-workspace" : "/overview"} />
         <main className="flex-1 min-w-0">
-          <div className={`max-w-[1280px] mx-auto px-4 pt-1 sm:px-6 lg:px-8 ${isInternal(user) ? "pb-28" : "pb-10"}`}>
+          <div className={`max-w-[1280px] mx-auto px-4 pt-1 sm:px-6 lg:px-8 ${isInternal(user) ? "pb-32 lg:pb-28" : "pb-32 lg:pb-10"}`}>
             {isInternal(user) ? <SectionTabs role={user.role} className="lg:hidden mb-4" /> : null}
             <Crumbs />
             <div className="reveal">{children}</div>
@@ -67,6 +71,7 @@ export async function AppShell({ user, children }: { user: SessionUser; children
         </main>
       </div>
       {isInternal(user) ? <AskDock /> : null}
+      <Suspense fallback={null}><CoreBar role={user.role} internal={isInternal(user)} released={released} /></Suspense>
       <CommandPalette items={items} />
     </div>
   );

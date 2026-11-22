@@ -1,4 +1,5 @@
 import { requireUser } from "@/server/session";
+import { NotOpen } from "@/components/domain/not-open";
 import { prisma } from "@/lib/db";
 import { isInternal, redactForPartner, containsForbiddenPartnerFields } from "@/lib/authz";
 import { partnerRef } from "@/lib/refs";
@@ -14,7 +15,7 @@ import { DateText } from "@/components/domain/date";
 import { BriefChips, ReadCard, AnonCard, KIND_LABEL } from "@/components/domain/demand";
 import { portalSubmitBrief, portalRespond, portalAcceptTerms } from "@/server/actions/demand";
 import { toDomain } from "@/lib/brief-domain";
-import { loadRateCard } from "@/server/queries";
+import { loadRateCard, isReleased, portalFeature } from "@/server/queries";
 import { resolvePortalAccount } from "@/server/queries";
 import { parseBrief, fmt, PORTAL_VISIBLE, BRIEF_STATUS_LABELS, type HardCheck, type Terms, type RateCard } from "@/lib/demand";
 import { fullName } from "@/lib/utils";
@@ -45,6 +46,8 @@ function termsText(t: Terms, card: RateCard) {
  */
 export default async function PortalPage({ searchParams }: { searchParams: Promise<{ account?: string; q?: string }> }) {
   const user = await requireUser();
+  // Nothing reaches clients or agencies until the owner releases it (Settings → Release).
+  if (!(await isReleased(user, portalFeature(user)))) return <NotOpen />;
   const sp = await searchParams;
   const account = await resolvePortalAccount(user, sp.account ?? null);
   const internal = isInternal(user);
@@ -91,7 +94,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Promi
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2 space-y-4">
+        <div id="raise" className="xl:col-span-2 space-y-4 scroll-mt-20">
           {preview ? (
             <Card data-portal-read>
               <CardHeader title="Here is how we read it" description="Check it before it goes. We confirm anything unclear with you." />

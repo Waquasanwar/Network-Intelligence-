@@ -9,7 +9,7 @@ import { isInternal } from "@/lib/authz";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { readReference, signReference, REFERENCE_DAYS, REFERENCE_RELATIONS } from "@/lib/reference-link";
 import { requireUser } from "@/server/session";
-import { resolveMemberPerson } from "@/server/queries";
+import { resolveMemberPerson, requireReleased } from "@/server/queries";
 
 /**
  * References by link: trust that does not need a phone call.
@@ -44,6 +44,7 @@ async function subject(user: Awaited<ReturnType<typeof requireUser>>, personId: 
 
 export async function requestReference(input: z.input<typeof askSchema>): Promise<AskReferenceResult> {
   const user = await requireUser();
+  await requireReleased(user, "memberArea", "/member"); // not until the owner releases it
   const parsed = askSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Add their name and how they know the work. Check the email address if you gave one." };
   const d = parsed.data;

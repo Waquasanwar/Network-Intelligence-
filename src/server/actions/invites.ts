@@ -15,7 +15,7 @@ import { signMemberInvite, signPersonalInvite } from "@/lib/invite";
 import { passwordProblem } from "@/lib/password";
 import { DEFAULT_PRIVACY } from "@/lib/privacy";
 import { requireAdminAction, requireInternalAction, requireUser } from "@/server/session";
-import { resolveMemberPerson } from "@/server/queries";
+import { resolveMemberPerson, requireReleased } from "@/server/queries";
 import { INVITE_DAYS, mayInvite, networkInviteToken, resolveInvite } from "@/server/invites";
 
 // ---------- sending invitations ----------
@@ -28,6 +28,7 @@ export type InviteLinkResult = { ok: true; token: string; kind: "network" | "mem
  */
 export async function myInviteLink(asPersonId?: string): Promise<InviteLinkResult> {
   const user = await requireUser();
+  await requireReleased(user, "memberReferrals", "/member"); // not until the owner releases it
   if (isMember(user) || (isInternal(user) && asPersonId)) {
     const me = await resolveMemberPerson(user, typeof asPersonId === "string" ? asPersonId : null);
     if (!me) return { ok: false, error: "No member profile." };
@@ -56,6 +57,7 @@ export type CreateInviteResult = { ok: true; id: string; token: string; name: st
  */
 export async function createInvite(input: z.input<typeof inviteSchema>): Promise<CreateInviteResult> {
   const user = await requireUser();
+  await requireReleased(user, "memberReferrals", "/member"); // not until the owner releases it
   const parsed = inviteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Add their name, and check the email address if you gave one." };
   const d = parsed.data;

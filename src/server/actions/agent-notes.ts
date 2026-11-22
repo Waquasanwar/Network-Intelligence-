@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { isInternal } from "@/lib/authz";
 import { requireUser } from "@/server/session";
-import { resolveMemberPerson, resolvePortalAccount } from "@/server/queries";
+import { resolveMemberPerson, resolvePortalAccount, requireReleased } from "@/server/queries";
 
 /**
  * A member answers the agent's "Shall I put you forward?". Yes becomes their interest on the
@@ -13,6 +13,7 @@ import { resolveMemberPerson, resolvePortalAccount } from "@/server/queries";
  */
 export async function answerFit(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberArea", "/member"); // not until the owner releases it
   const me = await resolveMemberPerson(user, String(formData.get("asPersonId") || "") || null);
   if (!me) redirect("/member");
   const n = await prisma.agentNote.findFirst({ where: { id: String(formData.get("noteId") || ""), personId: me!.id, kind: "fit", answer: null } });

@@ -37,6 +37,7 @@ import { fullName } from "@/lib/utils";
 import { CitySky } from "@/components/domain/city-sky";
 import { Constellation } from "@/components/ui/constellation";
 import { PhotoPicker } from "@/components/domain/photo-picker";
+import { NotOpen } from "@/components/domain/not-open";
 import { zoneFor, localTime } from "@/lib/place";
 import { AgentPulse, type PulseLine } from "@/components/ui/agent-pulse";
 import { Guide } from "@/components/ui/guide";
@@ -87,6 +88,11 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const canInvite = mayInvite(p);
   const now = new Date();
   const tab = sp.tab ?? "home";
+  // Nothing reaches members until the owner releases it (Settings → Release). Their privacy page
+  // is always open; the team's preview shows the page as it will be.
+  const released = (k: keyof typeof features) => internal || features[k];
+  if (!released("memberArea") && tab !== "privacy") return <NotOpen member privacyHref="/member?tab=privacy" />;
+  if (tab === "refer" && !released("memberReferrals")) return <NotOpen member privacyHref="/member?tab=privacy" title="Referrals are not open yet" body="Soon you will be able to refer people you know for work here. We will let you know when it opens." />;
   // Who this member knows here, and what the agent has told them.
   const net = ["home", "profile"].includes(tab) ? await memberNetwork(p.id, p.tenantId) : null;
   const notes = await notesFor({ personId: p.id }, 8);
@@ -129,7 +135,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   const checklist = [
     { key: "screening", done: screened, waiting: submitted && !screened, title: `Your ${SCREENING_MINUTES}-minute screening`,
       detail: screened ? "Done." : submitted ? "Sent. We will confirm it shortly." : "A short, structured conversation about what you do and how you work. In your own time, by voice or in writing.",
-      action: screened || submitted ? null : <div className="flex flex-wrap gap-2"><form action={startScreening}><input type="hidden" name="personId" value={p.id} /><SubmitButton pendingText="Starting…">Start my screening</SubmitButton></form><BookScreeningDrawer personId={p.id} label="Book a call instead" /></div> },
+      action: screened || submitted ? null : <div className="flex flex-wrap gap-2">{released("memberScreening") ? <form action={startScreening}><input type="hidden" name="personId" value={p.id} /><SubmitButton pendingText="Starting…">Start my screening</SubmitButton></form> : null}<BookScreeningDrawer personId={p.id} label={released("memberScreening") ? "Book a call instead" : "Book your screening call"} /></div> },
     { key: "reference", done: has("vouched"), waiting: !has("vouched") && openRefs.length > 0, title: "A reference from someone who has seen your work",
       detail: has("vouched") ? "Done. Thank you." : openRefs.length ? `Sent to ${openRefs.map((r) => r.refereeName.split(/\s+/)[0]).join(" and ")}. It counts as soon as they answer.` : "They answer from a link in about a minute. No account needed.",
       action: has("vouched") ? null : <ReferenceDrawer personId={internal ? p.id : undefined} about={p.firstName} open={openRefs} variant={screened || submitted ? "primary" : "secondary"} /> },
@@ -188,13 +194,13 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
                 </div>
               </div>
             ) : null}
-            <form method="get" action="/member" className="composer mt-6 flex max-w-[580px] items-center gap-2 p-1.5 pl-4" data-who-do-you-know>
+            {released("memberReferrals") ? <form method="get" action="/member" className="composer mt-6 flex max-w-[580px] items-center gap-2 p-1.5 pl-4" data-who-do-you-know>
               <input type="hidden" name="tab" value="refer" />
               {internal ? <input type="hidden" name="person" value={p.id} /> : null}
               <UserPlus className="h-4 w-4 flex-none text-ink-faint" aria-hidden="true" />
               <input name="name" maxLength={120} placeholder="Who do you know who is good? Their name…" aria-label="Who do you know who is good? Their name" className="h-10 min-w-0 flex-1 text-[15px] text-ink" autoComplete="off" />
               <button type="submit" className="send-btn" aria-label="Recommend them"><ArrowRight className="h-4 w-4" /></button>
-            </form>
+            </form> : null}
             <AgentPulse lines={pulse} onInk className="mt-3 max-w-[580px]" />
           </div>
           {net && (net.broughtIn.length || net.connected.length || net.broughtMeIn) ? (
@@ -208,7 +214,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
 
       {tab === "profile" ? (
         <div className="space-y-5" data-member-profile>
-          {internal ? null : <PhotoPicker person={p} photo={photoSrc(p)} />}
+          {internal || !released("memberPhotos") ? null : <PhotoPicker person={p} photo={photoSrc(p)} />}
           {screened ? <dl className="flex flex-wrap gap-x-10 gap-y-4">{[["Trust", t.score, TRUST_BAND_LABEL[t.band]], ["Vouched by", t.vouchedBy, "people"], ["Referrals", p.referralsMade.length, `${accepted} accepted`], ["Connections", myConnections, "members"]].map(([l, v, h]) => <div key={String(l)}><dt className="text-[12.5px] text-ink-muted">{l}</dt><dd className="figure-num mt-1 text-[30px] leading-none">{v}</dd><dd className="mt-1 text-[12px] text-ink-faint">{h}</dd></div>)}</dl> : null}
           {screened ? (
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">

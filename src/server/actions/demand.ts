@@ -12,7 +12,7 @@ import { parseList } from "@/lib/utils";
 import { parseBrief, matchBrief, hardChecks, estimateFee, defaultTerms, DEFAULT_RATE_CARD, type Brief, type RateCard, type FeeModel, type ShortlistDecision, type BriefStatus, type FeeStatus } from "@/lib/demand";
 import { toDomain } from "@/lib/brief-domain";
 import type { Brief as DbBrief, EngagementRoute, Seniority, Prisma } from "@prisma/client";
-import { resolvePortalAccount, loadRateCard } from "@/server/queries";
+import { resolvePortalAccount, loadRateCard, requireReleased } from "@/server/queries";
 import { briefData, briefPeople, termsFor, forecastFee, runShortlist, creditReferrers } from "@/server/briefs";
 import { agentOnBrief, agentOnDecision } from "@/server/agent";
 
@@ -344,6 +344,7 @@ export async function setCreditStatus(formData: FormData) {
 
 export async function portalSubmitBrief(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "clientPortal", "/portal"); // not until the owner releases it
   const account = await resolvePortalAccount(user, String(formData.get("accountId") || "") || null);
   if (!account || !account.portalEnabled) throw new Error("No portal account");
   const text = String(formData.get("text") || "").trim().slice(0, 6000);

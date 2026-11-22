@@ -1,4 +1,6 @@
 import { requireUser } from "@/server/session";
+import { NotOpen } from "@/components/domain/not-open";
+import { isReleased } from "@/server/queries";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { isClient } from "@/lib/authz";
@@ -15,6 +17,8 @@ export const metadata = { title: "Client workspace" };
 /** Phase 4 preview: a client sees its own requirements and curated recommendations only. */
 export default async function ClientWorkspace() {
   const user = await requireUser();
+  // Nothing reaches clients or agencies until the owner releases it (Settings → Release).
+  if (!(await isReleased(user, "clientPortal"))) return <NotOpen />;
   if (!isClient(user)) redirect("/forbidden");
   // A client is tied to a network by its portal account (a foreign key), never by matching names
   // across the whole database. Its requirements are the ones that network logged for that account.

@@ -15,7 +15,7 @@ import { suggestNextCheck } from "@/lib/availability";
 import { SCREENING_SCRIPT, screeningToResult, type ScreeningAnswers, type ScreeningResult } from "@/lib/screening";
 import { matchBrief, type BriefPerson } from "@/lib/demand";
 import { toDomain } from "@/lib/brief-domain";
-import { resolveMemberPerson } from "@/server/queries";
+import { resolveMemberPerson, requireReleased } from "@/server/queries";
 import type { Prisma } from "@prisma/client";
 import { DEFAULT_VOICE, type VoiceSettings } from "@/lib/voice-config";
 
@@ -30,6 +30,7 @@ const vouchSchema = z.object({ personId: z.string().min(1).max(40), voucher: z.s
  */
 export async function createVouch(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberArea", "/member"); // not until the owner releases it
   const d = vouchSchema.parse(Object.fromEntries(formData));
   const person = await prisma.person.findUnique({ where: { id: d.personId } });
   if (!person) throw new Error("Not found");
@@ -65,6 +66,7 @@ const SELF_STATUSES = ["AVAILABLE_NOW", "OPEN_TO_CONVERSATIONS", "QUIETLY_EXPLOR
  */
 export async function confirmMyAvailability(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberArea", "/member"); // not until the owner releases it
   const p = await screeningPersonFor(user, String(formData.get("personId") || ""));
   const status = z.enum(SELF_STATUSES).parse(formData.get("status"));
   const now = new Date();
@@ -79,6 +81,7 @@ export async function confirmMyAvailability(formData: FormData) {
  */
 export async function setMyAvailability(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberArea", "/member"); // not until the owner releases it
   const p = await screeningPersonFor(user, String(formData.get("personId") || ""));
   const when = z.enum(["now", "from", "open", "no"]).parse(formData.get("when"));
   const fromRaw = String(formData.get("from") || "");
@@ -114,6 +117,7 @@ async function screeningPersonFor(user: SessionUser, personId: string) {
 /** Start (or resume) a screening. Draft answers live on a SCREENING conversation until the last step. */
 export async function startScreening(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberScreening", "/member"); // not until the owner releases it
   const p = await screeningPersonFor(user, String(formData.get("personId")));
   const restart = formData.get("restart") === "1";
   let draft = await prisma.conversation.findFirst({ where: { personId: p.id, type: "SCREENING", approvalStatus: "DRAFT" }, orderBy: { createdAt: "desc" } });
@@ -128,6 +132,7 @@ export async function startScreening(formData: FormData) {
 
 export async function answerScreening(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberScreening", "/member"); // not until the owner releases it
   const conversationId = String(formData.get("conversationId")); const step = Number(formData.get("step") || 0); const nav = String(formData.get("nav") || "next");
   const conv = await prisma.conversation.findUnique({ where: { id: conversationId }, include: { person: true } });
   if (!conv || conv.type !== "SCREENING" || conv.approvalStatus !== "DRAFT") throw new Error("Screening not found");
@@ -198,6 +203,7 @@ const referSchema = z.object({ name: z.string().trim().min(2).max(120), email: z
 
 export async function submitReferral(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberReferrals", "/member"); // not until the owner releases it
   const me = await resolveMemberPerson(user, String(formData.get("asPersonId") || "") || null);
   if (!me) throw new Error("No member profile");
   const d = referSchema.parse(Object.fromEntries(formData));
@@ -214,6 +220,7 @@ export async function submitReferral(formData: FormData) {
 
 export async function submitPitch(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, "memberArea", "/member"); // not until the owner releases it
   const me = await resolveMemberPerson(user, String(formData.get("asPersonId") || "") || null);
   if (!me) throw new Error("No member profile");
   if (me.screeningStatus !== "APPROVED" && !me.screenedAt) throw new Error("Complete your screening first");

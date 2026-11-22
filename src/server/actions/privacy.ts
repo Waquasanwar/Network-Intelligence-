@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { limitOrThrow } from "@/lib/rate-limit";
 import { requireUser } from "@/server/session";
-import { resolveMemberPerson } from "@/server/queries";
+import { resolveMemberPerson, requireReleased } from "@/server/queries";
 import { CONSENTS, privacyOf, type Consents, type ConsentKey, type Privacy } from "@/lib/privacy";
 import { isInternal } from "@/lib/authz";
 import { requireInternalAction } from "@/server/session";
@@ -134,6 +134,7 @@ export async function cancelMyErasure(formData: FormData) {
  */
 export async function setMyPhoto(formData: FormData): Promise<{ ok: boolean; error?: string }> {
   const user = await requireUser();
+  await requireReleased(user, "memberPhotos", "/member"); // not until the owner releases it
   if (isInternal(user)) return { ok: false, error: "Only the member can add their own photo." };
   const me = await selfPerson(user, null);
   await limitOrThrow("mutate", `photo:${user.id}`);

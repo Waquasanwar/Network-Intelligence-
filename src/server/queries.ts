@@ -12,7 +12,8 @@
  * `requireUser()` / `requireInternal()` first and passes the trusted session through.
  */
 import "server-only";
-import { featuresOf, type Features } from "@/lib/features";
+import { redirect } from "next/navigation";
+import { featuresOf, type Features, type FeatureKey } from "@/lib/features";
 import { prisma } from "@/lib/db";
 import { assertSameTenant, isInternal, isMember } from "@/lib/authz";
 import { fmt, DEFAULT_RATE_CARD, type FeeStatus, type RateCard } from "@/lib/demand";
@@ -80,6 +81,36 @@ export async function loadRateCard(tenantId: string): Promise<RateCard> {
 export async function loadFeatures(tenantId: string): Promise<Features> {
   const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { features: true } });
   return featuresOf(t?.features);
+}
+
+/**
+ * What the network has released to this reader. Members belong to the network itself; a client
+ * reads its network's switches through its account, and an agency through its partner record.
+ * The team sees everything, always.
+ */
+export async function releasedFor(user: SessionUser): Promise<Features | "all"> {
+  if (isInternal(user)) return "all";
+  if (user.role === "MEMBER") return loadFeatures(user.tenantId);
+  if (user.role === "PARTNER" || user.tenantType === "RECRUITMENT_PARTNER") {
+    const p = await prisma.partner.findUnique({ where: { tenantId: user.tenantId }, select: { networkTenantId: true } });
+    return p?.networkTenantId ? loadFeatures(p.networkTenantId) : featuresOf(null);
+  }
+  const a = await prisma.commercialAccount.findUnique({ where: { portalTenantId: user.tenantId }, select: { tenantId: true } });
+  return a ? loadFeatures(a.tenantId) : featuresOf(null);
+}
+
+/** Which release switch governs the shared portal for this reader: agencies have their own. */
+export const portalFeature = (user: SessionUser): FeatureKey => (user.role === "PARTNER" || user.tenantType === "RECRUITMENT_PARTNER" ? "agencyPortal" : "clientPortal");
+
+/** For server actions: stop here, back to where the reader came from, if the feature is not released to them. */
+export async function requireReleased(user: SessionUser, key: FeatureKey, back = "/") {
+  if (!(await isReleased(user, key))) redirect(`${back}${back.includes("?") ? "&" : "?"}notice=not-open`);
+}
+
+/** Whether this reader may use a feature: always for the team, otherwise only once it is released. */
+export async function isReleased(user: SessionUser, key: FeatureKey): Promise<boolean> {
+  const r = await releasedFor(user);
+  return r === "all" || r[key];
 }
 
 /** The tenant's voice settings, plus whether the vendor key is present. Backend only: the

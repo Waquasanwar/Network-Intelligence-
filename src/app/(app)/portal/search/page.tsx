@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NotOpen } from "@/components/domain/not-open";
 import { requireUser } from "@/server/session";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
@@ -6,7 +7,7 @@ import { isClient, isInternal, isPartner } from "@/lib/authz";
 import { rateLimit } from "@/lib/rate-limit";
 import { getAIProvider } from "@/lib/ai";
 import { ROUTE_LABELS } from "@/lib/labels";
-import { resolvePortalAccount } from "@/server/queries";
+import { resolvePortalAccount, isReleased, portalFeature } from "@/server/queries";
 import { searchNetwork, MAX_RESULTS, type SearchFilters } from "@/server/search";
 import { askAboutPerson } from "@/server/actions/search";
 import { PageHeader, EmptyState } from "@/components/ui/page";
@@ -35,6 +36,8 @@ const NOTICE: Record<string, string> = {
  */
 export default async function PortalSearchPage({ searchParams }: { searchParams: Promise<{ q?: string; route?: string; where?: string; now?: string; notice?: string; account?: string }> }) {
   const user = await requireUser();
+  // Nothing reaches clients or agencies until the owner releases it (Settings → Release).
+  if (!(await isReleased(user, portalFeature(user)))) return <NotOpen />;
   if (!isClient(user) && !isPartner(user) && !isInternal(user)) redirect("/forbidden");
   const sp = await searchParams;
   const account = await resolvePortalAccount(user, sp.account ?? null);

@@ -3,7 +3,7 @@ import { signOutAction } from "@/server/actions/session";
 import { markNotesSeen } from "@/server/actions/agent-notes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Bell, Menu, ChevronRight, ChevronDown, LogOut } from "lucide-react";
+import { Search, Bell, ChevronRight, ChevronDown, LogOut } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { APP_NAME } from "@/lib/brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -85,9 +85,6 @@ export function TopBar({ alerts = [], user, home }: { alerts?: Alert[]; user: { 
   const initials = user.name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
   return (
     <header className="h-[68px] flex-none flex items-center gap-2.5 px-4 sm:px-6 lg:px-8 sticky top-0 z-20 glass">
-      <button type="button" aria-label="Open menu" aria-controls="app-nav" onClick={() => window.dispatchEvent(new CustomEvent("ni:toggle-nav"))} className="lg:hidden h-10 w-10 flex-none grid place-items-center rounded-full border border-line bg-surface text-ink shadow-[var(--shadow-card)] cursor-pointer">
-        <Menu className="h-5 w-5" />
-      </button>
       <Link href={home} className="lg:hidden flex h-10 flex-none items-center" aria-label="Home"><BrandMark className="h-[20px] w-auto text-ink" /></Link>
       <div className="hidden lg:block min-w-0 flex-1"><SectionTabs role={user.role} /></div>
       <div className="flex-1 lg:hidden" />

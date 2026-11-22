@@ -1,4 +1,6 @@
 import { requireUser } from "@/server/session";
+import { NotOpen } from "@/components/domain/not-open";
+import { isReleased } from "@/server/queries";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { isPartner, redactForPartner, containsForbiddenPartnerFields } from "@/lib/authz";
@@ -33,6 +35,8 @@ const plainAction = (a: string) => ACTIONS[a] ?? (a.replace(/[._]/g, " ").replac
 
 export default async function PartnerPortal() {
   const user = await requireUser();
+  // Nothing reaches clients or agencies until the owner releases it (Settings → Release).
+  if (!(await isReleased(user, "agencyPortal"))) return <NotOpen />;
   if (!isPartner(user)) redirect("/forbidden");
   const partner = await prisma.partner.findUnique({ where: { tenantId: user.tenantId }, include: { requirements: { orderBy: { createdAt: "desc" } }, introductions: { orderBy: { createdAt: "desc" }, include: { opportunity: { select: { title: true } }, person: { select: { id: true, firstName: true, lastName: true, privacy: true, referralConsent: true } } } } } });
   if (!partner) redirect("/forbidden");

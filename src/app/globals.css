@@ -1150,3 +1150,21 @@ a.rail-row:hover { background: var(--color-surface-muted); }
 *, *::before, *::after { transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, opacity, box-shadow !important; transition-duration: 120ms !important; }
 .sky-arc { stroke-dasharray: none; stroke-dashoffset: 0; }
 .trace-pulse, .swarm-comet, .swarm-pulse, .orbit-ripple, .orbit-glow, .sky-trail { display: none; }
+
+/* A part of the network that is not released yet: one calm note round the agent's core. */
+.not-open { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 620px; margin: 6vh auto 0; padding: 40px 24px; }
+.not-open-core { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 999px; color: #0b3a2c; background: radial-gradient(circle at 35% 30%, #e9fff6, #9af2cf 60%, #5fd3a6); box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-teal-400) 14%, transparent), 0 0 0 18px color-mix(in srgb, var(--color-teal-400) 6%, transparent); }
+.not-open-link { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--color-line); background: var(--color-surface); font-size: 13.5px; font-weight: 600; color: var(--color-ink); }
+.not-open-link:hover { border-color: var(--color-line-strong); }
+
+/* The phone bar: four quiet places either side of one centre, the Amana core. Still, no motion. */
+.core-bar { position: fixed; z-index: 35; left: 0; right: 0; bottom: 0; padding: 6px max(10px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--color-surface) 97%, transparent); border-top: 1px solid var(--color-line); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); }
+.core-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; max-width: 520px; margin: 0 auto; }
+.core-tab { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 48px; justify-content: center; font-size: 10.5px; font-weight: 500; letter-spacing: 0.01em; color: var(--color-ink-muted); background: none; border: 0; cursor: pointer; transition: color 160ms ease; }
+.core-tab.is-on { color: var(--color-ink); font-weight: 600; }
+.core-tab:focus-visible, .core-btn:focus-visible { outline: 2px solid var(--color-teal-400); outline-offset: 2px; border-radius: 12px; }
+.core-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: -22px; font-size: 10.5px; font-weight: 600; color: var(--color-ink); }
+.core-orb { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 999px; color: #0b3a2c; background: radial-gradient(circle at 35% 30%, #e9fff6, #9af2cf 60%, #5fd3a6); box-shadow: 0 0 0 5px var(--color-surface), 0 0 0 6px color-mix(in srgb, var(--color-teal-400) 22%, transparent), 0 12px 26px -10px rgba(12, 60, 44, 0.55); }
+.core-label { line-height: 1; }
+@media (max-width: 1023.98px) { .ask-dock { display: none; } }
+@media print { .core-bar { display: none; } }

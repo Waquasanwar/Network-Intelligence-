@@ -13,7 +13,13 @@ const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks 
 const MEMBER_NAV = [{ href: "/member", label: "Home", icon: Home }, { href: "/community?tab=connections", label: "Messages", icon: MessageCircle }, { href: "/community?tab=members", label: "People", icon: UsersRound }, { href: "/member?tab=refer", label: "Invite and refer", icon: UserPlus }, { href: "/member?tab=profile", label: "My profile", icon: BadgeCheck }, { href: "/member?tab=privacy", label: "Privacy & data", icon: Lock }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 const CLIENT_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/portal/search", label: "Search the network", icon: Search }, { href: "/client-workspace", label: "Client workspace", icon: Briefcase }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
 
-export function Sidebar({ user, community = true }: { user: { name: string; email: string; role: Role; tenantName: string }; community?: boolean }) {
+/** Which links a member, client or agency sees: only what the owner has released, plus Privacy & Security. */
+export type Released = { home: boolean; connections: boolean; referrals: boolean; portal: boolean };
+const ALWAYS = new Set(["/member?tab=privacy", "/settings/security"]);
+const RELEASE_OF: Record<string, keyof Released> = { "/member": "home", "/member?tab=profile": "home", "/community?tab=connections": "connections", "/community?tab=members": "connections", "/member?tab=refer": "referrals", "/portal": "portal", "/portal/search": "portal", "/client-workspace": "portal", "/partner-portal": "portal" };
+
+export function Sidebar({ user, released = { home: true, connections: true, referrals: true, portal: true } }: { user: { name: string; email: string; role: Role; tenantName: string }; released?: Released }) {
+  const shows = (href: string) => ALWAYS.has(href) || (RELEASE_OF[href] ? released[RELEASE_OF[href]] : true);
   const pathname = usePathname();
   const tab = useSearchParams().get("tab");
   const restricted = user.role === "PARTNER" || user.role === "CLIENT" || user.role === "MEMBER";
@@ -66,7 +72,7 @@ export function Sidebar({ user, community = true }: { user: { name: string; emai
         </button>
       </div>
       <nav aria-label="Main" className="px-3 flex-1 space-y-1 overflow-y-auto pt-3 pb-4">
-        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV.filter((i) => community || !i.href.startsWith("/community")) : CLIENT_NAV).map((i) => <Item key={i.href} {...i} />) : (
+        {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).filter((i) => shows(i.href) || (i.href === "/member" && user.role === "MEMBER")).map((i) => <Item key={i.href} {...i} />) : (
           <>
             {/* Six places. The pages inside each are the tabs across the top of the screen. */}
             {sections.filter((sec) => sec.key !== "settings").map((sec) => { const active = here?.section.key === sec.key; return (

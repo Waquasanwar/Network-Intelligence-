@@ -9,7 +9,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { parseBrief } from "@/lib/demand";
 import { ROUTE_LABELS } from "@/lib/labels";
 import { requireOwnerAction, requireUser } from "@/server/session";
-import { resolvePortalAccount, loadRateCard } from "@/server/queries";
+import { resolvePortalAccount, loadRateCard, requireReleased, portalFeature } from "@/server/queries";
 import { personForRef } from "@/server/search";
 import { briefData, termsFor, forecastFee } from "@/server/briefs";
 
@@ -35,6 +35,7 @@ const askSchema = z.object({ ref: z.string().regex(/^NI-[0-9A-F]{6,12}$/), route
  */
 export async function askAboutPerson(formData: FormData) {
   const user = await requireUser();
+  await requireReleased(user, portalFeature(user), "/portal/search"); // not until the owner releases it
   const account = await resolvePortalAccount(user, String(formData.get("accountId") || "") || null);
   if (!account || !account.searchEnabled) redirect("/portal/search");
   if (!(await rateLimit("mutate", `search-ask:${user.id}`)).success) redirect("/portal/search?notice=slow-down");

@@ -194,7 +194,7 @@ await step("features: you switch the board off and members lose it at once, then
     assert(await m2.locator("[data-guide]").count(), "the board is back");
     assert(sql(`select count(*) from "AuditLog" where action='feature.update' and "tenantId"='${tenant}'`) !== "0", "each change is in the audit log");
     return "off, then on";
-  } finally { sql(`update "Tenant" set "features" = "features" - 'communityBoard' where id='${tenant}'`); }
+  } finally { sql(`update "Tenant" set "features" = coalesce("features", '{}'::jsonb) || '{"communityBoard":true}'::jsonb where id='${tenant}'`); }
 });
 
 // Leave the shared demo data as it was.

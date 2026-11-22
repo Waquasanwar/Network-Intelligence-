@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Check } from "lucide-react";
 import { publicNetwork } from "@/server/public";
+import { loadFeatures } from "@/server/queries";
 import { applyToJoin, sendNeed } from "@/server/actions/public";
 import { PROOFS } from "@/lib/standard";
 import { SCREENING_MINUTES } from "@/lib/screening";
@@ -46,6 +47,8 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
   const network = await publicNetwork();
   if (!network) redirect("/login");
   const sp = await searchParams;
+  // Applications open only when the owner releases them; until then the network is by invitation.
+  const open = (await loadFeatures(network.id)).publicApplications;
   const err = (form: string) => (sp.form === form && sp.error && ERRORS[sp.error] ? ERRORS[sp.error] : null);
 
   return (
@@ -62,14 +65,14 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
             <span className="flex-1" />
             <ThemeToggle className="!h-9 !w-9 !border-0 !bg-transparent !text-white !shadow-none" />
             <a href="/login" className="hidden text-[14px] font-medium text-white/85 hover:text-white sm:inline">Sign in</a>
-            <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a>
+            {open ? <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a> : <a href="/login" className="btn-mint h-10 px-5 text-[14px]">Sign in</a>}
           </nav>
         </header>
 
         <section className="mx-auto w-full max-w-[960px] px-5 pb-24 pt-16 text-center sm:px-8 sm:pb-32 sm:pt-24">
           <h1 className="hero-title mx-auto max-w-[14ch] text-[48px] sm:text-[84px]">Who do you <span className="text-mint">need?</span></h1>
           <p className="mx-auto mt-6 max-w-[52ch] text-[16px] leading-[1.6] stage-muted sm:text-[18px]">Describe a role or a piece of work. We find senior consultants in the Gulf and London whom we know first hand, and introduce them once they say yes.</p>
-          <NeedComposer />
+          {open ? <NeedComposer /> : <p className="mx-auto mt-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-5 py-2.5 text-[14px] text-white/85" data-by-invitation>By invitation only. If you have an invitation, it brings you straight in.</p>}
           <p className="mt-12 text-[13px] stage-faint">Free for members · Pay only on placement · Names private until they say yes</p>
         </section>
       </div>
@@ -113,6 +116,7 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
           </div>
         </section>
 
+        {open ? (
         <section id="start" className="scroll-mt-20 border-t border-line" aria-labelledby="start-title">
           <div className="mx-auto w-full max-w-[1120px] px-5 py-20 sm:px-8 sm:py-24">
             <h2 id="start-title" className="section-title text-[30px] sm:text-[40px]">Get started</h2>
@@ -168,6 +172,7 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
             </div>
           </div>
         </section>
+        ) : null}
       </main>
 
       <footer className="stage-ink">
@@ -179,7 +184,7 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
           </div>
           <div className="flex items-center gap-3">
             <a href="/login" className="btn-ghost-stage h-10 px-5 text-[14px]">Sign in</a>
-            <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a>
+            {open ? <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a> : null}
           </div>
         </div>
       </footer>
