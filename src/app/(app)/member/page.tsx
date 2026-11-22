@@ -349,7 +349,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
           </div>
           <aside className="space-y-5">
             {screened && todo ? checklistCard : null}
-            {net ? <MemberNetwork compact broughtMeIn={net.broughtMeIn} broughtIn={net.broughtIn} connected={net.connected} inviteHref={`/member?tab=refer${qp}`} /> : null}
+            {net ? <MemberNetwork compact me={{ name: p.firstName, photo: canShowPhoto(p, "internal") ? p.photoUrl : null }} broughtMeIn={net.broughtMeIn} broughtIn={net.broughtIn} connected={net.connected} inviteHref={`/member?tab=refer${qp}`} /> : null}
             {features.memberConnections && canInvite ? (
               <div className="side-links">
                 <Link href="/community?tab=connections" className="side-link"><MessageCircle className="h-4 w-4" aria-hidden="true" /><span className="flex-1">Messages</span><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>

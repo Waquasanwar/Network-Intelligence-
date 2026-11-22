@@ -8,6 +8,7 @@ import { toDomain } from "@/lib/brief-domain";
 import { AVAILABILITY_LABELS, ROUTE_LABELS } from "@/lib/labels";
 import { fullName } from "@/lib/utils";
 import type { FitScores } from "@/lib/fit";
+import { canShowPhoto } from "@/lib/privacy";
 import type { GNode, GLink, GRole } from "@/components/domain/network-graph";
 
 const HUB = "__hub__";
@@ -19,7 +20,10 @@ const HUB = "__hub__";
  * matching engine the shortlists use. "Stretch" matches (a hard check unmet) are left out here so
  * "roles they fit" stays honest; they still appear on the requirement itself.
  */
-export async function buildNetworkMap(user: { tenantId: string; name: string }, now = new Date()): Promise<{ nodes: GNode[]; links: GLink[]; openRoles: number }> {
+/** Inline photos (no file store connected) travel with the page, so only this many are sent. */
+const INLINE_PHOTOS = 40;
+
+export async function buildNetworkMap(user: { tenantId: string; name: string }, now = new Date(), opts: { photos?: boolean } = {}): Promise<{ nodes: GNode[]; links: GLink[]; openRoles: number }> {
   const [people, briefs] = await Promise.all([
     prisma.person.findMany({
       where: { tenantId: user.tenantId },
@@ -67,14 +71,20 @@ export async function buildNetworkMap(user: { tenantId: string; name: string }, 
   const ids = new Set(people.map((p) => p.id));
   const nodes: GNode[] = [{ id: HUB, name: `${user.name.split(" ")[0]}’s network`, headline: "You — the centre of the network", trust: 100, worked: true, hub: true }];
   const links: GLink[] = [];
+  // Photos are fetched only for the view that draws faces, and shown only where the person agreed.
+  const withPhoto = opts.photos ? await prisma.person.findMany({ where: { tenantId: user.tenantId, photoUrl: { not: null } }, select: { id: true, photoUrl: true, privacy: true }, take: 400 }) : [];
+  const photoOf = new Map(withPhoto.filter((x) => canShowPhoto(x, "internal")).map((x) => [x.id, x.photoUrl]));
+  let inline = 0;
 
   for (const p of people) {
     const worked = p.relationships.some((r) => r.workedTogether);
     const freshness = assessFreshness({ availabilityStatus: p.availabilityStatus, availabilityConfirmedAt: p.availabilityConfirmedAt, nextCheckDate: p.nextCheckDate }, now);
     const t = trustFor(p);
     const open = ACTIVE_STATUSES.includes(p.availabilityStatus);
+    let photo = photoOf.get(p.id) ?? null;
+    if (photo?.startsWith("data:") && ++inline > INLINE_PHOTOS) photo = null;
     nodes.push({
-      id: p.id, name: p.preferredName || fullName(p), headline: p.headline ?? "", trust: t.score, worked,
+      id: p.id, name: p.preferredName || fullName(p), headline: p.headline ?? "", trust: t.score, worked, photo,
       band: TRUST_BAND_LABEL[trustBand(t.score)], vouchedBy: t.vouchedBy,
       capabilities: p.capabilities.slice(0, 6), city: p.primaryCity ?? p.primaryCountry ?? null,
       availability: AVAILABILITY_LABELS[p.availabilityStatus], availabilityTone: p.availabilityStatus === "NEEDS_REFRESH" || freshness !== "fresh" ? "amber" : open ? "teal" : "neutral", open,

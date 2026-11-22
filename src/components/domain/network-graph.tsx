@@ -12,6 +12,8 @@ export type GNode = {
   band?: string; vouchedBy?: number; capabilities?: string[]; city?: string | null;
   availability?: string; availabilityTone?: "teal" | "amber" | "neutral"; open?: boolean;
   member?: boolean; screened?: boolean; roles?: GRole[];
+  /** Their photo, sent only for the orbit view and only where they agreed to show it. */
+  photo?: string | null;
   /** Days since they were added. Under 30 counts as new growth. */
   addedDays?: number;
 };

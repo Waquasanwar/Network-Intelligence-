@@ -668,6 +668,18 @@ a.figure:hover { opacity: 0.72; }
 .orbit-ping::after { animation-duration: 4.5s; }
 @media (prefers-reduced-motion: reduce) { .cell-breathe, .organism-nucleus, .organism-halo { animation: none; } }
 
+/* ---------- Orbit: the network as a swarm of faces round a glowing centre ----------
+   Drawn in trust-orbit.tsx. Faces are rounded tiles (a photo where the person agreed, initials
+   otherwise). The closest circle carries a mint edge; the outer circle sits back a little. */
+.swarm-stage { background: radial-gradient(46% 56% at 50% 52%, rgba(126, 227, 188, 0.12) 0%, rgba(126, 227, 188, 0) 100%); }
+.swarm-tile { border-radius: 26%; overflow: hidden; background: #16284f; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 8px 16px -8px rgba(2, 8, 24, 0.8); }
+.swarm-tile.is-0 { box-shadow: 0 0 0 1.5px rgba(126, 227, 188, 0.8), 0 0 18px -2px rgba(126, 227, 188, 0.45), 0 8px 16px -8px rgba(2, 8, 24, 0.8); }
+.swarm-tile.is-2 { filter: saturate(0.7) brightness(0.82); }
+.swarm-tile.is-selected { filter: none; box-shadow: 0 0 0 1.5px #0b1a3a, 0 0 0 3px #ffffff, 0 0 26px 0 rgba(126, 227, 188, 0.6); }
+@keyframes swarm-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.swarm-drift { animation: swarm-drift 7s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .swarm-drift { animation: none; } }
+
 /* No eyebrows: small labels are plain sentence case, never spaced-out capitals. */
 .label-caps { font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; line-height: 1.3; }
 .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
