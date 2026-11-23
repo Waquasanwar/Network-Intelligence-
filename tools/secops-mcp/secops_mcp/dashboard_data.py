@@ -146,6 +146,12 @@ def build() -> dict:
     data["daily"], data["daily_sources"] = build_daily(os.environ.get("SECOPS_MODE", "sample").lower() == "live")
 
     data["outcomes"] = build_outcomes(data, folder, os.environ.get("SECOPS_MODE", "sample").lower() == "live", sources)
+    from . import liveboard, threats, workflows
+
+    is_live = os.environ.get("SECOPS_MODE", "sample").lower() == "live"
+    data["threats"] = threats.build(is_live)
+    data["live"] = liveboard.build(is_live)
+    data["workflows"] = workflows.overview()
     data["_sources"] = sources
     data["_built_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     return data

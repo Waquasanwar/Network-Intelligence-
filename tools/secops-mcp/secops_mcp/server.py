@@ -223,6 +223,50 @@ def period_summary(start: str, end: str) -> dict:
 
 
 @mcp.tool()
+def live_operations() -> dict:
+    """Incidents in flight right now with their service-level clocks (acknowledge and resolve
+    deadlines), the alert rate over the last 24 hours, and when each source last sent data."""
+    from . import liveboard
+    return liveboard.build(MODE == "live")
+
+
+@mcp.tool()
+def threat_paths(near_misses_only: bool = False) -> dict:
+    """Attack paths through the MITRE ATT&CK stages over the last 90 days, where each was
+    stopped, and near misses: real attacks that got deep into the chain before being stopped."""
+    from . import threats
+    t = threats.build(MODE == "live")
+    if near_misses_only:
+        t["paths"] = [p for p in t["paths"] if p["near_miss"]]
+    return t
+
+
+@mcp.tool()
+def workflow_status() -> dict:
+    """Automations: what each workflow watches, who it alerts or raises tickets for, actions
+    waiting for approval, and the log of what was sent (or would have been, in dry-run mode).
+    Approving is done on the dashboard's Workflows page, by a signed-in person."""
+    from . import workflows
+    return workflows.overview()
+
+
+@mcp.tool()
+def decisions_and_actions(days: int = 30) -> dict:
+    """For the last N days: every measure against the period before and its target, and the
+    decisions and actions that follow, each with an owner."""
+    import datetime as dt
+
+    from . import insights
+    from .dashboard_data import cached
+    data = cached()
+    end = dt.date.fromisoformat(data["daily"][-1]["date"])
+    start = end - dt.timedelta(days=max(1, min(days, 730)) - 1)
+    cur, prev = insights.period(data, start, end)
+    return {"start": start.isoformat(), "end": end.isoformat(), "measures": insights.verdicts(data, cur, prev),
+            "decisions_and_actions": insights.decisions(data, cur, prev)}
+
+
+@mcp.tool()
 def connection_check() -> dict:
     """Which source systems are connected, not configured, or failing, with a hint for each failure."""
     return check_all()

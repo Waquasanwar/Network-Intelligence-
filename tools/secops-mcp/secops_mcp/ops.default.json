@@ -1,0 +1,172 @@
+{
+ "_how": "Copy to the data folder as ops.json to change. 'sla' sets the clock for each severity. 'teams' says where each team is reached: a Teams channel webhook (held in the named environment variable), a ServiceNow assignment group and a Jira project. Each workflow has a trigger, the actions it takes, and a mode: 'auto' runs without asking (use for notifications only), 'approve' waits for someone to approve it on the Workflows page. Nothing is sent anywhere unless SECOPS_ACTIONS_ENABLED=true; until then every action is recorded as a dry run.",
+ "sla": {
+  "acknowledge_minutes": 15,
+  "resolve_hours": {
+   "High": 4,
+   "Medium": 24,
+   "Low": 72,
+   "Informational": 72
+  },
+  "at_risk_share": 0.75
+ },
+ "systems_by_table": {
+  "SecurityIncident": "Microsoft Sentinel",
+  "SecurityAlert": "Microsoft Sentinel",
+  "SigninLogs": "Microsoft Entra ID",
+  "DeviceEvents": "Microsoft Defender for Endpoint",
+  "SecurityRecommendation": "Microsoft Defender for Cloud",
+  "OrcaAlerts_CL": "Orca",
+  "SentinelOne_CL": "SentinelOne",
+  "CyberArk_AuditEvents_CL": "CyberArk",
+  "Mimecast_CL": "Mimecast",
+  "Netskope_CL": "Netskope",
+  "GitLabAudit": "GitLab",
+  "ABAPAuditLog": "SAP"
+ },
+ "teams": {
+  "SOC": {
+   "teams_webhook_env": "TEAMS_WEBHOOK_SOC",
+   "servicenow_group": "Security Operations",
+   "jira_project": "SOC"
+  },
+  "Detection engineering": {
+   "teams_webhook_env": "TEAMS_WEBHOOK_DETECTION",
+   "jira_project": "DET"
+  },
+  "Vulnerability management": {
+   "teams_webhook_env": "TEAMS_WEBHOOK_VULN",
+   "servicenow_group": "Vulnerability Management"
+  },
+  "Security awareness": {
+   "teams_webhook_env": "TEAMS_WEBHOOK_AWARENESS"
+  },
+  "Cloud platform": {
+   "teams_webhook_env": "TEAMS_WEBHOOK_CLOUD",
+   "servicenow_group": "Cloud Platform",
+   "jira_project": "CLOUD"
+  },
+  "Leadership": {
+   "teams_webhook_env": "TEAMS_WEBHOOK_LEADERSHIP",
+   "email_env": "LEADERSHIP_EMAIL"
+  }
+ },
+ "workflows": [
+  {
+   "id": "ack_at_risk",
+   "name": "Acknowledgement about to breach",
+   "trigger": "live.ack_at_risk",
+   "mode": "auto",
+   "cooldown_minutes": 30,
+   "actions": [
+    {
+     "type": "teams",
+     "team": "SOC",
+     "text": "{title} has not been acknowledged and breaches its {ack_minutes}-minute target in {ack_left}."
+    }
+   ]
+  },
+  {
+   "id": "resolve_breach",
+   "name": "Resolution target breached",
+   "trigger": "live.resolve_breached",
+   "mode": "approve",
+   "cooldown_minutes": 240,
+   "actions": [
+    {
+     "type": "teams",
+     "team": "SOC",
+     "text": "{title} has passed its {severity} resolution target by {overdue}."
+    },
+    {
+     "type": "servicenow",
+     "team": "SOC",
+     "priority": "1",
+     "summary": "SLA breach: {title}",
+     "detail": "Incident {id} ({severity}) passed its resolution target by {overdue}. Stage reached: {stage}."
+    }
+   ]
+  },
+  {
+   "id": "high_incident",
+   "name": "New high-severity incident",
+   "trigger": "live.new_high",
+   "mode": "approve",
+   "cooldown_minutes": 1440,
+   "actions": [
+    {
+     "type": "servicenow",
+     "team": "SOC",
+     "priority": "1",
+     "summary": "P1: {title}",
+     "detail": "High-severity incident {id} from {source}. Stage reached: {stage}."
+    },
+    {
+     "type": "teams",
+     "team": "Leadership",
+     "text": "High-severity incident: {title} ({source}). The SOC has it; ticket being raised."
+    }
+   ]
+  },
+  {
+   "id": "near_miss",
+   "name": "Near miss: attack stopped late in the chain",
+   "trigger": "threats.near_miss",
+   "mode": "approve",
+   "cooldown_minutes": 10080,
+   "actions": [
+    {
+     "type": "jira",
+     "team": "Detection engineering",
+     "summary": "Near miss review: {title}",
+     "detail": "The attack reached {stage} before {stopped_by} stopped it. Review why it was not caught earlier and add or tune a detection."
+    }
+   ]
+  },
+  {
+   "id": "overdue_criticals",
+   "name": "Critical findings overdue for a team",
+   "trigger": "vuln.team_overdue",
+   "mode": "approve",
+   "cooldown_minutes": 10080,
+   "actions": [
+    {
+     "type": "servicenow",
+     "team": "Vulnerability management",
+     "priority": "2",
+     "summary": "Overdue findings: {team}",
+     "detail": "{team} holds {overdue} critical and high findings past their deadline."
+    }
+   ]
+  },
+  {
+   "id": "click_rate_rise",
+   "name": "Phishing click rate rising",
+   "trigger": "mail.click_rate_up",
+   "mode": "auto",
+   "cooldown_minutes": 10080,
+   "actions": [
+    {
+     "type": "teams",
+     "team": "Security awareness",
+     "text": "Phishing click rate rose to {rate}% from {previous}%. Departments above target: {departments}."
+    }
+   ]
+  },
+  {
+   "id": "weekly_board_report",
+   "name": "Weekly board report",
+   "trigger": "schedule.weekly",
+   "schedule": "Mon 08:00",
+   "mode": "auto",
+   "cooldown_minutes": 1440,
+   "actions": [
+    {
+     "type": "teams",
+     "team": "Leadership",
+     "text": "This week's security operations report and board deck are ready: {report_url}"
+    }
+   ]
+  }
+ ]
+}

@@ -85,3 +85,15 @@ Two ways, from simplest:
 Systems most teams add next: Microsoft Intune (device compliance), Tenable or Qualys
 (vulnerabilities), ServiceNow or Jira (remediation tickets and due dates), KnowBe4 (awareness
 training), Okta (sign-in risk).
+
+## Outbound: Teams, ServiceNow, Jira and email
+
+The workflows are the only part of the system that writes anywhere, and only once
+`SECOPS_ACTIONS_ENABLED=true`.
+
+| Target | Identity | Least access |
+|---|---|---|
+| Teams | A Workflows (Power Automate) "post to channel when a webhook request is received" flow per channel | The webhook URL is a secret; keep it in Key Vault |
+| ServiceNow | Integration user | `itil` role, or a custom role that can only create incidents |
+| Jira | Service account API token | Create issues in the named projects only |
+| Email | The container's managed identity | Graph `Mail.Send` application permission, restricted by an application access policy to the one sending mailbox |

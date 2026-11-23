@@ -432,13 +432,11 @@ function periodChart(box,cur,prev,labels){
   draw();watch(box,draw)}
 function bucket(rows,size){const out=[];for(let i=0;i<rows.length;i+=size)out.push(rows.slice(i,i+size));return out}
 function periodSection(){
-  const wrap=el('section','period'),body=el('div','pbody'),bar=el('div','periods');bar.setAttribute('role','group');bar.setAttribute('aria-label','Period');
+  const wrap=el('section','period'),body=el('div','pbody');
   const lastDay=DY.length?DY[DY.length-1].date:null,firstDay=DY.length?DY[0].date:null;
-  const fromI=el('input');fromI.type='date';fromI.id='p-from';fromI.min=firstDay;fromI.max=lastDay;const toI=el('input');toI.type='date';toI.id='p-to';toI.min=firstDay;toI.max=lastDay;
-  const custom=el('div','pcustom',el('label','',el('span','','From'),fromI),el('label','',el('span','','To'),toI));custom.hidden=true;
-  const P={day:1,week:7,month:30,quarter:90,year:365};let cur='month';
+  const P={day:1,week:7,month:30,quarter:90,year:365};const cur=FILTER.period;
   const render=()=>{body.replaceChildren();if(!DY.length){body.append(el('p','note','No daily figures yet.'));return}
-    let to=lastDay,from;if(cur==='custom'){from=fromI.value;to=toI.value;if(!from||!to||from>to||!fromI.validity.valid||!toI.validity.valid){body.append(el('p','note','Choose a start and end date.'));return}}else from=addDays(to,-(P[cur]-1));
+    let to=lastDay,from;if(cur==='custom'){from=FILTER.from;to=FILTER.to;if(!from||!to||from>to){body.append(el('p','note','Choose a start and end date.'));return}}else from=addDays(to,-(P[cur]-1));
     const len=spanDays(from,to),pf=addDays(from,-len),pt=addDays(from,-1),rows=DY.filter((r)=>r.date>=from&&r.date<=to),prow=DY.filter((r)=>r.date>=pf&&r.date<=pt),c=agg(rows),p=agg(prow),hasPrev=prow.length===len;
     const yr=from.slice(0,4)!==to.slice(0,4),dfmt=(iso)=>new Date(iso+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC',...(yr?{year:'numeric'}:{})});
     const withT=PM.filter((m)=>m[4]!=null&&c[m[0]]!=null),onT=withT.filter((m)=>(m[3]==='lower'?c[m[0]]<=m[4]:c[m[0]]>=m[4])).length,acts=periodActions(c,hasPrev?p:{},from,to);
@@ -459,10 +457,7 @@ function periodSection(){
       el('section','card',el('div','ph',el('h2','h','Decisions and actions'),el('span','cap','From the figures above')),al)));
     if(Object.values(DYS).includes('sample'))body.append(el('p','note',`Sample figures: ${Object.keys(DYS).filter((k)=>DYS[k]==='sample').length} of ${Object.keys(DYS).length} daily measures are sample data until their source is connected.`));
     if(wrap.isConnected)after.splice(0).forEach((f)=>f())};
-  [['day','Yesterday'],['week','7 days'],['month','30 days'],['quarter','90 days'],['year','12 months'],['custom','Custom']].forEach(([k,lab])=>{const b=el('button','pchip',lab);b.type='button';b.setAttribute('aria-pressed',k===cur?'true':'false');
-    b.addEventListener('click',()=>{cur=k;bar.querySelectorAll('.pchip').forEach((x)=>x.setAttribute('aria-pressed',x===b?'true':'false'));custom.hidden=k!=='custom';if(k==='custom'&&!fromI.value){fromI.value=addDays(lastDay,-59);toI.value=lastDay}render()});bar.append(b)});
-  [fromI,toI].forEach((i)=>i.addEventListener('change',()=>{if(cur==='custom')render()}));
-  wrap.append(el('div','phead',bar,custom),body);render();return wrap}
+  wrap.append(body);render();return wrap}
 
 V.exec=()=>{
   const ms=OC.flatMap((o)=>o.measures.map((m)=>({...m,outcome:o.outcome}))),measured=ms.filter((m)=>m.meets!=null),met=measured.filter((m)=>m.meets),gaps=measured.filter((m)=>!m.meets),realised=OC.filter((o)=>o.status==='Realised');
@@ -482,10 +477,174 @@ V.exec=()=>{
     el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl)),
     band('Every area'),el('section','card',ar)]};
 
-const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['overview','Operations overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','Signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
+/* ---------- Operations: shared filters, live board, threat paths, workflows, reports, commands ---------- */
+const HOSTED=!!window.SECOPS_HOSTED;
+const FILTER={period:'month',from:null,to:null,severity:'all',team:'all',source:'all'};
+const APPLIES={exec:['period'],threats:['period','severity','source'],live:['severity','team','source'],workflows:['team']};
+let CURRENT='exec';
+const SEVS=['High','Medium','Low'];
+const LV=DATA.live||{queue:[],health:[],alert_rate:[],sla:{acknowledge_minutes:15,resolve_hours:{High:4,Medium:24,Low:72},at_risk_share:0.75}};
+const TH=DATA.threats||{stages:[],paths:[]};
+const WF=DATA.workflows||{workflows:[],teams:{},log:[],actions_enabled:false};
+/* Preview copies carry the time they were built; move every timestamp so the board reads as now. */
+if(!HOSTED&&LV.generated_at){const shift=Date.now()-new Date(LV.generated_at).getTime(),mv=(t)=>t?new Date(new Date(t).getTime()+shift).toISOString():t;
+  LV.queue.forEach((q)=>{q.created=mv(q.created);q.acknowledged=mv(q.acknowledged)});LV.health.forEach((h)=>{h.last_seen=mv(h.last_seen)});LV.generated_at=new Date().toISOString()}
+const ms2=(ms)=>{const neg=ms<0,a=Math.abs(ms),m=Math.floor(a/6e4),h=Math.floor(m/60);return(neg?'−':'')+(h?`${h} h ${String(m%60).padStart(2,'0')} min`:m>=10?`${m} min`:`${m}:${String(Math.floor(a/1e3)%60).padStart(2,'0')}`)};
+const ago=(t)=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} h ago`:`${Math.round(m/1440)} days ago`};
+function clocks(q){const sla=LV.sla,now=Date.now(),c=new Date(q.created).getTime(),ackDue=c+sla.acknowledge_minutes*6e4,resDue=c+(sla.resolve_hours[q.severity]||72)*36e5;
+  const acked=q.acknowledged?new Date(q.acknowledged).getTime():null;
+  const ack={due:ackDue,done:acked,left:acked?null:ackDue-now,share:acked?1:Math.min(1.2,(now-c)/(ackDue-c))};
+  const res={due:resDue,left:resDue-now,share:Math.min(1.2,(now-c)/(resDue-c)),done:q.status==='Contained'};
+  const breached=(!acked&&ack.left<0)||(!res.done&&res.left<0),risk=!breached&&((!acked&&ack.share>=sla.at_risk_share)||(!res.done&&res.share>=sla.at_risk_share));
+  return{ack,res,breached,risk,rank:breached?0:risk?1:q.status==='New'?2:3}}
+function passes(q,keys){return(!keys.includes('severity')||FILTER.severity==='all'||q.severity===FILTER.severity)&&(!keys.includes('team')||FILTER.team==='all'||q.team===FILTER.team)&&(!keys.includes('source')||FILTER.source==='all'||q.source===FILTER.source)}
+function toast(msg,tone){let t=$('#toast');if(!t){t=el('div','toast');t.id='toast';t.setAttribute('role','status');t.setAttribute('aria-live','polite');document.body.append(t)}
+  t.textContent=msg;t.className='toast show '+(tone||'');clearTimeout(toast.h);toast.h=setTimeout(()=>{t.className='toast'},4200)}
+
+/* Live operations: a control-room board. Clocks tick every second; data refreshes every minute when hosted. */
+function liveInsights(rows){const out=[],cl=rows.map((q)=>[q,clocks(q)]),un=cl.filter(([q,c])=>!c.ack.done),soon=un.filter(([q,c])=>c.ack.left>0&&c.ack.left<5*6e4);
+  if(soon.length)out.push(['bad',`${soon.length} alert${soon.length>1?'s':''} will miss the ${LV.sla.acknowledge_minutes}-minute acknowledgement target within 5 minutes.`]);
+  const br=cl.filter(([q,c])=>c.breached);if(br.length)out.push(['bad',`${br.length} incident${br.length>1?'s are':' is'} past a service-level target, longest ${ms2(-Math.min(...br.map(([q,c])=>Math.min(c.ack.done?Infinity:c.ack.left,c.res.done?Infinity:c.res.left))))} over.`]);
+  const deep=rows.filter((q)=>q.path&&q.path.length>=3);if(deep.length)out.push(['warn',`${deep.length} open incident${deep.length>1?'s have':' has'} reached ${deep.map((q)=>q.path[q.path.length-1]).join(', ')}: the deepest stages on the board.`]);
+  const stale=LV.health.filter((h)=>Date.now()-new Date(h.last_seen)>36e5*6);if(stale.length)out.push(['warn',`${stale.map((h)=>h.system).join(', ')} ${stale.length>1?'have':'has'} sent no data for over 6 hours. Incidents from ${stale.length>1?'them':'it'} cannot be seen.`]);
+  const r=LV.alert_rate.map((x)=>x.alerts);if(r.length>6){const lastH=r[r.length-1],avg=r.slice(0,-1).reduce((a,b)=>a+b,0)/(r.length-1);if(lastH>avg*1.4)out.push(['warn',`Alert volume in the last hour is ${Math.round((lastH/avg-1)*100)}% above the 24-hour average.`])}
+  if(!out.length)out.push(['ok','Every incident is inside its service-level targets and every source is reporting.']);return out}
+V.live=()=>{
+  const rows=LV.queue.filter((q)=>passes(q,APPLIES.live)).map((q)=>[q,clocks(q)]).sort((a,b)=>a[1].rank-b[1].rank||(a[1].ack.left??a[1].res.left)-(b[1].ack.left??b[1].res.left));
+  const qs=rows.map((r)=>r[0]),unacked=rows.filter(([q,c])=>!c.ack.done).length,risk=rows.filter(([q,c])=>c.risk).length,br=rows.filter(([q,c])=>c.breached).length,rate=LV.alert_rate.map((x)=>x.alerts);
+  const cnt=(label,val,tone,sub)=>el('div','card lcount '+(tone||''),el('span','cap',label),el('div','num',String(val)),el('span','cap',sub||''));
+  const sp=el('div','spark');after.push(()=>spark(sp,rate.length>1?rate:[0,0],'var(--a1)'));
+  const head=el('section','lcounts',cnt('Incidents in flight',qs.length,'',`${qs.filter((q)=>q.severity==='High').length} high severity`),cnt('Waiting to be acknowledged',unacked,unacked?'warn':'',`target ${LV.sla.acknowledge_minutes} min`),
+    cnt('At risk of breach',risk,risk?'warn':'','within the next stretch'),cnt('Past a target',br,br?'bad':'ok',br?'needs action now':'none'),el('div','card lcount',el('span','cap','Alerts in the last hour'),el('div','num',f0(rate[rate.length-1]||0)),sp));
+  const lanes=el('div','lanes');[['New','New'],['Active','Being worked'],['Contained','Contained']].forEach(([k,l])=>{const n=qs.filter((q)=>q.status===k).length;const d=el('div','lane',el('b','',String(n)),el('span','',l));d.style.flex=String(Math.max(1,n));lanes.append(d)});
+  const board=el('div','strips');
+  rows.forEach(([q,c])=>{const st=c.breached?'breach':c.risk?'risk':'';const path=el('span','chain');(q.path||[]).forEach((p,i)=>{if(i)path.append(el('span','arr','→'));path.append(el('span','node',p))});
+    const ackCell=el('div','clock'),resCell=el('div','clock');ackCell.dataset.q=q.id;ackCell.dataset.kind='ack';resCell.dataset.q=q.id;resCell.dataset.kind='res';
+    const esc=el('button','link sm',c.breached||c.risk?'Escalate':'Notify team');esc.type='button';esc.addEventListener('click',()=>escalate(q,c));
+    board.append(el('article','strip '+st,el('span','sev s-'+q.severity.toLowerCase(),q.severity),el('div','who',el('b','',q.title),el('small','',`${q.id} · ${q.source} · ${q.team}${q.owner?' · '+q.owner:''}`),path),
+      el('span','pill '+(q.status==='New'?'warn':q.status==='Contained'?'ok':''),q.status==='Active'?'Being worked':q.status),ackCell,resCell,esc))});
+  if(!rows.length)board.append(el('p','note','No incidents in flight match the filters.'));
+  const health=el('ul','health');LV.health.forEach((h)=>{const m=(Date.now()-new Date(h.last_seen))/6e4,tone=m<30?'ok':m<360?'warn':'bad';health.append(el('li','',el('span','dot '+tone),el('span','',h.system),el('small','',ago(h.last_seen))))});
+  const ins=el('ul','insights');liveInsights(qs).forEach(([tone,t])=>ins.append(el('li','',el('span','dot '+tone),el('span','',t))));
+  const feed=el('ul','feed');const ev=[];LV.queue.forEach((q)=>{ev.push([q.created,`${q.id} raised: ${q.title}`]);if(q.acknowledged)ev.push([q.acknowledged,`${q.id} acknowledged${q.owner?' by '+q.owner:''}`])});
+  ev.sort((a,b)=>new Date(b[0])-new Date(a[0])).slice(0,10).forEach(([t,x])=>feed.append(el('li','',el('small','',new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})),el('span','',x))));
+  const clock=el('span','liveclock');clock.dataset.clock='1';
+  const top=el('header','vh',el('div','vtitle',el('h1','','Live operations'),el('span','livepill',el('span','pulse'),HOSTED&&LV.source==='live'?'Live':'Sample board'),clock),el('p','',`Incidents in flight against their service-level clocks: acknowledge within ${LV.sla.acknowledge_minutes} minutes, resolve High within ${LV.sla.resolve_hours.High} hours and Medium within ${LV.sla.resolve_hours.Medium}. ${HOSTED?'Refreshes every minute.':'Times on this preview are relative to now.'}`));
+  return[top,head,el('div','lanewrap',el('span','cap','Queue'),lanes),el('div','livegrid',el('section','card',el('div','ph',el('h2','h','Flight board'),el('span','cap','Most urgent first')),el('div','striphead',el('span','',''),el('span','','Incident and path'),el('span','','Status'),el('span','','Acknowledge'),el('span','','Resolve'),el('span','','')),board),
+    el('div','livecol',el('section','card',el('h2','h','What needs attention'),ins),el('section','card',el('h2','h','Sources reporting'),health),el('section','card',el('h2','h','Latest events'),feed)))]};
+function paintClocks(){const v=$('#live');if(!v||v.hidden)return;const byId=Object.fromEntries(LV.queue.map((q)=>[q.id,q]));
+  v.querySelectorAll('.clock').forEach((elc)=>{const q=byId[elc.dataset.q];if(!q)return;const c=clocks(q),k=elc.dataset.kind,x=c[k];
+    let txt,tone='',share=Math.min(1,x.share);if(k==='ack'&&x.done){txt='in '+ms2(x.done-new Date(q.created));tone='ok';share=1}else if(k==='res'&&x.done){txt='contained';tone='ok';share=1}
+    else{txt=x.left>=0?ms2(x.left)+' left':ms2(-x.left)+' over';tone=x.left<0?'bad':x.share>=LV.sla.at_risk_share?'warn':''}
+    elc.replaceChildren(el('span','ct '+tone,txt),(()=>{const b=el('span','cbar '+tone),i=el('i');i.style.width=Math.max(3,share*100)+'%';b.append(i);return b})())});
+  v.querySelectorAll('[data-clock]').forEach((e)=>{e.textContent=new Date().toLocaleTimeString('en-GB')})}
+setInterval(paintClocks,1000);
+if(HOSTED)setInterval(()=>{fetch('api/live',{credentials:'same-origin'}).then((r)=>r.ok?r.json():null).then((d)=>{if(!d)return;Object.assign(LV,d);if(CURRENT==='live'){built.live=false;$('#live').replaceChildren();show('live',false)}}).catch(()=>{})},60000);
+function escalate(q,c){const wf=c.breached?'resolve_breach':'ack_at_risk';const msg=`${q.title} (${q.id})`;
+  if(!HOSTED){toast(`Preview: on the hosted system this sends "${msg}" to the SOC channel through the ${wf==='resolve_breach'?'resolution breach':'acknowledgement'} workflow.`);return}
+  toast(`Escalation for ${q.id} is queued. The workflow check runs within five minutes; see Workflows.`)}
+
+/* Threat paths: how far attacks got through the stages, where they were stopped, and the near misses. */
+function periodWindow(){const P={day:1,week:7,month:30,quarter:90,year:365},end=new Date();if(FILTER.period==='custom'&&FILTER.from&&FILTER.to)return[new Date(FILTER.from+'T00:00:00Z'),new Date(FILTER.to+'T23:59:59Z')];return[new Date(end-P[FILTER.period||'month']*864e5),end]}
+V.threats=()=>{const[a,b]=periodWindow(),ps=TH.paths.filter((p)=>{const t=new Date(p.created);return t>=a&&t<=b&&passes(p,APPLIES.threats)}),near=ps.filter((p)=>p.near_miss),end=ps.filter((p)=>p.reached_end);
+  const stages=TH.stages.filter((s)=>ps.some((p)=>p.path.includes(s)));
+  const reach={},stop={},link={};ps.forEach((p)=>{p.path.forEach((s,i)=>{reach[s]=(reach[s]||0)+1;if(i){const k=p.path[i-1]+'|'+s;link[k]=(link[k]||0)+1}});if(p.stopped_at)stop[p.stopped_at]=(stop[p.stopped_at]||0)+1});
+  const depth=ps.length?ps.reduce((s,p)=>s+p.depth,0)/ps.length:0,entry=Object.entries(ps.reduce((m,p)=>{m[p.path[0]]=(m[p.path[0]]||0)+1;return m},{})).sort((x,y)=>y[1]-x[1])[0];
+  const cnt=(l,v,s,tone)=>el('div','card lcount '+(tone||''),el('span','cap',l),el('div','num',String(v)),el('span','cap',s||''));
+  const box=el('div','flow');after.push(()=>drawFlow(box,stages,reach,stop,link));
+  const nl=el('div','nearlist');near.slice(0,12).forEach((p)=>{const ch=el('span','chain');p.path.forEach((s,i)=>{if(i)ch.append(el('span','arr','→'));ch.append(el('span','node'+(i===p.path.length-1?' stop':''),s))});
+    const t=el('button','link sm','Raise review ticket');t.type='button';t.addEventListener('click',()=>toast(HOSTED?`Review ticket for ${p.id} proposed. Approve it on the Workflows page.`:`Preview: on the hosted system this proposes a Jira review for ${p.id} to Detection engineering.`));
+    nl.append(el('article','card near',el('div','sig-head',el('h3','',p.title),el('span','pill '+(p.severity==='High'?'bad':'warn'),p.severity)),el('p','sig-sys',`${p.id} · ${new Date(p.created).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · stopped by ${p.stopped_by}${p.contain_hours!=null?' after '+f1(p.contain_hours)+' h':''}`),ch,t))});
+  if(!near.length)nl.append(el('p','note','No near misses in this period.'));
+  const stoppedBy=Object.entries(ps.reduce((m,p)=>{m[p.stopped_by]=(m[p.stopped_by]||0)+1;return m},{})).sort((x,y)=>y[1]-x[1]);
+  return[vhead('Threat paths',['How far each attack got through the stages of an intrusion (MITRE ATT&CK), where it was stopped, and the near misses: real attacks that got deep before being stopped. Near misses show both what the controls are worth and where detection fires too late.'],near.length>3?'warn':'ok',near.length?`${near.length} near misses`:'No near misses'),
+    el('section','lcounts',cnt('Attacks in the period',ps.length,`median depth ${f1(depth)} stages`),cnt('Near misses',near.length,'stopped late in the chain',near.length?'warn':''),cnt('Reached the final stage',end.length,'data left or damage done',end.length?'bad':'ok'),cnt('Most common way in',entry?entry[0]:'—',entry?`${entry[1]} attacks`:'','txt'),cnt('Stopped at the first stage',ps.filter((p)=>p.depth===1).length,`${ps.length?Math.round(100*ps.filter((p)=>p.depth===1).length/ps.length):0}% of attacks`,'ok')),
+    el('section','card',el('div','ph',el('h2','h','Paths through the stages'),el('span','cap','Width shows how many attacks moved between stages. Under each stage: how many reached it, and how many were stopped there.')),box),
+    band('Near misses'),nl,
+    el('div','two',el('section','card',el('div','ph',el('h2','h','What stopped them'),el('span','cap','Attacks in the period')),rowsBars(stoppedBy.map(([k,v])=>[k,v,String(v)]),Math.max(1,...stoppedBy.map((x)=>x[1])),'linear-gradient(90deg,var(--a2),var(--a1))')),
+      el('section','card',el('div','ph',el('h2','h','Where they were stopped'),el('span','cap','Furthest stage reached')),rowsBars(stages.filter((s)=>stop[s]).map((s)=>[s,stop[s],String(stop[s]),['Credential Access','Privilege Escalation','Lateral Movement','Command and Control','Exfiltration','Impact'].includes(s)?'var(--crit)':null]),Math.max(1,...Object.values(stop)),'linear-gradient(90deg,var(--a2),var(--a1))')))]};
+function drawFlow(box,stages,reach,stop,link){const draw=()=>{box.replaceChildren();if(!stages.length){box.append(el('p','note','No attacks in this period.'));return}
+  const w=Math.min(1600,Math.max(640,box.getBoundingClientRect().width||0)),h=300,pad=70,colW=(w-pad*2)/Math.max(1,stages.length-1),max=Math.max(...Object.values(reach)),y0=110,hmax=150;
+  const svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:w,height:h,role:'img','aria-label':`Attack paths across ${stages.length} stages`}),X=(i)=>stages.length===1?w/2:pad+i*colW,Hh=(v)=>Math.max(6,v/max*hmax);
+  Object.entries(link).forEach(([k,v])=>{const[a,b]=k.split('|'),i=stages.indexOf(a),j=stages.indexOf(b);if(i<0||j<0)return;const x1=X(i)+10,x2=X(j)-10,yc=y0+Hh(reach[a])/2,yd=y0+Hh(reach[b])/2,th=Math.max(2,v/max*hmax*0.9);
+    svg.append(sv('path',{d:`M${x1},${yc} C${(x1+x2)/2},${yc} ${(x1+x2)/2},${yd} ${x2},${yd}`,fill:'none',stroke:'var(--a1)','stroke-opacity':0.22,'stroke-width':th}),sv('title',{},`${a} to ${b}: ${v}`))});
+  stages.forEach((s,i)=>{const hh=Hh(reach[s]),deep=['Credential Access','Privilege Escalation','Lateral Movement','Command and Control','Exfiltration','Impact'].includes(s);
+    svg.append(sv('rect',{x:X(i)-10,y:y0,width:20,height:hh,rx:6,fill:deep?'var(--crit)':'var(--a1)'}));
+    const lines=s.split(' ');lines.forEach((t,k)=>svg.append(sv('text',{x:X(i),y:y0-34+k*13-(lines.length-1)*13,'text-anchor':'middle',class:'flowlbl'},t)));
+    svg.append(sv('text',{x:X(i),y:y0-10,'text-anchor':'middle',class:'flownum'},String(reach[s])));
+    if(stop[s])svg.append(sv('text',{x:X(i),y:y0+hh+18,'text-anchor':'middle',class:'flowstop'},`${stop[s]} stopped`))});
+  box.append(svg)};draw();watch(box,draw)}
+
+/* Workflows: who gets told, which tickets are raised, and what waits for approval. */
+V.workflows=()=>{const waiting=WF.log.filter((r)=>r.status==='waiting for approval'&&(FILTER.team==='all'||r.actions.some((a)=>a.team===FILTER.team))),done=WF.log.filter((r)=>r.status!=='waiting for approval').slice(0,15);
+  const typeName={teams:'Teams message',servicenow:'ServiceNow ticket',jira:'Jira issue',email:'Email',webhook:'Webhook'};
+  const wl=el('div','approvals');waiting.forEach((r)=>{const acts=el('ul','alist');r.actions.forEach((a)=>acts.append(el('li','',el('b','',`${typeName[a.type]||a.type} to ${a.team}`),el('small','',a.target?`(${a.target})`:'(no route set)'),el('p','',a.summary&&a.type!=='teams'?a.summary+': '+a.text:a.text))));
+    const ok=el('button','btn primary','Approve and send'),no=el('button','btn','Dismiss');ok.type=no.type='button';
+    const act=(verb)=>{if(!HOSTED){r.status=verb==='approve'?'dry run':'dismissed';r.done_by='you (preview)';toast(verb==='approve'?'Preview: nothing was sent. On the hosted system this sends the actions above.':'Dismissed in this preview.');built.workflows=false;$('#workflows').replaceChildren();show('workflows',false);return}
+      fetch(`api/workflows/${r.uid}/${verb}`,{method:'POST',credentials:'same-origin',headers:{'X-Requested-With':'secops-dashboard'}}).then((x)=>x.json()).then((rec)=>{Object.assign(r,rec);toast(rec.status?`${r.name}: ${rec.status}.`:rec.error,'');built.workflows=false;$('#workflows').replaceChildren();show('workflows',false)}).catch(()=>toast('Could not reach the server. Try again.','bad'))};
+    ok.addEventListener('click',()=>act('approve'));no.addEventListener('click',()=>act('dismiss'));
+    wl.append(el('article','card appr',el('div','sig-head',el('h3','',r.name),el('span','cap',ago(r.created))),acts,el('div','sig-go',ok,no)))});
+  if(!waiting.length)wl.append(el('p','note','Nothing is waiting for approval.'));
+  const rows=WF.workflows.map((w)=>[w.name,w.trigger.replace('.',': ').replace(/_/g,' '),w.actions.join(', '),w.mode==='auto'?'Runs automatically':'Needs approval']);
+  const tb=el('tbody');rows.forEach((r)=>{const tr=el('tr');r.forEach((c,i)=>tr.append(el('td',i===3?'':'',i===3?el('span','pill '+(c==='Needs approval'?'warn':''),c):c)));tb.append(tr)});
+  const hr=el('tr');['Workflow','Watches','Does','Mode'].forEach((h)=>hr.append(el('th','',h)));
+  const lg=el('ul','feed');done.forEach((r)=>lg.append(el('li','',el('small','',new Date(r.done_at||r.created).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})),el('span','',`${r.name}: ${r.status}${r.done_by&&r.done_by!=='automatic'?' by '+r.done_by:''}`))));
+  const routes=el('tbody');Object.entries(WF.teams).forEach(([t,c])=>routes.append(el('tr','',el('td','',t),el('td','',c.teams_webhook_env?'Teams channel':'—'),el('td','',c.servicenow_group||'—'),el('td','',c.jira_project||'—'))));
+  const rh=el('tr');['Team','Teams','ServiceNow group','Jira project'].forEach((h)=>rh.append(el('th','',h)));
+  return[vhead('Workflows',['Who is alerted, which tickets are raised, and when. Notifications can run automatically; tickets and anything sent to leadership wait here for a person to approve.'],WF.actions_enabled?'ok':'warn',WF.actions_enabled?'Sending on':'Dry run'),
+    WF.actions_enabled?null:el('p','sample','Sending is switched off, so approved actions are recorded as dry runs showing exactly what would be sent. Turn it on with SECOPS_ACTIONS_ENABLED once the Teams, ServiceNow and Jira connections are tested.'),
+    band(`Waiting for approval (${waiting.length})`),wl,
+    el('div','two wide',el('section','card',el('h2','h','Automations'),el('div','scroll',el('table','score wf',el('thead','',hr),tb))),el('section','card',el('h2','h','Recently done'),lg.children.length?lg:el('p','note','Nothing yet.'))),
+    el('section','card',el('h2','h','Where each team is reached'),el('div','scroll',el('table','score wf',el('thead','',rh),routes)))].filter(Boolean)};
+
+/* Reports and decks, built from the same figures. */
+V.reports=()=>{const sched=WF.workflows.find((w)=>w.trigger==='schedule.weekly');
+  const card=(title,desc,items,btn,href)=>{const b=el(HOSTED?'a':'button','btn primary',btn);if(HOSTED){b.href=href;b.setAttribute('download','')}else{b.type='button';b.addEventListener('click',()=>toast('Downloads work on the hosted system. This preview cannot save files.'))}
+    const ul=el('ul','list');items.forEach((t)=>ul.append(el('li','',t)));return el('section','card rep',el('h2','h',title),el('p','sub',desc),ul,el('div','sig-go',b))};
+  return[vhead('Reports',['Board decks and the weekly report are built from the same figures as these pages, so every channel says the same thing.'],'',''),
+    el('div','two',card('Board deck','PowerPoint, last 30 days. Editable charts and tables.',['Outcome targets met and realised','Phase 2 outcomes table','Performance against the period before','Threat paths and near misses','Decisions and actions with owners','Signals'],'Download the deck','api/report.pptx?days=30'),
+      card('Weekly report','One page for email or Teams, last 7 days.',['Headline and decisions needed','Every measure against the week before','Near misses','Which sections are still on sample data'],'Open the weekly report','api/report.html?days=7')),
+    el('section','card',el('h2','h','Schedule'),el('p','',sched?`${sched.name}: ${sched.schedule||'weekly'}, sent to ${sched.actions.join(', ')}. ${sched.mode==='auto'?'Runs automatically.':'Waits for approval.'}`:'No scheduled report is set up.'),el('p','note','Change the schedule and recipients in ops.json. In Claude, ask for "the board deck for the last 90 days" to get the same deck with a different period.'))]};
+
+/* Command bar and voice. */
+const CMDS=[[/(executive|exec|board|summary)/,'exec'],[/(live|control|flight|board view|now)/,'live'],[/(operations overview|overview)/,'overview'],[/(soc|incident|detection)/,'detection'],
+  [/(vuln)/,'vulnerabilities'],[/(remediat|fix)/,'remediation'],[/(email|phish)/,'email'],[/(user|app|dlp|data loss)/,'people'],[/(control area|coverage|blind)/,'controls'],
+  [/(threat|path|near miss|kill chain)/,'threats'],[/cloud/,'cloud'],[/(devsecops|code|pipeline)/,'devsecops'],[/sap/,'sap'],[/signal/,'signals'],[/(workflow|approval|ticket|automation)/,'workflows'],[/(report|deck|slides)/,'reports'],[/(build|security setup)/,'build']];
+function speak(t){try{if('speechSynthesis' in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}}catch(e){}}
+function briefing(){const oc=(DATA.outcomes&&DATA.outcomes.outcomes)||[],ms=oc.flatMap((o)=>o.measures),meas=ms.filter((m)=>m.meets!=null),met=meas.filter((m)=>m.meets).length,
+  rows=LV.queue.map((q)=>clocks(q)),br=rows.filter((c)=>c.breached).length,near=TH.paths.filter((p)=>p.near_miss&&Date.now()-new Date(p.created)<7*864e5).length;
+  return `${met} of ${meas.length} outcome targets are met. ${LV.queue.length} incidents are in flight, ${br} past a service-level target. ${near} near miss${near===1?"":"es"} in the last seven days. ${risks().length?'Top risk: '+risks()[0][0]+'.':''}`}
+function runCommand(raw){const t=raw.toLowerCase().trim();if(!t)return;
+  const per=[[/yesterday|today/,'day'],[/(7 days|week)/,'week'],[/(30 days|month)/,'month'],[/(90 days|quarter)/,'quarter'],[/(12 months|year)/,'year']].find(([r])=>r.test(t));
+  const sev=/(high|critical)/.test(t)?'High':/medium/.test(t)?'Medium':/(all severit|any severit)/.test(t)?'all':null;
+  if(/(brief|read|summar|how are we|status)/.test(t)&&!/report/.test(t)){const b=briefing();speak(b);toast(b);return}
+  if(/(deck|powerpoint|slides)/.test(t)&&/(download|make|create|build|get)/.test(t)){if(HOSTED){location.href='api/report.pptx?days='+({day:1,week:7,month:30,quarter:90,year:365}[per?per[1]:'month'])}else toast('Preview: the hosted system downloads the deck here.');return}
+  if(/(clear|reset) filter/.test(t)){Object.assign(FILTER,{severity:'all',team:'all',source:'all'});syncBar();rebuild();toast('Filters cleared.');return}
+  let did=[];if(per){FILTER.period=per[1];did.push('period set')}if(sev){FILTER.severity=sev;did.push(sev==='all'?'all severities':sev+' severity only')}
+  const team=Object.keys(WF.teams).concat((DATA.owners||[]).map((o)=>o.team)).find((n)=>t.includes(n.toLowerCase()));if(team){FILTER.team=team;did.push(team)}
+  const dest=CMDS.find(([r])=>r.test(t));if(did.length)syncBar();if(dest&&dest[1]!==CURRENT){show(dest[1],true);did.unshift('opened '+(NAV.find((n)=>n[0]===dest[1])||[])[1])}else if(did.length)rebuild();
+  toast(did.length?did.join(', ')+'.':`Not sure what to do with "${raw}". Try "show live operations", "near misses last 90 days", "high severity only" or "brief me".`)}
+function rebuild(){Object.keys(built).forEach((k)=>{built[k]=false;const v=$('#'+k);if(v)v.replaceChildren()});show(CURRENT,false)}
+const BAR=el('div','toolbar');
+function syncBar(){BAR.querySelectorAll('select').forEach((s)=>{s.value=FILTER[s.dataset.f]});const c=BAR.querySelector('.tcustom');if(c)c.hidden=FILTER.period!=='custom';
+  BAR.querySelectorAll('[data-f]').forEach((s)=>{const on=(APPLIES[CURRENT]||[]).includes(s.dataset.f);s.disabled=!on;s.closest('label').classList.toggle('off',!on);s.closest('label').title=on?'':'Not used on this page'})}
+(function makeBar(){const cmd=el('input');cmd.type='search';cmd.id='cmd';cmd.placeholder='Ask or command: "near misses last 90 days", "brief me"';cmd.setAttribute('aria-label','Command');
+  cmd.addEventListener('keydown',(e)=>{if(e.key==='Enter'){runCommand(cmd.value);cmd.value=''}});
+  const mic=el('button','mic');mic.type='button';mic.setAttribute('aria-label','Speak a command');const mi=sv('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.8,'stroke-linecap':'round','aria-hidden':'true'});mi.append(sv('path',{d:'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a7 7 0 0 0 14 0M12 19v3'}));mic.append(mi);
+  mic.addEventListener('click',()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Voice needs Chrome or Edge on the hosted system. Type the command instead.');return}
+    try{const r=new SR();r.lang='en-GB';r.interimResults=false;mic.classList.add('on');toast('Listening…');r.onresult=(e)=>{const said=e.results[0][0].transcript;cmd.value=said;runCommand(said);cmd.value=''};r.onerror=()=>toast('Voice is not available here. Type the command instead.');r.onend=()=>mic.classList.remove('on');r.start()}catch(e){toast('Voice is not available here. Type the command instead.')}});
+  const sel=(f,label,opts)=>{const s=el('select','dash-sel');s.dataset.f=f;s.id='f-'+f;opts.forEach(([v,l])=>s.append(new Option(l,v)));s.addEventListener('change',()=>{FILTER[f]=s.value;if(f==='period'&&s.value==='custom'&&!FILTER.from){const last=DY.length?DY[DY.length-1].date:new Date().toISOString().slice(0,10);FILTER.to=last;FILTER.from=addDays(last,-59);fi.value=FILTER.from;ti.value=FILTER.to}syncBar();rebuild()});return el('label','tf',el('span','',label),s)};
+  const fi=el('input'),ti=el('input');fi.type=ti.type='date';fi.id='f-from';ti.id='f-to';[fi,ti].forEach((i)=>i.addEventListener('change',()=>{if(fi.value&&ti.value&&fi.value<=ti.value){FILTER.from=fi.value;FILTER.to=ti.value;rebuild()}}));
+  const sources=[...new Set(LV.queue.map((q)=>q.source).concat(TH.paths.map((p)=>p.source)))].sort(),teams=[...new Set(LV.queue.map((q)=>q.team).concat(Object.keys(WF.teams)))].sort();
+  BAR.append(el('div','cmdbox',cmd,mic),sel('period','Period',[['day','Yesterday'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['year','Last 12 months'],['custom','Custom dates']]),
+    el('span','tcustom',el('label','tf',el('span','','From'),fi),el('label','tf',el('span','','To'),ti)),sel('severity','Severity',[['all','All'],...SEVS.map((s)=>[s,s])]),sel('team','Team',[['all','All teams'],...teams.map((t)=>[t,t])]),sel('source','Source',[['all','All systems'],...sources.map((s)=>[s,s])]));
+  $('#main').prepend(BAR);addEventListener('keydown',(e)=>{if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();cmd.focus()}})})();
+
+const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['live','Live operations','M3 12h3l2-5 3 10 2-5h8M12 3v2m0 14v2'],['overview','Operations overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','Signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
 const nav=$('#nav'),main=$('#main'),built={};
-NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
-NAV.forEach(([k,label,d],i)=>{if(k==='detection'||k===(DOMS[0]&&DOMS[0].id)||k==='signals')nav.append(el('div','gap'));
+NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['threats','Threat paths','M4 18c3-8 6-8 8-4s5 4 8-4M4 18h.01M20 10h.01'],...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
+NAV.splice(NAV.findIndex((n)=>n[0]==='build'),0,['workflows','Workflows','M5 6h6v4H5zM13 14h6v4h-6zM8 10v4h8'],['reports','Reports','M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6']);
+NAV.forEach(([k,label,d],i)=>{if(k==='detection'||k==='threats'||k==='signals')nav.append(el('div','gap'));
   const ic=sv('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'});ic.append(sv('path',{d}));
   const b=el('button','nv',ic,el('span','',label),AREAS[k]?el('span','st '+AREAS[k].tone):null);b.type='button';b.dataset.v=k;b.addEventListener('click',()=>show(k,true));nav.append(b);
   const v=el('section','view');v.id=k;v.hidden=true;v.setAttribute('aria-label',label);main.append(v)});
@@ -500,7 +659,7 @@ function customFor(k){const list=(DATA.custom||[]).filter((m)=>m.view===k&&Array
     if(m.chart!==false)charts.append(chartCard(m.label,{label:`${m.label} by week`,end:true,dec,unit:m.unit==='%'?'%':'',series:[{vals,color:'var(--a1)',label:m.label}]}));
     if(m.note)tiles.title=m.note});
   return[band('More measures'),tiles,charts.children.length?charts:null].filter(Boolean)}
-function show(k,push){if(!V[k])k='exec';
+function show(k,push){if(!V[k])k='exec';CURRENT=k;if(typeof syncBar==='function')syncBar();
   NAV.forEach(([id])=>{$('#'+id).hidden=id!==k});nav.querySelectorAll('.nv').forEach((b)=>{if(b.dataset.v===k){b.setAttribute('aria-current','page');if(b.scrollIntoView&&innerWidth<1000)b.scrollIntoView({block:'nearest',inline:'center'})}else b.removeAttribute('aria-current')});
   if(!built[k]){built[k]=true;const v=$('#'+k);V[k]().forEach((x)=>v.append(x));customFor(k).forEach((x)=>v.append(x));after.splice(0).forEach((f)=>f())}
   if(push){if(location.hash!=='#'+k)location.hash=k;scrollTo(0,0)}}

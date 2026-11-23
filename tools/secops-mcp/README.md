@@ -68,6 +68,30 @@ sections are still on sample data.
 | **Live connectors** | Set the credentials for a source and `SECOPS_MODE=live`. | SOC section from Sentinel today; vulnerability and phishing figures through the MCP tools |
 | **Through Sentinel** | Turn on each product's Sentinel data connector, then add a KQL measure. | Anything that lands in the workspace |
 
+## Operating it: live board, threat paths, workflows, reports, commands
+
+- **Live operations** is a control-room board for a wall screen: incidents in flight ranked by
+  urgency, each with live acknowledge and resolve clocks against the service levels in `ops.json`,
+  at-risk and breached highlighting, the queue by status, which sources are reporting, the alert
+  rate and a feed of what just happened, plus a short "what needs attention" list worked out from
+  the board. It refreshes every minute from `/api/live`.
+- **Threat paths** shows how far attacks got through the ATT&CK stages, where each was stopped,
+  what stopped it, and the **near misses**: real attacks that got deep before being stopped.
+- **Workflows** (`ops.json`) watch the figures and alert the right team in Teams, raise ServiceNow
+  incidents or Jira issues, or email leadership. Notifications can run automatically; tickets and
+  anything to leadership wait on the Workflows page for a signed-in person to approve, and the
+  approver is recorded. Nothing is sent until `SECOPS_ACTIONS_ENABLED=true`; until then every
+  action is a dry run that shows exactly what would be sent and where. Set `SECOPS_SCHEDULER=true`
+  on one replica to check the workflows every few minutes.
+- **Reports**: `/api/report.pptx?days=30` builds an editable PowerPoint board deck and
+  `/api/report.html?days=7` a one-page weekly report; the weekly workflow posts it each Monday.
+- **Toolbar and commands**: filters for period, severity, team and source sit across the top of
+  every page (each page uses the ones that apply). The command box takes plain requests such as
+  "near misses last 90 days", "high severity only", "open live operations" or "brief me" (which
+  reads the briefing aloud). The microphone takes the same commands by voice in Chrome or Edge.
+  Press `/` to jump to the command box.
+- In Claude: `live_operations`, `threat_paths`, `workflow_status` and `decisions_and_actions`.
+
 ## Executive view, outcomes and periods
 
 The landing page is the **Executive view**:

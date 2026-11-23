@@ -76,7 +76,7 @@
 fetch('api/dashboard', {credentials: 'same-origin'})
   .then((r) => { if (!r.ok) throw new Error('The server answered ' + r.status); return r.json(); })
   .then((data) => {
-    window.DATA = data;
+    window.DATA = data; window.SECOPS_HOSTED = true;
     document.getElementById('loading').remove();
     const s = document.createElement('script'); s.src = 'app.js'; document.body.append(s);
   })
