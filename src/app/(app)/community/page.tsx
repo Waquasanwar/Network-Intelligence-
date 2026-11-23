@@ -52,7 +52,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const base = internal ? null : await resolveMemberPerson(user, null);
   const me = base ? await prisma.person.findUnique({ where: { id: base.id }, select: { id: true, firstName: true, lastName: true, tenantId: true, memberSince: true, screeningStatus: true, screenedAt: true, privacy: true, photoUrl: true } }) : null;
   const tenantId = internal ? user.tenantId : me?.tenantId;
-  // What the owner has switched on in Settings → Features: the board, member connections, and earnings.
+  // What the owner has switched on in Settings → Release: the board, member connections, and earnings.
   const features = tenantId ? await loadFeatures(tenantId) : null;
   const earnings = !!features?.earnings;
   const board = internal || features?.communityBoard !== false;

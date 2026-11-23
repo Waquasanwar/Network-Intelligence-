@@ -82,7 +82,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
   ]);
   // The member's own screening record, as they gave it: shown on Privacy & data, like a call log.
   const myScreenings = (sp.tab ?? "home") === "privacy" ? await prisma.conversation.findMany({ where: { personId: p.id, type: "SCREENING" }, select: { id: true, createdAt: true, approvalStatus: true, screening: true }, orderBy: { createdAt: "desc" }, take: 5 }) : [];
-  const earnings = features.earnings; // off until the owner switches it on in Settings → Features
+  const earnings = features.earnings; // off until the owner switches it on in Settings → Release
   const connectable = peers.filter((x) => mayInvite(x) && privacyOf({ privacy: x.privacy }).consents.memberDirectory).length;
   const credits = await prisma.referralCredit.findMany({ where: { personId: p.id }, include: { brief: { select: { title: true } } }, orderBy: { createdAt: "desc" } });
   const canInvite = mayInvite(p);

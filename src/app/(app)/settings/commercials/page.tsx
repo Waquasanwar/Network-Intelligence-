@@ -33,7 +33,7 @@ export default async function CommercialsPage() {
                 <H>Advisory · Amana</H>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><F name="expertHourlyTakePct" label="Expert call take %" hint="platform share of the hourly rate" /><F name="defaultExpertHours" label="Default expert hours" /><F name="sowSharePct" label="SOW share %" hint="of SOW value for people we supply" /><F name="introductionFee" label="Flat introduction fee" /></div>
                 <H>Members</H>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><F name="memberReferralSharePct" label="Member referral share %" hint="of our fee, to the member who referred, introduced or shared the work" /><p className="self-end pb-2 text-[12.5px] text-ink-faint">Members see this only when Earnings is switched on in <a href="/settings/features" className="font-medium text-ink-muted underline-offset-4 hover:underline">Features</a>.</p></div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><F name="memberReferralSharePct" label="Member referral share %" hint="of our fee, to the member who referred, introduced or shared the work" /><p className="self-end pb-2 text-[12.5px] text-ink-faint">Members see this only when Earnings is switched on in <a href="/settings/features" className="font-medium text-ink-muted underline-offset-4 hover:underline">Release</a>.</p></div>
                 <Field label="Currency"><Select name="currency" defaultValue={rc.currency} className="w-[140px]">{["GBP", "AED", "SAR", "USD", "EUR"].map((c) => <option key={c}>{c}</option>)}</Select></Field>
                 <div className="flex justify-end"><SubmitButton pendingText="Saving…">Save rate card</SubmitButton></div>
               </form>

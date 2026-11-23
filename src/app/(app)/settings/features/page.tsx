@@ -80,7 +80,7 @@ export default async function FeaturesPage() {
                             <span className={`tag ${live ? "is-mint" : waiting ? "is-gold" : ""}`}>{live ? "Live" : waiting ? `Waits for ${parent!.label}` : "Off"}</span>
                           </div>
                           <p className="mt-1 max-w-[62ch] text-[13.5px] leading-[1.5] text-ink-muted">{f.detail}</p>
-                          {parent && !chosen ? <p className="mt-1 text-[12px] text-ink-faint">Needs {parent.label} on as well.</p> : null}
+                          {parent && !chosen && !on[parent.key] ? <p className="mt-1 text-[12px] text-ink-faint">Needs {parent.label} on as well.</p> : null}
                         </div>
                       </div>
                       <form action={setFeature} className="flex-none">

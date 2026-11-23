@@ -37,7 +37,7 @@ async function participant(user: Awaited<ReturnType<typeof requireUser>>) {
   return { user, me: me! };
 }
 
-/** Stop here if the owner has switched this part of the community off in Settings → Features. */
+/** Stop here if the owner has switched this part of the community off in Settings → Release. */
 async function mustBeOn(tenantId: string, key: "communityBoard" | "memberConnections") {
   if (!(await loadFeatures(tenantId))[key]) back("notice=off");
 }

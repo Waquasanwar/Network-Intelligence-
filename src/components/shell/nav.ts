@@ -17,7 +17,7 @@ const SECTIONS: NavSection[] = [
   { key: "conversations", label: "Conversations", icon: MessagesSquare, pages: [{ href: "/conversations", label: "Conversations" }] },
   { key: "work", label: "Work", icon: Briefcase, phase23: true, pages: [{ href: "/requirements", label: "Requirements" }, { href: "/opportunities", label: "Opportunities" }, { href: "/referrals", label: "Referrals and pitches" }, { href: "/relocation", label: "Relocation" }] },
   { key: "clients", label: "Clients", icon: Building2, phase23: true, pages: [{ href: "/portal", label: "Client and agency portal" }, { href: "/partners", label: "Agencies" }, { href: "/amana", label: "Amana Expert Network" }] },
-  { key: "settings", label: "Settings", icon: Settings2, pages: [{ href: "/settings/screening", label: "Screening" }, { href: "/settings/commercials", label: "Commercials", ownerOnly: true }, { href: "/settings/features", label: "Features", ownerOnly: true }, { href: "/settings/integrations", label: "Integrations" }, { href: "/settings/security", label: "Security" }] },
+  { key: "settings", label: "Settings", icon: Settings2, pages: [{ href: "/settings/screening", label: "Screening" }, { href: "/settings/commercials", label: "Commercials", ownerOnly: true }, { href: "/settings/features", label: "Release", ownerOnly: true }, { href: "/settings/integrations", label: "Integrations" }, { href: "/settings/security", label: "Security" }] },
 ];
 
 /** The sections and pages this person can see. */

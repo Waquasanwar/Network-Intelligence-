@@ -1,6 +1,6 @@
 /**
  * What the owner has released. Nothing reaches members, clients, agencies or the public until the
- * owner switches it on in Settings → Features, and anything can be paused again at once. Every
+ * owner switches it on in Settings → Release, and anything can be paused again at once. Every
  * switch is off by default. Stored on the network's tenant; anything not set is off.
  *
  * Always available, whatever is switched: Privacy & data and Security for anyone with an account
