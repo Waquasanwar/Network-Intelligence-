@@ -31,7 +31,7 @@ try {
     const pub = await (await b.newContext()).newPage();
     await pub.goto(`${BASE}/`, { waitUntil: "networkidle" });
     assert(await pub.locator("[data-by-invitation]").count(), "the public page says it is by invitation");
-    assert(!(await pub.locator('form textarea[name="message"], #join').count()), "no application forms");
+    assert(!(await pub.locator('#ask, #front-ask, .door-send').count()), "no way to apply");
     await pub.context().close();
     return "member, client, agency and public all closed";
   });

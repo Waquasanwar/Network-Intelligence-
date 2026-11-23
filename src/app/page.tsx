@@ -7,10 +7,8 @@ import { applyToJoin, sendNeed } from "@/server/actions/public";
 import { PROOFS } from "@/lib/standard";
 import { SCREENING_MINUTES } from "@/lib/screening";
 import { BrandMark } from "@/components/ui/brand-mark";
-import { Field, Input, Select, Textarea } from "@/components/ui/form";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { NeedComposer } from "@/components/public/need-composer";
+import { FrontDoor } from "@/components/public/front-door";
 import { Constellation } from "@/components/ui/constellation";
 import { APP_NAME } from "@/lib/brand";
 
@@ -21,35 +19,26 @@ export async function generateMetadata() {
 }
 
 const ERRORS: Record<string, string> = {
-  details: "Something is missing or too short. Check each field and send it again.",
-  consent: "Please tick the box so we may keep what you have sent.",
+  details: "Something was missing or too short. Start again and I will ask once more.",
+  consent: "Nothing was kept, because the box to keep your details was not ticked. Start again when you are ready.",
   throttled: "Too many attempts from this connection. Wait a few minutes, then try again.",
 };
 
-function Sent({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div role="status" className="py-6">
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-accent text-accent-ink"><Check className="h-5 w-5" /></span>
-      <h3 className="font-display text-[22px] leading-[1.15] mt-4">{title}</h3>
-      <p className="text-[14px] text-ink-muted mt-2 leading-[1.55] max-w-[44ch]">{detail}</p>
-    </div>
-  );
-}
-
-const Trap = () => <div className="hidden" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>;
 
 /**
  * The front door. It says what the network is, publishes the standard people are held to, and
- * takes two things from strangers: an application to join, and a need. It shows nothing about
+ * takes two things from strangers, in one conversation with Amana: an application to join, and a need. It shows nothing about
  * who is in the network. Signed-in visitors never see it; the middleware sends them home.
  */
-export default async function PublicPage({ searchParams }: { searchParams: Promise<{ sent?: string; form?: string; error?: string }> }) {
+export default async function PublicPage({ searchParams }: { searchParams: Promise<{ sent?: string; form?: string; error?: string; as?: string }> }) {
   const network = await publicNetwork();
   if (!network) redirect("/login");
   const sp = await searchParams;
   // Applications open only when the owner releases them; until then the network is by invitation.
   const open = (await loadFeatures(network.id)).publicApplications;
-  const err = (form: string) => (sp.form === form && sp.error && ERRORS[sp.error] ? ERRORS[sp.error] : null);
+  const asJoin = sp.as === "join" || sp.form === "join";
+  const sent = sp.sent === "need" || sp.sent === "join" ? sp.sent : null;
+  const error = sp.error && ERRORS[sp.error] ? ERRORS[sp.error] : null;
 
   return (
     <div className="min-h-screen overflow-x-clip text-ink">
@@ -58,21 +47,21 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
         <span className="stage-scrim is-center" aria-hidden="true" />
         <header>
           <nav aria-label="Main" className="mx-auto flex h-[72px] w-full max-w-[1180px] items-center gap-6 px-5 sm:px-8">
-            <Link href="/" className="flex items-center gap-2.5"><BrandMark className="h-[22px] w-auto text-white" /><span className="font-display text-[16px]">{network.name}</span></Link>
+            <Link href="/" className="flex items-center gap-2.5"><BrandMark className="h-[22px] w-auto text-white" /><span className="hidden font-display text-[16px] sm:inline">{network.name}</span></Link>
             <div className="hidden items-center gap-7 text-[14px] stage-muted md:flex">
-              <a href="#how" className="hover:text-white">How it works</a><a href="#standard" className="hover:text-white">The standard</a><a href="#start" className="hover:text-white">Get started</a>
+              <a href="#how" className="hover:text-white">How it works</a><a href="#standard" className="hover:text-white">The standard</a>
             </div>
             <span className="flex-1" />
             <ThemeToggle className="!h-9 !w-9 !border-0 !bg-transparent !text-white !shadow-none" />
             <a href="/login" className="hidden text-[14px] font-medium text-white/85 hover:text-white sm:inline">Sign in</a>
-            {open ? <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a> : <a href="/login" className="btn-mint h-10 px-5 text-[14px]">Sign in</a>}
+            {open ? <Link href="/?as=join#ask" className="btn-mint h-10 whitespace-nowrap px-5 text-[14px]">Apply to join</Link> : <a href="/login" className="btn-mint h-10 whitespace-nowrap px-5 text-[14px]">Sign in</a>}
           </nav>
         </header>
 
         <section className="mx-auto w-full max-w-[960px] px-5 pb-24 pt-16 text-center sm:px-8 sm:pb-32 sm:pt-24">
           <h1 className="hero-title mx-auto max-w-[14ch] text-[48px] sm:text-[84px]">Who do you <span className="text-mint">need?</span></h1>
           <p className="mx-auto mt-6 max-w-[52ch] text-[16px] leading-[1.6] stage-muted sm:text-[18px]">Describe a role or a piece of work. We find senior consultants in the Gulf and London whom we know first hand, and introduce them once they say yes.</p>
-          {open ? <NeedComposer /> : <p className="mx-auto mt-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-5 py-2.5 text-[14px] text-white/85" data-by-invitation>By invitation only. If you have an invitation, it brings you straight in.</p>}
+          {open ? <FrontDoor key={asJoin ? "join" : "need"} sendNeed={sendNeed} applyToJoin={applyToJoin} initialMode={asJoin ? "join" : "need"} sent={sent} error={error} networkName={network.name} /> : <p className="mx-auto mt-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-5 py-2.5 text-[14px] text-white/85" data-by-invitation>By invitation only. If you have an invitation, it brings you straight in.</p>}
           <p className="mt-12 text-[13px] stage-faint">Free for members · Pay only on placement · Names private until they say yes</p>
         </section>
       </div>
@@ -116,63 +105,6 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
           </div>
         </section>
 
-        {open ? (
-        <section id="start" className="scroll-mt-20 border-t border-line" aria-labelledby="start-title">
-          <div className="mx-auto w-full max-w-[1120px] px-5 py-20 sm:px-8 sm:py-24">
-            <h2 id="start-title" className="section-title text-[30px] sm:text-[40px]">Get started</h2>
-            <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div id="need" className="scroll-mt-24 rounded-[22px] border border-line bg-surface p-6 sm:p-9">
-            <h3 className="section-title text-[26px]">Bring us a need</h3>
-            <p className="mt-2 max-w-[48ch] text-[14.5px] leading-[1.55] text-ink-muted">For companies and agencies. Asking is free; a fee applies only when someone starts.</p>
-            {sp.sent === "need" ? <Sent title="Thank you. We have it." detail="A person will read it and come back to you by email, usually with a question or two before any names are discussed." /> : (
-              <>
-                <form action={sendNeed} className="mt-6 space-y-3.5">
-                  <Trap />
-                  {err("need") ? <div role="alert" className="rounded-[12px] bg-risk-100 px-3.5 py-2.5 text-[13px] text-risk">{err("need")}</div> : null}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Your name" required><Input name="name" required minLength={2} maxLength={120} autoComplete="name" /></Field>
-                    <Field label="Work email" required><Input name="email" type="email" required maxLength={200} autoComplete="email" /></Field>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3">
-                    <Field label="Organisation" required><Input name="organisation" required minLength={2} maxLength={160} autoComplete="organization" /></Field>
-                    <Field label="You are" required><Select name="who" defaultValue="company"><option value="company">A company</option><option value="agency">An agency</option></Select></Field>
-                  </div>
-                  <Field label="What do you need?" required hint="The role or the piece of work, where, for how long, and anything fixed such as budget or start date."><Textarea name="message" required minLength={15} maxLength={2500} rows={5} placeholder="We need an interim finance transformation lead in Dubai for six months, three days a week." /></Field>
-                  <label className="flex items-start gap-2.5 text-[12.5px] text-ink-muted leading-[1.5]"><input type="checkbox" name="consent" required className="mt-0.5 h-4 w-4 flex-none accent-[var(--color-navy)]" /><span>I am happy for {network.name} to keep these details to respond to this request.</span></label>
-                  <div className="flex justify-end"><SubmitButton pendingText="Sending…">Send it to us</SubmitButton></div>
-                </form>
-              </>
-            )}
-          </div>
-
-          <div id="join" className="scroll-mt-24 rounded-[22px] border border-line bg-surface p-6 sm:p-9">
-            <h3 className="section-title text-[26px]">Apply to join</h3>
-            <p className="mt-2 max-w-[48ch] text-[14.5px] leading-[1.55] text-ink-muted">For senior consultants. Free, by invitation. Your name is never shared until you say yes to an introduction.</p>
-            {sp.sent === "join" ? <Sent title="Thank you. Your application is with us." detail="A person reads every application. If it is a fit you will get a personal invitation by email, with a link to create your login." /> : (
-              <>
-                <form action={applyToJoin} className="mt-6 space-y-3.5">
-                  <Trap />
-                  {err("join") ? <div role="alert" className="rounded-[12px] bg-risk-100 px-3.5 py-2.5 text-[13px] text-risk">{err("join")}</div> : null}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Your name" required><Input name="name" required minLength={2} maxLength={120} autoComplete="name" /></Field>
-                    <Field label="Email" required><Input name="email" type="email" required maxLength={200} autoComplete="email" /></Field>
-                  </div>
-                  <Field label="What you do, in a line" required><Input name="headline" required minLength={3} maxLength={160} placeholder="Interim programme director, core banking and payments" /></Field>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="LinkedIn" hint="Optional"><Input name="linkedinUrl" type="url" maxLength={300} placeholder="https://www.linkedin.com/in/…" /></Field>
-                    <Field label="Who do you know here?" hint="Optional. It helps."><Input name="knows" maxLength={200} placeholder="A name, if anyone" /></Field>
-                  </div>
-                  <Field label="The work you are best at, and what you are open to" required><Textarea name="message" required minLength={10} maxLength={1500} rows={4} /></Field>
-                  <label className="flex items-start gap-2.5 text-[12.5px] text-ink-muted leading-[1.5]"><input type="checkbox" name="consent" required className="mt-0.5 h-4 w-4 flex-none accent-[var(--color-navy)]" /><span>I am happy for {network.name} to keep these details to consider my application and to contact me about it. If I am not invited they are deleted.</span></label>
-                  <div className="flex justify-end"><SubmitButton pendingText="Sending…">Send my application</SubmitButton></div>
-                </form>
-              </>
-            )}
-          </div>
-            </div>
-          </div>
-        </section>
-        ) : null}
       </main>
 
       <footer className="stage-ink">
@@ -184,7 +116,7 @@ export default async function PublicPage({ searchParams }: { searchParams: Promi
           </div>
           <div className="flex items-center gap-3">
             <a href="/login" className="btn-ghost-stage h-10 px-5 text-[14px]">Sign in</a>
-            {open ? <a href="#join" className="btn-mint h-10 px-5 text-[14px]">Apply to join</a> : null}
+            {open ? <Link href="/?as=join#ask" className="btn-mint h-10 px-5 text-[14px]">Apply to join</Link> : null}
           </div>
         </div>
       </footer>

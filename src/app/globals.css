@@ -1168,3 +1168,13 @@ a.rail-row:hover { background: var(--color-surface-muted); }
 .core-label { line-height: 1; }
 @media (max-width: 1023.98px) { .ask-dock { display: none; } }
 @media print { .core-bar { display: none; } }
+
+/* The front door: one conversation with Amana in place of forms. Still, no motion. */
+.door-thread { list-style: none; margin: 0 0 10px; padding: 16px; border-radius: 20px; background: var(--color-surface); border: 1px solid var(--color-line); display: flex; flex-direction: column; gap: 12px; box-shadow: 0 14px 34px -22px rgba(12, 27, 51, 0.32); }
+.door-line { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; line-height: 1.55; color: var(--color-ink); }
+.door-line p { margin: 3px 0 0; }
+.door-mark { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; color: #0b3a2c; background: radial-gradient(circle at 35% 30%, #e9fff6, #9af2cf 60%, #5fd3a6); }
+.door-you { align-self: flex-end; max-width: 85%; padding: 9px 14px; border-radius: 16px 16px 4px 16px; background: var(--color-ink); color: var(--color-canvas); font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.door-chip { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: color-mix(in srgb, var(--color-teal-400) 16%, transparent); color: var(--color-ink); font-size: 12.5px; font-weight: 600; }
+.door-send { padding: 16px; border-radius: 20px; background: var(--color-surface); border: 1px solid var(--color-line); box-shadow: 0 14px 34px -22px rgba(12, 27, 51, 0.32); }
+.door[data-door-sent] { padding: 18px; border-radius: 20px; background: var(--color-surface); border: 1px solid var(--color-line); }

@@ -15,6 +15,17 @@ const o = await session(b, "waqas@networkintelligence.local");
 /** Wait for the database to show what a click asked for, rather than guessing a delay. */
 const until = async (ok, ms = 10000) => { for (const end = Date.now() + ms; Date.now() < end; await new Promise((r) => setTimeout(r, 250))) if (ok()) return true; return ok(); };
 
+/** Talk to Amana on the front door, as a stranger would, and return the final "send" form. */
+const door = async (p, mode, a) => {
+  await p.goto(`${BASE}/${mode === "join" ? "?as=join" : ""}#ask`, { waitUntil: "networkidle" });
+  await p.locator("#front-ask").fill(a.text); await p.locator("#front-ask").press("Enter");
+  const ans = async (t) => { await p.locator("#front-answer").fill(t); await p.locator("#front-answer").press("Enter"); };
+  await ans(a.name); await ans(a.email);
+  if (mode === "need") { if (a.who === "agency") await p.getByRole("button", { name: "An agency" }).click(); await ans(a.org); }
+  else if (a.knows) await ans(a.knows); else await p.getByRole("button", { name: "Skip" }).click();
+  const f = p.locator(".door-send"); await f.waitFor(); return f;
+};
+
 await step("public page: signed out, it says what the network is and publishes the six proofs", null, async () => {
   const p = await stranger();
   const r = await p.goto(`${BASE}/`, { waitUntil: "networkidle" });
@@ -34,22 +45,15 @@ await step("public page: a signed-in user is sent home, not shown the front door
 
 await step("apply to join: a stranger applies, the owner invites them from Grow", o, async () => {
   const p = await stranger();
-  await p.goto(`${BASE}/#join`, { waitUntil: "networkidle" });
-  const f = p.locator("#join form");
-  await f.getByLabel("Your name").fill("Rana Aziz"); await f.getByLabel("Email").fill(APPLY);
-  await f.getByLabel(/What you do/).fill("Fractional CFO, energy and utilities");
-  await f.getByLabel(/Who do you know/).fill("Sarah Okonkwo");
-  await f.getByLabel(/The work you are best at/).fill("Finance transformation and turnaround for mid-size energy groups. Open to fractional and SOW.");
+  const A = { text: "Fractional CFO, energy and utilities. Finance transformation and turnaround for mid-size energy groups. Open to fractional and SOW.", name: "Rana Aziz", email: APPLY, knows: "Sarah Okonkwo" };
+  let f = await door(p, "join", A);
   // Without consent nothing is stored.
   await f.locator('input[name="consent"]').evaluate((el) => { el.required = false; });
   await f.getByRole("button", { name: "Send my application" }).click(); await p.waitForURL(/error=consent/, { timeout: 20000 });
   assert(sql(`select count(*) from "PublicRequest" where email='${APPLY}'`) === "0", "nothing stored without consent");
-  const f2 = p.locator("#join form");
-  await f2.getByLabel("Your name").fill("Rana Aziz"); await f2.getByLabel("Email").fill(APPLY);
-  await f2.getByLabel(/What you do/).fill("Fractional CFO, energy and utilities");
-  await f2.getByLabel(/The work you are best at/).fill("Finance transformation and turnaround for mid-size energy groups. Open to fractional and SOW.");
-  await f2.locator('input[name="consent"]').check();
-  await f2.getByRole("button", { name: "Send my application" }).click(); await p.waitForURL(/sent=join/, { timeout: 20000 });
+  f = await door(p, "join", A);
+  await f.locator('input[name="consent"]').check();
+  await f.getByRole("button", { name: "Send my application" }).click(); await p.waitForURL(/sent=join/, { timeout: 20000 });
   assert(await p.getByText(/application is with us/i).isVisible(), "thank-you shown");
   await p.context().close();
   assert(sql(`select status from "PublicRequest" where email='${APPLY}' and kind='JOIN'`) === "NEW", "application stored as NEW");
@@ -64,11 +68,8 @@ await step("apply to join: a stranger applies, the owner invites them from Grow"
 
 await step("bring us a need: a company sends one, the owner hands it to the co-pilot", o, async () => {
   const p = await stranger();
-  await p.goto(`${BASE}/#need`, { waitUntil: "networkidle" });
-  const f = p.locator("#need form");
-  await f.getByLabel("Your name").fill("Tom Reyes"); await f.getByLabel("Work email").fill(NEED);
-  await f.getByLabel("Organisation").fill("Gulf Utilities Co");
-  await f.getByLabel(/What do you need/).fill("We need an interim programme director in Dubai for nine months to recover a delayed billing replacement.");
+  const f = await door(p, "need", { text: "We need an interim programme director in Dubai for nine months to recover a delayed billing replacement.", name: "Tom Reyes", email: NEED, org: "Gulf Utilities Co" });
+  assert(await p.locator(".door-chip").count() >= 1, "Amana shows how it read the need");
   await f.locator('input[name="consent"]').check();
   await f.getByRole("button", { name: "Send it to us" }).click(); await p.waitForURL(/sent=need/, { timeout: 20000 });
   await p.context().close();
@@ -84,10 +85,8 @@ await step("bring us a need: a company sends one, the owner hands it to the co-p
 
 await step("declining something sent in deletes it", o, async () => {
   const p = await stranger();
-  await p.goto(`${BASE}/#join`, { waitUntil: "networkidle" });
-  const f = p.locator("#join form"), gone = `e2e-decline-${stamp}@example.com`;
-  await f.getByLabel("Your name").fill("Not A Fit"); await f.getByLabel("Email").fill(gone);
-  await f.getByLabel(/What you do/).fill("Something else entirely"); await f.getByLabel(/The work you are best at/).fill("Not related to this network at all, sorry.");
+  const gone = `e2e-decline-${stamp}@example.com`;
+  const f = await door(p, "join", { text: "Something else entirely, not related to this network at all, sorry.", name: "Not A Fit", email: gone });
   await f.locator('input[name="consent"]').check(); await f.getByRole("button", { name: "Send my application" }).click(); await p.waitForURL(/sent=join/, { timeout: 20000 }); await p.context().close();
   await o.goto(`${BASE}/invite`, { waitUntil: "networkidle" });
   const row = o.locator("[data-application]").filter({ hasText: gone });
@@ -99,10 +98,9 @@ await step("declining something sent in deletes it", o, async () => {
 
 await step("a filled-in trap field stores nothing", null, async () => {
   const p = await stranger();
-  await p.goto(`${BASE}/#need`, { waitUntil: "networkidle" });
-  const f = p.locator("#need form"), bot = `e2e-bot-${stamp}@example.com`;
-  await f.getByLabel("Your name").fill("Bot"); await f.getByLabel("Work email").fill(bot); await f.getByLabel("Organisation").fill("Bots Ltd");
-  await f.getByLabel(/What do you need/).fill("Buy cheap followers now from our website please."); await f.locator('input[name="consent"]').check();
+  const bot = `e2e-bot-${stamp}@example.com`;
+  const f = await door(p, "need", { text: "Buy cheap followers now from our website please.", name: "Bot", email: bot, org: "Bots Ltd" });
+  await f.locator('input[name="consent"]').check();
   await f.locator('input[name="website"]').evaluate((el) => { el.value = "http://spam.example"; });
   await f.getByRole("button", { name: "Send it to us" }).click(); await p.waitForURL(/sent=need/, { timeout: 20000 }); await p.context().close();
   assert(sql(`select count(*) from "PublicRequest" where email='${bot}'`) === "0", "nothing stored from a script");

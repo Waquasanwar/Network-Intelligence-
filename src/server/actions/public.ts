@@ -29,13 +29,13 @@ const needSchema = z.object({ name: text(120, 2), email, organisation: text(160,
 
 async function receive(kind: "JOIN" | "NEED", formData: FormData, limited: boolean, network: { id: string; name: string } | null) {
   const anchor = kind === "JOIN" ? "join" : "need";
-  const back = (error: string) => redirect(`/?form=${anchor}&error=${error}#${anchor}`);
+  const back = (error: string) => redirect(`/?form=${anchor}&error=${error}#ask`);
   if (limited) back("throttled");
   if (!network) redirect("/login");
   // Closed until the owner releases public applications: nothing is stored.
   if (!(await loadFeatures(network.id)).publicApplications) redirect("/");
   // A filled-in trap field means a script, not a person. Thank it and store nothing.
-  if (String(formData.get("website") || "")) redirect(`/?sent=${anchor}#${anchor}`);
+  if (String(formData.get("website") || "")) redirect(`/?sent=${anchor}#ask`);
   if (formData.get("consent") !== "on") back("consent");
   const fields = Object.fromEntries(formData);
   const parsed = kind === "JOIN" ? joinSchema.safeParse(fields) : needSchema.safeParse(fields);
@@ -54,7 +54,7 @@ async function receive(kind: "JOIN" | "NEED", formData: FormData, limited: boole
     await audit({ tenantId, actorId: null, action: kind === "JOIN" ? "public.apply" : "public.need", entityType: "PublicRequest", entityId: r.id });
   }
   revalidatePath("/invite"); revalidatePath("/requirements"); revalidatePath("/overview");
-  redirect(`/?sent=${anchor}#${anchor}`);
+  redirect(`/?sent=${anchor}#ask`);
 }
 
 /** Apply to join. Public: the network is fixed by publicNetwork(), and the endpoint is throttled. */

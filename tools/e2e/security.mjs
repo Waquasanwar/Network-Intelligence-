@@ -78,11 +78,12 @@ await step("sign-in: repeated wrong passwords from one place are throttled", nul
 await step("injection: script typed into the public form shows as text and never runs", null, async () => {
   const email = `e2e-xss-${stamp}@example.com`;
   const p = await stranger();
-  await p.goto(`${BASE}/#join`, { waitUntil: "networkidle" });
-  const f = p.locator("#join form");
-  await f.getByLabel("Your name").fill(`<img src=x onerror="window.__pwned=1">Eve`); await f.getByLabel("Email").fill(email);
-  await f.getByLabel(/What you do/).fill(`<script>window.__pwned=1</script>Fractional COO`);
-  await f.getByLabel(/The work you are best at/).fill(`"><svg onload="window.__pwned=1"> Operations turnarounds and interim leadership.`);
+  await p.goto(`${BASE}/?as=join#ask`, { waitUntil: "networkidle" });
+  await p.locator("#front-ask").fill(`<script>window.__pwned=1</script>Fractional COO "><svg onload="window.__pwned=1"> Operations turnarounds and interim leadership.`); await p.locator("#front-ask").press("Enter");
+  for (const t of [`<img src=x onerror="window.__pwned=1">Eve`, email]) { await p.locator("#front-answer").fill(t); await p.locator("#front-answer").press("Enter"); }
+  await p.getByRole("button", { name: "Skip" }).click();
+  assert(!(await p.evaluate(() => window.__pwned)), "script typed into the conversation ran");
+  const f = p.locator(".door-send");
   await f.locator('input[name="consent"]').check();
   await f.getByRole("button", { name: "Send my application" }).click(); await p.waitForURL(/sent=join/, { timeout: 20000 });
   await p.context().close();
