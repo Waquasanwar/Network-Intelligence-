@@ -1,6 +1,5 @@
 import { Sidebar } from "./sidebar";
 import { CommandPalette } from "./command-palette";
-import { AskDock } from "./ask-dock";
 import { CoreBar } from "./core-bar";
 import { Suspense } from "react";
 import { TopBar, Crumbs, SectionTabs } from "./topbar";
@@ -63,14 +62,13 @@ export async function AppShell({ user, children }: { user: SessionUser; children
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar alerts={alerts} user={{ name: user.name, role: user.role, tenantName: user.tenantName }} home={user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : user.role === "CLIENT" ? "/client-workspace" : "/overview"} />
         <main className="flex-1 min-w-0">
-          <div className={`max-w-[1280px] mx-auto px-4 pt-1 sm:px-6 lg:px-8 ${isInternal(user) ? "pb-32 lg:pb-28" : "pb-32 lg:pb-10"}`}>
+          <div className={`max-w-[1280px] mx-auto px-4 pt-1 sm:px-6 lg:px-8 pb-32 lg:pb-14`}>
             {isInternal(user) ? <SectionTabs role={user.role} className="lg:hidden mb-4" /> : null}
             <Crumbs />
             <div className="reveal">{children}</div>
           </div>
         </main>
       </div>
-      {isInternal(user) ? <AskDock /> : null}
       <Suspense fallback={null}><CoreBar role={user.role} internal={isInternal(user)} released={released} /></Suspense>
       <CommandPalette items={items} />
     </div>

@@ -93,7 +93,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<AddPersonDrawer people={allPeopleLite} />} />
+      <PageHeader title="Network" description="Search by relationship, expertise, location and status. Ask in plain language." actions={<AddPersonDrawer people={allPeopleLite} />} >
       <NextStep step={await networkStep(user.tenantId)} />
       <StatStrip>
         <Stat icon={Users} label="People" value={counts[0]} hint="everyone you hold a profile for" href="/network" />
@@ -101,7 +101,7 @@ export default async function NetworkPage({ searchParams }: { searchParams: Prom
         <Stat icon={Zap} label="Open to work" value={counts[2]} hint="available now or soon" href="/network?status=AVAILABLE_NOW" />
         <Stat icon={UserCheck} label="Joined" value={counts[3]} hint="have their own login" href="/invite" />
       </StatStrip>
-
+      </PageHeader>
       <form className="flex flex-wrap gap-2 mb-3">
         <div className="relative basis-full lg:basis-0 lg:flex-1">
           <Search className="h-4 w-4 text-ink-faint absolute left-3.5 top-3" />

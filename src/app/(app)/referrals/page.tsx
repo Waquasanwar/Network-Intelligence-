@@ -6,7 +6,7 @@ import { TRUST_INCLUDE } from "@/lib/trust-include";
 import { PageHeader, EmptyState, Tabs } from "@/components/ui/page";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stat } from "@/components/ui/stat";
+import { Stat, StatStrip } from "@/components/ui/stat";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { PersonLink } from "@/components/domain/person-link";
 import { DateText } from "@/components/domain/date";
@@ -35,10 +35,11 @@ export default async function ReferralsPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="Referrals and pitches" description="People who know people. Every referral carries the referrer's name inside the network and nothing outside it." />
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-5">
+      <PageHeader title="Referrals and pitches" description="People who know people. Every referral carries the referrer's name inside the network and nothing outside it." >
+      <StatStrip className="is-five">
         <Stat label="New referrals" value={refs.filter((r) => r.status === "NEW").length} hint="to triage" /><Stat label="Accepted" value={refs.filter((r) => r.status === "ACCEPTED").length} hint="into the network" tone="teal" /><Stat label="Pitches" value={pitches.filter((x) => x.status === "SUBMITTED").length} hint="waiting" /><Stat label="Joining" value={joiners.length} hint="registered or in screening" /><Stat label="Members screened" value={screenedCount} tone="teal" />
-      </div>
+      </StatStrip>
+      </PageHeader>
       <Tabs items={tabs} current={tab} base="/referrals" />
 
       {tab === "pitches" ? (pitches.length === 0 ? <EmptyState title="No pitches yet" description="Members pitch from their portal when a requirement is opened to them." /> : <div className="space-y-3">{await Promise.all(pitches.map(async (x) => { const t = await trustFor(x.person); return (

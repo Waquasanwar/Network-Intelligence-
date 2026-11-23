@@ -2,16 +2,27 @@ import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
+import { Constellation } from "@/components/ui/constellation";
 
-export function PageHeader({ title, description, actions }: { title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode; eyebrow?: React.ReactNode }) {
+/**
+ * Every page opens on the same ink stage as home: the title, Amana's one suggestion for this page,
+ * and the figures that matter, in one band instead of three stacked boxes. Still, never animated.
+ * Anything passed as children (a NextStep, a StatStrip) sits inside the band.
+ */
+export function PageHeader({ title, description, actions, children }: { title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode; eyebrow?: React.ReactNode; children?: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 mb-6">
-      <div className="min-w-0">
-        <h1 className="font-display text-[26px] sm:text-[32px] text-ink leading-[1.1]">{title}</h1>
-        {description ? <p className="text-[14.5px] text-ink-muted mt-2 max-w-2xl leading-[1.55]">{description}</p> : null}
+    <section className="page-stage stage-ink mb-6" data-page-stage>
+      <Constellation focus={0.82} density={0.55} />
+      <span className="page-stage-veil" aria-hidden="true" />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <div className="min-w-0">
+          <h1 className="page-stage-title">{title}</h1>
+          {description ? <p className="page-stage-lede">{description}</p> : null}
+        </div>
+        {actions ? <div className="page-stage-actions flex flex-wrap items-center gap-2 sm:flex-none">{actions}</div> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2 sm:flex-none">{actions}</div> : null}
-    </div>
+      {children ? <div className="page-stage-body">{children}</div> : null}
+    </section>
   );
 }
 
@@ -106,7 +117,7 @@ export function Label({ children, className }: { children: React.ReactNode; clas
 /** Apple-style segmented control. Links, so it works without JS. */
 export function Segmented({ items, current }: { items: { key: string; label: string; href: string }[]; current: string }) {
   return (
-    <div className="inline-flex items-center rounded-full bg-surface-muted p-[3px] border border-line">
+    <div className="segmented inline-flex items-center rounded-full bg-surface-muted p-[3px] border border-line">
       {items.map((it) => (
         <Link key={it.key} href={it.href} className={cn("px-3 h-7 inline-flex items-center rounded-full text-[12.5px] font-medium transition-all", current === it.key ? "bg-surface text-ink shadow-[0_1px_2px_rgba(16,24,40,0.12),0_0_0_1px_rgba(16,24,40,0.04)]" : "text-ink-muted hover:text-ink")}>
           {it.label}

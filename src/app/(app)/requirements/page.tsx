@@ -75,7 +75,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
 
   return (
     <>
-      <PageHeader title="Requirements" description={money ? "Clients, agencies and Amana tell us what they need. We structure it, you decide who to propose, and the fee is worked out as you go." : "Clients, agencies and Amana tell us what they need. We structure it and you decide who to propose."} actions={<NewAccountDrawer defaultCurrency={card.currency} />} />
+      <PageHeader title="Requirements" description={money ? "Clients, agencies and Amana tell us what they need. We structure it, you decide who to propose, and the fee is worked out as you go." : "Clients, agencies and Amana tell us what they need. We structure it and you decide who to propose."} actions={<NewAccountDrawer defaultCurrency={card.currency} />} >
       <NextStep step={await requirementsStep(user.tenantId)} />
       <StatStrip>
         <Stat icon={ListChecks} label="Open requirements" value={open.length} hint={`${briefs.filter((b) => b.submittedVia === "PORTAL").length} came through the portal`} />
@@ -88,6 +88,7 @@ export default async function RequirementsPage({ searchParams }: { searchParams:
           <Stat icon={CheckCheck} label="Filled" value={briefs.filter((b) => b.status === "FILLED").length} hint="requirements closed with a placement" />
         </>}
       </StatStrip>
+      </PageHeader>
       <Tabs items={[{ key: "briefs", label: "Requirements", count: briefs.length }, { key: "accounts", label: "Accounts", count: accounts.length }, ...(money ? [{ key: "fees", label: "Fees", count: fees.length }] : [])]} current={tab} base="/requirements" />
       {tab === "briefs" ? (<>
       {enquiries.length ? (

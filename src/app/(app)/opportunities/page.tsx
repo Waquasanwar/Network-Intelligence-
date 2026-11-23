@@ -27,7 +27,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageHeader title="Opportunities" description="Start from the client's problem, not a vacancy. The route is decided after we know who we have." actions={<><Segmented current={view} items={[{ key: "list", label: "List", href: `/opportunities?view=list${sp.route ? `&route=${sp.route}` : ""}` }, { key: "board", label: "Board", href: `/opportunities?view=board${sp.route ? `&route=${sp.route}` : ""}` }]} /><NewOpportunityDrawer partners={partners} /></>} />
+      <PageHeader title="Opportunities" description="Start from the client's problem, not a vacancy. The route is decided after we know who we have." actions={<><Segmented current={view} items={[{ key: "list", label: "List", href: `/opportunities?view=list${sp.route ? `&route=${sp.route}` : ""}` }, { key: "board", label: "Board", href: `/opportunities?view=board${sp.route ? `&route=${sp.route}` : ""}` }]} /><NewOpportunityDrawer partners={partners} /></>} >
       <NextStep step={await opportunitiesStep(user.tenantId)} />
       <StatStrip>
         <Stat icon={Briefcase} label="Live" value={opps.filter((o) => !["CLOSED_WON", "CLOSED_LOST", "ON_HOLD"].includes(o.status)).length} hint="open problems to solve" />
@@ -35,7 +35,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
         <Stat icon={Handshake} label="Introducing" value={opps.filter((o) => ["INTRODUCING", "ENGAGED"].includes(o.status)).length} hint="conversations under way" />
         <Stat icon={Trophy} label="Won" value={opps.filter((o) => o.status === "CLOSED_WON").length} hint="closed with a placement" tone="teal" />
       </StatStrip>
-
+      </PageHeader>
       <div className="flex flex-wrap gap-1.5 mb-4">
         {Object.entries(ROUTE_LABELS).map(([k, v]) => <Pill key={k} href={`/opportunities?view=${view}${sp.route === k ? "" : `&route=${k}`}`} active={sp.route === k}>{v}</Pill>)}
       </div>

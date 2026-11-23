@@ -25,7 +25,7 @@ await step("no horizontal overflow on the new pages at phone width", null, async
   await p.goto(`${BASE}/invite`, { waitUntil: "networkidle" }); await p.screenshot({ path: `${DIR}/grow-phone.png`, fullPage: false });
   await p.context().close();
 });
-await step("navigation, next step and ask bar", null, async () => {
+await step("navigation, next step and Ask Amana", null, async () => {
   const p = await session(b, "waqas@networkintelligence.local");
   await p.goto(`${BASE}/network`, { waitUntil: "networkidle" });
   // six sections in the sidebar; the pages of the section as tabs above the page
@@ -47,12 +47,12 @@ await step("navigation, next step and ask bar", null, async () => {
   await p.goto(`${BASE}/network`, { waitUntil: "networkidle" });
   const ns = p.locator(".next-step"); assert((await ns.count()) === 1, "one next step on the network page");
   const href = await ns.getByRole("link").getAttribute("href"); assert(/^\/(network\/|invite)/.test(href), "next step leads somewhere: " + href);
-  // the ask bar opens search with its question typed, and that question can be asked
-  const bar = p.getByRole("button", { name: /^Ask your network/ }); await bar.click();
-  const box = p.getByRole("dialog", { name: "Search the network" }).locator("input"); const q = await box.inputValue(); assert(q.length > 10, "ask bar question carried over: " + q);
+  // Ask Amana in the rail opens search with a question for this section typed, and it can be asked
+  const bar = p.locator("aside").getByRole("button", { name: /^Ask Amana/ }); await bar.click();
+  const box = p.getByRole("dialog", { name: "Search the network" }).locator("input"); const q = await box.inputValue(); assert(q.length > 10, "the section's question carried over: " + q);
   await p.keyboard.press("Enter"); await p.waitForURL(/\/network\?q=/, { timeout: 15000 });
   await p.screenshot({ path: `${DIR}/ask.png` });
-  await p.goto(`${BASE}/overview`, { waitUntil: "networkidle" }); assert(!(await p.locator(".ask-dock").count()), "home keeps its own composer");
+  await p.goto(`${BASE}/overview`, { waitUntil: "networkidle" }); assert(!(await p.locator(".ask-dock").count()), "no floating bar over the page");
   // profile graphics
   await p.goto(`${BASE}/network/${sql(`select "personId" from "Relationship" where "workedTogether" limit 1`)}`, { waitUntil: "networkidle" });
   assert(await p.getByRole("img", { name: /^Trust \d+ out of 100/ }).count(), "trust ring"); assert(await p.getByText("Keeping in touch").count(), "contact strip");

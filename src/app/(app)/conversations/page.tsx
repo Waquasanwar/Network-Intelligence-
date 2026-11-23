@@ -44,8 +44,9 @@ export default async function ConversationsPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageHeader title="Conversations" description="Natural conversations, written up for you to approve. Nothing becomes authoritative until reviewed." actions={<QuickCapture people={peopleLite} />} />
+      <PageHeader title="Conversations" description="Natural conversations, written up for you to approve. Nothing becomes authoritative until reviewed." actions={<QuickCapture people={peopleLite} />} >
       <NextStep step={await conversationsStep(user.tenantId)} />
+      </PageHeader>
       <Tabs items={tabs} current={tab} base="/conversations" />
 
       {tab === "upcoming" ? (

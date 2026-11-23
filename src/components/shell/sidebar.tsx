@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { APP_NAME } from "@/lib/brand";
 import { sectionsFor, locate } from "./nav";
+import { askFor } from "./ask";
+import { AgentMark } from "@/components/ui/agent-mark";
 import type { Role } from "@prisma/client";
 
 const PARTNER_NAV = [{ href: "/portal", label: "Requirements", icon: ListChecks }, { href: "/portal/search", label: "Search the network", icon: Search }, { href: "/partner-portal", label: "Partner portal", icon: Handshake }, { href: "/settings/security", label: "Security", icon: ShieldCheck }];
@@ -48,7 +50,7 @@ export function Sidebar({ user, released = { home: true, connections: true, refe
     return <Link href={href} aria-current={active ? "page" : undefined} className={row(active)}><Icon className="h-[18px] w-[18px] flex-none" /><span className="flex-1 truncate">{label}</span></Link>;
   };
   const home = restricted ? (user.role === "PARTNER" ? "/partner-portal" : user.role === "MEMBER" ? "/member" : "/client-workspace") : "/overview";
-  const openSearch = () => { setOpen(false); window.dispatchEvent(new CustomEvent("ni:open-palette")); };
+  const openSearch = (q?: string) => { setOpen(false); window.dispatchEvent(new CustomEvent("ni:open-palette", q ? { detail: { q } } : undefined)); };
 
   return (
     <>
@@ -65,11 +67,20 @@ export function Sidebar({ user, released = { home: true, connections: true, refe
         </Link>
       </div>
       <div className="px-3 pb-2">
-        <button type="button" onClick={openSearch} className="flex h-9 w-full items-center gap-2.5 rounded-[10px] border border-line bg-surface pl-3 pr-1.5 text-[13.5px] text-ink-faint transition-colors duration-200 hover:border-line-strong cursor-pointer">
-          <Search className="h-4 w-4 flex-none" />
-          <span className="flex-1 text-left">Search for…</span>
-          <kbd className="!rounded-full !px-2 !py-1">⌘K</kbd>
-        </button>
+        {restricted ? (
+          <button type="button" onClick={() => openSearch()} className="flex h-9 w-full items-center gap-2.5 rounded-[10px] border border-line bg-surface pl-3 pr-1.5 text-[13.5px] text-ink-faint transition-colors duration-200 hover:border-line-strong cursor-pointer">
+            <Search className="h-4 w-4 flex-none" />
+            <span className="flex-1 text-left">Search for…</span>
+            <kbd className="!rounded-full !px-2 !py-1">⌘K</kbd>
+          </button>
+        ) : (
+          // Ask from anywhere: one fixed place in the rail, with a question that suits the section.
+          <button type="button" onClick={() => openSearch(askFor(pathname))} className="ask-rail" aria-label={`Ask Amana. For example: ${askFor(pathname)}`} data-ask-rail>
+            <span className="ask-rail-orb" aria-hidden="true"><AgentMark size={14} /></span>
+            <span className="min-w-0 flex-1 text-left"><span className="block text-[13.5px] font-semibold text-ink">Ask Amana</span><span className="block truncate text-[12px] text-ink-faint">{askFor(pathname)}</span></span>
+            <kbd className="!rounded-full !px-2 !py-1">⌘K</kbd>
+          </button>
+        )}
       </div>
       <nav aria-label="Main" className="px-3 flex-1 space-y-1 overflow-y-auto pt-3 pb-4">
         {restricted ? (user.role === "PARTNER" ? PARTNER_NAV : user.role === "MEMBER" ? MEMBER_NAV : CLIENT_NAV).filter((i) => shows(i.href) || (i.href === "/member" && user.role === "MEMBER")).map((i) => <Item key={i.href} {...i} />) : (
