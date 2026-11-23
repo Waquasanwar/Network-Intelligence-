@@ -484,6 +484,21 @@ function periodSection(){
     if(wrap.isConnected)after.splice(0).forEach((f)=>f())};
   wrap.append(body);render();return wrap}
 
+/* A chart with one line of reading on top: what the trend means and where it is heading. */
+function trendCard(title,cfg,say,tone){const c=chartCard(title,cfg);c.querySelector('.ph').after(el('p','tsay',el('span','pill '+tone,TAG[tone]),' ',say));return c}
+function execTrends(){const sla=S.sla,tgt=L.sla_target,rs=S.rsla,rt=Q.response_target,kS=etaW(sla,tgt,'higher'),inc=S.inc,hi=S.sevC.map((v,i)=>v+S.sevH[i]),
+    op=S.opened,cl=S.closed,net=sum(cl.slice(-4),(v)=>v)-sum(op.slice(-4),(v)=>v),mt=S.mttr,kM=etaW(mt,15,'lower'),cont=S.cont,peak=inc.indexOf(Math.max(...inc)),hiShare=Math.round(sum(hi.slice(-4),(v)=>v)/sum(inc.slice(-4),(v)=>v)*100);
+  const g=el('div','two keep');g.append(
+    trendCard('Service levels met',{min:70,max:100,label:'Percent of fixes and responses inside the agreed time, by week',end:true,dec:true,unit:'%',go:'remediation',target:{value:tgt,label:`${tgt}% fix target`},
+      series:[{vals:sla,color:'var(--a1)',label:'Fixes in time'},{vals:rs,color:'var(--a2)',label:'Responses in time'}]},
+      `Responses are ${last(rs)>=rt?'inside':'outside'} the ${rt}% target at ${last(rs)}%. Fixes are at ${last(sla)}% against ${tgt}%, up ${f1(slope(sla))} points a week${kS?`; on this pace they meet the target around ${ahead(kS)}`:kS===0?'':', and not closing the gap'}.`,last(sla)>=tgt&&last(rs)>=rt?'ok':'warn'),
+    trendCard('What has been detected',{label:'Incidents by week, with critical and high',end:true,go:'detection',series:[{vals:inc,color:'var(--a1)',label:'All incidents'},{vals:hi,color:'var(--crit)',label:'Critical and high'}]},
+      `${last(inc)} incidents last week, ${slope(inc)<0?'down':'up'} ${f1(Math.abs(slope(inc)))} a week over six weeks. The peak was the week ending ${day(W[peak].week_ending)} (${inc[peak]}). ${hiShare}% of the last four weeks were critical or high.`,slope(inc)<=0?'ok':'warn'),
+    trendCard('Found against fixed',{label:'Vulnerability findings opened and closed, by week',end:true,go:'remediation',series:[{vals:op,color:'var(--warn)',label:'Found'},{vals:cl,color:'var(--a1)',label:'Fixed'}]},
+      `In four weeks ${f0(sum(cl.slice(-4),(v)=>v))} findings were fixed and ${f0(sum(op.slice(-4),(v)=>v))} found, so the backlog ${net>=0?'fell':'grew'} by ${Math.abs(net)}. ${streak(cl)>=3?`Fixes have slowed ${streak(cl)} weeks running; the backlog is falling because fewer are arriving.`:''}`,net>=0&&streak(cl)<3?'ok':'warn'),
+    trendCard('Time to fix and contain',{label:'Average days to fix a critical finding, by week',end:true,dec:true,fc:FC,go:'remediation',target:{value:15,label:'15-day policy'},series:[{vals:mt,color:'var(--a1)',label:'Days to fix a critical'}]},
+      `Critical findings take ${last(mt)} days to fix against a 15-day policy, ${slope(mt)<0?'falling':'rising'} ${f1(Math.abs(slope(mt)))} days a week${kM===0?'':kM?`; inside policy around ${ahead(kM)}`:''}. Incidents are contained in ${f1(last(cont))} hours, from ${f1(cont[0])} twelve weeks ago.`,last(mt)<=15?'ok':'warn'));
+  return[el('h2','band keep','Trends'),g]}
 V.exec=()=>{
   const ms=OC.flatMap((o)=>o.measures.map((m)=>({...m,outcome:o.outcome}))),measured=ms.filter((m)=>m.meets!=null),met=measured.filter((m)=>m.meets),gaps=measured.filter((m)=>!m.meets),realised=OC.filter((o)=>o.status==='Realised');
   const h1=el('h1','','Phase 2: ',el('em','',`${met.length} of ${measured.length}`),' measured targets met. ',el('em','',String(realised.length)),' outcomes realised.');
@@ -499,7 +514,7 @@ V.exec=()=>{
   const all=el('button','link sm','All signals');all.type='button';all.addEventListener('click',()=>show('signals',true));
   const ar=el('ul','arealist');Object.keys(AREAS).forEach((k)=>{const a=AREAS[k];const b=el('button','xrow',el('span','',el('b','',a.name),el('small','',a.what)),el('span','pill '+a.tone,a.state));b.type='button';b.addEventListener('click',()=>show(k,true));ar.append(el('li','',b))});
   return[head,insights([IX.exposure(),IX.provider(),IX.siem(),IX.ai(),IX.estate(),IX.teams()],4),band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
-    el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl))]};
+    ...execTrends(),el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl))]};
 
 /* ---------- Role views: executive insights, SOC director, Infrastructure, Engineering (see AUDIENCES.md) ---------- */
 const RO=DATA.roles||{},MS=RO.mssp,SI=RO.siem,AI=RO.ai,IN=RO.infra,EN=RO.eng;
@@ -795,7 +810,7 @@ function customFor(k){const list=(DATA.custom||[]).filter((m)=>m.view===k&&Array
   return[band('More measures'),tiles,charts.children.length?charts:null].filter(Boolean)}
 /* Summary or full detail, per page: summary keeps the insights, the headline figures, the first chart and the tables. */
 const NODETAIL=['live','threats','workflows','reports','build'];
-function markDetail(v){if(NODETAIL.includes(v.id))return;const KEEP=v.id==='exec'?1:4,skip='header,.dsays,.stats,.heroband,.period,.funnel,.signals,.band,.note,.more-detail';let shown=0,hid=0,charts=0;
+function markDetail(v){if(NODETAIL.includes(v.id))return;const KEEP=v.id==='exec'?1:4,skip='header,.keep,.dsays,.stats,.heroband,.period,.funnel,.signals,.band,.note,.more-detail';let shown=0,hid=0,charts=0;
   const kids=[...v.children].filter((x)=>!x.matches(skip));
   kids.forEach((x)=>{const cards=x.matches('section.card')?[x]:[...x.children].filter((c)=>c.matches('section.card,article.card'));if(!cards.length)return;
     cards.forEach((c)=>{const ch=!!c.querySelector('.chart');if(shown<KEEP&&!(ch&&charts>=2)){shown++;if(ch)charts++}else{c.classList.add('xtra');hid++}});if(cards.every((c)=>c.classList.contains('xtra')))x.classList.add('xtra')});
