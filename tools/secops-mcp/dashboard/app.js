@@ -115,7 +115,7 @@ function dataPanel(cfg){const fc=cfg.fc||0,dec=cfg.dec,u=cfg.unit||'',lo=cfg.cla
   return[el('div','cfoot',el('span','cap','Select a week on the chart for its figures'),btn),wrap]}
 function chartCard(title,cfg){const box=el('div','chart'),c=el('section','card',el('div','ph',el('h2','h',title),legend(cfg.series.map((q)=>[q.label,q.grad?'linear-gradient(var(--a2),var(--a1))':q.color]))),box,...dataPanel(cfg));const base=cfg.onPick;cfg.onPick=(i)=>{base(i);weekDrill(cfg,title,i)};after.push(()=>chart(box,cfg));return c}
 function stat(label,value,unit,dec,c,betterDir,vals,color,go){
-  const v=el('span'),num=el('div','num',v,unit?el('span','unit',unit):null),sp=vals?el('div','spark'):null;
+  const v=el('span'),num=el('div','num',v,unit?el('span','unit',unit):null),sp=null;
   const card=el(go?'button':'div','card kpi'+(go?' lift':''),el('div','cap',label),num,c===null?el('div','cap',' '):el('div','',deltaEl(c,betterDir,dec),' ',el('span','cap','on last week')),sp);
   if(go){card.type='button';card.addEventListener('click',()=>show(go,true))}
   after.push(()=>{count(v,value,dec);if(sp)spark(sp,vals,color||'var(--a1)')});return card}
@@ -470,8 +470,8 @@ function periodSection(){
     const bsize=len<=92?1:7,src=len<=1?DY.filter((r)=>r.date>addDays(to,-14)&&r.date<=to):rows,bk=bucket(src,len<=1?1:bsize);
     PM.forEach(([k,label,u,better,target,dec])=>{const v=c[k],pv=hasPrev?p[k]:null,[vt,tone,tn]=verdict(v,pv,better,target),sp=el('div','spark');
       const val=v==null?'—':(dec?f1(v):f0(v))+u,cmp=pv==null||v==null?'':`${dec?f1(pv):f0(pv)}${u} in the period before`;
-      tiles.append(el('div','card ptile',el('span','cap',label),el('div','num',val),el('div','pcmp',cmp),el('div','pv',vt?el('span','pill '+tone,vt):null,tn?el('span','cap',' '+tn):null),sp));
-      const series=bk.map((g)=>{const a=agg(g);return a[k]==null?0:a[k]});if(series.length>1)after.push(()=>spark(sp,series,better==='neutral'?'var(--dim)':'var(--a1)'))});
+      tiles.append(el('div','card ptile'+(tiles.children.length>=5?' xtra':''),el('span','cap',label),el('div','num',val),el('div','pcmp',cmp),el('div','pv',vt?el('span','pill '+tone,vt):null,tn?el('span','cap',' '+tn):null)));
+      const series=bk.map((g)=>{const a=agg(g);return a[k]==null?0:a[k]});});
     const cbox=el('div','chart'),curV=bk.map((g)=>agg(g).incidents),prevRows=len<=1?[]:prow,pv=bucket(prevRows,bsize).map((g)=>agg(g).incidents);
     const labels={unit:len<=1||bsize===1?'day':'week',at:bk.map((g)=>bsize===1||len<=1?dfmt(g[0].date):'w/c '+dfmt(g[0].date))};const pickB=(i)=>{const g=bk[i],a=agg(g),pa=bucket(prevRows,bsize)[i];const pr=pa?agg(pa):{};drill(`Incidents, ${labels.at[i]}`,g.length>1?`${dfmt(g[0].date)} to ${dfmt(g[g.length-1].date)}`:dfmt(g[0].date),
       PM.map(([k,label,u,bt,tg,dec])=>[label,a[k]==null?'—':(dec?f1(a[k]):f0(a[k]))+u+(pr[k]!=null&&a[k]!=null?`  (before: ${dec?f1(pr[k]):f0(pr[k])}${u})`:''),tg!=null&&a[k]!=null&&(bt==='lower'?a[k]>tg:a[k]<tg)?'alert':'']),[el('p','note','Bracketed figures are the matching '+labels.unit+' of the period before.')],'detection')};
@@ -498,25 +498,66 @@ V.exec=()=>{
   const sl=el('ul','sig-list');[...DATA.notes].filter((r)=>r.confidence==='High').slice(0,4).forEach((r)=>sl.append(signal(r,true)));
   const all=el('button','link sm','All signals');all.type='button';all.addEventListener('click',()=>show('signals',true));
   const ar=el('ul','arealist');Object.keys(AREAS).forEach((k)=>{const a=AREAS[k];const b=el('button','xrow',el('span','',el('b','',a.name),el('small','',a.what)),el('span','pill '+a.tone,a.state));b.type='button';b.addEventListener('click',()=>show(k,true));ar.append(el('li','',b))});
-  return[head,...questions(),band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
-    el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl)),
-    band('Every area'),el('section','card',ar)]};
+  return[head,insights([IX.exposure(),IX.provider(),IX.siem(),IX.ai(),IX.estate(),IX.teams()],4),band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
+    el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl))]};
 
-/* ---------- Role views: CISO and CIO questions, SOC director, Infrastructure, Engineering (see AUDIENCES.md) ---------- */
+/* ---------- Role views: executive insights, SOC director, Infrastructure, Engineering (see AUDIENCES.md) ---------- */
 const RO=DATA.roles||{},MS=RO.mssp,SI=RO.siem,AI=RO.ai,IN=RO.infra,EN=RO.eng;
 const avg=(a)=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
 const srcNote=(...b)=>b.some((x)=>x&&x.source==='sample')?el('p','note','Some figures on this page are sample data until their source is connected. See AUDIENCES.md for where each comes from.'):null;
-function qcard(q,ans,unit,dec,tone,verdictTxt,say,go){const b=el(go?'button':'article','card qcard'+(go?' lift':''),el('div','cap',q),el('div','qrow',bigNum(ans,dec,unit),el('span','pill '+tone,verdictTxt)),el('p','say',say));
-  if(go){b.type='button';b.addEventListener('click',()=>show(go,true))}return b}
-function questions(){if(!MS)return[];const sla=last(MS.sla_pct),gb=avg(SI.daily_gb.slice(-7)),eos=sum(IN.end_of_support,(r)=>r.devices),ex=IN.exploitable_exposed.length,ai=AI.unapproved;
-  const g=el('div','qgrid');g.append(
-    qcard('How exposed are critical services?',ex,'',0,ex?'bad':'ok',ex?'Act now':'Clear',`Exploitable weaknesses open on internet-facing systems. Oldest ${Math.max(...IN.exploitable_exposed.map((r)=>r.days_open),0)} days.`,'infra'),
-    qcard('Is the estate supportable?',eos,'',0,eos>100?'warn':'ok',eos>100?'Plan funding':'Manageable',`Devices on unsupported software. Largest: ${IN.end_of_support[1].software}, ${IN.end_of_support[1].devices} devices.`,'infra'),
-    qcard('Is SAP safe?',IN.sap.critical_config_findings,'',0,IN.sap.critical_config_findings?'warn':'ok',IN.sap.critical_config_findings?'Findings open':'Clear',`Critical SAP configuration findings; ${IN.sap.missing_security_notes} security notes missing across ${IN.sap.systems} systems.`,'sap'),
-    qcard('Is the managed service performing?',sla,'%',1,sla>=98?'ok':'warn',sla>=98?'On target':'Under 98%',`Incidents closed within the agreed time by ${MS.provider}. ${last(MS.escalations_real_pct)}% of escalations were real.`,'socdir'),
-    qcard('Is SIEM spend under control?',gb,' GB',1,gb<=SI.threshold_gb?'ok':'bad',gb<=SI.threshold_gb?'Within design':'Over design',`Ingestion per day, 7-day average, against the ${SI.threshold_gb} GB design threshold.`,'socdir'),
-    qcard('Is AI being used safely?',ai,'',0,ai>20?'warn':'ok',ai>20?'Policy needed':'Controlled',`Unapproved AI apps in use out of ${AI.apps_in_use}. Data sent to AI apps ${sgn(Math.round((last(AI.data_to_ai_mb_week)/AI.data_to_ai_mb_week[0]-1)*100))}% in 12 weeks.`,'ai'));
-  return[band('The questions the CISO and CIO ask'),g]}
+
+/* ---------- Insights: what the figures mean, why it matters, the next step and who owns it ---------- */
+const TONE={bad:0,warn:1,ok:2},TAG={bad:'Act now',warn:'Watch',ok:'Going well'};
+const etaW=(vals,target,better)=>{const v=last(vals),b=slope(vals);if(better==='higher'?v>=target:v<=target)return 0;if(better==='higher'?b<=0:b>=0)return null;return Math.ceil((target-v)/b)};
+const inDays=(d)=>dstr(new Date(Date.now()+d*864e5));
+function insights(items,max){const ul=el('ol','ins');[...items].filter(Boolean).sort((a,b)=>TONE[a.tone]-TONE[b.tone]).slice(0,max||4).forEach((it)=>{
+    const go=it.go&&it.go!==CURRENT?el('button','link sm','Open'):null;if(go){go.type='button';go.addEventListener('click',()=>show(it.go,true))}
+    ul.append(el('li','ins-i',el('span','pill '+it.tone,TAG[it.tone]),el('div','ins-b',el('b','',it.t),el('p','',it.w),it.a?el('p','ins-do',el('span','','Next step. '),it.a):null),el('div','aowner',it.o?el('span','cap',it.o):null,go)))});
+  return el('section','card dsays',el('div','ph',el('h2','h','What the data says'),el('span','cap','Worked out from the figures on this page')),ul)}
+
+const IX={
+ exposure:()=>{const ex=IN.exploitable_exposed;if(!ex.length)return{tone:'ok',t:'No exploitable weakness is open on an internet-facing system.',w:'The highest-risk class of finding is clear.',go:'infra'};
+   const byT={};ex.forEach((r)=>byT[r.team]=(byT[r.team]||0)+1);const [tm,c]=Object.entries(byT).sort((a,b)=>b[1]-a[1])[0],ow=DATA.owners.find((o)=>o.team===tm),old=[...ex].sort((a,b)=>b.days_open-a.days_open)[0];
+   return{tone:'bad',t:`${ex.length} weaknesses with a public exploit are open on internet-facing systems; the oldest, on ${old.host}, for ${old.days_open} days.`,
+     w:`${c} of ${ex.length} sit with ${tm}${ow?`, the team that also holds ${ow.overdue} overdue findings and fixes ${ow.sla_pct}% in time`:''}. This is where an attacker would start.`,
+     a:`Agree a fix date with ${tm} this week, or record a formal risk acceptance.`,o:'Security leadership',go:'infra'}},
+ provider:()=>{const v=last(MS.sla_pct),k=etaW(MS.sla_pct,98,'higher'),worst=[...MS.by_severity].sort((a,b)=>a.within_pct-b.within_pct)[0];
+   if(k===0)return{tone:'ok',t:`The managed SOC met its 98% target last week (${v}%).`,w:`${last(MS.escalations_real_pct)}% of its escalations needed action.`,go:'socdir'};
+   return{tone:k==null?'bad':'warn',t:`The managed SOC closed ${v}% of incidents in time against 98%${k?`, and at its current rate of improvement reaches the target around ${ahead(k)}`:', and is not improving'}.`,
+     w:`${worst.severity} severity is the gap at ${worst.within_pct}% in time. The figures are from Sentinel's timestamps, not the provider's report.`,
+     a:k?`Hold the provider to ${ahead(k)} at the next service review and ask for the ${worst.severity.toLowerCase()}-severity root cause.`:'Raise it formally at the next service review.',o:'Head of security operations',go:'socdir'}},
+ siem:()=>{const d=SI.daily_gb,v=avg(d.slice(-7)),b=slope(d,14),low=SI.by_source.filter((s)=>s.detection_value==='Low'),lowGb=sum(low,(s)=>s.gb_per_day),tot=sum(SI.by_source,(s)=>s.gb_per_day),k=b>0?Math.ceil((SI.threshold_gb-v)/b):null;
+   return{tone:v>SI.threshold_gb?'bad':k!=null&&k<90?'warn':'ok',t:`SIEM ingestion averages ${f1(v)} GB a day against the ${SI.threshold_gb} GB design threshold${k!=null&&k>0?`, rising about ${f1(b*7)} GB a week; it crosses the threshold around ${inDays(k)}`:''}.`,
+     w:`${low.map((s)=>s.source).join(' and ')||'No source'} carry ${Math.round(lowGb/tot*100)}% of the volume and little detection value.`,
+     a:low.length?`Move ${low[0].source.toLowerCase()} to a cheaper log tier or filter it before ingestion.`:null,o:'SIEM owner',go:'socdir'}},
+ ai:()=>{const d=AI.data_to_ai_mb_week,g=Math.round((last(d)/d[0]-1)*100),top=[...AI.top_apps].filter((a)=>!a.approved).sort((a,b)=>b.upload_mb-a.upload_mb)[0],ok=AI.top_apps.filter((a)=>a.approved);
+   return{tone:g>25?'warn':'ok',t:`Data sent to AI apps is up ${g}% in 12 weeks; ${AI.unapproved} of ${AI.apps_in_use} AI apps in use are not approved.`,
+     w:`${top.app} is the largest route, with ${f0(top.users)} people uploading ${f0(top.upload_mb)} MB this month, while approved tools (${ok.map((a)=>a.app).join(', ')}) are already available.`,
+     a:`Agree the AI use policy and steer people to the approved tools; block uploads to personal accounts.`,o:'Security and technology leadership',go:'ai'}},
+ estate:()=>{const eos=sum(IN.end_of_support,(r)=>r.devices),big=[...IN.end_of_support].sort((a,b)=>b.devices-a.devices)[0];
+   return{tone:eos>100?'warn':'ok',t:`${f0(eos)} devices run software that no longer gets security fixes.`,w:`${big.software} accounts for ${big.devices} of them (${big.service}). Their weaknesses can only be contained, not fixed.`,
+     a:'Fund the replacement or buy extended support, with a date per service.',o:'Technology leadership',go:'infra'}},
+ rules:()=>{const r=[...T.rules].sort((a,b)=>b.alerts*b.false_pct-a.alerts*a.false_pct)[0];return{tone:r.false_pct>=60?'warn':'ok',t:`One rule, "${r.rule}", raised ${f0(r.alerts)} alerts this week and ${r.false_pct}% were false alarms.`,
+   w:`Tuning it would remove about ${f0(r.alerts*r.false_pct/100)} wasted triage steps a week.`,a:'Tune or suppress the known-good cases in this rule.',o:'Detection engineering',go:'detection'}},
+ escal:()=>{const v=last(MS.escalations_real_pct),e=last(MS.escalations),b=slope(MS.escalations_real_pct);return{tone:v<75?'warn':'ok',t:`${v}% of the provider's escalations needed action last week, ${b>0?'up':'down'} ${f1(Math.abs(b))} points a week.`,
+   w:`About ${Math.round(e*(100-v)/100)} of ${e} escalations were noise for the internal team.`,a:v<75?'Share the false escalations with the provider and agree tuning.':null,o:'Head of security operations',go:'socdir'}},
+ automation:()=>{const a=MS.closed_by_automation_pct;return{tone:slope(a)>0?'ok':'warn',t:`Automation closed ${last(a)}% of incidents last week, up from ${a[0]}% twelve weeks ago.`,w:'Each automated closure is an analyst hour back for real incidents.',go:'socdir'}},
+ edr:()=>{const e=IN.edr;return{tone:e.no_agent>0?'warn':'ok',t:`${f0(e.no_agent)} devices (${f1(e.no_agent/e.devices*100)}%) have no EDR agent and ${f0(e.outdated_agent)} run an outdated one.`,w:'The SOC cannot see or stop an attack on these devices.',a:'Deploy the agent through the device management tool and report the remainder by owner.',o:'Infrastructure',go:'infra'}},
+ teams:()=>{const t=[...DATA.owners].sort((a,b)=>b.overdue-a.overdue)[0],sh=Math.round(t.overdue/od*100);return{tone:t.sla_pct<L.sla_target?'bad':'warn',t:`${t.team} holds ${t.overdue} of ${od} overdue findings (${sh}%) and fixes ${t.sla_pct}% in time against ${L.sla_target}%.`,
+   w:'One team is the bottleneck for the whole fix-time target.',a:`Agree extra capacity or a patch window with ${t.team}.`,o:'Infrastructure leadership',go:'remediation'}},
+ sap:()=>{const s=IN.sap;return{tone:s.critical_config_findings?'warn':'ok',t:`${s.critical_config_findings} critical SAP configuration findings and ${s.missing_security_notes} missing security notes across ${s.systems} systems.`,w:`Bowbridge blocked ${s.malware_uploads_blocked_30d} malware uploads into SAP in 30 days.`,a:'Plan the missing notes into the next SAP maintenance window.',o:'SAP basis team',go:'sap'}},
+ flow:()=>{const i=sum(EN.introduced.slice(-4),(v)=>v),f=sum(EN.fixed.slice(-4),(v)=>v);return{tone:f>=i?'ok':'warn',t:`In four weeks merge requests introduced ${i} findings and fixed ${f}.`,w:f>=i?'The backlog is shrinking from the code side.':'The backlog is growing from the code side.',go:'eng'}},
+ laggard:()=>{const p=[...EN.projects].sort((a,b)=>(b.scanning?0:100)+b.mttr_days+b.secrets*5-((a.scanning?0:100)+a.mttr_days+a.secrets*5))[0];return{tone:'bad',t:`${p.project} has ${p.critical} critical findings, ${p.secrets} committed secrets, a ${p.mttr_days}-day fix time${p.scanning?'':' and no security scanning'}.`,
+   w:'It is the riskiest project in the estate and is blind to new problems.',a:`Add the security scanning template to ${p.project}'s pipeline and rotate its secrets.`,o:'Engineering lead',go:'eng'}},
+ secrets:()=>{const ps=EN.projects.filter((p)=>p.secrets);return{tone:ps.length?'bad':'ok',t:`${sum(ps,(p)=>p.secrets)} secrets are committed in ${ps.length} projects.`,w:'A committed secret is usable by anyone with read access to the code, including former staff.',a:'Rotate each one now, then turn on push protection.',o:'Engineering lead',go:'eng'}},
+ cwe:()=>{const c=EN.top_cwes[0],t=sum(EN.top_cwes,(x)=>x.count);return{tone:'warn',t:`${c.cwe.replace(/^CWE-\d+ /,'')} makes up ${Math.round(c.count/t*100)}% of the most common weaknesses (${c.count} findings).`,w:'A repeated weakness is usually one missing control in a shared framework, not many separate bugs.',a:'Fix it once in the shared component and add a lint rule.',o:'Engineering lead',go:'eng'}},
+ mttr:()=>{const v=last(EN.mttr_critical);return{tone:v<=15?'ok':'warn',t:`Critical code findings are fixed in ${v} days on average, against a 15-day policy.`,w:`High findings take ${last(EN.mttr_high)} days.`,go:'eng'}},
+ aiFiles:()=>{const f=AI.top_apps.find((a)=>/converter/i.test(a.app));return f?{tone:'warn',t:`${f.app} received ${f0(f.upload_mb)} MB from ${f.users} people this month.`,w:'Files uploaded to free converters leave the company with no contract and no deletion.',a:'Block the category and offer an approved converter.',o:'Security leadership',go:'ai'}:null},
+ phish:()=>{const r=S.rate,b=slope(r),rc=T.repeat_clickers.filter((u)=>u.clicks>=4);return{tone:last(r)>prev(r)?'warn':'ok',t:`${last(r)}% of people who received a phishing email that got through clicked it last week, ${b>0?'rising':'falling'} ${f1(Math.abs(b))} points a week.`,
+   w:`${rc.length} people clicked four or more times in 90 days${rc.length?`, led by ${rc[0].id} (${rc[0].dept})`:''}. Repeat clickers carry most of the risk.`,a:'Give repeat clickers targeted training and stronger sign-in protection.',o:'Security awareness',go:'email'}},
+ delivered:()=>{const d=S.del,c=chg(d);return{tone:c>0?'warn':'ok',t:`${last(d)} phishing emails reached inboxes last week, ${c>0?'up':'down'} ${Math.abs(c)} on the week before.`,w:'Every delivered phishing email is a filter miss; the trend shows whether email security is keeping up.',a:c>0?'Review the delivered samples with the email security provider.':null,o:'Email security',go:'email'}},
+ aiViol:()=>{const v=AI.violations;return{tone:slope(v)>0?'warn':'ok',t:`AI policy violations ran at ${last(v)} last week, ${slope(v)>0?'rising':'falling'} about ${f1(Math.abs(slope(v)))} a week.`,w:'The EU AI Act high-risk obligations apply from 2 August 2026; an inventory of AI use is now a compliance matter.',a:'Keep a register of approved AI use and owners.',o:'Risk and compliance',go:'ai'}},
+};
 
 V.socdir=()=>{const autos=MS.closed_by_automation_pct,gb=avg(SI.daily_gb.slice(-7)),tot=sum(SI.by_source,(s)=>s.gb_per_day);
   const head=vhead('SOC director',[`The managed service closed `,[`${last(MS.sla_pct)}%`],` of incidents inside the agreed time last week, against 98%. `,[`${last(MS.true_positive_pct)}%`],` of incidents were real, and `,[`${last(MS.escalations_real_pct)}%`],` of escalations to us needed action. SIEM ingestion is `,[`${f1(gb)} GB a day`],` against the ${SI.threshold_gb} GB design threshold.`],last(MS.sla_pct)>=98?'ok':'warn',last(MS.sla_pct)>=98?'On target':'Under target');
@@ -529,7 +570,7 @@ V.socdir=()=>{const autos=MS.closed_by_automation_pct,gb=avg(SI.daily_gb.slice(-
   const mx=Math.max(...SI.by_source.map((s)=>s.gb_per_day)),tone={High:'var(--a1)',Medium:'var(--a2)',Low:'var(--warn)'};
   const ing=el('section','card',el('div','ph',el('h2','h','SIEM ingestion by source'),el('span','cap',`${f1(tot)} GB a day · colour shows detection value`)),rowsBars(SI.by_source.map((s)=>[s.source,s.gb_per_day,`${f1(s.gb_per_day)} GB${s.detection_value?' · '+s.detection_value+' value':''}`,tone[s.detection_value]||'var(--a1)']),mx),
     el('p','note','A large source with low detection value is the first candidate for basic logs, filtering or a transformation rule.'));
-  return[head,stats,el('div','two',chartCard('Managed service inside agreed time',{label:'Percent of incidents closed inside the agreed time, by week',end:true,dec:true,unit:'%',target:{value:98,label:'98% target'},series:[{vals:MS.sla_pct,color:'var(--a1)',label:'Inside agreed time'}]}),
+  return[head,insights([IX.provider(),IX.escal(),IX.rules(),IX.siem(),IX.automation()]),stats,el('div','two',chartCard('Managed service inside agreed time',{label:'Percent of incidents closed inside the agreed time, by week',end:true,dec:true,unit:'%',target:{value:98,label:'98% target'},series:[{vals:MS.sla_pct,color:'var(--a1)',label:'Inside agreed time'}]}),
     chartCard('Quality of what reaches us',{label:'Real incidents and escalations needing action, by week',end:true,dec:true,unit:'%',series:[{vals:MS.true_positive_pct,color:'var(--a1)',label:'Incidents that were real'},{vals:MS.escalations_real_pct,color:'var(--a2)',label:'Escalations needing action'}]})),
     el('div','two',sevT,ing),band('Detection'),R.rules(),srcNote(MS,SI)].filter(Boolean)};
 
@@ -539,7 +580,7 @@ V.infra=()=>{const e=IN.edr,eos=sum(IN.end_of_support,(r)=>r.devices);
   const eosT=rank('Unsupported software','By business service',['Software','Devices','Service'],IN.end_of_support.map((r)=>[[r.software,''],r.devices,r.service]));
   const cov=el('section','stats six',stat('No EDR agent',e.no_agent,'',0,null,'lower',null,null,'controls'),stat('Agent out of date',e.outdated_agent,'',0,null,'lower'),stat('Infected devices',e.infected,'',0,null,'lower'),
     stat('SAP security notes missing',IN.sap.missing_security_notes,'',0,null,'lower'),stat('SAP critical configuration',IN.sap.critical_config_findings,'',0,null,'lower'),stat('Overdue findings',od,'',0,null,'lower',null,null,'remediation'));
-  return[head,ex,cov,el('div','two',R.hostsVuln(),eosT),R.common(),srcNote(IN)]};
+  return[head,insights([IX.exposure(),IX.teams(),IX.edr(),IX.estate(),IX.sap()]),ex,cov,el('div','two',R.hostsVuln(),eosT),R.common(),srcNote(IN)]};
 
 V.eng=()=>{const P=EN.projects,crit=sum(P,(p)=>p.critical),sec=sum(P,(p)=>p.secrets),noScan=P.filter((p)=>!p.scanning),intro=sum(EN.introduced.slice(-4),(v)=>v),fixed=sum(EN.fixed.slice(-4),(v)=>v);
   const head=vhead('Engineering',[[`${crit} critical findings`],` are open across ${P.length} projects, with `,[`${sec} committed secrets`],`. In the last four weeks merge requests introduced ${intro} findings and fixed ${fixed}. `,noScan.length?[`${noScan.length} projects have no security scanning`]:'Every project has security scanning','.'],fixed>=intro?'ok':'warn',fixed>=intro?'Fixing faster than adding':'Adding faster than fixing');
@@ -549,18 +590,18 @@ V.eng=()=>{const P=EN.projects,crit=sum(P,(p)=>p.critical),sec=sum(P,(p)=>p.secr
     [...P].sort((a,b)=>b.critical*10+b.high-(a.critical*10+a.high)).map((p)=>[[p.project,p.scanning?'Scanning in pipeline':'No security scanning'],p.critical,p.high,p.secrets,p.dependency,p.code,p.container,p.iac,p.mttr_days+' days']),
     {flag:(r,k)=>(k===1&&r[1]>0)||(k===3&&r[3]>0)||(k===8&&parseFloat(r[8])>30)});
   const cw=el('section','card',el('div','ph',el('h2','h','Most common weakness types'),el('span','cap','Open findings')),rowsBars(EN.top_cwes.map((c)=>[c.cwe,c.count,String(c.count)]),Math.max(...EN.top_cwes.map((c)=>c.count)),'var(--a1)'));
-  return[head,stats,el('div','two',chartCard('Introduced against fixed',{label:'Findings introduced and fixed in merge requests, by week',end:true,series:[{vals:EN.introduced,color:'var(--warn)',label:'Introduced'},{vals:EN.fixed,color:'var(--a1)',label:'Fixed'}]}),
+  return[head,insights([IX.laggard(),IX.secrets(),IX.flow(),IX.cwe(),IX.mttr()]),stats,el('div','two',chartCard('Introduced against fixed',{label:'Findings introduced and fixed in merge requests, by week',end:true,series:[{vals:EN.introduced,color:'var(--warn)',label:'Introduced'},{vals:EN.fixed,color:'var(--a1)',label:'Fixed'}]}),
     chartCard('Time to fix',{label:'Average days to fix, by week',end:true,dec:true,series:[{vals:EN.mttr_critical,color:'var(--crit)',label:'Critical'},{vals:EN.mttr_high,color:'var(--a2)',label:'High'}]})),pr,cw,srcNote(EN)]};
 
 V.ai=()=>{const d=AI.data_to_ai_mb_week;
   const head=vhead('AI use',[[`${AI.unapproved} of ${AI.apps_in_use} AI apps`],` in use are not approved, used by `,[`${f0(AI.users)} people`],`. Data sent to AI apps is `,[`${sgn(Math.round((last(d)/d[0]-1)*100))}% in 12 weeks`],`. AI policy violations: ${last(AI.violations)} last week.`],'warn','Needs policy');
   const apps=rank('AI apps in use','This month',['App','People','Uploaded','Approved'],AI.top_apps.map((a)=>[[a.app,a.approved?'Approved':'Not approved'],a.users,a.upload_mb,a.approved?'Yes':'No']),{units:{2:' MB'},flag:(r,k)=>k===3&&r[3]==='No'});
-  return[head,el('div','two',chartCard('Data sent to AI apps',{label:'MB uploaded to AI apps per week',end:true,fc:FC,series:[{vals:d,color:'var(--a1)',label:'MB uploaded'}]}),chartCard('AI policy violations',{label:'Violations per week',end:true,series:[{vals:AI.violations,color:'var(--warn)',label:'Violations'}]})),apps,
+  return[head,insights([IX.ai(),IX.aiFiles(),IX.aiViol()]),el('div','two',chartCard('Data sent to AI apps',{label:'MB uploaded to AI apps per week',end:true,fc:FC,series:[{vals:d,color:'var(--a1)',label:'MB uploaded'}]}),chartCard('AI policy violations',{label:'Violations per week',end:true,series:[{vals:AI.violations,color:'var(--warn)',label:'Violations'}]})),apps,
     el('p','note','From Netskope\'s generative AI category and Defender for Cloud AI posture. The EU AI Act\'s high-risk obligations apply from 2 August 2026, so keep an inventory of approved AI use.'),srcNote(AI)].filter(Boolean)};
 
 /* ---------- Operations: shared filters, live board, threat paths, workflows, reports, commands ---------- */
 const HOSTED=!!window.SECOPS_HOSTED;
-const FILTER={period:'month',from:null,to:null,severity:'all',team:'all',source:'all'};
+const FILTER={detail:'summary',period:'month',from:null,to:null,severity:'all',team:'all',source:'all'};
 const APPLIES={exec:['period'],threats:['period','severity','source'],live:['severity','team','source'],workflows:['team']};
 let CURRENT='exec';
 const SEVS=['High','Medium','Low'];
@@ -708,7 +749,9 @@ function runCommand(raw){const t=raw.toLowerCase().trim();if(!t)return;
 function rebuild(){Object.keys(built).forEach((k)=>{built[k]=false;const v=$('#'+k);if(v)v.replaceChildren()});show(CURRENT,false)}
 const BAR=el('div','toolbar');
 function syncBar(){BAR.querySelectorAll('select').forEach((s)=>{s.value=FILTER[s.dataset.f]});const c=BAR.querySelector('.tcustom');if(c)c.hidden=FILTER.period!=='custom';
-  BAR.querySelectorAll('[data-f]').forEach((s)=>{const on=(APPLIES[CURRENT]||[]).includes(s.dataset.f);s.disabled=!on;s.closest('label').classList.toggle('off',!on);s.closest('label').title=on?'':'Not used on this page'})}
+  BAR.querySelectorAll('select[data-f]').forEach((s)=>{const on=(APPLIES[CURRENT]||[]).includes(s.dataset.f);s.disabled=!on;s.closest('label').hidden=!on});if(c&&!(APPLIES[CURRENT]||[]).includes('period'))c.hidden=true;
+  const v=$('#'+CURRENT),seg=BAR.querySelector('.seg');if(seg){seg.parentElement.hidden=!(v&&v.querySelector('.xtra'));seg.querySelectorAll('button').forEach((b)=>b.setAttribute('aria-pressed',b.dataset.d===FILTER.detail?'true':'false'))}
+  const t=BAR.querySelector('.ptitle');if(t){const n=NAV.find((q)=>q[0]===CURRENT);t.textContent=n?n[1]:''}}
 (function makeBar(){const cmd=el('input');cmd.type='search';cmd.id='cmd';cmd.placeholder='Ask or command: "near misses last 90 days", "brief me"';cmd.setAttribute('aria-label','Command');
   cmd.addEventListener('keydown',(e)=>{if(e.key==='Enter'){runCommand(cmd.value);cmd.value=''}});
   const mic=el('button','mic');mic.type='button';mic.setAttribute('aria-label','Speak a command');const mi=sv('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.8,'stroke-linecap':'round','aria-hidden':'true'});mi.append(sv('path',{d:'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a7 7 0 0 0 14 0M12 19v3'}));mic.append(mi);
@@ -717,20 +760,28 @@ function syncBar(){BAR.querySelectorAll('select').forEach((s)=>{s.value=FILTER[s
   const sel=(f,label,opts)=>{const s=el('select','dash-sel');s.dataset.f=f;s.id='f-'+f;opts.forEach(([v,l])=>s.append(new Option(l,v)));s.addEventListener('change',()=>{FILTER[f]=s.value;if(f==='period'&&s.value==='custom'&&!FILTER.from){const last=DY.length?DY[DY.length-1].date:new Date().toISOString().slice(0,10);FILTER.to=last;FILTER.from=addDays(last,-59);fi.value=FILTER.from;ti.value=FILTER.to}syncBar();rebuild()});return el('label','tf',el('span','',label),s)};
   const fi=el('input'),ti=el('input');fi.type=ti.type='date';fi.id='f-from';ti.id='f-to';[fi,ti].forEach((i)=>i.addEventListener('change',()=>{if(fi.value&&ti.value&&fi.value<=ti.value){FILTER.from=fi.value;FILTER.to=ti.value;rebuild()}}));
   const sources=[...new Set(LV.queue.map((q)=>q.source).concat(TH.paths.map((p)=>p.source)))].sort(),teams=[...new Set(LV.queue.map((q)=>q.team).concat(Object.keys(WF.teams)))].sort();
-  BAR.append(el('div','cmdbox',cmd,mic),sel('period','Period',[['day','Yesterday'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['year','Last 12 months'],['custom','Custom dates']]),
+  const seg=el('div','seg');seg.setAttribute('role','group');seg.setAttribute('aria-label','Detail');[['summary','Summary'],['full','Full detail']].forEach(([d,l])=>{const b=el('button','',l);b.type='button';b.dataset.d=d;b.addEventListener('click',()=>{FILTER.detail=d;applyDetail();syncBar()});seg.append(b)});
+  BAR.append(el('h2','ptitle',''),el('div','cmdbox',cmd,mic),el('div','tf tseg',el('span','','Detail'),seg),sel('period','Period',[['day','Yesterday'],['week','Last 7 days'],['month','Last 30 days'],['quarter','Last 90 days'],['year','Last 12 months'],['custom','Custom dates']]),
     el('span','tcustom',el('label','tf',el('span','','From'),fi),el('label','tf',el('span','','To'),ti)),sel('severity','Severity',[['all','All'],...SEVS.map((s)=>[s,s])]),sel('team','Team',[['all','All teams'],...teams.map((t)=>[t,t])]),sel('source','Source',[['all','All systems'],...sources.map((s)=>[s,s])]));
   $('#main').prepend(BAR);addEventListener('keydown',(e)=>{if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();cmd.focus()}})})();
 
-const NAV=[['exec','CISO and CIO','M3 20h18M6 16V9m6 7V5m6 11v-4'],['socdir','SOC director','M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm-7 18c0-3.900 3.100-7 7-7s7 3.100 7 7'],['live','SOC team: live','M3 12h3l2-5 3 10 2-5h8M12 3v2m0 14v2'],['overview','Operations overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','Signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
+const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['socdir','SOC director','M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm-7 18c0-3.900 3.100-7 7-7s7 3.100 7 7'],['live','SOC team','M3 12h3l2-5 3 10 2-5h8M12 3v2m0 14v2'],['overview','Operations overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','Signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
 const nav=$('#nav'),main=$('#main'),built={};
 NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['threats','Threat paths','M4 18c3-8 6-8 8-4s5 4 8-4M4 18h.01M20 10h.01'],...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
 NAV.splice(NAV.findIndex((n)=>n[0]==='overview'),0,['infra','Infrastructure','M4 5h16v5H4zM4 14h16v5H4zM8 7.500h.01M8 16.500h.01'],['eng','Engineering','m8 8-4 4 4 4m8-8 4 4-4 4M14 5l-4 14']);
 NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
 NAV.splice(NAV.findIndex((n)=>n[0]==='build'),0,['workflows','Workflows','M5 6h6v4H5zM13 14h6v4h-6zM8 10v4h8'],['reports','Reports','M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6']);
-NAV.forEach(([k,label,d],i)=>{if(k==='overview'||k==='detection'||k==='threats'||k==='signals')nav.append(el('div','gap'));
-  const ic=sv('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'});ic.append(sv('path',{d}));
-  const b=el('button','nv',ic,el('span','',label),AREAS[k]?el('span','st '+AREAS[k].tone):null);b.type='button';b.dataset.v=k;b.addEventListener('click',()=>show(k,true));nav.append(b);
-  const v=el('section','view');v.id=k;v.hidden=true;v.setAttribute('aria-label',label);main.append(v)});
+/* Sidebar: three short groups. "Areas" folds away and opens by itself when one of its pages is shown. */
+const GROUPS=[['Views',['exec','socdir','live','infra','eng'],false],['Areas',null,true],['Operations',['threats','signals','workflows','reports','build'],false]];
+{const taken=new Set(GROUPS.filter((g)=>g[1]).flatMap((g)=>g[1]));GROUPS[1][1]=NAV.map((n)=>n[0]).filter((k)=>!taken.has(k))}
+const byId=Object.fromEntries(NAV.map((n)=>[n[0],n]));
+NAV.forEach(([k,label])=>{const v=el('section','view');v.id=k;v.hidden=true;v.setAttribute('aria-label',label);main.append(v)});
+GROUPS.forEach(([name,ids,fold],gi)=>{const box=el('div','ngroup');box.id='ng-'+gi;
+  ids.forEach((k)=>{const [,label,d]=byId[k],ic=sv('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'});ic.append(sv('path',{d}));
+    const b=el('button','nv',ic,el('span','',label));b.type='button';b.dataset.v=k;b.addEventListener('click',()=>show(k,true));box.append(b)});
+  if(fold){const h=el('button','ngh fold',el('span','',name),el('span','cnt',String(ids.length)));h.type='button';h.setAttribute('aria-expanded','false');h.setAttribute('aria-controls',box.id);box.classList.add('shut');
+    h.addEventListener('click',()=>{const open=box.classList.toggle('shut');h.setAttribute('aria-expanded',open?'false':'true')});nav.append(h)}
+  else nav.append(el('div','ngh',name));nav.append(box)});
 const SRC=DATA._sources||{},onSample=Object.keys(SRC).filter((k)=>SRC[k]==='sample');
 $('#meta').append(el('span','badge'+(onSample.length?' sample':''),onSample.length?`Sample data: ${onSample.length} of ${Object.keys(SRC).length} sections`:'All sections live'),el('span','badge',el('span','dot'),'Week ending '+day(L.week_ending)),el('span','badge',el('span','dot'+(lateT.length?' w':'')),`${DATA.tools.length-lateT.length} of ${DATA.tools.length} systems current`));
 
@@ -742,9 +793,22 @@ function customFor(k){const list=(DATA.custom||[]).filter((m)=>m.view===k&&Array
     if(m.chart!==false)charts.append(chartCard(m.label,{label:`${m.label} by week`,end:true,dec,unit:m.unit==='%'?'%':'',series:[{vals,color:'var(--a1)',label:m.label}]}));
     if(m.note)tiles.title=m.note});
   return[band('More measures'),tiles,charts.children.length?charts:null].filter(Boolean)}
+/* Summary or full detail, per page: summary keeps the insights, the headline figures, the first chart and the tables. */
+const NODETAIL=['live','threats','workflows','reports','build'];
+function markDetail(v){if(NODETAIL.includes(v.id))return;const KEEP=v.id==='exec'?1:4,skip='header,.dsays,.stats,.heroband,.period,.funnel,.signals,.band,.note,.more-detail';let shown=0,hid=0,charts=0;
+  const kids=[...v.children].filter((x)=>!x.matches(skip));
+  kids.forEach((x)=>{const cards=x.matches('section.card')?[x]:[...x.children].filter((c)=>c.matches('section.card,article.card'));if(!cards.length)return;
+    cards.forEach((c)=>{const ch=!!c.querySelector('.chart');if(shown<KEEP&&!(ch&&charts>=2)){shown++;if(ch)charts++}else{c.classList.add('xtra');hid++}});if(cards.every((c)=>c.classList.contains('xtra')))x.classList.add('xtra')});
+  const all=[...v.children];all.forEach((x,i)=>{if(!x.matches('.band'))return;let j=i+1,any=false;while(j<all.length&&!all[j].matches('.band')){if(!all[j].classList.contains('xtra')&&!all[j].matches('.note'))return;any=true;j++}if(any)x.classList.add('xtra')});
+  if(hid){const b=el('button','btn more-detail',`Show ${hid} more section${hid===1?'':'s'}`);b.type='button';b.addEventListener('click',()=>{FILTER.detail='full';applyDetail();syncBar()});v.append(b)}}
+const AREA_IX={detection:['rules','provider','escal','automation'],vulnerabilities:['exposure','teams','estate','edr'],remediation:['teams','exposure','estate'],email:['phish','delivered'],people:['ai','aiFiles'],controls:['edr','siem'],overview:['exposure','provider','phish','teams']};
+function areaInsights(v){const ks=AREA_IX[v.id];if(!ks||v.querySelector('.dsays')||!MS)return;const box=insights(ks.map((k)=>IX[k]()));const h=v.querySelector(':scope > header');if(h)h.after(box);else v.prepend(box)}
+function applyDetail(){document.querySelectorAll('.view').forEach((v)=>v.classList.toggle('summary',FILTER.detail!=='full'))}
 function show(k,push){if(!V[k])k='exec';CURRENT=k;if(typeof syncBar==='function')syncBar();
   NAV.forEach(([id])=>{$('#'+id).hidden=id!==k});nav.querySelectorAll('.nv').forEach((b)=>{if(b.dataset.v===k){b.setAttribute('aria-current','page');if(b.scrollIntoView&&innerWidth<1000)b.scrollIntoView({block:'nearest',inline:'center'})}else b.removeAttribute('aria-current')});
-  if(!built[k]){built[k]=true;const v=$('#'+k);V[k]().forEach((x)=>v.append(x));customFor(k).forEach((x)=>v.append(x));after.splice(0).forEach((f)=>f())}
+  const nb=nav.querySelector(`.nv[data-v="${k}"]`),grp=nb&&nb.parentElement;if(grp&&grp.classList.contains('shut')){grp.classList.remove('shut');const h=nav.querySelector(`[aria-controls="${grp.id}"]`);if(h)h.setAttribute('aria-expanded','true')}
+  if(!built[k]){built[k]=true;const v=$('#'+k);V[k]().forEach((x)=>v.append(x));customFor(k).forEach((x)=>v.append(x));areaInsights(v);markDetail(v);after.splice(0).forEach((f)=>f())}
+  applyDetail();syncBar();
   if(push){if(location.hash!=='#'+k)location.hash=k;scrollTo(0,0)}}
 addEventListener('hashchange',()=>show(location.hash.slice(1),false));
 show(location.hash.slice(1)||'exec',false);

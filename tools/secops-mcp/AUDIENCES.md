@@ -8,14 +8,14 @@ supports. A measure that supports no decision does not belong on an executive pa
 
 | Audience | Page in the sidebar | What it adds |
 |---|---|---|
-| CISO and CIO | CISO and CIO (the landing page) | Six questions with an answer and a verdict each, then the period totals, Phase 2 outcomes, top risks and signals |
+| CISO and CIO | Executive view (the landing page) | What the data says (the four most pressing findings, each with why it matters, the next step and an owner), the period totals and Phase 2 outcomes |
 | SOC director | SOC director | Managed service against 98%, quality of what reaches the SOC, results by severity, SIEM ingestion by source against 200 GB a day, noisiest rules |
-| SOC team | SOC team: live | The live queue with clocks, at-risk and breached first |
+| SOC team | SOC team | The live queue with clocks, at-risk and breached first |
 | Infrastructure | Infrastructure | Exploitable and internet-facing first, unsupported software by service, EDR agent gaps, SAP findings, most exposed hosts |
 | Engineering | Engineering | GitLab findings by project and type, introduced against fixed, time to fix, secrets, scanning coverage, top weakness types |
 | Everyone | AI use, Web edge, SAP | AI apps and data sent to them; Cloudflare (planned); SecurityBridge and Bowbridge (planned) |
 
-Every chart, bar list and ranked table opens a panel with the figures behind what was selected and
+Each page opens in Summary: its insights, headline figures, at most two charts and four sections. Full detail, in the bar at the top, shows the rest. The bar shows only the filters that work on that page. Every chart, bar list and ranked table opens a panel with the figures behind what was selected and
 a link to the page that explains it. Role data comes from `secops_mcp/personas.py`: provider
 performance and SIEM ingestion are live from Sentinel; the rest is sample until its connector is
 confirmed, and each page says so.
