@@ -624,3 +624,30 @@ table.wf{min-width:620px}
 .near .chain .node.stop{background:var(--navy);color:#fff}
 .lcount.txt .num{font-size:clamp(1.3rem,1.8vw,1.7rem);line-height:1.15}
 .flow svg{display:block;max-width:none}
+
+/* drill-down panel */
+.drill{position:fixed;top:12px;right:12px;bottom:12px;width:min(420px,calc(100vw - 24px));z-index:40;background:var(--solid);border:1px solid var(--line2);border-radius:22px;box-shadow:0 24px 60px rgba(10,23,64,.22);padding:22px;overflow:auto;display:flex;flex-direction:column;gap:16px;outline:none}
+.drill[hidden]{display:none}
+.drill .dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.drill h2{margin:0;font-size:19px;letter-spacing:-.01em}
+.drill .dhead .cap{margin:4px 0 0}
+.dpairs{display:grid;grid-template-columns:minmax(0,1fr) auto;margin:0;border-top:1px solid var(--line)}
+.dpairs dt,.dpairs dd{padding:10px 0;border-bottom:1px solid var(--line);margin:0;font-size:13.5px}
+.dpairs dt{color:var(--muted);white-space:pre}
+.dpairs dd{font-family:var(--mono);font-weight:600;text-align:right;padding-left:14px}
+.dpairs dd.alert{color:var(--crit)}
+.dfoot{margin-top:auto;display:flex;justify-content:flex-end}
+.barbtn{all:unset;display:block;cursor:pointer;border-radius:10px;padding:4px 6px;margin:-4px -6px}
+.barbtn:hover{background:var(--glass2)}
+.barbtn:focus-visible,.rank tr.pick:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
+.rank tr.pick{cursor:pointer}
+.rank tr.pick:hover td{background:var(--glass2)}
+.chart svg{cursor:pointer}
+/* role views */
+.qgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1100px){.qgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.qgrid{grid-template-columns:minmax(0,1fr)}}
+.qcard{text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:10px}
+.qrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.qcard .say{margin:0;color:var(--muted);font-size:13.5px;line-height:1.45}
+@media (prefers-reduced-motion:reduce){.barbtn{transition:none}}

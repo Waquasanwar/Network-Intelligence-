@@ -39,6 +39,7 @@ function outlier(vals){const m=vals.reduce((a,b)=>a+b,0)/vals.length,sd=Math.sqr
 
 /* chart: lines/areas, stacked areas or paired bars; fc = weeks of straight-line projection drawn dashed */
 function chart(box,cfg){
+  if(!cfg.onPick)cfg.onPick=(i)=>weekDrill(cfg,cfg.title||cfg.label,i);
   const fc=cfg.fc||0,N=n+fc,dec=cfg.dec,lo=cfg.clamp?cfg.clamp[0]:0,hi=cfg.clamp?cfg.clamp[1]:Infinity;
   const proj=cfg.series.map((q)=>{const b=slope(q.vals),a=[];for(let j=1;j<=fc;j++)a.push(Math.min(hi,Math.max(lo,last(q.vals)+b*j)));return a});
   const date=(i)=>i<n?day(W[i].week_ending):ahead(i-n+1);
@@ -85,6 +86,23 @@ function chart(box,cfg){
 const after=[];
 const band=(t)=>el('h2','band',t);
 const legend=(items)=>{const u=el('ul','legend');items.forEach(([name,color])=>{const s=el('span','sw');s.style.background=color;u.append(el('li','',s,name))});return u};
+/* Drill-down: every major chart, bar list and ranked table opens this panel with the figures behind what was selected. */
+let drawerBack=null;
+function drill(title,sub,pairs,extra,go){let d=$('#drill');if(!d){d=el('aside','drill');d.id='drill';d.setAttribute('role','dialog');d.setAttribute('aria-modal','false');d.tabIndex=-1;document.body.append(d);
+    addEventListener('keydown',(e)=>{if(e.key==='Escape'&&!d.hidden)closeDrill()})}
+  drawerBack=document.activeElement;const x=el('button','link sm','Close');x.type='button';x.addEventListener('click',closeDrill);
+  const dl=el('dl','dpairs');pairs.forEach(([k,v,tone])=>dl.append(el('dt','',k),el('dd',tone||'',v)));
+  const foot=el('div','dfoot');if(go&&go!==CURRENT&&V[go]){const b=el('button','btn primary','Open '+((NAV.find((q)=>q[0]===go)||[])[1]||'page'));b.type='button';b.addEventListener('click',()=>{closeDrill();show(go,true)});foot.append(b)}
+  d.replaceChildren(el('div','dhead',el('div','',el('h2','',title),sub?el('p','cap',sub):null),x),dl,...(extra||[]),foot);d.setAttribute('aria-label',title);d.hidden=false;d.focus()}
+function closeDrill(){const d=$('#drill');if(d)d.hidden=true;if(drawerBack&&drawerBack.focus)drawerBack.focus()}
+function weekDrill(cfg,title,i){const dec=cfg.dec,u=cfg.unit||'';
+  if(i>=n){const j=i-n+1,lo=cfg.clamp?cfg.clamp[0]:0,hi=cfg.clamp?cfg.clamp[1]:Infinity;drill(title,`Week ending ${ahead(j)}, projected`,cfg.series.map((q)=>[q.label,'≈'+fx(Math.min(hi,Math.max(lo,last(q.vals)+slope(q.vals)*j)),dec)+u]),
+    [el('p','note','Projected from the trend of the last six weeks. A projection, not a forecast: it assumes nothing changes.')],cfg.go||CURRENT);return}
+  const pairs=[];cfg.series.forEach((q)=>{const v=q.vals[i],pv=i>0?q.vals[i-1]:null,av=q.vals.reduce((a,b)=>a+b,0)/q.vals.length;
+    pairs.push([q.label,fx(v,dec)+u]);if(pv!=null)pairs.push(['  on the week before',sgn(v-pv,dec?1:0)+(u==='%'?' pts':u)]);pairs.push(['  12-week average',fx(av,dec)+u])});
+  if(cfg.extra)cfg.extra(i).forEach((e)=>pairs.push([e[0],e[1]]));
+  const rk=cfg.series.map((q)=>[...q.vals].sort((a,b)=>b-a).indexOf(q.vals[i])+1)[0];
+  drill(title,`Week ending ${day(W[i].week_ending)}`,pairs,[el('p','note',`${cfg.series[0].label}: ${rk===1?'highest':rk===n?'lowest':'number '+rk+' highest'} of the last ${n} weeks.`)],cfg.go||CURRENT)}
 function dataPanel(cfg){const fc=cfg.fc||0,dec=cfg.dec,u=cfg.unit||'',lo=cfg.clamp?cfg.clamp[0]:0,hi=cfg.clamp?cfg.clamp[1]:Infinity;
   const hr=el('tr','',el('th','','Week ending'));cfg.series.forEach((q)=>hr.append(el('th','',q.label)));const extra=cfg.extra?cfg.extra(0).map((e)=>e[0]):[];extra.forEach((e)=>hr.append(el('th','',e)));
   const body=el('tbody'),rows=[];
@@ -94,8 +112,8 @@ function dataPanel(cfg){const fc=cfg.fc||0,dec=cfg.dec,u=cfg.unit||'',lo=cfg.cla
   const open=(on)=>{wrap.hidden=!on;btn.textContent=on?'Hide data':'View data';btn.setAttribute('aria-expanded',on?'true':'false')};
   btn.addEventListener('click',()=>open(wrap.hidden));
   cfg.onPick=(i)=>{open(true);rows.forEach((r)=>r&&r.classList.remove('on'));if(rows[i]){rows[i].classList.add('on');wrap.scrollTop=Math.max(0,rows[i].offsetTop-60)}};
-  return[el('div','cfoot',el('span','cap','Select a week on the chart to see its figures'),btn),wrap]}
-function chartCard(title,cfg){const box=el('div','chart'),c=el('section','card',el('div','ph',el('h2','h',title),legend(cfg.series.map((q)=>[q.label,q.grad?'linear-gradient(var(--a2),var(--a1))':q.color]))),box,...dataPanel(cfg));after.push(()=>chart(box,cfg));return c}
+  return[el('div','cfoot',el('span','cap','Select a week on the chart for its figures'),btn),wrap]}
+function chartCard(title,cfg){const box=el('div','chart'),c=el('section','card',el('div','ph',el('h2','h',title),legend(cfg.series.map((q)=>[q.label,q.grad?'linear-gradient(var(--a2),var(--a1))':q.color]))),box,...dataPanel(cfg));const base=cfg.onPick;cfg.onPick=(i)=>{base(i);weekDrill(cfg,title,i)};after.push(()=>chart(box,cfg));return c}
 function stat(label,value,unit,dec,c,betterDir,vals,color,go){
   const v=el('span'),num=el('div','num',v,unit?el('span','unit',unit):null),sp=vals?el('div','spark'):null;
   const card=el(go?'button':'div','card kpi'+(go?' lift':''),el('div','cap',label),num,c===null?el('div','cap',' '):el('div','',deltaEl(c,betterDir,dec),' ',el('span','cap','on last week')),sp);
@@ -109,8 +127,8 @@ function signal(r,compact){
   return el('article','card signal',el('div','sig-head',el('h3','',r.title),conf),el('p','sig-sys',r.systems),
     el('div','sig-body',el('div','',el('h4','','What we see'),el('p','',r.pattern)),el('div','',el('h4','','Where to look'),el('p','',r.look))),areaLinks(r))}
 const signalsFor=(area)=>DATA.notes.filter((r)=>r.areas.includes(area));
-function heading(title,cfg,points,note){const box=el('div','chart'),ul=el('ul','proj');points.forEach(([a,b])=>ul.append(el('li','',el('b','',a),el('span','',b))));after.push(()=>chart(box,cfg));
-  return el('div','head',el('section','card',el('div','ph',el('h2','h',title),legend(cfg.series.map((q)=>[q.label,q.color]))),box,...dataPanel(cfg)),el('section','card edge',el('h2','h','Where it is heading'),el('div','',''),ul,el('p','note',note||`A straight line through the last six weeks, carried forward to ${ahead(FC)}. A guide to direction, not a forecast.`)))}
+function heading(title,cfg,points,note){const box=el('div','chart'),dp=dataPanel(cfg),base=cfg.onPick;cfg.onPick=(i)=>{base(i);weekDrill(cfg,title,i)};const ul=el('ul','proj');points.forEach(([a,b])=>ul.append(el('li','',el('b','',a),el('span','',b))));after.push(()=>chart(box,cfg));
+  return el('div','head',el('section','card',el('div','ph',el('h2','h',title),legend(cfg.series.map((q)=>[q.label,q.color]))),box,...dp),el('section','card edge',el('h2','h','Where it is heading'),el('div','',''),ul,el('p','note',note||`A straight line through the last six weeks, carried forward to ${ahead(FC)}. A guide to direction, not a forecast.`)))}
 function vhead(title,text,tone,state){const p=el('p');text.forEach((t)=>p.append(typeof t==='string'?t:el('b','',t[0])));return el('header','vh',el('div','vtitle',el('h1','',title),state?el('span','pill '+tone,state):null),p)}
 function aiBlock(area){const s=signalsFor(area);if(!s.length)return[];const g=el('section','signals');s.forEach((r)=>g.append(signal(r)));return[band('Signals for this area'),g]}
 
@@ -125,7 +143,9 @@ const worstPatch=[...AS].sort((a,b)=>a.patched_pct-b.patched_pct)[0];
 const socTiles=()=>el('section','stats six',stat('Time to detect',last(S.mttd),'min',0,chg(S.mttd),'lower',S.mttd),stat('Time to acknowledge',last(S.mtta),'min',0,chg(S.mtta),'lower',S.mtta,'var(--a3)'),stat('Time to contain',last(S.cont),'hrs',1,chg(S.cont),'lower',S.cont,'var(--a2)'),
   stat('Contained inside the agreed time',last(S.rsla),'%',0,chg(S.rsla),'higher',S.rsla,'var(--a3)'),stat('Alerts that were false alarms',last(S.fp),'%',0,chg(S.fp),'lower',S.fp,'var(--a2)'),stat('Incidents still open',last(S.oinc),'',0,chg(S.oinc),'lower',S.oinc));
 const lowTac=[...Q.attack].sort((a,b)=>a.coverage-b.coverage)[0];
-function rowsBars(items,max,color){const b=el('div','bars');items.forEach(([name,val,note,col])=>{const tr=el('div','track'),i=el('i');i.style.width=Math.max(2,val/max*100)+'%';i.style.background=col||color;tr.append(i);tr.setAttribute('role','img');tr.setAttribute('aria-label',`${name}: ${val}`);b.append(el('div','',el('div','bar-top',el('span','',name),el('span','',note)),tr))});return b}
+function rowsBars(items,max,color,o={}){const b=el('div','bars'),tot=items.reduce((a,r)=>a+(Number(r[1])||0),0);items.forEach(([name,val,note,col,go,more],k)=>{const tr=el('div','track'),i=el('i');i.style.width=Math.max(2,val/max*100)+'%';i.style.background=col||color;tr.append(i);tr.setAttribute('aria-hidden','true');
+  const row=el('button','barbtn',el('div','bar-top',el('span','',name),el('span','',note)),tr);row.type='button';row.setAttribute('aria-label',`${name}: ${note||val}. Show details`);
+  row.addEventListener('click',()=>drill(name,o.title||'',[[o.label||'Value',note||String(val)],['Share of total',tot?f1(val/tot*100)+'%':'—'],['Rank',`${k+1} of ${items.length}`],...(more||[])],o.note?[el('p','note',o.note)]:[],go||o.go||CURRENT));b.append(row)});return b}
 
 
 const T=DATA.top;
@@ -133,6 +153,8 @@ S.rsign=T.weekly.risky_signins;S.mfa=T.weekly.mfa_failures;S.shadow=T.weekly.sha
 /* ranked list: head = column names (first is the name column), rows = [[name,sub],v1,v2...]; bar = index of the column that gets a bar; hot(row) marks its bar red */
 function rank(title,sub,head,rows,o={}){const bi=o.bar||1,max=Math.max(...rows.map((r)=>r[bi])),hr=el('tr','',el('th','',''));head.forEach((h)=>hr.append(el('th','',h)));const body=el('tbody');
   rows.forEach((r,i)=>{const nm=el('td','nm',el('b','',r[0][0]),el('small','',r[0][1])),tr=el('tr','',el('td','rk',String(i+1)),nm);
+    tr.className='pick';tr.tabIndex=0;tr.setAttribute('role','button');const open=()=>drill(r[0][0],[r[0][1],title].filter(Boolean).join(' · '),head.slice(1).map((h,j)=>{const v=r[j+1];return[h,typeof v==='number'?f0(v)+((o.units||{})[j+1]||''):String(v),o.flag&&o.flag(r,j+1)?'alert':'']}),o.note?[el('p','note',o.note)]:[],o.go||CURRENT);
+    tr.addEventListener('click',open);tr.addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
     r.slice(1).forEach((v,j)=>{const k=j+1,txt=typeof v==='number'?f0(v)+((o.units||{})[k]||''):v;if(k===bi){const me=el('div','meter'),f=el('i'),hot=o.hot&&o.hot(r);f.style.width=Math.max(3,v/max*100)+'%';f.style.background=hot?'var(--crit)':'linear-gradient(90deg,var(--a2),var(--a1))';me.append(f);me.setAttribute('aria-hidden','true');tr.append(el('td','br'+(hot?' alert':''),txt,me))}else tr.append(el('td',o.flag&&o.flag(r,k)?'alert':'',txt))});body.append(tr)});
   return el('section','card',el('div','ph',el('h2','h',title),el('span','cap',sub)),el('div','scroll',el('table','rank',el('thead','',hr),body)),o.note?el('p','note',o.note):null)}
 const R={
@@ -206,7 +228,7 @@ V.overview=()=>{
     sumRow('Watch',`Closure has slowed for ${streak(S.closed)} weeks. ${H0.teams[pk0.i]} holds ${pk0.v} overdue findings in ${H0.scanners[pk0.j]}. Detection rules cover ${lowTac.coverage}% of ${lowTac.tactic} techniques.`)));
   const big=(v,dec,unit)=>{const s=el('span');after.push(()=>count(s,v,dec));return el('div','num',s,unit?el('span','unit',unit):null)};
   const c1box=el('div','chart'),c2=el('div','spark'),me=el('div','meter'),fill=el('i'),mark=el('u'),met=last(S.sla)>=L.sla_target;
-  after.push(()=>{chart(c1box,{h:150,label:`Open critical and high findings, from ${S.open[0]} to ${last(S.open)} over 12 weeks`,end:true,series:[{vals:S.open,color:'var(--a1)',label:'Critical and high open'}]});spark(c2,S.rem,'var(--a2)')});
+  after.push(()=>{chart(c1box,{go:'vulnerabilities',title:'Open critical and high findings',h:150,label:`Open critical and high findings, from ${S.open[0]} to ${last(S.open)} over 12 weeks`,end:true,series:[{vals:S.open,color:'var(--a1)',label:'Critical and high open'}]});spark(c2,S.rem,'var(--a2)')});
   fill.style.width=last(S.sla)+'%';fill.style.background=met?'var(--ok)':'linear-gradient(90deg,var(--a1),var(--a2))';mark.style.left=`calc(${L.sla_target}% - 1px)`;me.append(fill,mark);me.setAttribute('role','img');me.setAttribute('aria-label',`${last(S.sla)}% against a target of ${L.sla_target}%`);
   const say=(...k)=>{const p=el('p','say');k.forEach((x)=>p.append(x));return p};
   const answers=el('section','answers',
@@ -418,7 +440,7 @@ function periodActions(c,p,from,to){const out=[],worstT=[...DATA.owners].sort((a
   OC.forEach((o)=>o.measures.forEach((m)=>{if(m.meets===false&&!['Acknowledge an alert','Median containment','Adherence to SOC service levels'].includes(m.label))
     out.push({d:true,t:`Close the gap on ${lcFirst(m.label)}`,w:`${fmtNow(m)} against ${fmtTarget(m).replace('≥ ','').replace('≤ ','')} (${o.outcome}).`,o:'Programme sponsor',go:'exec'})}));
   return out.sort((a,b)=>(b.d?1:0)-(a.d?1:0))}
-function periodChart(box,cur,prev,labels){
+function periodChart(box,cur,prev,labels,onPick){
   const draw=()=>{box.replaceChildren();const w=Math.max(280,box.clientWidth),h=220,m={l:36,r:10,t:14,b:26},n=cur.length,max=nice(Math.max(1,...cur,...prev.filter((v)=>v!=null)));
     const bw=(w-m.l-m.r)/n,x=(i)=>m.l+i*bw+bw/2,y=(v)=>h-m.b-v/max*(h-m.t-m.b),svg=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%',height:h,role:'img','aria-label':`Incidents per ${labels.unit} in the period, with the period before as a dashed line`});
     for(let k=0;k<=4;k++){const v=max*k/4;svg.append(sv('line',{x1:m.l,x2:w-m.r,y1:y(v),y2:y(v),stroke:'var(--grid)'}),sv('text',{x:m.l-6,y:y(v)+3.5,'text-anchor':'end',class:'tick'},f0(v)))}
@@ -428,7 +450,8 @@ function periodChart(box,cur,prev,labels){
     const tip=el('div','tip');tip.hidden=true;const hit=sv('rect',{x:m.l,y:0,width:w-m.l-m.r,height:h,fill:'transparent'});svg.append(hit);box.append(svg,tip);
     const mv=(ev)=>{const b=svg.getBoundingClientRect(),i=Math.max(0,Math.min(n-1,Math.floor(((ev.clientX-b.left)*w/b.width-m.l)/bw)));tip.replaceChildren(el('div','',labels.at[i]),el('div','',el('span','','Incidents'),el('b','',f0(cur[i]))),el('div','',el('span','','Period before'),el('b','',prev[i]==null?'—':f0(prev[i]))));
       tip.hidden=false;const k=b.width/w,tw=tip.offsetWidth;let left=x(i)*k+12;if(left+tw>box.clientWidth)left=x(i)*k-tw-12;tip.style.left=Math.max(0,left)+'px'};
-    hit.addEventListener('pointermove',mv);hit.addEventListener('pointerdown',mv);hit.addEventListener('pointerleave',()=>{tip.hidden=true})};
+    hit.addEventListener('pointermove',mv);hit.addEventListener('pointerdown',mv);hit.addEventListener('pointerleave',()=>{tip.hidden=true});
+    if(onPick){hit.style.cursor='pointer';hit.addEventListener('click',(ev)=>{const b=svg.getBoundingClientRect();onPick(Math.max(0,Math.min(n-1,Math.floor(((ev.clientX-b.left)*w/b.width-m.l)/bw))))})}};
   draw();watch(box,draw)}
 function bucket(rows,size){const out=[];for(let i=0;i<rows.length;i+=size)out.push(rows.slice(i,i+size));return out}
 function periodSection(){
@@ -450,10 +473,12 @@ function periodSection(){
       tiles.append(el('div','card ptile',el('span','cap',label),el('div','num',val),el('div','pcmp',cmp),el('div','pv',vt?el('span','pill '+tone,vt):null,tn?el('span','cap',' '+tn):null),sp));
       const series=bk.map((g)=>{const a=agg(g);return a[k]==null?0:a[k]});if(series.length>1)after.push(()=>spark(sp,series,better==='neutral'?'var(--dim)':'var(--a1)'))});
     const cbox=el('div','chart'),curV=bk.map((g)=>agg(g).incidents),prevRows=len<=1?[]:prow,pv=bucket(prevRows,bsize).map((g)=>agg(g).incidents);
-    const labels={unit:len<=1||bsize===1?'day':'week',at:bk.map((g)=>bsize===1||len<=1?dfmt(g[0].date):'w/c '+dfmt(g[0].date))};after.push(()=>periodChart(cbox,curV,curV.map((_,i)=>pv[i]??null),labels));
+    const labels={unit:len<=1||bsize===1?'day':'week',at:bk.map((g)=>bsize===1||len<=1?dfmt(g[0].date):'w/c '+dfmt(g[0].date))};const pickB=(i)=>{const g=bk[i],a=agg(g),pa=bucket(prevRows,bsize)[i];const pr=pa?agg(pa):{};drill(`Incidents, ${labels.at[i]}`,g.length>1?`${dfmt(g[0].date)} to ${dfmt(g[g.length-1].date)}`:dfmt(g[0].date),
+      PM.map(([k,label,u,bt,tg,dec])=>[label,a[k]==null?'—':(dec?f1(a[k]):f0(a[k]))+u+(pr[k]!=null&&a[k]!=null?`  (before: ${dec?f1(pr[k]):f0(pr[k])}${u})`:''),tg!=null&&a[k]!=null&&(bt==='lower'?a[k]>tg:a[k]<tg)?'alert':'']),[el('p','note','Bracketed figures are the matching '+labels.unit+' of the period before.')],'detection')};
+    after.push(()=>periodChart(cbox,curV,curV.map((_,i)=>pv[i]??null),labels,pickB));
     const al=el('ul','actions');if(!acts.length)al.append(el('li','',el('span','pill ok','No action'),el('div','',el('b','','Every measure is on target or improving.'))));
     acts.forEach((a)=>{const go=el('button','link sm','Open');go.type='button';go.addEventListener('click',()=>show(a.go,true));al.append(el('li','',el('span','pill '+(a.d?'bad':'warn'),a.d?'Decision needed':'Action'),el('div','',el('b','',a.t),el('p','',a.w)),el('div','aowner',el('span','cap',a.o),go)))});
-    body.append(lead,tiles,el('div','two wide',el('section','card',el('div','ph',el('h2','h',`Incidents per ${labels.unit}`),el('span','cap','Bars: this period. Dashed: the period before.')),cbox),
+    body.append(lead,tiles,el('div','two wide',el('section','card',el('div','ph',el('h2','h',`Incidents per ${labels.unit}`),el('span','cap','Bars: this period. Dashed: the period before. Select a bar for its figures.')),cbox),
       el('section','card',el('div','ph',el('h2','h','Decisions and actions'),el('span','cap','From the figures above')),al)));
     if(Object.values(DYS).includes('sample'))body.append(el('p','note',`Sample figures: ${Object.keys(DYS).filter((k)=>DYS[k]==='sample').length} of ${Object.keys(DYS).length} daily measures are sample data until their source is connected.`));
     if(wrap.isConnected)after.splice(0).forEach((f)=>f())};
@@ -473,9 +498,65 @@ V.exec=()=>{
   const sl=el('ul','sig-list');[...DATA.notes].filter((r)=>r.confidence==='High').slice(0,4).forEach((r)=>sl.append(signal(r,true)));
   const all=el('button','link sm','All signals');all.type='button';all.addEventListener('click',()=>show('signals',true));
   const ar=el('ul','arealist');Object.keys(AREAS).forEach((k)=>{const a=AREAS[k];const b=el('button','xrow',el('span','',el('b','',a.name),el('small','',a.what)),el('span','pill '+a.tone,a.state));b.type='button';b.addEventListener('click',()=>show(k,true));ar.append(el('li','',b))});
-  return[head,band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
+  return[head,...questions(),band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
     el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl)),
     band('Every area'),el('section','card',ar)]};
+
+/* ---------- Role views: CISO and CIO questions, SOC director, Infrastructure, Engineering (see AUDIENCES.md) ---------- */
+const RO=DATA.roles||{},MS=RO.mssp,SI=RO.siem,AI=RO.ai,IN=RO.infra,EN=RO.eng;
+const avg=(a)=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
+const srcNote=(...b)=>b.some((x)=>x&&x.source==='sample')?el('p','note','Some figures on this page are sample data until their source is connected. See AUDIENCES.md for where each comes from.'):null;
+function qcard(q,ans,unit,dec,tone,verdictTxt,say,go){const b=el(go?'button':'article','card qcard'+(go?' lift':''),el('div','cap',q),el('div','qrow',bigNum(ans,dec,unit),el('span','pill '+tone,verdictTxt)),el('p','say',say));
+  if(go){b.type='button';b.addEventListener('click',()=>show(go,true))}return b}
+function questions(){if(!MS)return[];const sla=last(MS.sla_pct),gb=avg(SI.daily_gb.slice(-7)),eos=sum(IN.end_of_support,(r)=>r.devices),ex=IN.exploitable_exposed.length,ai=AI.unapproved;
+  const g=el('div','qgrid');g.append(
+    qcard('How exposed are critical services?',ex,'',0,ex?'bad':'ok',ex?'Act now':'Clear',`Exploitable weaknesses open on internet-facing systems. Oldest ${Math.max(...IN.exploitable_exposed.map((r)=>r.days_open),0)} days.`,'infra'),
+    qcard('Is the estate supportable?',eos,'',0,eos>100?'warn':'ok',eos>100?'Plan funding':'Manageable',`Devices on unsupported software. Largest: ${IN.end_of_support[1].software}, ${IN.end_of_support[1].devices} devices.`,'infra'),
+    qcard('Is SAP safe?',IN.sap.critical_config_findings,'',0,IN.sap.critical_config_findings?'warn':'ok',IN.sap.critical_config_findings?'Findings open':'Clear',`Critical SAP configuration findings; ${IN.sap.missing_security_notes} security notes missing across ${IN.sap.systems} systems.`,'sap'),
+    qcard('Is the managed service performing?',sla,'%',1,sla>=98?'ok':'warn',sla>=98?'On target':'Under 98%',`Incidents closed within the agreed time by ${MS.provider}. ${last(MS.escalations_real_pct)}% of escalations were real.`,'socdir'),
+    qcard('Is SIEM spend under control?',gb,' GB',1,gb<=SI.threshold_gb?'ok':'bad',gb<=SI.threshold_gb?'Within design':'Over design',`Ingestion per day, 7-day average, against the ${SI.threshold_gb} GB design threshold.`,'socdir'),
+    qcard('Is AI being used safely?',ai,'',0,ai>20?'warn':'ok',ai>20?'Policy needed':'Controlled',`Unapproved AI apps in use out of ${AI.apps_in_use}. Data sent to AI apps ${sgn(Math.round((last(AI.data_to_ai_mb_week)/AI.data_to_ai_mb_week[0]-1)*100))}% in 12 weeks.`,'ai'));
+  return[band('The questions the CISO and CIO ask'),g]}
+
+V.socdir=()=>{const autos=MS.closed_by_automation_pct,gb=avg(SI.daily_gb.slice(-7)),tot=sum(SI.by_source,(s)=>s.gb_per_day);
+  const head=vhead('SOC director',[`The managed service closed `,[`${last(MS.sla_pct)}%`],` of incidents inside the agreed time last week, against 98%. `,[`${last(MS.true_positive_pct)}%`],` of incidents were real, and `,[`${last(MS.escalations_real_pct)}%`],` of escalations to us needed action. SIEM ingestion is `,[`${f1(gb)} GB a day`],` against the ${SI.threshold_gb} GB design threshold.`],last(MS.sla_pct)>=98?'ok':'warn',last(MS.sla_pct)>=98?'On target':'Under target');
+  const stats=el('section','stats six',stat('Provider inside agreed time',last(MS.sla_pct),'%',1,chg(MS.sla_pct),'higher',MS.sla_pct),stat('Time to acknowledge',last(MS.ack_minutes),' min',1,chg(MS.ack_minutes),'lower',MS.ack_minutes),
+    stat('Incidents that were real',last(MS.true_positive_pct),'%',1,chg(MS.true_positive_pct),'higher',MS.true_positive_pct),stat('Escalations that needed action',last(MS.escalations_real_pct),'%',1,chg(MS.escalations_real_pct),'higher',MS.escalations_real_pct),
+    stat('Closed by automation',last(autos),'%',1,chg(autos),'higher',autos),stat('SIEM GB a day',gb,'',1,null,'lower',SI.daily_gb.slice(-12)));
+  const sev=el('tbody');MS.by_severity.forEach((r)=>sev.append(el('tr','',el('td','',el('b','',r.severity)),el('td','',f0(r.incidents)),el('td',r.within_pct<98?'alert':'',f1(r.within_pct)+'%'),el('td','',f1(r.ack_minutes)+' min'))));
+  const sevT=el('section','card',el('div','ph',el('h2','h','Provider by severity'),el('span','cap','Last 12 weeks')),el('div','scroll',el('table','rank',el('thead','',el('tr','',...['Severity','Incidents','Inside agreed time','Acknowledged in'].map((h)=>el('th','',h)))),sev)),
+    el('p','note','Figures are worked out from Sentinel incident timestamps, not taken from the provider\'s report. Escalation outcomes need the provider\'s ticket export.'));
+  const mx=Math.max(...SI.by_source.map((s)=>s.gb_per_day)),tone={High:'var(--a1)',Medium:'var(--a2)',Low:'var(--warn)'};
+  const ing=el('section','card',el('div','ph',el('h2','h','SIEM ingestion by source'),el('span','cap',`${f1(tot)} GB a day · colour shows detection value`)),rowsBars(SI.by_source.map((s)=>[s.source,s.gb_per_day,`${f1(s.gb_per_day)} GB${s.detection_value?' · '+s.detection_value+' value':''}`,tone[s.detection_value]||'var(--a1)']),mx),
+    el('p','note','A large source with low detection value is the first candidate for basic logs, filtering or a transformation rule.'));
+  return[head,stats,el('div','two',chartCard('Managed service inside agreed time',{label:'Percent of incidents closed inside the agreed time, by week',end:true,dec:true,unit:'%',target:{value:98,label:'98% target'},series:[{vals:MS.sla_pct,color:'var(--a1)',label:'Inside agreed time'}]}),
+    chartCard('Quality of what reaches us',{label:'Real incidents and escalations needing action, by week',end:true,dec:true,unit:'%',series:[{vals:MS.true_positive_pct,color:'var(--a1)',label:'Incidents that were real'},{vals:MS.escalations_real_pct,color:'var(--a2)',label:'Escalations needing action'}]})),
+    el('div','two',sevT,ing),band('Detection'),R.rules(),srcNote(MS,SI)].filter(Boolean)};
+
+V.infra=()=>{const e=IN.edr,eos=sum(IN.end_of_support,(r)=>r.devices);
+  const head=vhead('Infrastructure',[[`${IN.exploitable_exposed.length} exploitable weaknesses`],` are open on internet-facing systems and come first. `,[`${f0(od)} findings`],` are past their deadline, `,[`${f0(eos)} devices`],` run unsupported software and `,[`${f0(e.no_agent)} devices`],` have no EDR agent.`],IN.exploitable_exposed.length?'bad':'ok',IN.exploitable_exposed.length?'Act now':'Clear');
+  const ex=rank('Fix first: exploitable and internet-facing','Public exploit, reachable from the internet',['Host','Weakness','Days open','Team'],IN.exploitable_exposed.map((r)=>[[r.host,r.cve],r.what,r.days_open,r.team]),{bar:2,units:{2:' days'},hot:(r)=>r[2]>14});
+  const eosT=rank('Unsupported software','By business service',['Software','Devices','Service'],IN.end_of_support.map((r)=>[[r.software,''],r.devices,r.service]));
+  const cov=el('section','stats six',stat('No EDR agent',e.no_agent,'',0,null,'lower',null,null,'controls'),stat('Agent out of date',e.outdated_agent,'',0,null,'lower'),stat('Infected devices',e.infected,'',0,null,'lower'),
+    stat('SAP security notes missing',IN.sap.missing_security_notes,'',0,null,'lower'),stat('SAP critical configuration',IN.sap.critical_config_findings,'',0,null,'lower'),stat('Overdue findings',od,'',0,null,'lower',null,null,'remediation'));
+  return[head,ex,cov,el('div','two',R.hostsVuln(),eosT),R.common(),srcNote(IN)]};
+
+V.eng=()=>{const P=EN.projects,crit=sum(P,(p)=>p.critical),sec=sum(P,(p)=>p.secrets),noScan=P.filter((p)=>!p.scanning),intro=sum(EN.introduced.slice(-4),(v)=>v),fixed=sum(EN.fixed.slice(-4),(v)=>v);
+  const head=vhead('Engineering',[[`${crit} critical findings`],` are open across ${P.length} projects, with `,[`${sec} committed secrets`],`. In the last four weeks merge requests introduced ${intro} findings and fixed ${fixed}. `,noScan.length?[`${noScan.length} projects have no security scanning`]:'Every project has security scanning','.'],fixed>=intro?'ok':'warn',fixed>=intro?'Fixing faster than adding':'Adding faster than fixing');
+  const stats=el('section','stats five',stat('Time to fix, critical',last(EN.mttr_critical),' days',1,chg(EN.mttr_critical),'lower',EN.mttr_critical),stat('Time to fix, high',last(EN.mttr_high),' days',1,chg(EN.mttr_high),'lower',EN.mttr_high),
+    stat('Critical open',crit,'',0,null,'lower'),stat('Secrets committed',sec,'',0,null,'lower'),stat('Projects scanning',P.length-noScan.length,` of ${P.length}`,0,null,'higher'));
+  const pr=rank('Findings by project','Open now',['Project','Critical','High','Secrets','Dependencies','Code','Containers','Templates','Time to fix'],
+    [...P].sort((a,b)=>b.critical*10+b.high-(a.critical*10+a.high)).map((p)=>[[p.project,p.scanning?'Scanning in pipeline':'No security scanning'],p.critical,p.high,p.secrets,p.dependency,p.code,p.container,p.iac,p.mttr_days+' days']),
+    {flag:(r,k)=>(k===1&&r[1]>0)||(k===3&&r[3]>0)||(k===8&&parseFloat(r[8])>30)});
+  const cw=el('section','card',el('div','ph',el('h2','h','Most common weakness types'),el('span','cap','Open findings')),rowsBars(EN.top_cwes.map((c)=>[c.cwe,c.count,String(c.count)]),Math.max(...EN.top_cwes.map((c)=>c.count)),'var(--a1)'));
+  return[head,stats,el('div','two',chartCard('Introduced against fixed',{label:'Findings introduced and fixed in merge requests, by week',end:true,series:[{vals:EN.introduced,color:'var(--warn)',label:'Introduced'},{vals:EN.fixed,color:'var(--a1)',label:'Fixed'}]}),
+    chartCard('Time to fix',{label:'Average days to fix, by week',end:true,dec:true,series:[{vals:EN.mttr_critical,color:'var(--crit)',label:'Critical'},{vals:EN.mttr_high,color:'var(--a2)',label:'High'}]})),pr,cw,srcNote(EN)]};
+
+V.ai=()=>{const d=AI.data_to_ai_mb_week;
+  const head=vhead('AI use',[[`${AI.unapproved} of ${AI.apps_in_use} AI apps`],` in use are not approved, used by `,[`${f0(AI.users)} people`],`. Data sent to AI apps is `,[`${sgn(Math.round((last(d)/d[0]-1)*100))}% in 12 weeks`],`. AI policy violations: ${last(AI.violations)} last week.`],'warn','Needs policy');
+  const apps=rank('AI apps in use','This month',['App','People','Uploaded','Approved'],AI.top_apps.map((a)=>[[a.app,a.approved?'Approved':'Not approved'],a.users,a.upload_mb,a.approved?'Yes':'No']),{units:{2:' MB'},flag:(r,k)=>k===3&&r[3]==='No'});
+  return[head,el('div','two',chartCard('Data sent to AI apps',{label:'MB uploaded to AI apps per week',end:true,fc:FC,series:[{vals:d,color:'var(--a1)',label:'MB uploaded'}]}),chartCard('AI policy violations',{label:'Violations per week',end:true,series:[{vals:AI.violations,color:'var(--warn)',label:'Violations'}]})),apps,
+    el('p','note','From Netskope\'s generative AI category and Defender for Cloud AI posture. The EU AI Act\'s high-risk obligations apply from 2 August 2026, so keep an inventory of approved AI use.'),srcNote(AI)].filter(Boolean)};
 
 /* ---------- Operations: shared filters, live board, threat paths, workflows, reports, commands ---------- */
 const HOSTED=!!window.SECOPS_HOSTED;
@@ -640,11 +721,13 @@ function syncBar(){BAR.querySelectorAll('select').forEach((s)=>{s.value=FILTER[s
     el('span','tcustom',el('label','tf',el('span','','From'),fi),el('label','tf',el('span','','To'),ti)),sel('severity','Severity',[['all','All'],...SEVS.map((s)=>[s,s])]),sel('team','Team',[['all','All teams'],...teams.map((t)=>[t,t])]),sel('source','Source',[['all','All systems'],...sources.map((s)=>[s,s])]));
   $('#main').prepend(BAR);addEventListener('keydown',(e)=>{if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();cmd.focus()}})})();
 
-const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['live','Live operations','M3 12h3l2-5 3 10 2-5h8M12 3v2m0 14v2'],['overview','Operations overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','Signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
+const NAV=[['exec','CISO and CIO','M3 20h18M6 16V9m6 7V5m6 11v-4'],['socdir','SOC director','M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm-7 18c0-3.900 3.100-7 7-7s7 3.100 7 7'],['live','SOC team: live','M3 12h3l2-5 3 10 2-5h8M12 3v2m0 14v2'],['overview','Operations overview','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z'],['detection','SOC operations','M3 12h4l2-6 4 12 2-6h6'],['vulnerabilities','Vulnerabilities','M12 3 3 19h18L12 3Zm0 6v5m0 3v.5'],['remediation','Remediation','M4 12a8 8 0 1 0 2.300-5.600M4 4v4h4m3 4 2 2 4-4'],['email','Email and phishing','M3 6h18v12H3V6Zm0 1 9 6 9-6'],['people','Users and apps','M8 11a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Zm-6 9c0-3.300 2.700-6 6-6s6 2.700 6 6M17 11a3 3 0 1 0 0-6M22 20c0-2.800-2-5.100-4.500-5.800'],['controls','Control areas','M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z'],['signals','Signals','M12 3c.600 5 2.400 6.800 7.500 7.500-5.100.700-6.900 2.500-7.500 7.500-.600-5-2.400-6.800-7.500-7.500C9.600 9.800 11.400 8 12 3Z'],['build','Build and security','M12 3 5 6v5c0 4.500 3 8 7 10 4-2 7-5.500 7-10V6l-7-3Z']];
 const nav=$('#nav'),main=$('#main'),built={};
 NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['threats','Threat paths','M4 18c3-8 6-8 8-4s5 4 8-4M4 18h.01M20 10h.01'],...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
+NAV.splice(NAV.findIndex((n)=>n[0]==='overview'),0,['infra','Infrastructure','M4 5h16v5H4zM4 14h16v5H4zM8 7.500h.01M8 16.500h.01'],['eng','Engineering','m8 8-4 4 4 4m8-8 4 4-4 4M14 5l-4 14']);
+NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
 NAV.splice(NAV.findIndex((n)=>n[0]==='build'),0,['workflows','Workflows','M5 6h6v4H5zM13 14h6v4h-6zM8 10v4h8'],['reports','Reports','M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6']);
-NAV.forEach(([k,label,d],i)=>{if(k==='detection'||k==='threats'||k==='signals')nav.append(el('div','gap'));
+NAV.forEach(([k,label,d],i)=>{if(k==='overview'||k==='detection'||k==='threats'||k==='signals')nav.append(el('div','gap'));
   const ic=sv('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'});ic.append(sv('path',{d}));
   const b=el('button','nv',ic,el('span','',label),AREAS[k]?el('span','st '+AREAS[k].tone):null);b.type='button';b.dataset.v=k;b.addEventListener('click',()=>show(k,true));nav.append(b);
   const v=el('section','view');v.id=k;v.hidden=true;v.setAttribute('aria-label',label);main.append(v)});

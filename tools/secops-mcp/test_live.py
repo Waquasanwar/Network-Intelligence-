@@ -125,7 +125,7 @@ assert all(v["status"] == "connected" for k, v in checks.items() if k != "GitLab
 assert data["_sources"]["assets"] == data["_sources"]["soc"] == data["_sources"]["mail"] == "live"
 assert all(len(v) == 12 and None not in v for v in data["trend"].values())
 print("domains:", [(d["id"], d["state"]) for d in data["domains"]])
-assert [d["state"] for d in data["domains"]] == ["live", "live", "planned"]
+assert [d["state"] for d in data["domains"]] == ["live", "live", "planned", "planned"]
 if len(sys.argv) > 1:
     json.dump(data, open(sys.argv[1], "w"))
 print("OK,", len(calls), "simulated API calls")

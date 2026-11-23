@@ -152,6 +152,9 @@ def build() -> dict:
     data["threats"] = threats.build(is_live)
     data["live"] = liveboard.build(is_live)
     data["workflows"] = workflows.overview()
+    from .personas import build as build_personas
+
+    data["roles"] = build_personas(is_live)
     data["_sources"] = sources
     data["_built_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     return data

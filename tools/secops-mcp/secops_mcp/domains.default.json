@@ -407,13 +407,14 @@
    "status": "planned",
    "better": "lower",
    "icon": "M4 7l8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7m-8 4v10",
-   "intro": "Threats and risky activity in SAP, from the Microsoft Sentinel solution for SAP applications.",
-   "needs": "Deploy the Microsoft Sentinel solution for SAP applications and its data connector agent. Its built-in rules then raise alerts named 'SAP - ...', and the audit log is queried through the SAPAuditLog function. Set this page's status to live in domains.json once data arrives.",
+   "intro": "Threats, weaknesses and malware in SAP, from SecurityBridge, Bowbridge and the Microsoft Sentinel solution for SAP applications.",
+   "needs": "Connect SecurityBridge to Sentinel with its connector, deploy the Sentinel solution for SAP applications, and forward Bowbridge's virus-scan events to a custom table. Confirm the table names in your workspace, then set this page's status to live in domains.json.",
    "will_show": [
-    "SAP security alerts per week, by rule, from the built-in analytics rules",
-    "Activity by privileged and emergency (firefighter) users",
-    "Sensitive transactions and changes to critical system parameters",
-    "Failed and unusual logons, and data downloads from production",
+    "SAP security alerts per week, by rule, from SecurityBridge and the Sentinel SAP rules",
+    "Missing SAP security notes and critical configuration findings per system (SecurityBridge)",
+    "ABAP custom code findings by severity (SecurityBridge code scanning)",
+    "Malware found in files uploaded to SAP (Bowbridge)",
+    "Activity by privileged and emergency (firefighter) users, and changes to critical parameters",
     "Which SAP systems are sending data, and which are late"
    ],
    "measures": [
@@ -434,6 +435,33 @@
      "sample": []
     }
    ],
+   "ranked": []
+  },
+  {
+   "id": "edge",
+   "title": "Web edge",
+   "nav": "Web edge",
+   "status": "planned",
+   "better": "lower",
+   "icon": "M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Z",
+   "intro": "Attacks on public websites and services stopped at the edge: web attacks, bots and denial of service, from Cloudflare.",
+   "needs": "Send Cloudflare logs to Azure storage with Logpush and turn on the Cloudflare codeless connector in Sentinel (table CloudflareV2_CL). Confirm the field names after the first delivery, then set this page's status to live.",
+   "will_show": [
+    "Web attacks blocked by the web application firewall, by rule and by site",
+    "Bot traffic and challenges, and denial-of-service events",
+    "Which public services are attacked most, and from where",
+    "Attacks that got past the edge and reached an application, matched to Sentinel incidents"
+   ],
+   "measures": [
+    {
+     "id": "edge_waf",
+     "label": "Web attacks blocked",
+     "better": "lower",
+     "query": "CloudflareV2_CL | where TimeGenerated > ago({weeks} * 7d) | extend week_ending = startofweek(TimeGenerated - 1d) + 7d | where week_ending < startofday(now()) | summarize value = count() by week_ending | order by week_ending asc",
+     "sample": []
+    }
+   ],
+   "breakdowns": [],
    "ranked": []
   }
  ]
