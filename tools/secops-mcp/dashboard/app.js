@@ -93,6 +93,7 @@ function drill(title,sub,pairs,extra,go){let d=$('#drill');if(!d){d=el('aside','
   drawerBack=document.activeElement;const x=el('button','link sm','Close');x.type='button';x.addEventListener('click',closeDrill);
   const dl=el('dl','dpairs');pairs.forEach(([k,v,tone])=>dl.append(el('dt','',k),el('dd',tone||'',v)));
   const foot=el('div','dfoot');if(go&&go!==CURRENT&&V[go]){const b=el('button','btn primary','Open '+((NAV.find((q)=>q[0]===go)||[])[1]||'page'));b.type='button';b.addEventListener('click',()=>{closeDrill();show(go,true)});foot.append(b)}
+  if(CL&&pairs.length){const q=el('button','btn','Ask Claude about this');q.type='button';q.addEventListener('click',()=>askClaude(title,sub,`Explain what is behind this item, the likely cause, how it compares with the rest of the figures, and the next step with an owner. Item: ${title}${sub?' ('+sub+')':''}: ${pairs.map((p)=>p[0].trim()+' '+p[1]).join('; ')}.`));foot.prepend(q)}
   d.replaceChildren(el('div','dhead',el('div','',el('h2','',title),sub?el('p','cap',sub):null),x),dl,...(extra||[]),foot);d.setAttribute('aria-label',title);d.hidden=false;d.focus()}
 function closeDrill(){const d=$('#drill');if(d)d.hidden=true;if(drawerBack&&drawerBack.focus)drawerBack.focus()}
 function weekDrill(cfg,title,i){const dec=cfg.dec,u=cfg.unit||'';
@@ -513,7 +514,7 @@ V.exec=()=>{
   const sl=el('ul','sig-list');[...DATA.notes].filter((r)=>r.confidence==='High').slice(0,4).forEach((r)=>sl.append(signal(r,true)));
   const all=el('button','link sm','All signals');all.type='button';all.addEventListener('click',()=>show('signals',true));
   const ar=el('ul','arealist');Object.keys(AREAS).forEach((k)=>{const a=AREAS[k];const b=el('button','xrow',el('span','',el('b','',a.name),el('small','',a.what)),el('span','pill '+a.tone,a.state));b.type='button';b.addEventListener('click',()=>show(k,true));ar.append(el('li','',b))});
-  return[head,insights([IX.exposure(),IX.provider(),IX.siem(),IX.ai(),IX.estate(),IX.teams()],4),band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
+  return[head,insights([IX.overlap(),IX.redteam(),IX.exposure(),IX.provider(),IX.siem(),IX.ai(),IX.estate(),IX.teams()],4),band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
     ...execTrends(),el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl))]};
 
 /* ---------- Role views: executive insights, SOC director, Infrastructure, Engineering (see AUDIENCES.md) ---------- */
@@ -528,7 +529,7 @@ const inDays=(d)=>dstr(new Date(Date.now()+d*864e5));
 function insights(items,max){const ul=el('ol','ins');[...items].filter(Boolean).sort((a,b)=>TONE[a.tone]-TONE[b.tone]).slice(0,max||4).forEach((it)=>{
     const go=it.go&&it.go!==CURRENT?el('button','link sm','Open'):null;if(go){go.type='button';go.addEventListener('click',()=>show(it.go,true))}
     ul.append(el('li','ins-i',el('span','pill '+it.tone,TAG[it.tone]),el('div','ins-b',el('b','',it.t),el('p','',it.w),it.a?el('p','ins-do',el('span','','Next step. '),it.a):null),el('div','aowner',it.o?el('span','cap',it.o):null,go)))});
-  return el('section','card dsays',el('div','ph',el('h2','h','What the data says'),el('span','cap','Worked out from the figures on this page')),ul)}
+  return el('section','card dsays',el('div','ph',el('h2','h','What the data says'),el('span','cap','Worked out from the figures on this page'),CL?briefBtn():null),ul)}
 
 const IX={
  exposure:()=>{const ex=IN.exploitable_exposed;if(!ex.length)return{tone:'ok',t:'No exploitable weakness is open on an internet-facing system.',w:'The highest-risk class of finding is clear.',go:'infra'};
@@ -613,6 +614,83 @@ V.ai=()=>{const d=AI.data_to_ai_mb_week;
   const apps=rank('AI apps in use','This month',['App','People','Uploaded','Approved'],AI.top_apps.map((a)=>[[a.app,a.approved?'Approved':'Not approved'],a.users,a.upload_mb,a.approved?'Yes':'No']),{units:{2:' MB'},flag:(r,k)=>k===3&&r[3]==='No'});
   return[head,insights([IX.ai(),IX.aiFiles(),IX.aiViol()]),el('div','two',chartCard('Data sent to AI apps',{label:'MB uploaded to AI apps per week',end:true,fc:FC,series:[{vals:d,color:'var(--a1)',label:'MB uploaded'}]}),chartCard('AI policy violations',{label:'Violations per week',end:true,series:[{vals:AI.violations,color:'var(--warn)',label:'Violations'}]})),apps,
     el('p','note','From Netskope\'s generative AI category and Defender for Cloud AI posture. The EU AI Act\'s high-risk obligations apply from 2 August 2026, so keep an inventory of approved AI use.'),srcNote(AI)].filter(Boolean)};
+
+/* ---------- Red team, pen tests and attack simulation ---------- */
+const OF=RO.offsec,AG=RO.agents;
+Object.assign(IX,{
+ redteam:()=>{const r=OF.engagements.find((e)=>e.type==='Red team');return{tone:r.reached?'bad':'ok',t:`The red team ${r.reached?'reached':'did not reach'} its objective (${r.objective.toLowerCase()})${r.reached?` in ${r.days_to_objective} days`:''}. The SOC saw ${r.detected_steps} of ${r.steps} steps, the first at step ${r.first_detected_step}.`,
+   w:`${r.steps-r.detected_steps-r.blocked_steps} steps went unseen. Detection started after the attacker already had a foothold.`,a:'Close the unseen steps first: lateral movement and credential access rules, then retest.',o:'Head of security operations',go:'offsec'}},
+ purple:()=>{const t=OF.tactics,tot=sum(t,(x)=>x.tested),miss=sum(t,(x)=>x.missed),w=[...t].sort((a,b)=>b.missed/b.tested-a.missed/a.tested)[0];return{tone:miss/tot>0.3?'bad':'warn',t:`Of ${tot} attack techniques tested, ${Math.round(sum(t,(x)=>x.blocked)/tot*100)}% were blocked, ${Math.round(sum(t,(x)=>x.detected)/tot*100)}% detected and ${Math.round(miss/tot*100)}% missed.`,
+   w:`${w.tactic} is the weakest stage: ${w.missed} of ${w.tested} techniques went unnoticed. Attack simulation detection is ${last(OF.bas_detected_pct)}%, up from ${OF.bas_detected_pct[0]}% twelve weeks ago.`,a:`Give the detection agent's ${w.tactic.toLowerCase()} rule drafts priority review.`,o:'Detection engineering',go:'offsec'}},
+ pentest:()=>{const f=OF.open_findings.filter((x)=>x.severity==='Critical'),old=[...f].sort((a,b)=>b.days_open-a.days_open)[0],failed=OF.open_findings.filter((x)=>x.retest==='Failed');return{tone:f.length?'bad':'ok',t:`${f.length} critical findings from testing are still open; the oldest, "${old.title}", for ${old.days_open} days.`,
+   w:`${failed.length} fixes failed their retest, so the weakness is still there although the ticket may say done.`,a:'Hold a retest within two weeks of every fix, and report failed retests to the risk owner.',o:'Security leadership',go:'offsec'}},
+ overlap:()=>({tone:'bad',t:'The weakness the red team used to get in (no MFA on the legacy VPN profile) sits on the same edge gateway as an exploitable vulnerability open for 19 days.',
+   w:'Two independent sources point at the same door. This is the most likely route for a real attacker this month.',a:'Retire the legacy VPN profile and patch the gateway in the same change window.',o:'Infrastructure leadership',go:'offsec'}),
+});
+V.offsec=()=>{const r=OF.engagements.find((e)=>e.type==='Red team'),t=OF.tactics;
+  const head=vhead('Red team and testing',[`The last red team `,[r.reached?`reached its objective in ${r.days_to_objective} days`:'did not reach its objective'],`. `,[`${OF.open_findings.filter((f)=>f.severity==='Critical').length} critical findings`],` from testing are open, and attack simulation detection is `,[`${last(OF.bas_detected_pct)}%`],`.`],'bad','Gaps open');
+  const chain=el('ol','chain2');for(let i=1;i<=r.steps;i++){const st=i===r.steps?'reached':i<=r.blocked_steps?'blocked':[6,7,9,10].includes(i)?'detected':'missed';chain.append(el('li',st,el('span','',String(i))))}
+  const legend2=el('p','cap','Each square is one step of the attack, in order. Filled: seen by the SOC. Outline: not seen. The last square is the objective.');
+  const tb=el('tbody');t.forEach((x)=>{const bar=el('div','stack');[['blocked',x.blocked],['detected',x.detected],['missed',x.missed]].forEach(([k,v])=>{const i=el('i',k);i.style.width=(v/x.tested*100)+'%';bar.append(i)});
+    const tr=el('tr','pick',el('td','',x.tactic),el('td','num',String(x.tested)),el('td','num',String(x.blocked)),el('td','num',String(x.detected)),el('td','num'+(x.missed/x.tested>0.5?' alert':''),String(x.missed)),el('td','sb',bar));tr.tabIndex=0;
+    tr.addEventListener('click',()=>drill(x.tactic,'Techniques tested by the red team and attack simulation',[['Tested',String(x.tested)],['Blocked',String(x.blocked)],['Detected',String(x.detected)],['Missed',String(x.missed),x.missed?'alert':'']],[el('p','note','Missed means the technique ran with no alert. The detection agent drafts a rule for each miss.')],'detection'));tb.append(tr)});
+  const tac=el('section','card',el('div','ph',el('h2','h','Blocked, detected or missed, by attack stage'),el('span','cap','Red team and attack simulation, last 90 days')),el('div','scroll',el('table','rank tac',el('thead','',el('tr','',...['Stage','Tested','Blocked','Detected','Missed',''].map((h)=>el('th','',h)))),tb)));
+  const eng=rank('Engagements','Last 12 months',['Engagement','Critical','High','Open','Retests passed'],OF.engagements.map((e)=>[[e.name,`${e.type} · ${e.provider} · ended ${day(e.ended)}`],e.findings.critical,e.findings.high,e.open,`${e.retest_passed} of ${e.retested}`]),{bar:3,flag:(row,k)=>k===1&&row[1]>0});
+  const of=rank('Open findings from testing','Oldest first within severity',['Finding','Severity','Owner','Days open','Retest'],[...OF.open_findings].sort((a,b)=>(a.severity==='Critical'?0:1)-(b.severity==='Critical'?0:1)||b.days_open-a.days_open).map((f)=>[[f.title,`${f.id} · ${f.source}`],f.severity,f.owner,f.days_open,f.retest]),{bar:4,units:{4:' days'},flag:(row,k)=>(k===1&&row[1]==='Critical')||(k===5&&row[5]==='Failed')});
+  return[head,insights([IX.overlap(),IX.redteam(),IX.pentest(),IX.purple()]),el('section','card',el('div','ph',el('h2','h',`${r.name}: the attack path`),el('span','cap',r.objective)),chain,legend2),tac,of,
+    chartCard('Attack simulation results',{label:'Percent of simulated attack steps detected and blocked, by week',end:true,dec:true,unit:'%',series:[{vals:OF.bas_detected_pct,color:'var(--a1)',label:'Detected'},{vals:OF.bas_blocked_pct,color:'var(--ok)',label:'Blocked'}]}),eng,srcNote(OF)]};
+
+/* ---------- Agents: what each one checked, found and wants to do ---------- */
+const EVERY={'Triage agent':'Every 5 minutes','Exposure agent':'Every hour','Detection agent':'Daily, and after each attack simulation','Phishing agent':'On every reported email','Provider agent':'Daily at 06:00','Reporting agent':'Mondays at 07:00'};
+const AUTO={'Triage agent':'Closes duplicates and known-good alerts','Exposure agent':'Nothing; ranks and proposes','Detection agent':'Nothing; drafts rules for review','Phishing agent':'Pulls confirmed phishing from mailboxes','Provider agent':'Nothing; reports','Reporting agent':'Nothing; drafts for approval'};
+const PROPOSALS=[
+ {agent:'Exposure agent',title:'Patch NET-FW-EDGE-02 and retire the legacy VPN profile in one change',team:'Infrastructure',why:'Exploitable gateway weakness open 19 days, and the red team got in through the same gateway.',risk:'High',state:'waiting'},
+ {agent:'Detection agent',title:'Review two draft rules for lateral movement over SMB',team:'Detection engineering',why:'The red team moved laterally unseen; the drafts fire on all 4 replayed steps in the lab.',risk:'Medium',state:'waiting'},
+ {agent:'Provider agent',title:'Raise six late high-severity closures at the service review',team:'Head of security operations',why:'High severity is 95.2% in time against 98%.',risk:'Medium',state:'waiting'}];
+function proposalsCard(){const ul=el('ul','props');const draw=()=>{ul.replaceChildren();const w=PROPOSALS.filter((p)=>p.state==='waiting');if(!w.length)ul.append(el('li','note','Nothing waiting.'));
+    PROPOSALS.forEach((p,i)=>{const ok=el('button','btn primary','Approve'),no=el('button','btn','Dismiss');ok.type=no.type='button';
+      const act=(yes)=>{p.state=yes?'approved':'dismissed';toast(yes?(HOSTED?`Approved: ${p.title}.`:`Approved. On the hosted system this raises the ticket for ${p.team} and posts to its Teams channel.`):'Dismissed.');draw()};
+      ok.addEventListener('click',()=>act(true));no.addEventListener('click',()=>act(false));
+      ul.append(el('li','prop '+p.state,el('span','pill '+(p.risk==='High'?'bad':'warn'),p.risk),el('div','',el('b','',p.title),el('p','',p.why),el('p','cap',`${p.agent} · for ${p.team}`)),p.state==='waiting'?el('div','pbtn',ok,no):el('span','cap',p.state==='approved'?'Approved':'Dismissed')))})};
+  draw();PROPOSALS.redraw=draw;return el('section','card',el('div','ph',el('h2','h','Waiting for approval'),el('span','cap','Nothing that writes runs without a person approving it')),ul)}
+function runAgent(a,btn,out){if(!CL)return;btn.disabled=true;out.textContent='Working through the figures…';
+  const prompt=`${RULES}\n\nYou are the ${a.agent}. Your job: ${a.does}\nWork through the figures below as that agent and propose at most 3 specific actions a person must approve. Reply with only a JSON array of objects: {"title": short imperative action, "team": owning team, "why": one sentence citing the figures, "risk": "High" or "Medium"}.\n\nFigures:\n${figures()}`;
+  CL.json(prompt,{cache:false}).then((arr)=>{const got=(Array.isArray(arr)?arr:[]).filter((x)=>x&&x.title).slice(0,3);
+      got.forEach((x)=>PROPOSALS.unshift({agent:a.agent,title:String(x.title),team:String(x.team||'Security operations'),why:String(x.why||''),risk:x.risk==='High'?'High':'Medium',state:'waiting'}));
+      out.textContent=got.length?`Proposed ${got.length} action${got.length===1?'':'s'}; see Waiting for approval.`:'Nothing new to propose.';if(PROPOSALS.redraw)PROPOSALS.redraw()})
+    .catch((e)=>{out.textContent=e.code==='cancelled'?'':(COPY[e.code]||'The agent could not finish just now.')}).finally(()=>{btn.disabled=false})}
+V.agents=()=>{const g=el('div','agents');AG.runs.forEach((a)=>{const b=el('button','link sm',`Review proposals`);b.type='button';b.addEventListener('click',()=>{const t=$('#agents .props');if(t)t.scrollIntoView({block:'center'})});
+    const run=el('button','btn ai-only','Run now'),out=el('p','cap ag-out');run.type='button';run.addEventListener('click',()=>runAgent(a,run,out));
+    g.append(el('article','card agent',el('div','ph',el('h2','h',a.agent),el('span','cap',a.last_run)),el('p','ag-does',a.does),
+      el('dl','dpairs',el('dt','','Runs'),el('dd','ag-f',EVERY[a.agent]||'On demand'),el('dt','','Acts alone'),el('dd','ag-f',AUTO[a.agent]||'Nothing'),el('dt','','Checked'),el('dd','',f0(a.checked)),el('dt','','Found'),el('dd','ag-f',a.found)),
+      el('div','ag-btns',run,b),out))});
+  const head=vhead('Agents',[`Six agents work through the data on a schedule. Today they checked `,[f0(sum(AG.runs,(a)=>a.checked))+' items'],`, acted alone on low-risk work and are waiting on `,[`${PROPOSALS.filter((p)=>p.state==='waiting').length} decisions`],` from people.`],'ok','Running');
+  return[head,proposalsCard(),g,el('p','note','In the hosted system the agents run inside your tenant on the schedule shown, with read-only identities. Anything that writes (a ticket, an email, a block) waits here for approval and is then carried out by the workflow engine. In this preview, Run now asks Claude to do the agent\'s work on the sample figures.'),srcNote(AG)].filter(Boolean)};
+
+/* ---------- Claude in the page (preview on claude.ai): ask, brief, investigate. Hidden wherever it is unavailable. ---------- */
+let CL=null;const onClaude=[];
+try{if(window.claude&&window.claude.use)window.claude.use('sample').then((s)=>{if(!s)return;CL=s;onClaude.splice(0).forEach((f)=>{try{f()}catch(e){}})}).catch(()=>{})}catch(e){}
+function figures(){const L2=[];const add=(s)=>L2.push(s);
+  Object.keys(IX).forEach((k)=>{try{const i=IX[k]();if(i)add(`- [${TAG[i.tone]}] ${i.t} ${i.w||''}${i.a?' Next step: '+i.a:''} (page: ${i.go||''})`)}catch(e){}});
+  const s6=(a)=>a.slice(-6).join(', ');
+  add(`Weekly series, oldest to newest, last 6 weeks ending ${L.week_ending}:`);
+  add(`incidents ${s6(S.inc)}; critical+high incidents ${s6(S.sevC.map((v,i)=>v+S.sevH[i]))}; fixes in time % ${s6(S.sla)} (target ${L.sla_target}); response in time % ${s6(S.rsla)} (target ${Q.response_target}); days to fix a critical ${s6(S.mttr)}; hours to contain ${s6(S.cont)}; findings found ${s6(S.opened)}; fixed ${s6(S.closed)}; phishing click rate % ${s6(S.rate)}; managed SOC in time % ${s6(MS.sla_pct)}; attack simulation detected % ${s6(OF.bas_detected_pct)}.`);
+  add('Teams: '+DATA.owners.map((o)=>`${o.team} ${o.overdue} overdue, ${o.sla_pct}% in time`).join('; ')+'.');
+  add('Agents: '+AG.runs.map((a)=>`${a.agent}: ${a.found}`).join('; ')+'.');
+  add('Pages: '+NAV.map((n)=>`${n[0]}=${n[1]}`).join(', ')+'.');
+  return L2.join('\n')}
+const RULES='You are the security operations analyst for this company, briefing a senior reader. Use only the figures below; do not invent numbers. Plain British English, short sentences, no headings, no emoji, no bold. If the figures cannot answer the question, say which data is missing.';
+const COPY={not_granted:'Claude is turned off for this page.',sampling_disabled:'Claude is not available on this account.',rate_limited:'Too many requests just now. Try again in a minute.',refused:'Claude declined that one. Try asking it differently.'};
+function askClaude(title,sub,task,opts={}){if(!CL)return;const out=el('div','ai-out','Thinking…'),stop=el('button','link sm','Stop'),ctl=new AbortController(),go=el('div','dfoot');stop.type='button';stop.addEventListener('click',()=>ctl.abort());
+  drill(title,sub,[],[el('p','cap','Written by Claude from the figures on this dashboard. Check before acting.'),out,el('div','ai-ctl',stop),go]);
+  const prompt=`${RULES}\n\n${task}\n\nAfter your answer, on its own last line, write "Open: <page id>" naming the one page that shows the detail, or "Open: none".\n\nFigures:\n${figures()}${opts.extra?'\n\n'+opts.extra:''}`;
+  const clean=(t)=>t.replace(/\n?Open:\s*([a-z]+)\s*$/i,'').trim();
+  CL(prompt,{signal:ctl.signal,modelTier:opts.tier||'default',cache:opts.cache===false?false:true,onText:({text})=>{out.textContent=clean(text)}})
+    .then(({text})=>{out.textContent=clean(text);stop.remove();const m=text.match(/Open:\s*([a-z]+)\s*$/i);if(m&&V[m[1]]&&m[1]!==CURRENT){const b=el('button','btn primary','Open '+((NAV.find((q)=>q[0]===m[1])||[])[1]||m[1]));b.type='button';b.addEventListener('click',()=>{closeDrill();show(m[1],true)});go.append(b)}})
+    .catch((e)=>{stop.remove();out.textContent=e.text?clean(e.text):'';if(e.code!=='cancelled')out.append(el('p','note',COPY[e.code]||'Claude could not answer just now.'))})}
+function briefBtn(){const b=el('button','link sm ai-only','Write the brief');b.type='button';b.addEventListener('click',()=>askClaude('Brief',`Week ending ${day(L.week_ending)}`,'Write a five-point brief for the executive team: what changed, what is at risk, what is going well, and the two decisions needed this week with owners.'));return b}
+onClaude.push(()=>{document.body.classList.add('has-claude');document.querySelectorAll('.dsays .ph').forEach((ph)=>{if(!ph.querySelector('.ai-only'))ph.append(briefBtn())});
+  const c=$('#cmd');if(c)c.placeholder='Ask a question about the figures, or give a command';});
 
 /* ---------- Operations: shared filters, live board, threat paths, workflows, reports, commands ---------- */
 const HOSTED=!!window.SECOPS_HOSTED;
@@ -744,7 +822,7 @@ V.reports=()=>{const sched=WF.workflows.find((w)=>w.trigger==='schedule.weekly')
     el('section','card',el('h2','h','Schedule'),el('p','',sched?`${sched.name}: ${sched.schedule||'weekly'}, sent to ${sched.actions.join(', ')}. ${sched.mode==='auto'?'Runs automatically.':'Waits for approval.'}`:'No scheduled report is set up.'),el('p','note','Change the schedule and recipients in ops.json. In Claude, ask for "the board deck for the last 90 days" to get the same deck with a different period.'))]};
 
 /* Command bar and voice. */
-const CMDS=[[/(executive|exec|board|summary)/,'exec'],[/(live|control|flight|board view|now)/,'live'],[/(operations overview|overview)/,'overview'],[/(soc|incident|detection)/,'detection'],
+const CMDS=[[/(red team|pen ?test|penetration|attack simulation|purple)/,'offsec'],[/agent/,'agents'],[/(executive|exec|board|summary)/,'exec'],[/(live|control|flight|board view|now)/,'live'],[/(operations overview|overview)/,'overview'],[/(soc|incident|detection)/,'detection'],
   [/(vuln)/,'vulnerabilities'],[/(remediat|fix)/,'remediation'],[/(email|phish)/,'email'],[/(user|app|dlp|data loss)/,'people'],[/(control area|coverage|blind)/,'controls'],
   [/(threat|path|near miss|kill chain)/,'threats'],[/cloud/,'cloud'],[/(devsecops|code|pipeline)/,'devsecops'],[/sap/,'sap'],[/signal/,'signals'],[/(workflow|approval|ticket|automation)/,'workflows'],[/(report|deck|slides)/,'reports'],[/(build|security setup)/,'build']];
 function speak(t){try{if('speechSynthesis' in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}}catch(e){}}
@@ -752,6 +830,7 @@ function briefing(){const oc=(DATA.outcomes&&DATA.outcomes.outcomes)||[],ms=oc.f
   rows=LV.queue.map((q)=>clocks(q)),br=rows.filter((c)=>c.breached).length,near=TH.paths.filter((p)=>p.near_miss&&Date.now()-new Date(p.created)<7*864e5).length;
   return `${met} of ${meas.length} outcome targets are met. ${LV.queue.length} incidents are in flight, ${br} past a service-level target. ${near} near miss${near===1?"":"es"} in the last seven days. ${risks().length?'Top risk: '+risks()[0][0]+'.':''}`}
 function runCommand(raw){const t=raw.toLowerCase().trim();if(!t)return;
+  if(CL&&(/\?$/.test(t)||/^(what|why|how|which|who|where|when|should|is|are|can|do|does|did|give|explain|compare|tell|summari[sz]e|draft|write)\b/.test(t))){askClaude('Answer',raw,'Question from the reader: '+raw,{cache:false});return}
   const per=[[/yesterday|today/,'day'],[/(7 days|week)/,'week'],[/(30 days|month)/,'month'],[/(90 days|quarter)/,'quarter'],[/(12 months|year)/,'year']].find(([r])=>r.test(t));
   const sev=/(high|critical)/.test(t)?'High':/medium/.test(t)?'Medium':/(all severit|any severit)/.test(t)?'all':null;
   if(/(brief|read|summar|how are we|status)/.test(t)&&!/report/.test(t)){const b=briefing();speak(b);toast(b);return}
@@ -760,6 +839,7 @@ function runCommand(raw){const t=raw.toLowerCase().trim();if(!t)return;
   let did=[];if(per){FILTER.period=per[1];did.push('period set')}if(sev){FILTER.severity=sev;did.push(sev==='all'?'all severities':sev+' severity only')}
   const team=Object.keys(WF.teams).concat((DATA.owners||[]).map((o)=>o.team)).find((n)=>t.includes(n.toLowerCase()));if(team){FILTER.team=team;did.push(team)}
   const dest=CMDS.find(([r])=>r.test(t));if(did.length)syncBar();if(dest&&dest[1]!==CURRENT){show(dest[1],true);did.unshift('opened '+(NAV.find((n)=>n[0]===dest[1])||[])[1])}else if(did.length)rebuild();
+  if(!did.length&&CL){askClaude('Answer',raw,'Request from the reader: '+raw,{cache:false});return}
   toast(did.length?did.join(', ')+'.':`Not sure what to do with "${raw}". Try "show live operations", "near misses last 90 days", "high severity only" or "brief me".`)}
 function rebuild(){Object.keys(built).forEach((k)=>{built[k]=false;const v=$('#'+k);if(v)v.replaceChildren()});show(CURRENT,false)}
 const BAR=el('div','toolbar');
@@ -784,10 +864,10 @@ const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['socdir','
 const nav=$('#nav'),main=$('#main'),built={};
 NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['threats','Threat paths','M4 18c3-8 6-8 8-4s5 4 8-4M4 18h.01M20 10h.01'],...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
 NAV.splice(NAV.findIndex((n)=>n[0]==='overview'),0,['infra','Infrastructure','M4 5h16v5H4zM4 14h16v5H4zM8 7.500h.01M8 16.500h.01'],['eng','Engineering','m8 8-4 4 4 4m8-8 4 4-4 4M14 5l-4 14']);
-NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
+NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['offsec','Red team and testing','M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z'],['agents','Agents','M8 4h8v5H8zM5 9h14v11H5zM9 14h.01M15 14h.01M12 4V2'],['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
 NAV.splice(NAV.findIndex((n)=>n[0]==='build'),0,['workflows','Workflows','M5 6h6v4H5zM13 14h6v4h-6zM8 10v4h8'],['reports','Reports','M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6']);
 /* Sidebar: three short groups. "Areas" folds away and opens by itself when one of its pages is shown. */
-const GROUPS=[['Views',['exec','socdir','live','infra','eng'],false],['Areas',null,true],['Operations',['threats','signals','workflows','reports','build'],false]];
+const GROUPS=[['Views',['exec','socdir','live','infra','eng'],false],['Areas',null,true],['Operations',['agents','offsec','threats','signals','workflows','reports','build'],false]];
 {const taken=new Set(GROUPS.filter((g)=>g[1]).flatMap((g)=>g[1]));GROUPS[1][1]=NAV.map((n)=>n[0]).filter((k)=>!taken.has(k))}
 const byId=Object.fromEntries(NAV.map((n)=>[n[0],n]));
 NAV.forEach(([k,label])=>{const v=el('section','view');v.id=k;v.hidden=true;v.setAttribute('aria-label',label);main.append(v)});
@@ -809,7 +889,7 @@ function customFor(k){const list=(DATA.custom||[]).filter((m)=>m.view===k&&Array
     if(m.note)tiles.title=m.note});
   return[band('More measures'),tiles,charts.children.length?charts:null].filter(Boolean)}
 /* Summary or full detail, per page: summary keeps the insights, the headline figures, the first chart and the tables. */
-const NODETAIL=['live','threats','workflows','reports','build'];
+const NODETAIL=['live','threats','workflows','reports','build','agents'];
 function markDetail(v){if(NODETAIL.includes(v.id))return;const KEEP=v.id==='exec'?1:4,skip='header,.keep,.dsays,.stats,.heroband,.period,.funnel,.signals,.band,.note,.more-detail';let shown=0,hid=0,charts=0;
   const kids=[...v.children].filter((x)=>!x.matches(skip));
   kids.forEach((x)=>{const cards=x.matches('section.card')?[x]:[...x.children].filter((c)=>c.matches('section.card,article.card'));if(!cards.length)return;

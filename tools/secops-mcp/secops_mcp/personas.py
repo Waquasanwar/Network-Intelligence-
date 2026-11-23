@@ -86,7 +86,48 @@ def _sample() -> dict:
            "introduced": [rnd.randint(28, 44) for _ in range(weeks)], "fixed": [rnd.randint(30, 48) + i for i in range(weeks)],
            "top_cwes": [{"cwe": "CWE-79 Cross-site scripting", "count": 24}, {"cwe": "CWE-89 SQL injection", "count": 9}, {"cwe": "CWE-798 Hard-coded credentials", "count": 7},
                         {"cwe": "CWE-502 Unsafe deserialisation", "count": 6}, {"cwe": "CWE-22 Path traversal", "count": 5}]}
-    return {"mssp": mssp, "siem": siem, "ai": ai, "infra": infra, "eng": eng}
+    tactics = [("Initial Access", 6, 3, 2, 1), ("Execution", 7, 4, 2, 1), ("Persistence", 5, 1, 2, 2), ("Privilege Escalation", 6, 1, 2, 3),
+               ("Defense Evasion", 8, 1, 2, 5), ("Credential Access", 6, 2, 3, 1), ("Discovery", 5, 0, 1, 4), ("Lateral Movement", 6, 1, 1, 4),
+               ("Collection", 3, 0, 1, 2), ("Command and Control", 5, 2, 2, 1), ("Exfiltration", 4, 2, 1, 1), ("Impact", 3, 2, 1, 0)]
+    offsec = {"source": "sample",
+              "engagements": [
+                  {"name": "Annual red team", "type": "Red team", "ended": "2026-10-24", "provider": "External red team",
+                   "objective": "Reach the payments database from a phished laptop", "reached": True, "days_to_objective": 3,
+                   "steps": 11, "detected_steps": 4, "blocked_steps": 1, "first_detected_step": 6,
+                   "findings": {"critical": 2, "high": 5, "medium": 7, "low": 3}, "open": 9, "retested": 5, "retest_passed": 4},
+                  {"name": "Customer portal pen test", "type": "Pen test", "ended": "2026-09-30", "provider": "CREST pen test provider",
+                   "objective": "Web application and API", "reached": None, "findings": {"critical": 1, "high": 4, "medium": 9, "low": 6},
+                   "open": 6, "retested": 8, "retest_passed": 7},
+                  {"name": "External perimeter pen test", "type": "Pen test", "ended": "2026-08-15", "provider": "CREST pen test provider",
+                   "objective": "Internet-facing services", "reached": None, "findings": {"critical": 0, "high": 3, "medium": 6, "low": 8},
+                   "open": 2, "retested": 9, "retest_passed": 9},
+                  {"name": "SAP authorisation review", "type": "Pen test", "ended": "2026-07-11", "provider": "SAP security specialist",
+                   "objective": "SAP ERP roles and RFC interfaces", "reached": None, "findings": {"critical": 1, "high": 2, "medium": 4, "low": 2},
+                   "open": 3, "retested": 4, "retest_passed": 3}],
+              "open_findings": [
+                  {"id": "RT-03", "title": "Domain admin credentials cached on a jump server", "severity": "Critical", "source": "Annual red team", "owner": "Infrastructure", "days_open": 30, "retest": "Failed"},
+                  {"id": "RT-01", "title": "No MFA on the legacy VPN profile", "severity": "Critical", "source": "Annual red team", "owner": "Infrastructure", "days_open": 30, "retest": "Not yet"},
+                  {"id": "PT-CP-02", "title": "Broken object-level authorisation on the orders API", "severity": "Critical", "source": "Customer portal pen test", "owner": "Customer Apps", "days_open": 54, "retest": "Not yet"},
+                  {"id": "SAP-01", "title": "RFC user with SAP_ALL in production", "severity": "Critical", "source": "SAP authorisation review", "owner": "SAP basis", "days_open": 135, "retest": "Failed"},
+                  {"id": "RT-05", "title": "Lateral movement over SMB not alerted", "severity": "High", "source": "Annual red team", "owner": "SOC", "days_open": 30, "retest": "Not yet"},
+                  {"id": "PT-EX-04", "title": "Outdated TLS on the partner file transfer service", "severity": "High", "source": "External perimeter pen test", "owner": "Infrastructure", "days_open": 100, "retest": "Not yet"}],
+              "tactics": [{"tactic": t, "tested": n, "blocked": b, "detected": d, "missed": m} for t, n, b, d, m in tactics],
+              "bas_detected_pct": [round(min(80, 44 + i * 1.6 + rnd.gauss(0, 2)), 1) for i in range(weeks)],
+              "bas_blocked_pct": [round(min(60, 21 + i * 0.9 + rnd.gauss(0, 2)), 1) for i in range(weeks)]}
+    agents = {"source": "sample", "runs": [
+        {"agent": "Triage agent", "does": "Reads every new incident, enriches it (Joe Sandbox, threat intelligence, asset owner) and proposes a severity and next step.",
+         "last_run": "4 minutes ago", "checked": 312, "found": "Closed 104 duplicates and known-good alerts; raised 3 incidents to high", "proposed": 2, "mode": "Acts on low risk, asks on the rest"},
+        {"agent": "Exposure agent", "does": "Joins vulnerabilities, internet exposure, exploit intelligence and pen test findings to rank what to fix first.",
+         "last_run": "1 hour ago", "checked": 18420, "found": "3 exploitable internet-facing weaknesses; 1 matches an open red team finding", "proposed": 3, "mode": "Asks before raising tickets"},
+        {"agent": "Detection agent", "does": "Replays red team and attack simulation steps against the detection rules and drafts rules for the gaps.",
+         "last_run": "Yesterday", "checked": 64, "found": "Lateral movement over SMB has no working rule; 2 draft rules ready for review", "proposed": 2, "mode": "Drafts only"},
+        {"agent": "Phishing agent", "does": "Looks at every reported email, pulls matching messages from other mailboxes and notifies repeat clickers' managers.",
+         "last_run": "12 minutes ago", "checked": 146, "found": "Pulled 38 copies of one invoice lure; 2 people clicked", "proposed": 1, "mode": "Acts on confirmed phishing"},
+        {"agent": "Provider agent", "does": "Checks the managed SOC's work against Sentinel timestamps and flags breaches and weak escalations.",
+         "last_run": "This morning", "checked": 481, "found": "6 high-severity incidents closed late; 5 escalations with no action needed", "proposed": 1, "mode": "Reports only"},
+        {"agent": "Reporting agent", "does": "Writes the weekly brief and the board pack from the figures and sends them for approval.",
+         "last_run": "Monday 07:00", "checked": 48, "found": "Weekly brief drafted; board pack due 1 Dec", "proposed": 1, "mode": "Asks before sending"}]}
+    return {"mssp": mssp, "siem": siem, "ai": ai, "infra": infra, "eng": eng, "offsec": offsec, "agents": agents}
 
 
 def build(live: bool) -> dict:

@@ -13,6 +13,8 @@ supports. A measure that supports no decision does not belong on an executive pa
 | SOC team | SOC team | The live queue with clocks, at-risk and breached first |
 | Infrastructure | Infrastructure | Exploitable and internet-facing first, unsupported software by service, EDR agent gaps, SAP findings, most exposed hosts |
 | Engineering | Engineering | GitLab findings by project and type, introduced against fixed, time to fix, secrets, scanning coverage, top weakness types |
+| Everyone | Red team and testing | Red team attack path (seen, blocked, missed), techniques blocked/detected/missed by attack stage, open pen test findings and failed retests, attack simulation trend |
+| Everyone | Agents | Six agents (triage, exposure, detection, phishing, provider, reporting): schedule, what each may do alone, what it found, and a queue of proposed actions waiting for approval |
 | Everyone | AI use, Web edge, SAP | AI apps and data sent to them; Cloudflare (planned); SecurityBridge and Bowbridge (planned) |
 
 Each page opens in Summary: its insights, headline figures, at most two charts and four sections. Full detail, in the bar at the top, shows the rest. The bar shows only the filters that work on that page. Every chart, bar list and ranked table opens a panel with the figures behind what was selected and
@@ -130,6 +132,7 @@ Purpose: ship without adding risk, and fix what is found while the code is fresh
 | Mimecast | Phishing blocked and delivered, malicious links clicked, impersonation, simulated phishing results, staff reporting | SOC, CISO | API 2.0 (built); Sentinel connector (audit, awareness training tables) |
 | Cloudflare (later) | Web attacks blocked by the WAF, bot and DDoS events, exposure of public services | CISO, infrastructure | Logpush to Azure storage, Sentinel codeless connector (`CloudflareV2_CL`) |
 | Joe Sandbox | Verdicts, scores and indicators for detonated files and links | SOC | No native Sentinel connector; Joe Security's Defender connector enriches Defender alerts, or a Logic App writes verdicts to a custom table |
+| Red team, pen tests, attack simulation | Engagement findings and retest results, attack steps seen or missed, technique outcomes by ATT&CK stage, simulation detection and block rates | CISO, SOC director, infrastructure | Pen test and red team reports (CSV export per engagement); breach and attack simulation platform API or its Sentinel connector |
 | MSSP services | Incidents they own: acknowledge and resolve times, escalations and whether they were real, closures without escalation | SOC director, CISO | Sentinel incidents (owner and timestamps); provider ticket export for escalation outcomes |
 | AI | Two meanings. AI used across the company: unapproved apps, data sent to them, policy violations (Netskope, Defender for Cloud). AI in the SOC: automated closures, Security Copilot use, the dashboard's own signals, always reviewed by a person | CISO, CIO, SOC director | Netskope, Defender for Cloud, Sentinel automation |
 

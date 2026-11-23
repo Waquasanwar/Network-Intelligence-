@@ -697,3 +697,117 @@ table.wf{min-width:620px}
 .heroband h1{font-size:clamp(1.7rem,3vw,2.6rem);max-width:28ch}
 .tsay{margin:2px 0 14px;font-size:14px;line-height:1.5;color:var(--fg);max-width:80ch}
 .tsay .pill{vertical-align:1px;margin-right:4px}
+
+/* ===== Ops theme: flat, dense, quiet. Overrides everything above. ===== */
+:root{--bg:#f5f6f8;--solid:#fff;--glass:#fff;--glass2:#eef1f5;--line:#e2e5ea;--line2:#cfd4dc;--fg:#141a24;--muted:#596273;--dim:#8a93a3;
+  --a1:#1f3f8f;--a2:#5b77b8;--a3:#8ea3cf;--navy:#141a24;--ok:#2e7d4f;--warn:#a86b12;--crit:#b8322a;--grid:#eceef2;--glow:transparent;--shadow:none;
+  --display:"IBM Plex Sans",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+body{font-size:14px;line-height:1.45;background:var(--bg)}
+.aurora{display:none!important}
+.card,.card.edge,details.card{border-radius:6px;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;background:#fff;border:1px solid var(--line);padding:18px}
+.card.lift:hover{transform:none;border-color:var(--line2)}
+.rise{animation:none!important}
+h1,.num,.h{letter-spacing:0;font-family:var(--display)}
+.h{font-size:15px;font-weight:600}
+.num{font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .num,.ptile .num,.stats.six .num{font-size:28px;line-height:1.1}
+.kpi .unit,.num .unit{font-size:14px;font-weight:500;color:var(--muted);margin-left:2px}
+.cap{font-size:12px;color:var(--muted)}
+.band{font-family:var(--body);font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--fg);margin:18px 0 -2px}
+.band::after{display:none}
+/* page header */
+.vh{padding:0;gap:6px}
+.vh h1,.vh.big h1,.vh.verdict h1{font-size:22px;font-weight:600;line-height:1.25}
+.vh p{font-size:14.5px;color:var(--muted);max-width:110ch}
+.vh p b{font-weight:600;color:var(--fg)}
+/* executive headline: plain, not a hero */
+.heroband{background:#fff;color:var(--fg);border:1px solid var(--line);border-left:3px solid var(--a1);border-radius:6px;box-shadow:none;padding:18px 20px;gap:14px}
+.heroband h1{color:var(--fg);font-size:20px;font-weight:600;line-height:1.3;max-width:none}
+.heroband h1 em{color:var(--a1);font-style:normal}
+.heroband .sum,.heroband .sum li,.heroband .sum b,.heroband .sum span{color:var(--fg)!important;border-color:var(--line)!important}
+.heroband .sum span{color:var(--muted)!important}
+/* status marks: a small square and a word, no pastel capsules */
+.pill{background:none!important;border:0!important;border-radius:0;padding:0;font-size:12px;font-weight:600;color:var(--muted);gap:6px}
+.pill::before{content:"";width:8px;height:8px;flex:none;background:var(--dim)}
+.pill.ok{color:var(--ok)}.pill.ok::before{background:var(--ok)}
+.pill.warn{color:var(--warn)}.pill.warn::before{background:var(--warn)}
+.pill.bad{color:var(--crit)}.pill.bad::before{background:var(--crit)}
+.delta{border-radius:3px;padding:0 5px;font-weight:600;font-size:12px}
+/* controls */
+.btn{border-radius:4px;font-size:13px;font-weight:500;padding:7px 14px;background:#fff;border:1px solid var(--line2)}
+.btn.primary{background:var(--a1);border-color:var(--a1);color:#fff}
+.link,.link.sm{border-radius:4px;background:#fff;border:1px solid var(--line2);color:var(--fg);font-weight:500;font-size:12.5px;padding:4px 10px}
+.link.sm:hover,.link:hover{background:var(--glass2)}
+.toolbar{background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:10px 12px;margin:0 0 16px;top:8px}
+.toolbar .ptitle{font-size:15px;font-weight:600}
+.cmdbox{border-radius:4px!important;box-shadow:none!important;background:#fff!important;border:1px solid var(--line2)!important}
+.mic{border-radius:4px!important;background:var(--fg)!important}
+.tf select,.tf input{border-radius:4px;font-size:13px;padding:6px 8px}
+.seg{border-radius:4px;padding:2px}
+.seg button{border-radius:3px;font-size:12.5px;padding:5px 10px}
+.seg button[aria-pressed="true"]{background:var(--fg)}
+/* sidebar: light, a bar marks the current page */
+.side{background:#fff!important;color:var(--fg)!important;border-right:1px solid var(--line)!important}
+.side .brand small{color:var(--muted)!important}
+.logo{border-radius:4px!important;background:var(--fg)!important;box-shadow:none!important}
+.nv{color:var(--muted)!important;border-radius:0!important;font-weight:500;font-size:13.5px;padding:7px 12px;border-left:2px solid transparent}
+.nv:hover{color:var(--fg)!important;background:var(--glass2)!important}
+.nv[aria-current="page"]{background:var(--glass2)!important;color:var(--fg)!important;border-left-color:var(--a1);font-weight:600;box-shadow:none!important}
+.nv[aria-current="page"] svg{color:var(--a1)!important}
+.nv:focus-visible{outline:2px solid var(--a1)!important}
+@media (min-width:1000px){.side nav .ngh,.side nav button.ngh{color:var(--dim)!important;font-size:12px}.side nav button.ngh:hover{color:var(--fg)!important}.side nav button.ngh:focus-visible{outline-color:var(--a1)}}
+.side .badge{background:#fff!important;border:1px solid var(--line)!important;color:var(--muted)!important;border-radius:3px;font-size:11.5px}
+.side .badge.sample{color:var(--warn)!important;border-color:var(--line)!important}
+/* charts: lines and bars only, no glow or area wash */
+.chart svg path[fill^="url"]{display:none}
+.chart svg circle{stroke-width:1.5}
+.spark{display:none}
+.tip{border-radius:4px;box-shadow:0 2px 8px rgba(20,26,36,.12)}
+.meter,.meter i,.track i{border-radius:1px!important}
+.meter{height:6px}
+.rank td,.rank th{font-size:13px}
+.rank th{font-weight:600;color:var(--muted)}
+/* insights */
+.dsays .ins li.ins-i{padding:12px 0;grid-template-columns:88px minmax(0,1fr) auto}
+.ins-b b{font-size:14.5px;font-weight:600}
+.ins-b p{font-size:13.5px}
+.tsay{font-size:13.5px;color:var(--fg)}
+/* drill panel */
+.drill{border-radius:6px;box-shadow:-8px 0 24px rgba(20,26,36,.10);border-color:var(--line2)}
+.drill h2{font-size:16px}
+.ai-out{white-space:pre-wrap;font-size:14px;line-height:1.55;color:var(--fg)}
+.ai-ctl{display:flex;justify-content:flex-end}
+/* outcomes and tables keep their structure; only soften */
+.ptile{padding:14px!important}
+.funnel{border-radius:6px}
+/* red team page */
+.chain2{list-style:none;display:flex;gap:6px;padding:0;margin:8px 0 10px;flex-wrap:wrap}
+.chain2 li{width:34px;height:34px;display:grid;place-items:center;font-size:12px;font-weight:600;border:2px solid var(--crit);color:var(--crit)}
+.chain2 li.detected{background:var(--warn);border-color:var(--warn);color:#fff}
+.chain2 li.blocked{background:var(--ok);border-color:var(--ok);color:#fff}
+.chain2 li.reached{background:var(--crit);color:#fff}
+.stack{display:flex;height:8px;min-width:140px;background:var(--glass2)}
+.stack i.blocked{background:var(--ok)}.stack i.detected{background:var(--warn)}.stack i.missed{background:var(--crit)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+/* agents */
+.agents{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.agent{display:grid;gap:10px;align-content:start}
+.ag-does{margin:0;color:var(--muted);font-size:13.5px}
+.agent .dpairs dd.ag-f{font-family:var(--body);font-weight:500;text-align:left}
+.agent .dpairs{grid-template-columns:80px minmax(0,1fr)}
+.agent .link{justify-self:start}
+.chart .draw{animation:none!important;stroke-dasharray:none!important;stroke-dashoffset:0!important}
+.rank.tac td:first-child,.rank.tac th:first-child{text-align:left}
+.rank.tac th{text-align:right}.rank.tac th:last-child{text-align:left}
+.ai-only{display:none}
+body.has-claude .ai-only{display:inline-flex}
+.ag-btns{display:flex;gap:8px;flex-wrap:wrap}
+.ag-out{margin:0}
+.props{list-style:none;margin:6px 0 0;padding:0}
+.prop{display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:6px 16px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.prop:first-child{border-top:0}
+.prop b{font-weight:600}
+.prop p{margin:3px 0 0;font-size:13.5px;color:var(--muted)}
+.prop.approved,.prop.dismissed{opacity:.6}
+.pbtn{display:flex;gap:6px}
+@media (max-width:760px){.prop{grid-template-columns:minmax(0,1fr)}}
