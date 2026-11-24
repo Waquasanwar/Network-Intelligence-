@@ -200,6 +200,19 @@ def build(live: bool) -> dict:
                                by_source=[{"source": k, "gb_per_day": round(v / days, 1), "detection_value": ""} for k, v in sorted(by_src.items(), key=lambda x: -x[1])[:12]])
     except Exception as exc:  # noqa: BLE001
         log.warning("usage query failed: %s", exc)
+    if os.environ.get("SECOPS_DEFENDER_XDR"):
+        from .sources import hunting
+
+        for key, fn in (("end_of_support", hunting.end_of_support), ("exploitable_exposed", hunting.exploitable_exposed)):
+            try:
+                rows = fn()
+                out["infra"][key], out["infra"]["source"] = rows, "live"
+            except Exception as exc:  # noqa: BLE001
+                log.warning("advanced hunting %s failed: %s", key, exc)
+        try:
+            out["infra"]["scores"] = hunting.scores()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("score query failed: %s", exc)
     try:
         rows = sentinel.query(GEO_KQL)
         if rows and {"country", "attempts", "lat", "lon"} <= set(rows[0]):

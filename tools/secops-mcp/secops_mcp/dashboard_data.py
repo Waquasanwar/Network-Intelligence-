@@ -155,6 +155,9 @@ def build() -> dict:
     from .personas import build as build_personas
 
     data["roles"] = build_personas(is_live)
+    from .catalog import build as build_catalog
+
+    data["catalog"] = build_catalog(is_live, data.get("_systems"))
     data["_sources"] = sources
     data["_built_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     return data

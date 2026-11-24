@@ -995,3 +995,11 @@ table.dtable tr.pick:focus-visible{outline:2px solid var(--a1)}
 .kspark{overflow:hidden}.kspark svg{width:100%;height:34px}
 .krow>*{min-width:0}
 table.rank td.br:not(.alert) .meter i{background:var(--a1)!important}
+.stm{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;white-space:nowrap}
+.stm i{width:9px;height:9px;border-radius:2px;flex:none}
+table.dtable td.tw{white-space:normal;min-width:160px}
+table.dtable .thl{display:block;padding:8px 10px;font-size:12px;font-weight:600;color:var(--muted)}
+table.dtable.compact{min-width:420px}
+.segrow{margin-bottom:10px;overflow-x:auto}
+.dgrid>*,.panel>*{min-width:0}
+.segrow .seg{flex-wrap:wrap}

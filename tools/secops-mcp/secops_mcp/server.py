@@ -267,6 +267,19 @@ def decisions_and_actions(days: int = 30) -> dict:
 
 
 @mcp.tool()
+def data_catalog(state: str = "") -> dict:
+    """What each source system can provide and the state of every data item: live, ready to
+    connect, to build, needs licence, to confirm, or not possible; plus which Sentinel feeds are
+    arriving, late or silent. Pass state (for example "licence") to list only those items."""
+    from .catalog import build
+
+    cat = build(os.environ.get("SECOPS_MODE", "sample").lower() == "live")
+    if state:
+        return {"items": [{"system": s["name"], **i} for s in cat["systems"] for i in s["items"] if i["state"] == state], "totals": cat["totals"]}
+    return cat
+
+
+@mcp.tool()
 def connection_check() -> dict:
     """Which source systems are connected, not configured, or failing, with a hint for each failure."""
     return check_all()

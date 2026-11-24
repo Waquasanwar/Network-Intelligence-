@@ -12,7 +12,7 @@ have. **Setup** needs a connector or export configured first. **No** not possibl
 | System | Best route into the dashboard | Built here | Main gaps |
 |---|---|---|---|
 | Microsoft Sentinel (SIEM) | Log Analytics query API | Built | Only holds what is sent to it; retention limits history |
-| Microsoft Defender XDR / for Endpoint | Graph security API and Defender API | Built | Vulnerability tables are not in Sentinel; some inventory needs the Defender Vulnerability Management add-on |
+| Microsoft Defender XDR / for Endpoint | Graph security API, Defender API and advanced hunting | Built (incl. unsupported software, exposed weaknesses, scores) | Vulnerability tables are not in Sentinel; some inventory needs the Defender Vulnerability Management add-on |
 | Microsoft Defender for Cloud | Azure Resource Graph, or export to Sentinel | Built | Attack paths and AI posture need the Defender CSPM plan |
 | Microsoft Entra ID | Graph API, or sign-in logs in Sentinel | Built (risky users); sign-in locations via Sentinel | Risk data needs Entra ID P2 |
 | SentinelOne (EDR) | Management API v2.1; or its Sentinel connector | Built | Application vulnerabilities need the Vulnerability Management (Ranger Insights) licence |
@@ -24,7 +24,7 @@ have. **Setup** needs a connector or export configured first. **No** not possibl
 | SecurityBridge (SAP) | Its Sentinel connector (SecurityBridge_CL) | Planned page | API export details not public; confirm with vendor |
 | Bowbridge (SAP anti-virus) | Custom feed (event handler or log forward) into Sentinel | No | No documented Sentinel connector or syslog format |
 | Cloudflare | Logpush to Azure storage, Sentinel connector (CloudflareV2_CL) | Planned page | Field set depends on plan |
-| Joe Sandbox | Its API, or its Defender integration | No | No native Sentinel connector |
+| Joe Sandbox | Its API, or its Defender integration | Built (API) | No native Sentinel connector |
 | MSSP / managed SOC | Sentinel incidents they own; their ticket export | Built (from Sentinel) | Their internal triage is invisible unless shared |
 | AI use | Netskope, Defender for Cloud Apps, Purview DSPM for AI | Sample only | Each source needs its own licence |
 | Red team, pen tests, attack simulation | Engagement exports; simulation platform API | Sample only | Reports are documents, not data, unless exported |

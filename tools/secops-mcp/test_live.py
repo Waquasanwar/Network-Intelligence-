@@ -16,7 +16,7 @@ import tempfile
 import httpx
 
 tmp = tempfile.mkdtemp()
-os.environ.update({
+os.environ.update({"JOE_API_KEY": "test-key", 
     "SECOPS_MODE": "live", "SECOPS_SNAPSHOT_DIR": tmp, "SECOPS_DATA_DIR": tmp,
     "IDENTITY_ENDPOINT": "http://identity.local/token", "IDENTITY_HEADER": "x",
     "SENTINEL_WORKSPACE_ID": "ws", "SECOPS_DEFENDER_XDR": "1", "DEFENDER_SUBSCRIPTION_IDS": "sub1", "SECOPS_ENTRA_RISK": "1",
@@ -40,6 +40,9 @@ def handler(req: httpx.Request) -> httpx.Response:
         return j({"access_token": "mi-token", "expires_on": str(int(now.timestamp()) + 3600)})
     if h == "api.loganalytics.io":
         q = json.loads(req.content)["query"]
+        if "union isfuzzy" in q:  # feed health
+            return j({"tables": [{"columns": [{"name": "TableName"}, {"name": "last"}, {"name": "rows"}],
+                                  "rows": [["SecurityIncident", iso(0), 3000], ["SigninLogs", iso(0), 90000], ["SentinelOneThreats_CL", iso(2), 400]]}]})
         if "summarize value" in q and "by week_ending" in q:  # a domain measure
             return j({"tables": [{"columns": [{"name": "week_ending"}, {"name": "value"}], "rows": [[iso(7 * i + 2), 100 + 3 * i] for i in range(12, 0, -1)]}]})
         if "by name" in q:  # a domain breakdown
@@ -58,6 +61,22 @@ def handler(req: httpx.Request) -> httpx.Response:
                              "classification": "falsePositive" if d % 4 == 0 else "truePositive"} for d in range(0, 80, 2)]})
     if h == "graph.microsoft.com" and "riskyUsers" in p:
         return j({"value": [{"riskLevel": "high"}, {"riskLevel": "medium"}, {"riskLevel": "medium"}]})
+    if h == "api.securitycenter.microsoft.com" and p == "/api/advancedqueries/run":
+        q = json.loads(req.content)["Query"]
+        if "EndOfSupportStatus" in q:
+            return j({"Results": [{"SoftwareName": "windows_server_2012_r2", "SoftwareVersion": "6.3", "EndOfSupportStatus": "EOS Software", "devices": 14}]})
+        if "IsInternetFacing" in q:
+            return j({"Results": [{"DeviceName": "NET-FW-EDGE-02", "CveId": "CVE-2026-1001", "VulnerabilitySeverityLevel": "Critical", "Title": "VPN gateway RCE", "first_seen": iso(19)}]})
+        return j({"Results": [{"DeviceId": "d1"}]})
+    if h == "api.securitycenter.microsoft.com" and p == "/api/exposureScore":
+        return j({"score": 38.5})
+    if h == "graph.microsoft.com" and "secureScores" in p:
+        return j({"value": [{"currentScore": 512.0, "maxScore": 810.0}]})
+    if h == "jbxcloud.joesecurity.org":
+        form = dict(x.split("=", 1) for x in req.content.decode().split("&"))
+        if p.endswith("/analysis/list"):
+            return j({"data": [{"webid": str(i)} for i in range(5)]})
+        return j({"data": {"webid": form.get("webid"), "filename": "invoice.pdf.exe", "detection": ["malicious", "clean"][int(form.get("webid", 0)) % 2], "score": 88}})
     if h == "api.securitycenter.microsoft.com" and p == "/api/machines":
         plats = ["WindowsServer2022"] * 30 + ["Windows11"] * 120 + ["Linux"] * 20 + ["iOS"] * 40
         return j({"value": [{"osPlatform": o, "onboardingStatus": "Onboarded", "exposureLevel": "Medium"} for o in plats]})
@@ -126,6 +145,15 @@ assert data["_sources"]["assets"] == data["_sources"]["soc"] == data["_sources"]
 assert all(len(v) == 12 and None not in v for v in data["trend"].values())
 print("domains:", [(d["id"], d["state"]) for d in data["domains"]])
 assert [d["state"] for d in data["domains"]] == ["live", "live", "planned", "planned"]
+cat = data["catalog"]
+print("catalog:", cat["totals"], "feeds:", [(f["table"], f["state"]) for f in cat["feeds"] if f["state"] != "silent"])
+assert cat["totals"]["live"] > 0 and any(f["state"] == "arriving" and f["source"] == "live" for f in cat["feeds"])
+assert data["roles"]["infra"]["source"] == "live" and data["roles"]["infra"]["end_of_support"][0]["devices"] == 14
+assert data["roles"]["infra"]["scores"]["exposure_score"] == 38.5
+from secops_mcp.sources import joesandbox  # noqa: E402
+js = joesandbox.summary(5)
+print("joe sandbox:", js["by_verdict"])
+assert js["analyses"] == 5
 if len(sys.argv) > 1:
     json.dump(data, open(sys.argv[1], "w"))
 print("OK,", len(calls), "simulated API calls")

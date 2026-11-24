@@ -26,11 +26,21 @@ and compare a few figures with each console before trusting the dashboard.
 | CyberArk | Privilege Cloud: OAuth2 service user in CyberArk Identity. Self-hosted: Vault user | An auditor-style role with list-only rights. Never a role that can retrieve passwords. Discovered accounts need Vault Admins; without it that figure is skipped | Privileged accounts not onboarded (or not automatically managed), vaulted accounts by platform |
 | Mimecast | API 2.0 application with a custom role | Monitoring read for URL Protection, Attachment Protection, Impersonation Protection; Awareness Training dashboard read | Phishing blocked (malicious links, attachments, impersonation), malicious links clicked, simulated campaign results |
 | Netskope | REST API v2 token | READ on `/api/v2/events/dataexport/alerts/dlp`; optionally on `/api/v2/events/dataexport/events/application` | Data loss violations by week, kind of data involved, people with most violations; optionally risky apps and their users |
+| Defender advanced hunting | Same managed identity | WindowsDefenderATP `AdvancedQuery.Read.All`, `Score.Read.All`; Graph `SecurityEvents.Read.All` | Unsupported software, exploitable weaknesses on internet-facing devices, exposure score and secure score (Infrastructure page) |
+| Joe Sandbox | Read-only API key (`JOE_API_KEY`; `JOE_API_URL` for an on-premise server) | Analysis list and info only | Verdicts and scores for detonated files and links |
 | GitLab | Service account with group access token | `read_api` scope, Security Manager or Developer on the groups (Ultimate) | Code findings by severity |
 
 Granting Microsoft application permissions to a managed identity is done with PowerShell or
 the Graph API (the portal does not offer it for managed identities); your Entra admin will
 know the routine. Admin consent is required.
+
+## What is live, what is not: the Data sources page
+
+Every system and data item is listed in `secops_mcp/catalog.default.json` with its route, what it
+needs and the page it feeds. The Data sources page (and the `data_catalog` tool in Claude) shows
+each item as live, ready to connect, to build, needs licence, to confirm or not possible, and a
+Sentinel feed-health table shows which connector tables are arriving, late or silent. Copy the
+catalogue to the data folder as `catalog.json` to change it. `DATA-AVAILABILITY.md` explains each entry.
 
 ## Cloud risks, DevSecOps and SAP: straight from Sentinel
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from typing import Callable
 
-from . import cyberark, defender_cloud, defender_xdr, entra, gitlab, mimecast, netskope, sentinel, sentinelone
+from . import cyberark, defender_cloud, defender_xdr, entra, gitlab, hunting, joesandbox, mimecast, netskope, sentinel, sentinelone
 from .base import NotConfigured
 
 AZURE = ("SENTINEL_WORKSPACE_ID",)
@@ -24,6 +24,8 @@ SYSTEMS: dict[str, dict] = {
     "Mimecast": {"needs": ("MIMECAST_CLIENT_ID", "MIMECAST_CLIENT_SECRET"), "check": mimecast.simulation_campaigns},
     "Netskope": {"needs": ("NETSKOPE_URL", "NETSKOPE_API_TOKEN"), "check": lambda: netskope.dlp(1)},
     "GitLab": {"needs": ("GITLAB_TOKEN", "GITLAB_GROUPS"), "check": gitlab.summary},
+    "Defender advanced hunting": {"needs": ("SECOPS_DEFENDER_XDR",), "check": lambda: hunting.run("DeviceInfo | take 1")},
+    "Joe Sandbox": {"needs": ("JOE_API_KEY",), "check": lambda: joesandbox._post("/v2/analysis/list")},
 }
 
 

@@ -1,0 +1,685 @@
+{
+ "systems": [
+  {
+   "name": "Microsoft Sentinel",
+   "connector": "Microsoft Sentinel",
+   "tables": {
+    "SecurityIncident": 2,
+    "SecurityAlert": 2,
+    "Usage": 3,
+    "SentinelHealth": 3
+   },
+   "items": [
+    {
+     "data": "Incidents with owner and timestamps: detect, acknowledge, contain, SLA by severity",
+     "status": "yes",
+     "route": "Log Analytics API",
+     "needs": "Microsoft Sentinel Reader",
+     "page": "detection",
+     "built": true,
+     "tables": [
+      "SecurityIncident"
+     ]
+    },
+    {
+     "data": "Alerts by product and rule; false alarms by rule",
+     "status": "yes",
+     "route": "Log Analytics API",
+     "needs": "",
+     "page": "detection",
+     "built": true,
+     "tables": [
+      "SecurityAlert"
+     ]
+    },
+    {
+     "data": "Ingestion and cost by source against 200 GB a day",
+     "status": "yes",
+     "route": "Usage table",
+     "needs": "",
+     "page": "socdir",
+     "built": true,
+     "tables": [
+      "Usage"
+     ]
+    },
+    {
+     "data": "Feed health: which sources are late or silent",
+     "status": "yes",
+     "route": "Last record per table",
+     "needs": "",
+     "page": "sources",
+     "built": true,
+     "tables": [
+      "SentinelHealth"
+     ]
+    },
+    {
+     "data": "Analytics rules mapped to attack stages (coverage)",
+     "status": "yes",
+     "route": "Sentinel REST API",
+     "needs": "Microsoft Sentinel Reader",
+     "page": "detection",
+     "built": false
+    },
+    {
+     "data": "Share of incidents closed by automation",
+     "status": "yes",
+     "route": "Incident closing data",
+     "needs": "",
+     "page": "socdir",
+     "built": false
+    },
+    {
+     "data": "History older than the retention period",
+     "status": "no",
+     "route": "Increase retention or archive",
+     "needs": "",
+     "page": "",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Microsoft Defender XDR and Endpoint",
+   "connector": "Microsoft Defender for Endpoint",
+   "items": [
+    {
+     "data": "Incidents and alerts across endpoint, email, identity",
+     "status": "yes",
+     "route": "Graph security API",
+     "needs": "SecurityIncident.Read.All",
+     "page": "detection",
+     "built": true
+    },
+    {
+     "data": "Devices: OS, type, exposure, sensor health",
+     "status": "yes",
+     "route": "Defender API",
+     "needs": "Machine.Read.All",
+     "page": "vulnerabilities",
+     "built": true
+    },
+    {
+     "data": "Vulnerabilities by device, severity and age",
+     "status": "yes",
+     "route": "Defender API",
+     "needs": "Vulnerability.Read.All",
+     "page": "vulnerabilities",
+     "built": true
+    },
+    {
+     "data": "Exploitable weaknesses on internet-facing devices",
+     "status": "yes",
+     "route": "Advanced hunting",
+     "needs": "AdvancedQuery.Read.All",
+     "page": "infra",
+     "built": true
+    },
+    {
+     "data": "Unsupported (end-of-support) software",
+     "status": "check",
+     "route": "Advanced hunting",
+     "needs": "AdvancedQuery.Read.All; confirm licence tier",
+     "page": "infra",
+     "built": true
+    },
+    {
+     "data": "Secure score and exposure score",
+     "status": "yes",
+     "route": "Graph and Defender API",
+     "needs": "SecurityEvents.Read.All, Score.Read.All",
+     "page": "infra",
+     "built": true
+    },
+    {
+     "data": "Browser extensions, certificates, firmware assessment",
+     "status": "licence",
+     "route": "Advanced hunting",
+     "needs": "Defender Vulnerability Management add-on",
+     "page": "infra",
+     "built": false
+    },
+    {
+     "data": "Attack paths and critical assets",
+     "status": "licence",
+     "route": "Exposure Management",
+     "needs": "Exposure Management",
+     "page": "threats",
+     "built": false
+    },
+    {
+     "data": "Vulnerability data inside Sentinel",
+     "status": "no",
+     "route": "Not ingested; use the Defender API",
+     "needs": "",
+     "page": "",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Microsoft Defender for Cloud",
+   "connector": "Microsoft Defender for Cloud",
+   "tables": {
+    "SecurityRecommendation": 26
+   },
+   "items": [
+    {
+     "data": "Secure score, recommendations by severity, compliance",
+     "status": "yes",
+     "route": "Resource Graph",
+     "needs": "Security Reader",
+     "page": "cloud",
+     "built": true,
+     "tables": [
+      "SecurityRecommendation"
+     ]
+    },
+    {
+     "data": "GitLab code, secrets and dependency findings",
+     "status": "setup",
+     "route": "DevOps security connector",
+     "needs": "Connect GitLab",
+     "page": "devsecops",
+     "built": true
+    },
+    {
+     "data": "Attack paths and AI security posture",
+     "status": "licence",
+     "route": "Resource Graph",
+     "needs": "Defender CSPM plan",
+     "page": "cloud",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Microsoft Entra ID",
+   "connector": "Microsoft Entra ID",
+   "tables": {
+    "SigninLogs": 2,
+    "AuditLogs": 3
+   },
+   "items": [
+    {
+     "data": "Risky users and detections",
+     "status": "licence",
+     "route": "Graph API",
+     "needs": "Entra ID P2",
+     "page": "people",
+     "built": true
+    },
+    {
+     "data": "Sign-ins with location (attack origins)",
+     "status": "licence",
+     "route": "Sentinel connector",
+     "needs": "Entra ID P1 or P2",
+     "page": "geo",
+     "built": true,
+     "tables": [
+      "SigninLogs"
+     ]
+    },
+    {
+     "data": "MFA registration coverage",
+     "status": "yes",
+     "route": "Graph reports",
+     "needs": "Reports.Read.All",
+     "page": "people",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "SentinelOne",
+   "connector": "SentinelOne",
+   "tables": {
+    "SentinelOneThreats_CL": 6,
+    "SentinelOneAgents_CL": 26
+   },
+   "items": [
+    {
+     "data": "Threats, verdicts, mitigation status",
+     "status": "yes",
+     "route": "Management API v2.1 or Sentinel connector",
+     "needs": "Viewer role",
+     "page": "controls",
+     "built": true,
+     "tables": [
+      "SentinelOneThreats_CL"
+     ]
+    },
+    {
+     "data": "Agent coverage, version, health, infected",
+     "status": "yes",
+     "route": "Management API v2.1",
+     "needs": "Viewer role",
+     "page": "infra",
+     "built": true,
+     "tables": [
+      "SentinelOneAgents_CL"
+     ]
+    },
+    {
+     "data": "Application and OS vulnerabilities",
+     "status": "licence",
+     "route": "Management API",
+     "needs": "Singularity Vulnerability Management",
+     "page": "vulnerabilities",
+     "built": false
+    },
+    {
+     "data": "Unmanaged devices on the network",
+     "status": "licence",
+     "route": "Ranger",
+     "needs": "Ranger licence",
+     "page": "infra",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "CyberArk",
+   "connector": "CyberArk",
+   "items": [
+    {
+     "data": "Vaulted accounts, managed and unmanaged, rotation",
+     "status": "yes",
+     "route": "PVWA / Privilege Cloud API",
+     "needs": "List-only auditor user",
+     "page": "people",
+     "built": true
+    },
+    {
+     "data": "Discovered accounts not onboarded",
+     "status": "licence",
+     "route": "Discovery API",
+     "needs": "Discovery rights",
+     "page": "people",
+     "built": true
+    },
+    {
+     "data": "Risky privileged activity (PTA)",
+     "status": "setup",
+     "route": "Syslog to Sentinel",
+     "needs": "Configure forwarding",
+     "page": "people",
+     "built": false
+    },
+    {
+     "data": "Passwords or secrets",
+     "status": "no",
+     "route": "Never requested, by design",
+     "needs": "",
+     "page": "",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Mimecast",
+   "connector": "Mimecast",
+   "tables": {
+    "MimecastTTPUrl_CL": 6
+   },
+   "items": [
+    {
+     "data": "Malicious links, attachments, impersonation; clicks",
+     "status": "yes",
+     "route": "API 2.0 TTP logs",
+     "needs": "Monitoring read",
+     "page": "email",
+     "built": true,
+     "tables": [
+      "MimecastTTPUrl_CL"
+     ]
+    },
+    {
+     "data": "Simulation results per campaign and person",
+     "status": "yes",
+     "route": "Awareness Training API",
+     "needs": "Dashboard read",
+     "page": "email",
+     "built": true
+    },
+    {
+     "data": "Staff reports of simulated phishing",
+     "status": "yes",
+     "route": "Awareness Training API",
+     "needs": "Dashboard read",
+     "page": "email",
+     "built": false
+    },
+    {
+     "data": "SAFE score per person",
+     "status": "check",
+     "route": "CSV export; no API confirmed",
+     "needs": "",
+     "page": "email",
+     "built": false
+    },
+    {
+     "data": "Email content",
+     "status": "no",
+     "route": "Not requested, by design",
+     "needs": "",
+     "page": "",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Netskope",
+   "connector": "Netskope",
+   "tables": {
+    "NetskopeAlertEvents_CL": 6
+   },
+   "items": [
+    {
+     "data": "Data loss incidents by kind of data and user",
+     "status": "yes",
+     "route": "Data export API v2",
+     "needs": "READ on alerts",
+     "page": "people",
+     "built": true,
+     "tables": [
+      "NetskopeAlertEvents_CL"
+     ]
+    },
+    {
+     "data": "Risky and unapproved apps, users, uploads",
+     "status": "yes",
+     "route": "Data export API v2",
+     "needs": "READ on application events",
+     "page": "people",
+     "built": true
+    },
+    {
+     "data": "Generative AI app use and data sent",
+     "status": "check",
+     "route": "Application events",
+     "needs": "Depends on licensed features",
+     "page": "ai",
+     "built": false
+    },
+    {
+     "data": "Compromised credentials, behaviour alerts",
+     "status": "licence",
+     "route": "Data export API v2",
+     "needs": "UEBA and threat protection",
+     "page": "people",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "GitLab",
+   "connector": "GitLab",
+   "items": [
+    {
+     "data": "Findings by project and severity",
+     "status": "licence",
+     "route": "GraphQL API",
+     "needs": "GitLab Ultimate",
+     "page": "eng",
+     "built": true
+    },
+    {
+     "data": "Time to fix; introduced against fixed",
+     "status": "licence",
+     "route": "Vulnerability history",
+     "needs": "GitLab Ultimate",
+     "page": "eng",
+     "built": false
+    },
+    {
+     "data": "Projects with security scanning",
+     "status": "yes",
+     "route": "REST API",
+     "needs": "read_api",
+     "page": "eng",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Orca",
+   "connector": null,
+   "tables": {
+    "OrcaAlerts_CL": 26
+   },
+   "items": [
+    {
+     "data": "Cloud alerts by risk score and asset",
+     "status": "yes",
+     "route": "Sentinel connector",
+     "needs": "Orca connector",
+     "page": "cloud",
+     "built": true,
+     "tables": [
+      "OrcaAlerts_CL"
+     ]
+    },
+    {
+     "data": "Attack paths, compliance, workload vulnerabilities",
+     "status": "yes",
+     "route": "Orca API",
+     "needs": "API token",
+     "page": "cloud",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "SecurityBridge",
+   "connector": null,
+   "tables": {
+    "SecurityBridge_CL": 26
+   },
+   "items": [
+    {
+     "data": "SAP threat detection events",
+     "status": "yes",
+     "route": "Sentinel connector (SecurityBridge_CL)",
+     "needs": "SecurityBridge connector",
+     "page": "sap",
+     "built": true,
+     "tables": [
+      "SecurityBridge_CL"
+     ]
+    },
+    {
+     "data": "Missing SAP notes, configuration and ABAP findings",
+     "status": "check",
+     "route": "Confirm export with SecurityBridge",
+     "needs": "",
+     "page": "sap",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Bowbridge",
+   "connector": null,
+   "tables": {
+    "Bowbridge_CL": 26
+   },
+   "items": [
+    {
+     "data": "Malware blocked in SAP uploads",
+     "status": "setup",
+     "route": "Event handler or log forward to a custom table",
+     "needs": "Custom feed",
+     "page": "sap",
+     "built": false,
+     "tables": [
+      "Bowbridge_CL"
+     ]
+    },
+    {
+     "data": "Ready-made Sentinel connector",
+     "status": "no",
+     "route": "None found",
+     "needs": "",
+     "page": "",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Cloudflare",
+   "connector": null,
+   "tables": {
+    "CloudflareV2_CL": 6
+   },
+   "items": [
+    {
+     "data": "WAF, firewall and request logs",
+     "status": "yes",
+     "route": "Logpush to Sentinel (CloudflareV2_CL)",
+     "needs": "Logpush job",
+     "page": "edge",
+     "built": true,
+     "tables": [
+      "CloudflareV2_CL"
+     ]
+    },
+    {
+     "data": "Bot management and DDoS detail",
+     "status": "licence",
+     "route": "Logpush",
+     "needs": "Plan and add-ons",
+     "page": "edge",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Joe Sandbox",
+   "connector": "Joe Sandbox",
+   "items": [
+    {
+     "data": "Verdicts, scores, indicators per analysis",
+     "status": "yes",
+     "route": "Joe Sandbox API",
+     "needs": "Read-only API key",
+     "page": "live",
+     "built": true
+    },
+    {
+     "data": "Verdicts inside Sentinel",
+     "status": "setup",
+     "route": "Logic App to a custom table",
+     "needs": "",
+     "page": "live",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Managed SOC provider",
+   "connector": "Microsoft Sentinel",
+   "items": [
+    {
+     "data": "SLA by severity, acknowledge times, true positives",
+     "status": "yes",
+     "route": "Sentinel incidents they own",
+     "needs": "Provider works in your workspace",
+     "page": "socdir",
+     "built": true
+    },
+    {
+     "data": "Whether escalations needed action",
+     "status": "setup",
+     "route": "Provider ticket export",
+     "needs": "Agree in the service review",
+     "page": "socdir",
+     "built": false
+    },
+    {
+     "data": "What they closed in their own tools",
+     "status": "no",
+     "route": "Unless the contract requires sharing",
+     "needs": "",
+     "page": "",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "AI use",
+   "connector": "Netskope",
+   "items": [
+    {
+     "data": "Unapproved AI apps and data uploaded",
+     "status": "yes",
+     "route": "Netskope",
+     "needs": "",
+     "page": "ai",
+     "built": false
+    },
+    {
+     "data": "Shadow AI discovery",
+     "status": "licence",
+     "route": "Defender for Cloud Apps",
+     "needs": "Defender for Cloud Apps",
+     "page": "ai",
+     "built": false
+    },
+    {
+     "data": "Sensitive data in AI prompts, Copilot use",
+     "status": "licence",
+     "route": "Purview DSPM for AI",
+     "needs": "E5 compliance",
+     "page": "ai",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Red team, pen tests, attack simulation",
+   "connector": null,
+   "items": [
+    {
+     "data": "Findings, owners, retest results",
+     "status": "setup",
+     "route": "Export per engagement (CSV)",
+     "needs": "",
+     "page": "offsec",
+     "built": false
+    },
+    {
+     "data": "Detection and block rates by attack stage",
+     "status": "setup",
+     "route": "Attack simulation platform API",
+     "needs": "Simulation platform",
+     "page": "offsec",
+     "built": false
+    }
+   ]
+  },
+  {
+   "name": "Sites and offices",
+   "connector": null,
+   "items": [
+    {
+     "data": "Site list with staff and location",
+     "status": "yes",
+     "route": "offices.json in the data folder",
+     "needs": "",
+     "page": "geo",
+     "built": true
+    },
+    {
+     "data": "Figures per site",
+     "status": "setup",
+     "route": "Office tag or IP range mapping",
+     "needs": "",
+     "page": "geo",
+     "built": false
+    }
+   ]
+  }
+ ]
+}

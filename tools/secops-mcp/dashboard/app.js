@@ -826,6 +826,34 @@ V.geo=()=>{const offs=[...GEO.offices].map((o)=>({...o,score:officeRisk(o)})).so
     panel('Attack origins','Blocked attempts, last 30 days',rank('Countries','Blocked sign-ins and web attacks',['Country','Attempts','Main target'],orig.map((o)=>[[o.country,''],o.attempts,o.target||'—']),{bar:1}),null,'span4')),
     el('p','note',`Sites come from offices.json in the data folder (name, country, coordinates, staff); their figures are joined from Sentinel and Defender by office tag or IP range. Attack origins come from failed and blocked Entra ID sign-ins in Sentinel${GEO.source==='live'?' (live)':' (sample data until connected)'}.`)]};
 
+/* ---------- Data sources: what each system provides, what is live, what needs a licence, what is not possible ---------- */
+const CAT=DATA.catalog||{systems:[],totals:{},labels:{},feeds:[]};
+const STC={live:K.teal,ready:K.blue,to_build:K.blue3,licence:K.gold,check:K.slate,not_possible:'#9F1239'};
+const STORDER=['live','ready','to_build','licence','check','not_possible'];
+function stMark(st){const m=el('span','stm',el('i'),CAT.labels[st]||st);m.firstChild.style.background=STC[st];return m}
+V.sources=()=>{const T=CAT.totals,all=CAT.systems.flatMap((s)=>s.items.map((i)=>({...i,system:s.name}))),n2=all.length,connected=CAT.systems.filter((s)=>s.live_items>0).length;
+  const head=vhead('Data sources',[[`${T.live||0} of ${n2} data items`],` are live. `,[`${T.ready||0}`],` are built and ready to connect, `,[`${T.to_build||0}`],` are possible but not built yet, `,[`${T.licence||0}`],` need a licence and `,[`${T.not_possible||0}`],` are not possible.`],T.live?'ok':'warn',CAT.mode==='live'?'Live check':'Not yet connected');
+  const kp=el('section','krow keep',...[['Systems sending data',`${connected}`,` of ${CAT.systems.length}`],['Live',String(T.live||0),''],['Ready to connect',String(T.ready||0),''],['To build',String(T.to_build||0),''],['Needs licence',String(T.licence||0),''],['Not possible',String(T.not_possible||0),'']]
+    .map(([l,v,u],i)=>{const c=kcard(l,v,u,i?'data items':'systems with live data',null,null,null);c.style.borderTopColor=i?STC[STORDER[i-1]]:K.gold;return c}));
+  const sys=CAT.systems,sysDrill=(i)=>{const s=sys[i];drill(s.name,`${s.live_items} of ${s.items.length} items live`,s.items.map((it)=>[it.data,it.label,it.state==='not_possible'||it.state==='licence'?'alert':'']),[el('p','note','Route and what each needs are in the table below.')],'sources')};
+  const bars=cjPanel(Math.max(320,sys.length*24+60),{type:'bar',label:'Data items by state for each system',data:{labels:sys.map((s)=>s.name),datasets:STORDER.map((st)=>({label:CAT.labels[st],data:sys.map((s)=>s.items.filter((i)=>i.state===st).length),backgroundColor:STC[st],stack:'s'}))},
+    options:{indexAxis:'y',scales:{x:{stacked:true,grid:{color:'#EEF2F7'},ticks:{precision:0}},y:{stacked:true,grid:{display:false},ticks:{font:{size:11}}}}}},(i)=>sysDrill(i),
+    (b)=>b.append(rowsBars(sys.map((s)=>[s.name,s.live_items,`${s.live_items} of ${s.items.length} live`,K.teal]),Math.max(...sys.map((s)=>s.items.length)),K.teal)));
+  const fb=el('tbody'),fd=[...CAT.feeds].sort((a,b)=>({silent:2,late:1,arriving:0}[b.state]-{silent:2,late:1,arriving:0}[a.state])||a.table.localeCompare(b.table));
+  fd.forEach((f)=>{const col=f.state==='arriving'?K.teal:f.state==='late'?K.gold:'#9F1239',m=el('span','stm',el('i'),f.state==='arriving'?'Arriving':f.state==='late'?'Late':'Silent');m.firstChild.style.background=col;
+    fb.append(el('tr','',el('td','',f.table),el('td','',m),el('td','num',f.hours_since!=null?`${f1(f.hours_since)} h`:'—'),el('td','num',f.rows_7d?f0(f.rows_7d):'0')))});
+  const feedsT=el('div','scroll',el('table','dtable compact',el('thead','',el('tr','',...['Sentinel table','State','Last record','Rows, 7 days'].map((h,i)=>el('th',i>1?'num':'',el('span','thl',h))))),fb));
+  let flt='all';const tb=el('tbody'),seg=el('div','seg');
+  const draw=()=>{tb.replaceChildren();all.filter((i)=>flt==='all'||i.state===flt).forEach((i)=>{const tr=el('tr',i.page&&V[i.page]?'pick':'',el('td','',i.system),el('td','tw',i.data),el('td','',stMark(i.state)),el('td','tw',i.route),el('td','tw',i.needs||'—'),el('td','',i.page&&V[i.page]?((NAV.find((q)=>q[0]===i.page)||[])[1]||''):'—'));
+      if(i.page&&V[i.page]){tr.tabIndex=0;const go=()=>show(i.page,true);tr.addEventListener('click',go);tr.addEventListener('keydown',(e)=>{if(e.key==='Enter')go()})}tb.append(tr)});
+    seg.querySelectorAll('button').forEach((b)=>b.setAttribute('aria-pressed',b.dataset.s===flt?'true':'false'))};
+  [['all','All'],...STORDER.map((s)=>[s,CAT.labels[s]])].forEach(([s,l])=>{const b=el('button','',l);b.type='button';b.dataset.s=s;b.addEventListener('click',()=>{flt=s;draw()});seg.append(b)});draw();
+  const tbl=el('div','',el('div','segrow',seg),el('div','scroll',el('table','dtable',el('thead','',el('tr','',...['System','Data','State','Route','Needs','Shown on'].map((h)=>el('th','',el('span','thl',h))))),tb)));
+  return[head,kp,el('div','dgrid keep',panel('Coverage by system','Data items by state. Select a bar for the list.',bars,null,'span8'),
+      panel('Sentinel feed health',CAT.mode==='live'?'Last record per table, last 7 days':'Sample until Sentinel is connected',feedsT,null,'span4'),
+      panel('Every data item','Filter by state. Select a row to open the page it feeds.',tbl,null,'span12')),
+    el('p','note','The catalogue is catalog.default.json in the server; copy it to the data folder as catalog.json to change it. DATA-AVAILABILITY.md explains each entry, its licence and its source.')]};
+
 /* ---------- Operations: shared filters, live board, threat paths, workflows, reports, commands ---------- */
 const HOSTED=!!window.SECOPS_HOSTED;
 const FILTER={detail:'summary',period:'month',from:null,to:null,severity:'all',team:'all',source:'all'};
@@ -956,7 +984,7 @@ V.reports=()=>{const sched=WF.workflows.find((w)=>w.trigger==='schedule.weekly')
     el('section','card',el('h2','h','Schedule'),el('p','',sched?`${sched.name}: ${sched.schedule||'weekly'}, sent to ${sched.actions.join(', ')}. ${sched.mode==='auto'?'Runs automatically.':'Waits for approval.'}`:'No scheduled report is set up.'),el('p','note','Change the schedule and recipients in ops.json. In Claude, ask for "the board deck for the last 90 days" to get the same deck with a different period.'))]};
 
 /* Command bar and voice. */
-const CMDS=[[/(map|site|office|countr|location|origin)/,'geo'],[/(red team|pen ?test|penetration|attack simulation|purple)/,'offsec'],[/agent/,'agents'],[/(executive|exec|board|summary)/,'exec'],[/(live|control|flight|board view|now)/,'live'],[/(operations overview|overview)/,'overview'],[/(soc|incident|detection)/,'detection'],
+const CMDS=[[/(data source|catalog|connector|feed|licen[cs]e)/,'sources'],[/(map|site|office|countr|location|origin)/,'geo'],[/(red team|pen ?test|penetration|attack simulation|purple)/,'offsec'],[/agent/,'agents'],[/(executive|exec|board|summary)/,'exec'],[/(live|control|flight|board view|now)/,'live'],[/(operations overview|overview)/,'overview'],[/(soc|incident|detection)/,'detection'],
   [/(vuln)/,'vulnerabilities'],[/(remediat|fix)/,'remediation'],[/(email|phish)/,'email'],[/(user|app|dlp|data loss)/,'people'],[/(control area|coverage|blind)/,'controls'],
   [/(threat|path|near miss|kill chain)/,'threats'],[/cloud/,'cloud'],[/(devsecops|code|pipeline)/,'devsecops'],[/sap/,'sap'],[/signal/,'signals'],[/(workflow|approval|ticket|automation)/,'workflows'],[/(report|deck|slides)/,'reports'],[/(build|security setup)/,'build']];
 function speak(t){try{if('speechSynthesis' in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}}catch(e){}}
@@ -998,10 +1026,10 @@ const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['socdir','
 const nav=$('#nav'),main=$('#main'),built={};
 NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['threats','Threat paths','M4 18c3-8 6-8 8-4s5 4 8-4M4 18h.01M20 10h.01'],...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
 NAV.splice(NAV.findIndex((n)=>n[0]==='overview'),0,['infra','Infrastructure','M4 5h16v5H4zM4 14h16v5H4zM8 7.500h.01M8 16.500h.01'],['eng','Engineering','m8 8-4 4 4 4m8-8 4 4-4 4M14 5l-4 14']);
-NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['geo','Sites and attack origins','M12 21s-6-5.5-6-11a6 6 0 1 1 12 0c0 5.5-6 11-6 11Zm0-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z'],['offsec','Red team and testing','M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z'],['agents','Agents','M8 4h8v5H8zM5 9h14v11H5zM9 14h.01M15 14h.01M12 4V2'],['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
+NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['geo','Sites and attack origins','M12 21s-6-5.5-6-11a6 6 0 1 1 12 0c0 5.5-6 11-6 11Zm0-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z'],['offsec','Red team and testing','M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z'],['sources','Data sources','M4 6c0-1.700 3.600-3 8-3s8 1.300 8 3-3.600 3-8 3-8-1.300-8-3Zm0 0v12c0 1.700 3.600 3 8 3s8-1.300 8-3V6M4 12c0 1.700 3.600 3 8 3s8-1.300 8-3'],['agents','Agents','M8 4h8v5H8zM5 9h14v11H5zM9 14h.01M15 14h.01M12 4V2'],['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
 NAV.splice(NAV.findIndex((n)=>n[0]==='build'),0,['workflows','Workflows','M5 6h6v4H5zM13 14h6v4h-6zM8 10v4h8'],['reports','Reports','M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6']);
 /* Sidebar: three short groups. "Areas" folds away and opens by itself when one of its pages is shown. */
-const GROUPS=[['Views',['exec','socdir','live','infra','eng'],false],['Areas',null,true],['Operations',['agents','offsec','threats','signals','workflows','reports','build'],false]];
+const GROUPS=[['Views',['exec','socdir','live','infra','eng'],false],['Areas',null,true],['Operations',['sources','agents','offsec','threats','signals','workflows','reports','build'],false]];
 {const taken=new Set(GROUPS.filter((g)=>g[1]).flatMap((g)=>g[1]));GROUPS[1][1]=NAV.map((n)=>n[0]).filter((k)=>!taken.has(k))}
 const byId=Object.fromEntries(NAV.map((n)=>[n[0],n]));
 NAV.forEach(([k,label])=>{const v=el('section','view');v.id=k;v.hidden=true;v.setAttribute('aria-label',label);main.append(v)});
@@ -1023,7 +1051,7 @@ function customFor(k){const list=(DATA.custom||[]).filter((m)=>m.view===k&&Array
     if(m.note)tiles.title=m.note});
   return[band('More measures'),tiles,charts.children.length?charts:null].filter(Boolean)}
 /* Summary or full detail, per page: summary keeps the insights, the headline figures, the first chart and the tables. */
-const NODETAIL=['live','threats','workflows','reports','build','agents'];
+const NODETAIL=['live','threats','workflows','reports','build','agents','sources'];
 function markDetail(v){if(NODETAIL.includes(v.id))return;const KEEP=v.id==='exec'?0:4,skip='header,.keep,.dsays,.stats,.heroband,.period,.funnel,.signals,.band,.note,.more-detail';let shown=0,hid=0,charts=0;
   const kids=[...v.children].filter((x)=>!x.matches(skip));
   kids.forEach((x)=>{const cards=x.matches('section.card')?[x]:[...x.children].filter((c)=>c.matches('section.card,article.card'));if(!cards.length)return;
