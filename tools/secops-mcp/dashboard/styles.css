@@ -811,3 +811,52 @@ body.has-claude .ai-only{display:inline-flex}
 .prop.approved,.prop.dismissed{opacity:.6}
 .pbtn{display:flex;gap:6px}
 @media (max-width:760px){.prop{grid-template-columns:minmax(0,1fr)}}
+
+/* ===== Brand: deep blue, gold and teal on warm ivory. Overrides the ops theme above. ===== */
+:root{--navy:#0b1f44;--a1:#14387a;--a2:#c9a227;--a3:#1c7c7d;--gold:#c9a227;--gold-t:#8a6a12;--gold-l:#e6c86e;
+  --bg:#f6f4ee;--line:#e5e0d4;--line2:#d3ccbc;--glass2:#efeadf;--fg:#0b1f44;--muted:#5a6275;--dim:#8f95a3;--grid:#ece8de;
+  --ok:#2e7d4f;--warn:#c4620c;--crit:#b42318}
+body{background:var(--bg)}
+.card,.card.edge,details.card{border-color:var(--line)}
+/* sidebar */
+.side{background:var(--navy)!important;color:#fff!important;border-right:0!important}
+.side .brand,.side .brand span{color:#fff}
+.side .brand small{color:rgba(255,255,255,.6)!important}
+.logo{background:var(--gold)!important;color:var(--navy)!important}
+.nv{color:rgba(255,255,255,.74)!important;border-left:3px solid transparent}
+.nv:hover{color:#fff!important;background:rgba(255,255,255,.07)!important}
+.nv[aria-current="page"]{background:rgba(255,255,255,.09)!important;color:#fff!important;border-left-color:var(--gold)}
+.nv[aria-current="page"] svg{color:var(--gold)!important}
+.nv:focus-visible{outline:2px solid var(--gold)!important}
+@media (min-width:1000px){.side nav .ngh,.side nav button.ngh{color:rgba(255,255,255,.45)!important}.side nav button.ngh:hover{color:#fff!important}.side nav button.ngh:focus-visible{outline-color:var(--gold)}}
+.side .badge{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.16)!important;color:rgba(255,255,255,.85)!important}
+.side .badge.sample{color:var(--gold-l)!important}
+/* headline panel: deep blue, gold figures */
+.heroband{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:26px 28px;gap:18px}
+.heroband h1{color:#fff;font-size:clamp(1.6rem,2.6vw,2.3rem);font-weight:600;line-height:1.2;max-width:34ch}
+.heroband h1 em{color:var(--gold-l)}
+.heroband .sum li{border-top:1px solid rgba(255,255,255,.16)!important}
+.heroband .sum b{color:var(--gold-l)!important}
+.heroband .sum span{color:rgba(255,255,255,.9)!important}
+/* page titles and figures */
+.vh h1,.vh.big h1,.vh.verdict h1{font-size:26px;font-weight:600;color:var(--navy)}
+.vh p{font-size:15px}
+.num{color:var(--navy)}
+.kpi .num,.ptile .num,.stats.six .num{font-size:30px}
+.band{font-size:15px;color:var(--navy);padding-left:10px;border-left:3px solid var(--gold)}
+/* controls */
+.btn.primary,.seg button[aria-pressed="true"],.mic{background:var(--navy)!important;border-color:var(--navy)!important;color:#fff}
+.link.sm{color:var(--navy);border-color:var(--line2)}
+.cmdbox:focus-within{border-color:var(--gold)!important;box-shadow:0 0 0 3px rgba(201,162,39,.2)!important}
+.toolbar{border-color:var(--line)}
+/* insight panel and trend readings */
+.dsays{border-top:3px solid var(--gold)}
+.tsay .pill{margin-right:6px}
+/* charts: lines with a light wash again */
+.chart svg path[fill^="url"]{display:inline;opacity:.45}
+.tip{border-color:var(--line2)}
+/* tables and meters */
+table.rank td.br .meter i,.meter i{background:var(--a1)}
+.stack i.detected{background:var(--gold)}
+.chain2 li.detected{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.drill{border-top:3px solid var(--gold)}
