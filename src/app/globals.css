@@ -10,20 +10,20 @@
   a hairline and a soft lift on hover; colour is used sparingly so it means something.
 */
 @theme {
-  --color-canvas: #f3f5f9;
+  --color-canvas: #e9edfb;
   --color-surface: #ffffff;
-  --color-surface-muted: #f1f2f5;
-  --color-surface-hover: #f8fafc;
-  --color-line: #e5e7ec;
-  --color-line-strong: #cdd3dd;
+  --color-surface-muted: #eef1fb;
+  --color-surface-hover: #f6f7fd;
+  --color-line: #dfe3f3;
+  --color-line-strong: #c3cae6;
   --color-ink: #0c1b33;
-  --color-ink-muted: #3b475b;
-  --color-ink-faint: #5b6576;
+  --color-ink-muted: #38436a;
+  --color-ink-faint: #5c6690;
   --color-navy: #0c1b33;
   --color-navy-600: #1a2c4d;
-  --color-navy-400: #6b7a93;
-  --color-navy-100: #dce3ec;
-  --color-navy-50: #eef2f7;
+  --color-navy-400: #6b77a8;
+  --color-navy-100: #dfe4f8;
+  --color-navy-50: #eff2fc;
   --color-teal: #0b6e4f;
   --color-teal-400: #2fb389;
   --color-teal-100: #d5f3e6;
@@ -46,18 +46,18 @@
   --color-amber-50: #fdf6ea;
   --color-risk: #9b1c1c;
   --color-risk-100: #fbe2df;
-  --color-rail: #ffffff;
-  --color-rail-ink: #3b475b;
+  --color-rail: #f8f9ff;
+  --color-rail-ink: #38436a;
   --color-rail-ink-strong: #0c1b33;
-  --color-rail-line: #e6e9ef;
-  --color-rail-active: #f3f4f8;
+  --color-rail-line: #e1e5f5;
+  --color-rail-active: #eaedfb;
   --color-chart-a: #0c1b33;
   --color-chart-b: #2fb389;
   /* chart series: checked for colour-blind separation and contrast in both modes (dataviz validator) */
   --color-series-1: #17a077;
   --color-series-2: #2868b4;
   --color-series-3: #ff5440;
-  --color-series-track: #eceef3;
+  --color-series-track: #e6e9f8;
   --color-pink: #e8598b;
   --color-pink-100: #fde3ec;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Samsung Sans", "SamsungOne", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -70,10 +70,10 @@
   --radius-xl: 28px;
   /* flat: cards are a hairline on a grey ground; only things that float cast a shadow */
   /* soft: cards float a little above a pale ground */
-  --shadow-card: 0 1px 2px rgba(12, 27, 51, 0.035), 0 10px 28px -20px rgba(12, 27, 51, 0.16);
+  --shadow-card: 0 1px 2px rgba(30, 42, 120, 0.04), 0 12px 30px -20px rgba(30, 42, 120, 0.2);
   /* The fine edge every widget carries: mint where the light comes from, coral where it leaves. */
   --widget-edge: linear-gradient(145deg, rgba(47, 179, 137, 0.6) 0%, rgba(12, 27, 51, 0.1) 20%, rgba(12, 27, 51, 0.07) 76%, rgba(255, 84, 64, 0.55) 100%);
-  --shadow-card-hover: 0 2px 4px rgba(12, 27, 51, 0.04), 0 22px 44px -18px rgba(12, 27, 51, 0.2);
+  --shadow-card-hover: 0 2px 4px rgba(30, 42, 120, 0.05), 0 24px 46px -18px rgba(30, 42, 120, 0.26);
   --shadow-drawer: 0 32px 80px -16px rgba(12, 27, 51, 0.3), 0 0 0 1px rgba(12, 27, 51, 0.05);
   --shadow-pop: 0 14px 40px rgba(12, 27, 51, 0.14), 0 0 0 1px rgba(12, 27, 51, 0.04);
   --shadow-button: 0 1px 2px rgba(12, 27, 51, 0.12);
@@ -84,20 +84,20 @@
    the light the product gives off, indigo for the agent, coral as the spark. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-canvas: #0b0d12;
-  --color-surface: #12151c;
-  --color-surface-muted: #181c25;
-  --color-surface-hover: #161a22;
-  --color-line: rgba(214, 226, 255, 0.085);
-  --color-line-strong: rgba(214, 226, 255, 0.17);
+  --color-canvas: #080c1f;
+  --color-surface: #0f1631;
+  --color-surface-muted: #161e3d;
+  --color-surface-hover: #131a37;
+  --color-line: rgba(170, 186, 255, 0.11);
+  --color-line-strong: rgba(170, 186, 255, 0.22);
   --color-ink: #f1f4fb;
   --color-ink-muted: #b0bad0;
   --color-ink-faint: #7e8aa6;
   --color-navy: #f4f6fb;
   --color-navy-600: #dfe5f1;
   --color-navy-400: #94a3c2;
-  --color-navy-100: #1c212c;
-  --color-navy-50: #151922;
+  --color-navy-100: #1b2450;
+  --color-navy-50: #141b3a;
   --color-teal: #7ee3bc;
   --color-teal-400: #7ee3bc;
   --color-teal-100: #0f3328;
@@ -108,11 +108,11 @@
   --color-amber-50: #261c0b;
   --color-risk: #ff8a7d;
   --color-risk-100: #3b1814;
-  --color-rail: #0b0d12;
+  --color-rail: #0a0f26;
   --color-rail-ink: #b0bad0;
   --color-rail-ink-strong: #f4f6fb;
-  --color-rail-line: rgba(214, 226, 255, 0.085);
-  --color-rail-active: #181c25;
+  --color-rail-line: rgba(170, 186, 255, 0.11);
+  --color-rail-active: #18214a;
   --color-chart-a: #f4f6fb;
   --color-chart-b: #7ee3bc;
   --color-series-1: #199e70;
@@ -582,7 +582,7 @@ a.figure:hover { opacity: 0.72; }
    Deep ink with the live network drawn on it (<Constellation />). The one place the product is
    unmistakably Amana: sign-in, join, the public hero and the top of home. Text on it is white;
    whatever sits on it keeps its own surface (the composer stays a white card). */
-.stage-ink { position: relative; isolation: isolate; overflow: hidden; color: #ffffff; background: radial-gradient(110% 95% at 72% 40%, #15306a 0%, #0c1d42 46%, #07122b 100%); }
+.stage-ink { position: relative; isolation: isolate; overflow: hidden; color: #ffffff; background: radial-gradient(120% 110% at 78% 18%, #2b3c9e 0%, #172670 34%, #0c1648 68%, #070d2c 100%); }
 .stage-ink > canvas { z-index: -1; }
 .stage-scrim { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(7, 18, 43, 0.92) 0%, rgba(7, 18, 43, 0.6) 38%, rgba(7, 18, 43, 0) 70%); }
 .stage-scrim.is-center { background: radial-gradient(60% 70% at 50% 46%, rgba(7, 18, 43, 0.82) 0%, rgba(7, 18, 43, 0.35) 60%, rgba(7, 18, 43, 0) 100%); }
@@ -1173,15 +1173,15 @@ a.rail-row:hover { background: var(--color-surface-muted); }
    like an instrument, not bold like a spreadsheet. */
 .page-stage { border-radius: 28px; padding: 30px 32px 24px; margin-top: 2px; box-shadow: 0 30px 60px -40px rgba(7, 18, 43, 0.55); }
 .page-stage > canvas { opacity: 0.85; }
-.page-stage-veil { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(100deg, rgba(7, 18, 43, 0.94) 0%, rgba(7, 18, 43, 0.7) 45%, rgba(7, 18, 43, 0.2) 100%); }
+.page-stage-veil { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(100deg, rgba(7, 12, 44, 0.78) 0%, rgba(7, 12, 44, 0.45) 45%, rgba(7, 12, 44, 0) 100%); }
 .page-stage-title { font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.06; letter-spacing: -0.022em; color: #ffffff; text-wrap: balance; }
 .page-stage-lede { margin-top: 10px; max-width: 64ch; font-size: 14.5px; line-height: 1.55; color: #c3cde2; }
 .page-stage-body { margin-top: 22px; }
 @media (min-width: 640px) { .page-stage-title { font-size: 36px; } }
 @media (max-width: 639.98px) { .page-stage { border-radius: 22px; padding: 22px 18px 18px; margin-inline: -4px; } }
 /* Actions on the stage: the primary is mint, the rest are glass. */
-.page-stage .btn-navy { background: var(--color-accent); color: #0c1b33; }
-.page-stage .btn-navy:hover { background: #95ecca; }
+.page-stage .btn-navy { background: var(--color-accent) !important; color: #0c1b33 !important; box-shadow: 0 10px 24px -12px rgba(126, 227, 188, 0.55); }
+.page-stage .btn-navy:hover { background: #95ecca !important; }
 .page-stage-actions .bg-surface { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.18); color: #ffffff; box-shadow: none; }
 .page-stage-actions .bg-surface:hover { border-color: rgba(255, 255, 255, 0.42); }
 /* Amana's suggestion, as glass on the stage. */
@@ -1203,10 +1203,10 @@ a.rail-row:hover { background: var(--color-surface-muted); }
 .page-stage .text-ink, .page-stage .text-ink-muted { color: #c3cde2; }
 
 /* ---------- Navigation: the active place is a small piece of the stage ---------- */
-.nav-active { background: #0c1b33 !important; color: #ffffff !important; box-shadow: 0 10px 22px -14px rgba(7, 18, 43, 0.7) !important; }
+.nav-active { background: linear-gradient(135deg, #2a3b9c 0%, #142063 100%) !important; color: #ffffff !important; box-shadow: 0 12px 24px -14px rgba(30, 44, 140, 0.75) !important; }
 .nav-active svg { color: var(--color-accent); }
 .nav-active::before { display: none !important; }
-[data-theme="dark"] .nav-active { background: #1b2c52 !important; }
+[data-theme="dark"] .nav-active { background: linear-gradient(135deg, #3445b0 0%, #1b2878 100%) !important; }
 /* Long values (two currencies, say) stay on one line at a smaller size. */
 .page-stage .figure .font-display:not(.whitespace-nowrap) { font-size: 28px; white-space: nowrap; }
 .page-stage .figures { border-bottom: 0; }
@@ -1228,3 +1228,24 @@ a.rail-row:hover { background: var(--color-surface-muted); }
 .ask-rail { display: flex; width: 100%; align-items: center; gap: 10px; padding: 9px 8px 9px 10px; border-radius: 14px; border: 1px solid var(--color-line); background: var(--color-surface); cursor: pointer; transition: border-color 160ms ease, box-shadow 160ms ease; }
 .ask-rail:hover { border-color: var(--color-line-strong); box-shadow: 0 8px 20px -14px rgba(12, 27, 51, 0.35); }
 .ask-rail-orb { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; color: #0b3a2c; background: radial-gradient(circle at 35% 30%, #e9fff6, #9af2cf 60%, #5fd3a6); }
+
+/* ---------- Indigo, mint and champagne ----------
+   The ground is an indigo mist rather than grey: a soft indigo light from the top right and a
+   breath of mint from the bottom left. Indigo carries the primary actions and the place you are;
+   mint is Amana; champagne is kept for one hairline of polish on each stage. */
+html { background: radial-gradient(1200px 700px at 92% -10%, #cfd8fb 0%, rgba(207, 216, 251, 0) 64%), radial-gradient(1000px 620px at -10% 110%, #d6f1e6 0%, rgba(214, 241, 230, 0) 60%), linear-gradient(180deg, #edf0fc 0%, #e6eafa 100%); background-attachment: fixed; }
+:root[data-theme="dark"] { background: radial-gradient(1100px 620px at 88% -8%, rgba(60, 78, 190, 0.28) 0%, rgba(60, 78, 190, 0) 62%), radial-gradient(900px 560px at -8% 108%, rgba(126, 227, 188, 0.07) 0%, rgba(126, 227, 188, 0) 58%), var(--color-canvas); background-attachment: fixed; }
+.page-stage::after { content: ""; position: absolute; inset: 0 28px auto; height: 1px; pointer-events: none; background: linear-gradient(90deg, rgba(126, 227, 188, 0) 0%, rgba(126, 227, 188, 0.7) 30%, rgba(214, 186, 120, 0.7) 70%, rgba(214, 186, 120, 0) 100%); }
+/* Primary actions are indigo, in light and dark alike. */
+.btn-navy { background: linear-gradient(180deg, #2c3d9f 0%, #1a2775 100%) !important; color: #ffffff !important; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 22px -12px rgba(30, 44, 140, 0.6); }
+.btn-navy:hover { background: linear-gradient(180deg, #3446ad 0%, #1f2d84 100%) !important; }
+/* The sidebar is a pale indigo glass in light, a deep indigo in dark. */
+aside.rail { background: linear-gradient(180deg, #f9faff 0%, #eff2fd 100%); border-right: 1px solid var(--color-rail-line); }
+:root[data-theme="dark"] aside.rail { background: linear-gradient(180deg, #0b1129 0%, #080c1f 100%); }
+/* Chips, table headings and quiet fills pick up the indigo. */
+.chip:not([aria-pressed="true"]) { background: var(--color-navy-50); border-color: var(--color-line); }
+.chip[aria-pressed="true"], .feed-filter.is-on { background: linear-gradient(135deg, #2a3b9c, #142063); border-color: transparent; color: #ffffff; }
+.widget thead th, .widget thead tr { background: color-mix(in srgb, var(--color-navy-50) 75%, var(--color-surface)); }
+.widget { border-color: var(--color-line); }
+/* The top bar lets the indigo ground show through instead of laying a flat strip over it. */
+header.glass { background: color-mix(in srgb, var(--color-canvas) 55%, transparent); backdrop-filter: saturate(160%) blur(16px); }
