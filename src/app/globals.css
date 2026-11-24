@@ -1217,7 +1217,7 @@ header.glass { background: color-mix(in srgb, var(--color-canvas) 55%, transpare
 :root[data-theme="dark"] .page-stage .next-step { background: rgba(255, 255, 255, 0.04); }
 .page-stage .next-step a { background: linear-gradient(180deg, #2c3d9f, #1a2775); color: #ffffff; }
 .page-stage .figures { margin-bottom: 0; border-bottom: 0; }
-.page-stage .figure .font-display { font-weight: 300; letter-spacing: -0.03em; font-size: 40px; color: #24348f; -webkit-text-fill-color: currentColor; background: none; }
+.page-stage .figure .font-display { font-weight: 650; letter-spacing: -0.035em; font-size: 40px; color: #1f2c80; -webkit-text-fill-color: currentColor; background: none; }
 :root[data-theme="dark"] .page-stage .figure .font-display { color: #b9c4ff; }
 .page-stage .figure .font-display.text-teal { color: var(--color-teal); }
 .page-stage .figure .font-display.text-amber { color: var(--color-amber); }
