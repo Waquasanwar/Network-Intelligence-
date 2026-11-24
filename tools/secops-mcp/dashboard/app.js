@@ -485,37 +485,7 @@ function periodSection(){
     if(wrap.isConnected)after.splice(0).forEach((f)=>f())};
   wrap.append(body);render();return wrap}
 
-/* A chart with one line of reading on top: what the trend means and where it is heading. */
-function trendCard(title,cfg,say,tone){const c=chartCard(title,cfg);c.querySelector('.ph').after(el('p','tsay',el('span','pill '+tone,TAG[tone]),' ',say));return c}
-function execTrends(){const sla=S.sla,tgt=L.sla_target,rs=S.rsla,rt=Q.response_target,kS=etaW(sla,tgt,'higher'),inc=S.inc,hi=S.sevC.map((v,i)=>v+S.sevH[i]),
-    op=S.opened,cl=S.closed,net=sum(cl.slice(-4),(v)=>v)-sum(op.slice(-4),(v)=>v),mt=S.mttr,kM=etaW(mt,15,'lower'),cont=S.cont,peak=inc.indexOf(Math.max(...inc)),hiShare=Math.round(sum(hi.slice(-4),(v)=>v)/sum(inc.slice(-4),(v)=>v)*100);
-  const g=el('div','two keep');g.append(
-    trendCard('Service levels met',{min:70,max:100,label:'Percent of fixes and responses inside the agreed time, by week',end:true,dec:true,unit:'%',go:'remediation',target:{value:tgt,label:`${tgt}% fix target`},
-      series:[{vals:sla,color:'var(--a1)',label:'Fixes in time'},{vals:rs,color:'var(--a2)',label:'Responses in time'}]},
-      `Responses are ${last(rs)>=rt?'inside':'outside'} the ${rt}% target at ${last(rs)}%. Fixes are at ${last(sla)}% against ${tgt}%, up ${f1(slope(sla))} points a week${kS?`; on this pace they meet the target around ${ahead(kS)}`:kS===0?'':', and not closing the gap'}.`,last(sla)>=tgt&&last(rs)>=rt?'ok':'warn'),
-    trendCard('What has been detected',{label:'Incidents by week, with critical and high',end:true,go:'detection',series:[{vals:inc,color:'var(--a1)',label:'All incidents'},{vals:hi,color:'var(--crit)',label:'Critical and high'}]},
-      `${last(inc)} incidents last week, ${slope(inc)<0?'down':'up'} ${f1(Math.abs(slope(inc)))} a week over six weeks. The peak was the week ending ${day(W[peak].week_ending)} (${inc[peak]}). ${hiShare}% of the last four weeks were critical or high.`,slope(inc)<=0?'ok':'warn'),
-    trendCard('Found against fixed',{label:'Vulnerability findings opened and closed, by week',end:true,go:'remediation',series:[{vals:op,color:'var(--warn)',label:'Found'},{vals:cl,color:'var(--a1)',label:'Fixed'}]},
-      `In four weeks ${f0(sum(cl.slice(-4),(v)=>v))} findings were fixed and ${f0(sum(op.slice(-4),(v)=>v))} found, so the backlog ${net>=0?'fell':'grew'} by ${Math.abs(net)}. ${streak(cl)>=3?`Fixes have slowed ${streak(cl)} weeks running; the backlog is falling because fewer are arriving.`:''}`,net>=0&&streak(cl)<3?'ok':'warn'),
-    trendCard('Time to fix and contain',{label:'Average days to fix a critical finding, by week',end:true,dec:true,fc:FC,go:'remediation',target:{value:15,label:'15-day policy'},series:[{vals:mt,color:'var(--a1)',label:'Days to fix a critical'}]},
-      `Critical findings take ${last(mt)} days to fix against a 15-day policy, ${slope(mt)<0?'falling':'rising'} ${f1(Math.abs(slope(mt)))} days a week${kM===0?'':kM?`; inside policy around ${ahead(kM)}`:''}. Incidents are contained in ${f1(last(cont))} hours, from ${f1(cont[0])} twelve weeks ago.`,last(mt)<=15?'ok':'warn'));
-  return[el('h2','band keep','Trends'),g]}
-V.exec=()=>{
-  const ms=OC.flatMap((o)=>o.measures.map((m)=>({...m,outcome:o.outcome}))),measured=ms.filter((m)=>m.meets!=null),met=measured.filter((m)=>m.meets),gaps=measured.filter((m)=>!m.meets),realised=OC.filter((o)=>o.status==='Realised');
-  const h1=el('h1','','Phase 2: ',el('em','',`${met.length} of ${measured.length}`),' measured targets met. ',el('em','',String(realised.length)),' outcomes realised.');
-  const row=(k,t)=>el('li','',el('b','',k+'. '),el('span','',t));
-  const rk=risks();
-  const head=el('header','heroband rise',h1,el('ul','sum',
-    row('Not yet met',gaps.length?gaps.map((m)=>`${lcFirst(m.label)} (${fmtNow(m)} against ${fmtTarget(m).replace('≥ ','').replace('≤ ','')})`).join('; ')+'.':'Every measured target is met.'),
-    row('Realised',realised.map((o)=>o.outcome).join('; ')+'.'),
-    row('This week',`${L.incidents} incidents, contained in ${f1(last(S.cont))} hours. Critical and high findings ${pct12<=0?'down':'up'} ${Math.abs(pct12)}% in 12 weeks to ${f0(last(S.open))}.`),
-    row('Top risk',rk.length?`${rk[0][0]}. ${rk[0][1]}`:'None flagged.')));
-  const rl=el('ul','risks');rk.slice(0,5).forEach(([t,d,lvl,tone,go],i)=>{const b=el('button','risk',el('span','n',String(i+1)),el('span','',el('b','',t),el('span','d',d)),el('span','pill '+tone,lvl));b.type='button';b.addEventListener('click',()=>show(go,true));rl.append(el('li','',b))});
-  const sl=el('ul','sig-list');[...DATA.notes].filter((r)=>r.confidence==='High').slice(0,4).forEach((r)=>sl.append(signal(r,true)));
-  const all=el('button','link sm','All signals');all.type='button';all.addEventListener('click',()=>show('signals',true));
-  const ar=el('ul','arealist');Object.keys(AREAS).forEach((k)=>{const a=AREAS[k];const b=el('button','xrow',el('span','',el('b','',a.name),el('small','',a.what)),el('span','pill '+a.tone,a.state));b.type='button';b.addEventListener('click',()=>show(k,true));ar.append(el('li','',b))});
-  return[head,insights([IX.overlap(),IX.redteam(),IX.exposure(),IX.provider(),IX.siem(),IX.ai(),IX.estate(),IX.teams()],4),band('Performance over the period'),periodSection(),band('Phase 2 outcomes'),scorecard(),
-    ...execTrends(),el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),rl),el('section','card',el('div','ph',el('h2','h','Signals'),all),sl))]};
+/* V.exec is defined with the dashboard components further down. */
 
 /* ---------- Role views: executive insights, SOC director, Infrastructure, Engineering (see AUDIENCES.md) ---------- */
 const RO=DATA.roles||{},MS=RO.mssp,SI=RO.siem,AI=RO.ai,IN=RO.infra,EN=RO.eng;
@@ -691,6 +661,101 @@ function askClaude(title,sub,task,opts={}){if(!CL)return;const out=el('div','ai-
 function briefBtn(){const b=el('button','link sm ai-only','Write the brief');b.type='button';b.addEventListener('click',()=>askClaude('Brief',`Week ending ${day(L.week_ending)}`,'Write a five-point brief for the executive team: what changed, what is at risk, what is going well, and the two decisions needed this week with owners.'));return b}
 onClaude.push(()=>{document.body.classList.add('has-claude');document.querySelectorAll('.dsays .ph').forEach((ph)=>{if(!ph.querySelector('.ai-only'))ph.append(briefBtn())});
   const c=$('#cmd');if(c)c.placeholder='Ask a question about the figures, or give a command';});
+
+/* ---------- Executive dashboard: visual components (SVG, redrawn on resize, every mark clickable) ---------- */
+const C={navy:'#14387a',ink:'#0b1f44',gold:'#c9a227',teal:'#1c7c7d',red:'#b42318',amber:'#c4620c',green:'#2e7d4f',mist:'#e9ecf3',sky:'#7f9ccf'};
+function viz(box,fn){const d=()=>{box.replaceChildren();fn(box,Math.max(200,Math.floor(box.clientWidth)))};after.push(()=>{d();watch(box,d)})}
+const wk=(i)=>day(W[i].week_ending);
+function hitDrill(node,fn){node.style.cursor='pointer';node.addEventListener('click',(e)=>{e.stopPropagation();fn()})}
+function miniArea(box,vals,color,h=54){viz(box,(b,w)=>{const mn=Math.min(...vals),mx=Math.max(...vals),r=mx-mn||1,x=(i)=>2+i*(w-8)/(vals.length-1),y=(v)=>h-4-(v-mn)/r*(h-12);
+  const s=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:w,height:h,'aria-hidden':'true'}),id='m'+(++uid),g=sv('linearGradient',{id,x1:0,y1:0,x2:0,y2:1});g.append(sv('stop',{offset:0,'stop-color':color,'stop-opacity':.45}),sv('stop',{offset:1,'stop-color':color,'stop-opacity':0}));
+  const d=vals.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');s.append(sv('defs',{},undefined),sv('path',{d:d+`L${x(vals.length-1)},${h}L${x(0)},${h}Z`,fill:`url(#${id})`,stroke:'none'}),sv('path',{d,fill:'none',stroke:color,'stroke-width':2,'stroke-linejoin':'round'}),sv('circle',{cx:x(vals.length-1),cy:y(last(vals)),r:3.2,fill:color}));s.firstChild.append(g);b.append(s)})}
+function ring(box,pct,target,color,label){viz(box,(b,w)=>{const S=Math.min(w,62),r=S/2-6,c=2*Math.PI*r,s=sv('svg',{viewBox:`0 0 ${S} ${S}`,width:S,height:S,role:'img','aria-label':`${label}: ${pct}%`});
+  s.append(sv('circle',{cx:S/2,cy:S/2,r,fill:'none',stroke:'rgba(255,255,255,.14)','stroke-width':8}),sv('circle',{cx:S/2,cy:S/2,r,fill:'none',stroke:color,'stroke-width':8,'stroke-linecap':'round','stroke-dasharray':`${c*Math.min(1,pct/100)} ${c}`,transform:`rotate(-90 ${S/2} ${S/2})`}));
+  if(target!=null){const a=(target/100)*2*Math.PI-Math.PI/2;s.append(sv('line',{x1:S/2+(r-7)*Math.cos(a),y1:S/2+(r-7)*Math.sin(a),x2:S/2+(r+7)*Math.cos(a),y2:S/2+(r+7)*Math.sin(a),stroke:'#fff','stroke-width':2}))}
+  b.append(s)})}
+function gauge(box,v,trend){viz(box,(b,w)=>{const W2=Math.min(w,300),H=W2*0.62,cx=W2/2,cy=H-14,r=W2/2-18,s=sv('svg',{viewBox:`0 0 ${W2} ${H}`,width:W2,height:H,role:'img','aria-label':`Security posture index ${v} out of 100`});
+  const arc=(a0,a1,col,wd)=>{const p=(a)=>[cx+r*Math.cos(Math.PI*(1-a)),cy-r*Math.sin(Math.PI*(1-a))],[x0,y0]=p(a0),[x1,y1]=p(a1);return sv('path',{d:`M${x0},${y0}A${r},${r} 0 0 1 ${x1},${y1}`,fill:'none',stroke:col,'stroke-width':wd,'stroke-linecap':'butt'})};
+  s.append(arc(0,.5,'rgba(180,35,24,.55)',14),arc(.5,.7,'rgba(196,98,12,.6)',14),arc(.7,1,'rgba(46,125,79,.65)',14),arc(0,v/100,C.gold,5));
+  const a=Math.PI*(1-v/100);s.append(sv('line',{x1:cx,y1:cy,x2:cx+(r-24)*Math.cos(a),y2:cy-(r-24)*Math.sin(a),stroke:'#fff','stroke-width':3,'stroke-linecap':'round'}),sv('circle',{cx,cy,r:6,fill:C.gold}),
+    sv('text',{x:cx,y:cy-30,'text-anchor':'middle',class:'gv'},String(v)),sv('text',{x:18,y:H-2,class:'gl'},'0'),sv('text',{x:W2-18,y:H-2,'text-anchor':'end',class:'gl'},'100'));b.append(s)})}
+function combo(box,bars,line,target,o){viz(box,(b,w)=>{const h=o.h||260,m={l:34,r:40,t:16,b:26},n2=bars.length,bw=(w-m.l-m.r)/n2,mx=nice(Math.max(...bars)),x=(i)=>m.l+i*bw+bw/2,y=(v)=>h-m.b-v/mx*(h-m.t-m.b),yp=(v)=>h-m.b-(v-o.pmin)/(100-o.pmin)*(h-m.t-m.b);
+  const s=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:w,height:h,role:'img','aria-label':o.label}),id='cb'+(++uid),g=sv('linearGradient',{id,x1:0,y1:0,x2:0,y2:1});g.append(sv('stop',{offset:0,'stop-color':C.navy}),sv('stop',{offset:1,'stop-color':C.sky}));s.append(sv('defs',{}),);s.firstChild.append(g);
+  for(let k=0;k<=4;k++){const v=mx*k/4;s.append(sv('line',{x1:m.l,x2:w-m.r,y1:y(v),y2:y(v),stroke:'var(--grid)'}),sv('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end',class:'tick'},f0(v)),sv('text',{x:w-m.r+6,y:yp(o.pmin+(100-o.pmin)*k/4)+4,class:'tick'},Math.round(o.pmin+(100-o.pmin)*k/4)+'%'))}
+  bars.forEach((v,i)=>{const r=sv('rect',{x:x(i)-bw*0.3,y:y(v),width:bw*0.6,height:y(0)-y(v),rx:3,fill:`url(#${id})`});r.append(sv('title',{},`${wk(i)}: ${v} incidents, ${line[i]}% in time`));hitDrill(r,()=>o.pick(i));s.append(r)});
+  s.append(sv('line',{x1:m.l,x2:w-m.r,y1:yp(target),y2:yp(target),stroke:C.gold,'stroke-dasharray':'4 4','stroke-width':1.5}),sv('text',{x:w-m.r-4,y:yp(target)-6,'text-anchor':'end',class:'tick gold'},`${target}% target`));
+  const d=line.map((v,i)=>`${i?'L':'M'}${x(i)},${yp(v)}`).join('');s.append(sv('path',{d,fill:'none',stroke:C.teal,'stroke-width':2.5,'stroke-linejoin':'round'}));line.forEach((v,i)=>s.append(sv('circle',{cx:x(i),cy:yp(v),r:3,fill:'#fff',stroke:C.teal,'stroke-width':2})));
+  const ev=Math.max(1,Math.ceil(n2/Math.floor((w-m.l-m.r)/70)));for(let i=n2-1;i>=0;i-=ev)s.append(sv('text',{x:x(i),y:h-8,'text-anchor':'middle',class:'tick'},wk(i)));b.append(s)})}
+function donut(box,parts,colors,center,onPick){viz(box,(b,w)=>{const S=Math.min(w,210),r=S/2-6,ir=r*0.62,tot=sum(parts,(p)=>p.v),s=sv('svg',{viewBox:`0 0 ${S} ${S}`,width:S,height:S,role:'img','aria-label':center[1]});let a=-Math.PI/2;
+  parts.forEach((p,i)=>{const a1=a+p.v/tot*2*Math.PI,lg=a1-a>Math.PI?1:0,P=(rr,an)=>`${S/2+rr*Math.cos(an)},${S/2+rr*Math.sin(an)}`;
+    const path=sv('path',{d:`M${P(r,a)}A${r},${r} 0 ${lg} 1 ${P(r,a1)}L${P(ir,a1)}A${ir},${ir} 0 ${lg} 0 ${P(ir,a)}Z`,fill:colors[i%colors.length],stroke:'#fff','stroke-width':2});path.append(sv('title',{},`${p.name}: ${p.v}`));hitDrill(path,()=>onPick(p,i));s.append(path);a=a1});
+  s.append(sv('text',{x:S/2,y:S/2+4,'text-anchor':'middle',class:'dv'},String(center[0])),sv('text',{x:S/2,y:S/2+24,'text-anchor':'middle',class:'tick'},center[1]));b.append(s)})}
+function radar(box,axes,series,onPick){viz(box,(b,w)=>{const S=Math.min(w,380),cx=S/2,cy=S/2,r=S/2-78,N=axes.length,P=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/N;return[cx+r*v/100*Math.cos(a),cy+r*v/100*Math.sin(a)]};
+  const s=sv('svg',{viewBox:`0 0 ${S} ${S}`,width:S,height:S,role:'img','aria-label':'Detection coverage by attack stage'});
+  [25,50,75,100].forEach((v)=>s.append(sv('polygon',{points:axes.map((_,i)=>P(i,v).join(',')).join(' '),fill:'none',stroke:'var(--grid)'})));
+  axes.forEach((t,i)=>{const [x2,y2]=P(i,100),[lx,ly]=P(i,118);s.append(sv('line',{x1:cx,y1:cy,x2,y2,stroke:'var(--grid)'}));const tx=sv('text',{x:lx,y:ly+3,'text-anchor':lx<cx-5?'end':lx>cx+5?'start':'middle',class:'tick rl'},t.replace('Command and Control','C2').replace('Privilege Escalation','Privilege').replace('Credential Access','Credentials').replace('Lateral Movement','Lateral movement').replace('Defense Evasion','Evasion').replace('Persistence','Persistence').replace('Initial Access','Initial access'));hitDrill(tx,()=>onPick(i));s.append(tx)});
+  series.forEach((q)=>{s.append(sv('polygon',{points:q.vals.map((v,i)=>P(i,v).join(',')).join(' '),fill:q.color,'fill-opacity':.18,stroke:q.color,'stroke-width':2}));q.vals.forEach((v,i)=>{const [px,py]=P(i,v),c=sv('circle',{cx:px,cy:py,r:3.2,fill:q.color});c.append(sv('title',{},`${axes[i]}: ${q.label} ${v}%`));hitDrill(c,()=>onPick(i));s.append(c)})});b.append(s)})}
+function heatmap(box,rows,cols,cells,onPick){viz(box,(b,w)=>{const lw=Math.min(150,w*0.34),cw=(w-lw)/cols.length,ch=34,h=26+rows.length*(ch+4),mx=Math.max(...cells.flat()),s=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:w,height:h,role:'img','aria-label':'Overdue findings by team and scanner'});
+  cols.forEach((c,j)=>s.append(sv('text',{x:lw+j*cw+cw/2,y:14,'text-anchor':'middle',class:'tick'},c.replace('Defender for Cloud','Defender'))));
+  rows.forEach((r,i)=>{const yy=24+i*(ch+4);s.append(sv('text',{x:0,y:yy+ch/2+4,class:'hl'},r));cells[i].forEach((v,j)=>{const t=v/mx,rect=sv('rect',{x:lw+j*cw+2,y:yy,width:cw-4,height:ch,rx:4,fill:v?`rgba(180,35,24,${0.08+t*0.85})`:'#f1efe8'});rect.append(sv('title',{},`${r} · ${cols[j]}: ${v} overdue`));hitDrill(rect,()=>onPick(i,j));
+    s.append(rect,sv('text',{x:lw+j*cw+cw/2,y:yy+ch/2+5,'text-anchor':'middle',class:'hv'+(t>0.5?' inv':''),'pointer-events':'none'},String(v)))})});b.append(s)})}
+function stacked(box,series,o){viz(box,(b,w)=>{const h=o.h||220,m={l:36,r:44,t:12,b:24},N=series[0].vals.length,tops=series.map((q,k)=>q.vals.map((_,i)=>series.slice(0,k+1).reduce((a,qq)=>a+qq.vals[i],0))),mx=nice(Math.max(...tops.flat())),x=(i)=>m.l+i*(w-m.l-m.r)/(N-1),y=(v)=>h-m.b-v/mx*(h-m.t-m.b);
+  const s=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:w,height:h,role:'img','aria-label':o.label});for(let k=0;k<=4;k++){const v=mx*k/4;s.append(sv('line',{x1:m.l,x2:w-m.r,y1:y(v),y2:y(v),stroke:'var(--grid)'}),sv('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end',class:'tick'},f0(v)))}
+  for(let k=series.length-1;k>=0;k--){const up=tops[k],dn=k?tops[k-1]:up.map(()=>0),d=up.map((v,i)=>`${i?'L':'M'}${x(i)},${y(v)}`).join('')+dn.map((v,i)=>[i,v]).reverse().map(([i,v])=>`L${x(i)},${y(v)}`).join('')+'Z';
+    s.append(sv('path',{d,fill:series[k].color,'fill-opacity':.85}));s.append(sv('text',{x:w-m.r+6,y:y(up[N-1]-(up[N-1]-dn[N-1])/2)+4,class:'tick'},f0(series[k].vals[N-1])))}
+  const hit=sv('rect',{x:m.l,y:0,width:w-m.l-m.r,height:h,fill:'transparent'});hitDrill(hit,()=>{});hit.addEventListener('click',(e)=>{const bb=s.getBoundingClientRect(),i=Math.round(((e.clientX-bb.left)*w/bb.width-m.l)/((w-m.l-m.r)/(N-1)));o.pick(Math.max(0,Math.min(N-1,i)))});s.append(hit);
+  const ev=Math.max(1,Math.ceil(N/Math.floor((w-m.l-m.r)/70)));for(let i=N-1;i>=0;i-=ev)s.append(sv('text',{x:x(i),y:h-6,'text-anchor':'middle',class:'tick'},wk(i)));b.append(s)})}
+function funnelViz(box,steps,onPick){viz(box,(b,w)=>{const h=steps.length*48,mx=Math.log10(steps[0].v+1),s=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:w,height:h,role:'img','aria-label':'From alert to incident'});
+  steps.forEach((st,i)=>{const bwid=Math.max(18,Math.log10(st.v+1)/mx*w),yy=i*48,r=sv('rect',{x:0,y:yy+18,width:bwid,height:22,rx:3,fill:[C.sky,C.navy,C.teal,C.gold][i%4]});r.append(sv('title',{},`${st.label}: ${f0(st.v)}`));hitDrill(r,()=>onPick(st));
+    s.append(sv('text',{x:0,y:yy+12,class:'hl'},st.label),sv('text',{x:w,y:yy+12,'text-anchor':'end',class:'hv'},f0(st.v)+(i?`  (${f1(st.v/steps[i-1].v*100)}%)`:'')),r)});b.append(s)})}
+function bullets(items){const box=el('div','bullets');items.forEach((m)=>{const hiB=m.better==='higher',mx=hiB?Math.max(100,m.now,m.target)*1.0:Math.max(m.now,m.target)*1.6,met=hiB?m.now>=m.target:m.now<=m.target;
+  const bar=el('div','bbar'),f=el('i'),t=el('u');f.style.width=Math.min(100,m.now/mx*100)+'%';f.style.background=met?C.teal:C.gold;t.style.left=Math.min(100,m.target/mx*100)+'%';bar.append(f,t);
+  const row=el('button','brow',el('span','bl',m.label),bar,el('span','bv',`${fx(m.now,m.now%1?1:0)}${m.unit||''}`),el('span','bt',`target ${hiB?'≥':'≤'} ${m.target}${m.unit||''}`));row.type='button';
+  row.addEventListener('click',()=>drill(m.label,m.outcome||'Phase 2 outcome',[['Now',`${m.now}${m.unit||''}`],['Target',`${hiB?'≥':'≤'} ${m.target}${m.unit||''}`,met?'':'alert'],['Against target',met?'Met':'Not yet met',met?'':'alert']],[],'exec'));box.append(row)});return box}
+function tile(title,value,unit,delta,good,vizEl,go,dark){const c=el(go?'button':'div','dtile'+(dark?' dark':''),el('div','dt-h',title),el('div','dt-v',el('b','',value),unit?el('small','',unit):null),delta?el('div','dt-d '+(good?'up':'down'),delta):null,vizEl);if(go){c.type='button';c.addEventListener('click',()=>show(go,true))}return c}
+function panel(title,sub,body,go,cls){const ph=el('div','ph',el('div','',el('h2','h',title),sub?el('p','cap',sub):null));if(CL&&cls&&cls.includes('dsays'))ph.append(briefBtn());if(go){const a=el('button','link sm','Open');a.type='button';a.addEventListener('click',()=>show(go,true));ph.append(a)}return el('section','card panel'+(cls?' '+cls:''),ph,body)}
+function postureSeries(){const rs=S.rsla,sl=S.sla,mt=S.mttr,bd=OF.bas_detected_pct,rt=S.rate;
+  return rs.map((_,i)=>Math.round(100*(0.25*Math.min(1,rs[i]/Q.response_target)+0.25*Math.min(1,sl[i]/L.sla_target)+0.2*(1-Math.min(1,mt[i]/30))+0.15*Math.min(1,bd[i]/80)+0.15*(1-Math.min(1,rt[i]/15)))))}
+function attention(items){const ul=el('ul','attn');[...items].filter(Boolean).sort((a,b)=>TONE[a.tone]-TONE[b.tone]).slice(0,4).forEach((it)=>{const b=el('button','attn-i',el('span','pill '+it.tone,TAG[it.tone]),el('span','at',it.t),el('span','cap',it.o||''));b.type='button';
+  b.addEventListener('click',()=>drill(TAG[it.tone],it.o||'',[['What',it.t],['Why it matters',it.w||'—'],['Next step',it.a||'—']],[],it.go));ul.append(el('li','',b))});return ul}
+V.exec=()=>{const ps=postureSeries(),pv=last(ps),pd=pv-prev(ps),hi=S.sevC.map((v,i)=>v+S.sevH[i]),gbs=SI.daily_gb,gb=avg(gbs.slice(-7)),rtm=OF.engagements.find((e)=>e.type==='Red team');
+  const T2=(t,v,u,d,g,viz2,go)=>tile(t,v,u,d,g,viz2,go,true);
+  const sp=(vals,col)=>{const b=el('div','dt-c');miniArea(b,vals,col);return b},rg=(p,t,col,l)=>{const b=el('div','dt-r');ring(b,p,t,col,l);return b};
+  const gbox=el('div','gauge'),gwrap=el('div','dtile dark gtile',el('div','dt-h','Security posture index'),gbox,el('div','dt-d '+(pd>=0?'up':'down'),`${sgn(pd)} on last week · ${sgn(last(ps)-ps[0])} in 12 weeks`),el('p','gnote','From response and fix times, time to fix, attack simulation and phishing.'));
+  gauge(gbox,pv);hitDrill(gwrap,()=>drill('Security posture index',`Week ending ${wk(n-1)}`,[['Index now',String(pv)],['12 weeks ago',String(ps[0])],['Responses in time',`${last(S.rsla)}% (25%)`],['Fixes in time',`${last(S.sla)}% (25%)`],['Days to fix a critical',`${last(S.mttr)} (20%)`],['Attack simulation detected',`${last(OF.bas_detected_pct)}% (15%)`],['Phishing click rate',`${last(S.rate)}% (15%)`]],[el('p','note','Weights in brackets. Each measure is scored against its target and combined into one number out of 100.')],'exec'));
+  const band2=el('section','kband keep',gwrap,
+    T2('Incidents this week',String(L.incidents),'',`${sgn(chg(S.inc))} on last week`,chg(S.inc)<=0,sp(S.inc,C.gold),'detection'),
+    T2('Time to contain',f1(last(S.cont)),'h',`${sgn(chg(S.cont),1)} h`,chg(S.cont)<=0,sp(S.cont,C.gold),'detection'),
+    T2('Responses in time',`${last(S.rsla)}`,'%',`target ${Q.response_target}%`,last(S.rsla)>=Q.response_target,rg(last(S.rsla),Q.response_target,'#5fc3b9','Responses in time'),'detection'),
+    T2('Critical and high open',f0(last(S.open)),'',`${sgn(Math.round((last(S.open)/S.open[0]-1)*100))}% in 12 weeks`,last(S.open)<=S.open[0],sp(S.open,C.gold),'vulnerabilities'),
+    T2('Fixes in time',`${last(S.sla)}`,'%',`target ${L.sla_target}%`,last(S.sla)>=L.sla_target,rg(last(S.sla),L.sla_target,C.gold,'Fixes in time'),'remediation'),
+    T2('Red team steps seen',`${rtm.detected_steps} of ${rtm.steps}`,'',rtm.reached?'objective reached':'objective stopped',!rtm.reached,rg(Math.round(rtm.detected_steps/rtm.steps*100),null,'#e07a6e','Red team steps seen'),'offsec'));
+  const cbox=el('div','viz');combo(cbox,S.inc,S.rsla,Q.response_target,{h:270,pmin:60,label:'Incidents per week with the share responded to in time',pick:(i)=>drill(`Week ending ${wk(i)}`,'Threat activity and response',[['Incidents',String(S.inc[i])],['Critical and high',String(hi[i])],['Responded in time',`${S.rsla[i]}%`,S.rsla[i]<Q.response_target?'alert':''],['Hours to contain',f1(S.cont[i])]],[],'detection')});
+  const dbox=el('div','viz donutw'),cats=Q.categories.map((c)=>({name:c.name,v:c.now})),cols=[C.navy,C.gold,C.teal,C.sky,'#b9a36a','#9aa3b2'];
+  donut(dbox,cats,cols,[L.incidents,'incidents this week'],(p)=>drill(p.name,'Incidents this week',[['This week',String(p.v)],['Last week',String(Q.categories.find((c)=>c.name===p.name).previous)],['Share',Math.round(p.v/L.incidents*100)+'%']],[],'detection'));
+  const lg=el('ul','dleg');cats.forEach((c,i)=>{const sw=el('i');sw.style.background=cols[i];lg.append(el('li','',sw,el('span','',c.name),el('b','',String(c.v))))});
+  const rbox=el('div','viz'),tac=Q.attack.map((a)=>a.tactic),rtDet=tac.map((t)=>{const x=OF.tactics.find((o)=>o.tactic===t);return x?Math.round((x.blocked+x.detected)/x.tested*100):0});
+  radar(rbox,tac,[{vals:Q.attack.map((a)=>a.coverage),color:C.navy,label:'Rules in place'},{vals:rtDet,color:C.gold,label:'Caught in testing'}],(i)=>{const a=Q.attack[i],x=OF.tactics.find((o)=>o.tactic===a.tactic)||{};drill(a.tactic,'Detection coverage',[['Techniques with a rule',a.coverage+'%'],['Caught in red team and simulation',rtDet[i]+'%',rtDet[i]<50?'alert':''],['Missed in testing',String(x.missed??'—')],['Incidents at this stage, 12 weeks',String(a.incidents)]],[],'offsec')});
+  const hbox=el('div','viz');heatmap(hbox,DATA.hot.teams,DATA.hot.scanners,DATA.hot.cells,(i,j)=>drill(`${DATA.hot.teams[i]} · ${DATA.hot.scanners[j]}`,'Overdue critical and high findings',[['Overdue',String(DATA.hot.cells[i][j])],['Team total',String(sum(DATA.hot.cells[i],(v)=>v))],['Scanner total',String(sum(DATA.hot.cells,(r)=>r[j]))]],[],'remediation'));
+  const fbox=el('div','viz');funnelViz(fbox,[{label:'alerts',v:last(Q.alerts)},{label:'triaged',v:last(Q.triaged)},{label:'incidents',v:L.incidents},{label:'critical or high',v:last(hi)}],(st)=>drill(st.label,'Alert to incident, this week',[['Count',f0(st.v)],['Share of alerts',f1(st.v/last(Q.alerts)*100)+'%']],[],'detection'));
+  const sbox=el('div','viz');stacked(sbox,[{vals:col('open_high'),color:C.sky},{vals:col('open_critical'),color:C.navy}],{h:230,label:'Open critical and high findings by week',pick:(i)=>drill(`Week ending ${wk(i)}`,'Open findings',[['Critical',String(W[i].open_critical)],['High',String(W[i].open_high)],['Found that week',String(W[i].opened)],['Fixed that week',String(W[i].closed)]],[],'vulnerabilities')});
+  const ms=OC.flatMap((o)=>o.measures.map((m)=>({...m,outcome:o.outcome}))).filter((m)=>typeof m.now==='number'&&typeof m.target==='number');
+  const units={'Acknowledge an alert':' min','Resolve a P1':' h','Resolve a P2':' h','Median containment':' h','Tier-1 systems monitored':'%','Telemetry coverage':'%','Adherence to SOC service levels':'%','Log ingestion per day':' GB'};ms.forEach((m)=>m.unit=units[m.label]||'');
+  const met=ms.filter((m)=>m.better==='higher'?m.now>=m.target:m.now<=m.target).length;
+  const legend2=(items)=>el('ul','legend',...items.map(([l,c])=>{const sw=el('span','sw');sw.style.background=c;return el('li','',sw,l)}));
+  return[band2,
+    el('div','dgrid keep',
+      panel('Threat activity and response','Incidents per week (bars) and share responded to in time (line)',el('div','',legend2([['Incidents',C.navy],['Responded in time',C.teal],['Target',C.gold]]),cbox),'detection','span8'),
+      panel('Incidents by type','This week',el('div','donutbox',dbox,lg),'detection','span4'),
+      panel('Detection coverage','Rules in place against what testing caught, by attack stage',el('div','',legend2([['Rules in place',C.navy],['Caught in testing',C.gold]]),rbox),'offsec','span4'),
+      panel('Where fixes are overdue','Critical and high findings past deadline, team by scanner',hbox,'remediation','span5'),
+      panel('Alert to incident','This week',fbox,'detection','span3'),
+      panel('Exposure over time','Open critical and high findings',el('div','',legend2([['Critical',C.navy],['High',C.sky]]),sbox),'vulnerabilities','span6'),
+      panel(`Phase 2 targets: ${met} of ${ms.length} met`,'Bar: now. Mark: target. Select a row for detail.',bullets(ms),null,'span6'),
+      panel('Needs attention','Worked out from the figures',attention([IX.overlap(),IX.redteam(),IX.exposure(),IX.provider(),IX.siem(),IX.ai()]),null,'span12 dsays')),
+    band('Performance over the period'),(()=>{const p=periodSection();p.classList.add('xtra');return p})(),band('Phase 2 outcomes'),scorecard(),
+    el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),(()=>{const rl=el('ul','risks');risks().slice(0,5).forEach(([t,d,lvl,tone,go],i)=>{const b=el('button','risk',el('span','n',String(i+1)),el('span','',el('b','',t),el('span','d',d)),el('span','pill '+tone,lvl));b.type='button';b.addEventListener('click',()=>show(go,true));rl.append(el('li','',b))});return rl})()),
+      el('section','card',el('div','ph',el('h2','h','Signals')),(()=>{const sl=el('ul','sig-list');[...DATA.notes].filter((r)=>r.confidence==='High').slice(0,4).forEach((r)=>sl.append(signal(r,true)));return sl})()))]};
 
 /* ---------- Operations: shared filters, live board, threat paths, workflows, reports, commands ---------- */
 const HOSTED=!!window.SECOPS_HOSTED;
@@ -890,7 +955,7 @@ function customFor(k){const list=(DATA.custom||[]).filter((m)=>m.view===k&&Array
   return[band('More measures'),tiles,charts.children.length?charts:null].filter(Boolean)}
 /* Summary or full detail, per page: summary keeps the insights, the headline figures, the first chart and the tables. */
 const NODETAIL=['live','threats','workflows','reports','build','agents'];
-function markDetail(v){if(NODETAIL.includes(v.id))return;const KEEP=v.id==='exec'?1:4,skip='header,.keep,.dsays,.stats,.heroband,.period,.funnel,.signals,.band,.note,.more-detail';let shown=0,hid=0,charts=0;
+function markDetail(v){if(NODETAIL.includes(v.id))return;const KEEP=v.id==='exec'?0:4,skip='header,.keep,.dsays,.stats,.heroband,.period,.funnel,.signals,.band,.note,.more-detail';let shown=0,hid=0,charts=0;
   const kids=[...v.children].filter((x)=>!x.matches(skip));
   kids.forEach((x)=>{const cards=x.matches('section.card')?[x]:[...x.children].filter((c)=>c.matches('section.card,article.card'));if(!cards.length)return;
     cards.forEach((c)=>{const ch=!!c.querySelector('.chart');if(shown<KEEP&&!(ch&&charts>=2)){shown++;if(ch)charts++}else{c.classList.add('xtra');hid++}});if(cards.every((c)=>c.classList.contains('xtra')))x.classList.add('xtra')});
