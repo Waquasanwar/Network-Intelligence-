@@ -930,3 +930,68 @@ table.rank td.br .meter i,.meter i{background:var(--a1)}
 .panel .ph .link{flex:none}
 @media (max-width:899px){.gtile{grid-column:1/-1}}
 .dt-c,.dt-c svg{max-width:100%;overflow:hidden}
+
+/* ===== Design system (UI/UX Pro Max: data-dense dashboard). Deep blue primary, gold accent, teal support, slate neutrals. ===== */
+:root{--bg:#F8FAFC;--line:#E2E8F0;--line2:#CBD5E1;--glass2:#F1F5F9;--fg:#0F172A;--muted:#475569;--dim:#94A3B8;--grid:#EEF2F7;
+  --navy:#0F1E45;--a1:#1E3A8A;--a2:#B7791F;--a3:#0F766E;--gold:#B7791F;--gold-t:#8A5A0B;--gold-l:#E2B95B;--ok:#047857;--warn:#B45309;--crit:#B91C1C;
+  --display:"Fira Sans",system-ui,sans-serif;--body:"Fira Sans",system-ui,sans-serif;--mono:"Fira Code",ui-monospace,monospace}
+body{background:var(--bg);font-size:14px}
+.side{background:var(--navy)!important}
+.logo{background:var(--gold)!important;color:var(--navy)!important}
+.card,.panel{border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);background:#fff;padding:16px}
+.panel{gap:8px}
+.panel .ph h2.h{font-size:14px;font-weight:600;color:var(--fg)}
+.panel .ph .cap{font-size:12.5px}
+.dsays{border-top:1px solid var(--line)}
+.band{border-left:0;padding-left:0;font-size:14px;color:var(--fg)}
+.toolbar{border-radius:8px}
+.dgrid{gap:12px}
+.cjw{position:relative;width:100%}
+.cjw canvas{display:block}
+/* KPI cards */
+.krow{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:900px){.krow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1400px){.krow{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.kcard{appearance:none;font:inherit;color:inherit;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:14px 16px 10px;display:grid;gap:2px;align-content:start;cursor:pointer;min-width:0;border-top:3px solid var(--a1)}
+.kcard:first-child{border-top-color:var(--gold)}
+.kcard:hover{border-color:var(--line2);border-top-color:var(--a1)}
+.kcard:first-child:hover{border-top-color:var(--gold)}
+.kcard:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
+.kl{font-size:12.5px;color:var(--muted);font-weight:500}
+.kv{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--fg);letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums}
+.kv small{font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);margin-left:3px}
+.kc{font-size:12px;font-weight:500;color:var(--muted)}
+.kc.up{color:var(--ok)}.kc.down{color:var(--crit)}
+.kn{font-size:11.5px;color:var(--dim)}
+.kspark{height:34px;margin-top:4px}
+/* map */
+.mapbox{min-height:0}
+.mapbox svg .ml{font-size:11px;font-weight:600;fill:var(--fg);paint-order:stroke;stroke:#fff;stroke-width:3px}
+.maplg{margin-top:8px}
+.maplg .lc{width:10px;height:10px;border-radius:50%;display:inline-block}
+.maplg .ld{width:8px;height:8px;background:var(--gold);transform:rotate(45deg);display:inline-block}
+.maplg .la{width:18px;height:2px;background:var(--gold);display:inline-block;opacity:.7}
+/* sortable table */
+table.dtable{width:100%;min-width:760px;border-collapse:collapse;font-size:13px}
+table.dtable th{padding:0;border-bottom:1px solid var(--line2);text-align:left}
+table.dtable th.num{text-align:right}
+table.dtable th button{appearance:none;border:0;background:none;font:inherit;font-size:12px;font-weight:600;color:var(--muted);padding:8px 10px;cursor:pointer;width:100%;text-align:inherit}
+table.dtable th[aria-sort="ascending"] button::after{content:" \2191"}
+table.dtable th[aria-sort="descending"] button::after{content:" \2193"}
+table.dtable th button:hover{color:var(--fg)}
+table.dtable td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--fg);font-weight:400;white-space:nowrap}
+table.dtable td:first-child{font-weight:600}
+table.dtable td.num{text-align:right;font-family:var(--mono);font-size:12.5px}
+table.dtable tr.pick{cursor:pointer}
+table.dtable tr.pick:hover td{background:#F8FAFC}
+table.dtable tr.pick:focus-visible{outline:2px solid var(--a1)}
+.sq{display:inline-block;width:8px;height:8px;margin-right:6px;vertical-align:1px}
+/* bullets and attention in the new palette */
+.bbar{background:#EEF2F7}
+.brow:focus-visible,.attn-i:focus-visible{outline:2px solid var(--a1)}
+.kcard{overflow:hidden}
+.span6 .attn{grid-template-columns:minmax(0,1fr)}
+.kcard{grid-template-columns:minmax(0,1fr)}
+.kspark{overflow:hidden}.kspark svg{width:100%;height:34px}
+.krow>*{min-width:0}
+table.rank td.br:not(.alert) .meter i{background:var(--a1)!important}

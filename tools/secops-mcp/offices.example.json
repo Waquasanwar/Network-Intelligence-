@@ -1,0 +1,4 @@
+[
+  {"city": "London", "country": "United Kingdom", "lat": 51.51, "lon": -0.13, "staff": 1850, "kind": "Headquarters"},
+  {"city": "Dubai", "country": "United Arab Emirates", "lat": 25.20, "lon": 55.27, "staff": 2400, "kind": "Regional hub", "incidents": 58, "risky_signins": 37, "phish_clicks": 14, "no_edr": 64, "overdue": 71}
+]

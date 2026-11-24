@@ -718,44 +718,113 @@ function postureSeries(){const rs=S.rsla,sl=S.sla,mt=S.mttr,bd=OF.bas_detected_p
   return rs.map((_,i)=>Math.round(100*(0.25*Math.min(1,rs[i]/Q.response_target)+0.25*Math.min(1,sl[i]/L.sla_target)+0.2*(1-Math.min(1,mt[i]/30))+0.15*Math.min(1,bd[i]/80)+0.15*(1-Math.min(1,rt[i]/15)))))}
 function attention(items){const ul=el('ul','attn');[...items].filter(Boolean).sort((a,b)=>TONE[a.tone]-TONE[b.tone]).slice(0,4).forEach((it)=>{const b=el('button','attn-i',el('span','pill '+it.tone,TAG[it.tone]),el('span','at',it.t),el('span','cap',it.o||''));b.type='button';
   b.addEventListener('click',()=>drill(TAG[it.tone],it.o||'',[['What',it.t],['Why it matters',it.w||'—'],['Next step',it.a||'—']],[],it.go));ul.append(el('li','',b))});return ul}
-V.exec=()=>{const ps=postureSeries(),pv=last(ps),pd=pv-prev(ps),hi=S.sevC.map((v,i)=>v+S.sevH[i]),gbs=SI.daily_gb,gb=avg(gbs.slice(-7)),rtm=OF.engagements.find((e)=>e.type==='Red team');
-  const T2=(t,v,u,d,g,viz2,go)=>tile(t,v,u,d,g,viz2,go,true);
-  const sp=(vals,col)=>{const b=el('div','dt-c');miniArea(b,vals,col);return b},rg=(p,t,col,l)=>{const b=el('div','dt-r');ring(b,p,t,col,l);return b};
-  const gbox=el('div','gauge'),gwrap=el('div','dtile dark gtile',el('div','dt-h','Security posture index'),gbox,el('div','dt-d '+(pd>=0?'up':'down'),`${sgn(pd)} on last week · ${sgn(last(ps)-ps[0])} in 12 weeks`),el('p','gnote','From response and fix times, time to fix, attack simulation and phishing.'));
-  gauge(gbox,pv);hitDrill(gwrap,()=>drill('Security posture index',`Week ending ${wk(n-1)}`,[['Index now',String(pv)],['12 weeks ago',String(ps[0])],['Responses in time',`${last(S.rsla)}% (25%)`],['Fixes in time',`${last(S.sla)}% (25%)`],['Days to fix a critical',`${last(S.mttr)} (20%)`],['Attack simulation detected',`${last(OF.bas_detected_pct)}% (15%)`],['Phishing click rate',`${last(S.rate)}% (15%)`]],[el('p','note','Weights in brackets. Each measure is scored against its target and combined into one number out of 100.')],'exec'));
-  const band2=el('section','kband keep',gwrap,
-    T2('Incidents this week',String(L.incidents),'',`${sgn(chg(S.inc))} on last week`,chg(S.inc)<=0,sp(S.inc,C.gold),'detection'),
-    T2('Time to contain',f1(last(S.cont)),'h',`${sgn(chg(S.cont),1)} h`,chg(S.cont)<=0,sp(S.cont,C.gold),'detection'),
-    T2('Responses in time',`${last(S.rsla)}`,'%',`target ${Q.response_target}%`,last(S.rsla)>=Q.response_target,rg(last(S.rsla),Q.response_target,'#5fc3b9','Responses in time'),'detection'),
-    T2('Critical and high open',f0(last(S.open)),'',`${sgn(Math.round((last(S.open)/S.open[0]-1)*100))}% in 12 weeks`,last(S.open)<=S.open[0],sp(S.open,C.gold),'vulnerabilities'),
-    T2('Fixes in time',`${last(S.sla)}`,'%',`target ${L.sla_target}%`,last(S.sla)>=L.sla_target,rg(last(S.sla),L.sla_target,C.gold,'Fixes in time'),'remediation'),
-    T2('Red team steps seen',`${rtm.detected_steps} of ${rtm.steps}`,'',rtm.reached?'objective reached':'objective stopped',!rtm.reached,rg(Math.round(rtm.detected_steps/rtm.steps*100),null,'#e07a6e','Red team steps seen'),'offsec'));
-  const cbox=el('div','viz');combo(cbox,S.inc,S.rsla,Q.response_target,{h:270,pmin:60,label:'Incidents per week with the share responded to in time',pick:(i)=>drill(`Week ending ${wk(i)}`,'Threat activity and response',[['Incidents',String(S.inc[i])],['Critical and high',String(hi[i])],['Responded in time',`${S.rsla[i]}%`,S.rsla[i]<Q.response_target?'alert':''],['Hours to contain',f1(S.cont[i])]],[],'detection')});
-  const dbox=el('div','viz donutw'),cats=Q.categories.map((c)=>({name:c.name,v:c.now})),cols=[C.navy,C.gold,C.teal,C.sky,'#b9a36a','#9aa3b2'];
-  donut(dbox,cats,cols,[L.incidents,'incidents this week'],(p)=>drill(p.name,'Incidents this week',[['This week',String(p.v)],['Last week',String(Q.categories.find((c)=>c.name===p.name).previous)],['Share',Math.round(p.v/L.incidents*100)+'%']],[],'detection'));
-  const lg=el('ul','dleg');cats.forEach((c,i)=>{const sw=el('i');sw.style.background=cols[i];lg.append(el('li','',sw,el('span','',c.name),el('b','',String(c.v))))});
-  const rbox=el('div','viz'),tac=Q.attack.map((a)=>a.tactic),rtDet=tac.map((t)=>{const x=OF.tactics.find((o)=>o.tactic===t);return x?Math.round((x.blocked+x.detected)/x.tested*100):0});
-  radar(rbox,tac,[{vals:Q.attack.map((a)=>a.coverage),color:C.navy,label:'Rules in place'},{vals:rtDet,color:C.gold,label:'Caught in testing'}],(i)=>{const a=Q.attack[i],x=OF.tactics.find((o)=>o.tactic===a.tactic)||{};drill(a.tactic,'Detection coverage',[['Techniques with a rule',a.coverage+'%'],['Caught in red team and simulation',rtDet[i]+'%',rtDet[i]<50?'alert':''],['Missed in testing',String(x.missed??'—')],['Incidents at this stage, 12 weeks',String(a.incidents)]],[],'offsec')});
-  const hbox=el('div','viz');heatmap(hbox,DATA.hot.teams,DATA.hot.scanners,DATA.hot.cells,(i,j)=>drill(`${DATA.hot.teams[i]} · ${DATA.hot.scanners[j]}`,'Overdue critical and high findings',[['Overdue',String(DATA.hot.cells[i][j])],['Team total',String(sum(DATA.hot.cells[i],(v)=>v))],['Scanner total',String(sum(DATA.hot.cells,(r)=>r[j]))]],[],'remediation'));
-  const fbox=el('div','viz');funnelViz(fbox,[{label:'alerts',v:last(Q.alerts)},{label:'triaged',v:last(Q.triaged)},{label:'incidents',v:L.incidents},{label:'critical or high',v:last(hi)}],(st)=>drill(st.label,'Alert to incident, this week',[['Count',f0(st.v)],['Share of alerts',f1(st.v/last(Q.alerts)*100)+'%']],[],'detection'));
-  const sbox=el('div','viz');stacked(sbox,[{vals:col('open_high'),color:C.sky},{vals:col('open_critical'),color:C.navy}],{h:230,label:'Open critical and high findings by week',pick:(i)=>drill(`Week ending ${wk(i)}`,'Open findings',[['Critical',String(W[i].open_critical)],['High',String(W[i].open_high)],['Found that week',String(W[i].opened)],['Fixed that week',String(W[i].closed)]],[],'vulnerabilities')});
+
+
+/* ---------- Chart.js where available (hosted: vendor/chart.umd.min.js; preview: CDN), hand-drawn SVG otherwise ---------- */
+const CJ=()=>window.Chart||null;
+if(CJ()){const d=Chart.defaults;d.font.family='"Fira Sans",system-ui,sans-serif';d.font.size=12;d.color='#475569';d.borderColor='#E2E8F0';d.animation=false;d.maintainAspectRatio=false;
+  d.plugins.legend.labels.usePointStyle=true;d.plugins.legend.labels.boxWidth=8;d.plugins.legend.labels.boxHeight=8;d.plugins.legend.position='top';d.plugins.legend.align='start';
+  d.plugins.tooltip.backgroundColor='#0F172A';d.plugins.tooltip.padding=10;d.plugins.tooltip.cornerRadius=6;d.plugins.tooltip.titleFont={weight:'600'};}
+const K={blue:'#1E3A8A',blue2:'#3B5BB5',blue3:'#93A9D9',gold:'#B7791F',gold2:'#E2B95B',teal:'#0F766E',teal2:'#5EB3AA',red:'#B91C1C',slate:'#94A3B8'};
+function cjPanel(h,cfg,onPick,fallback){const w=el('div','cjw');w.style.height=h+'px';if(!CJ()){fallback(w);w.style.height='';return w}
+  const c=el('canvas');c.setAttribute('role','img');c.setAttribute('aria-label',cfg.label||'Chart');w.append(c);
+  after.push(()=>{const ch=new Chart(c,cfg);if(onPick){c.style.cursor='pointer';c.addEventListener('click',(e)=>{const p=ch.getElementsAtEventForMode(e,'nearest',{intersect:true},false);if(p.length)onPick(p[0].index,p[0].datasetIndex)})}});return w}
+const weeks=()=>W.map((r)=>day(r.week_ending));
+
+/* ---------- World map: land as a dot grid, offices sized by incidents and coloured by risk, attack origins with arcs ---------- */
+const WORLD={"step":2.2,"top":78,"rows":"31-31,36-36,38-38,43-46,49-72,88-90,92-92|29-31,33-33,36-37,40-41,55-72,109-111,125-133,145-147|26-29,34-34,36-37,39-40,42-42,44-44,46-46,57-72,107-107,119-135,138-138,146-146|26-27,29-34,37-37,39-39,41-49,58-71,106-107,113-114,116-140,142-150|8-18,21-27,30-35,37-40,43-44,48-51,59-70,90-97,110-111,113-114,116-158,160-163|0-3,8-44,49-52,58-66,89-100,102-102,104-114,116-163|3-3,7-44,47-51,59-63,72-75,87-91,93-97,99-99,101-163|7-39,44-44,51-51,60-62,85-89,92-163|7-14,16-38,47-50,62-62,85-90,92-93,95-152,156-159|11-11,21-39,47-53,80-80,85-85,87-89,93-145,154-155|9-9,22-42,47-54,80-80,86-86,88-88,92-144,153-155|23-44,46-55,78-79,81-81,86-145,153-154|24-56,80-82,84-145,153-153|25-51,53-53,56-57,81-145,147-147|26-52,81-144|26-51,53-53,82-87,89-95,98-103,106-143|26-49,78-83,86-88,90-94,101-103,106-141,146-147|26-48,78-82,86-86,89-89,91-92,94-104,106-136,138-140,146-146|26-47,78-81,89-89,92-92,94-104,107-135,139-140|27-47,82-86,97-97,99-136,140-140,144-145|28-46,79-86,98-136,143-143|29-44,78-88,91-93,98-137|31-38,41-41,44-44,78-103,105-137|30-30,32-37,45-45,76-97,99-104,106-136|31-31,33-37,45-45,76-97,99-105,107-107,110-110,113-135,137-137|34-37,45-45,75-98,100-108,114-134|34-37,41-42,47-47,75-98,100-108,115-121,124-130,132-132|35-38,40-41,49-50,75-98,101-107,115-120,125-129|37-41,75-99,102-105,116-119,125-125,127-130,137-137|41-43,75-100,102-104,116-118,127-131,137-137|43-43,50-50,75-101,105-105,117-118,127-127,129-131|44-44,48-53,76-104,117-117,130-130|47-55,77-104,127-127,139-139|47-57,78-81,85-103,128-128,135-135|47-58,87-103,127-128,134-135|46-59,87-101,127-128,132-135,137-137,140-140|46-60,86-100,128-129,132-134,137-137,142-142|46-64,87-100,129-130,134-134,136-137,141-141,143-146,151-151|46-65,88-99,143-143,145-148,150-150|46-65,88-99,132-133,145-148,154-154|47-65,88-99,138-138,149-150|47-64,88-100,142-144|48-64,88-100,104-104,139-139,141-143,147-147|49-64,88-99,102-104,138-144,146-147|50-63,88-98,102-104,138-148|50-63,88-97,102-103,135-149,157-157|50-61,89-97,102-103,134-150|50-59,89-96,134-151|50-59,89-96,134-151|50-59,90-95,135-151|50-58,91-95,135-140,143-151|50-57,91-91,135-136,145-150|49-56,146-150,161-161|49-55,147-148,162-162|49-53|49-52,149-149,160-160|48-51,158-159|48-51|48-51|48-50,55-55|49-51"};
+const GEO=(DATA.roles&&DATA.roles.geo)||{offices:[],origins:[]};
+function officeRisk(o){const all=GEO.offices,mx=(f)=>Math.max(...all.map(f))||1,f1v=(f)=>f(o)/mx(f);
+  return Math.round(100*(0.3*f1v((x)=>x.incidents/x.staff)+0.25*f1v((x)=>x.risky_signins/x.staff)+0.2*f1v((x)=>x.no_edr/x.staff)+0.15*f1v((x)=>x.overdue)+0.1*f1v((x)=>x.phish_clicks/x.staff)))}
+const tier=(s)=>s>=60?['High',K.red]:s>=35?['Medium',K.gold]:['Low',K.teal];
+function officeDrill(o){const s=officeRisk(o),[t]=tier(s);drill(`${o.city}`,`${o.country} · ${o.kind} · ${f0(o.staff)} staff`,[['Risk score',`${s} (${t})`,t==='High'?'alert':''],['Incidents, 12 weeks',String(o.incidents)],['Per 100 staff',f1(o.incidents/o.staff*100)],['Risky sign-ins, 30 days',String(o.risky_signins)],['Phishing clicks, 30 days',String(o.phish_clicks)],['Devices without EDR',String(o.no_edr),o.no_edr>40?'alert':''],['Overdue findings',String(o.overdue)]],
+  [el('p','note','Risk score weights incidents per head (30%), risky sign-ins per head (25%), devices without EDR per head (20%), overdue findings (15%) and phishing clicks per head (10%), each against the highest site.')],'geo')}
+function worldMap(box,o={}){viz(box,(b,w)=>{const top=80,bot=-58,h=Math.round(w*(top-bot)/360*1.05),px=(lon)=>(lon+180)/360*w,py=(lat)=>(top-lat)/(top-bot)*h;
+  const s=sv('svg',{viewBox:`0 0 ${w} ${h}`,width:w,height:h,role:'img','aria-label':'Map of offices and attack origins'}),dots=sv('g',{fill:'#CBD5E1'});
+  WORLD.rows.split('|').forEach((row,ri)=>{if(!row)return;const lat=WORLD.top-ri*WORLD.step,y=py(lat);row.split(',').forEach((run)=>{const [a,b2]=run.split('-').map(Number);for(let c=a;c<=b2;c++)dots.append(sv('circle',{cx:px(-180+c*WORLD.step).toFixed(1),cy:y.toFixed(1),r:Math.max(1,w/620)}))})});s.append(dots);
+  const offs=GEO.offices,byCity=Object.fromEntries(offs.map((x)=>[x.city,x])),mxA=Math.max(...GEO.origins.map((x)=>x.attempts),1);
+  if(o.arcs!==false)GEO.origins.forEach((g)=>{const t=byCity[g.target];if(!t)return;const x1=px(g.lon),y1=py(g.lat),x2=px(t.lon),y2=py(t.lat),mxp=(x1+x2)/2,myp=Math.min(y1,y2)-Math.abs(x2-x1)*0.22-18;
+    s.append(sv('path',{d:`M${x1},${y1}Q${mxp},${myp} ${x2},${y2}`,fill:'none',stroke:K.gold,'stroke-width':0.8+2.4*g.attempts/mxA,'stroke-opacity':0.55,'stroke-linecap':'round'}))});
+  GEO.origins.forEach((g)=>{const x=px(g.lon),y=py(g.lat),r=3+5*Math.sqrt(g.attempts/mxA),m=sv('g',{});m.append(sv('rect',{x:x-r/2,y:y-r/2,width:r,height:r,fill:K.gold,transform:`rotate(45 ${x} ${y})`}));
+    const t=sv('title',{},`${g.country}: ${f0(g.attempts)} blocked attempts${g.target?' aimed at '+g.target:''}`);m.append(t);hitDrill(m,()=>drill(g.country,'Attack origin, last 30 days',[['Blocked sign-in and web attempts',f0(g.attempts)],['Main target',g.target||'Several']],[el('p','note','From failed and blocked sign-ins (Entra ID via Sentinel) and web attacks blocked at the edge.')],'geo'));s.append(m)});
+  const mxI=Math.max(...offs.map((x)=>x.incidents),1),placed=[];
+  [...offs].sort((a,b2)=>b2.incidents-a.incidents).forEach((x)=>{const cx=px(x.lon),cy=py(x.lat),sc=officeRisk(x),[,col]=tier(sc),r=Math.max(5,(o.big?22:16)*Math.sqrt(x.incidents/mxI)),g=sv('g',{});
+    g.append(sv('circle',{cx,cy,r:r+5,fill:col,'fill-opacity':0.16}),sv('circle',{cx,cy,r,fill:col,'fill-opacity':0.85,stroke:'#fff','stroke-width':1.5}));
+    if(o.labels!==false&&w>520&&!placed.some(([ax,ay])=>Math.abs(ax-cx)<70&&Math.abs(ay-cy)<16)){placed.push([cx,cy]);g.append(sv('text',{x:cx+r+4,y:cy+4,class:'ml'},x.city))}g.append(sv('title',{},`${x.city}: risk ${sc}, ${x.incidents} incidents`));hitDrill(g,()=>officeDrill(x));s.append(g)});
+  b.append(s)})}
+function mapLegend(){const it=(sw,l)=>el('li','',sw,l),c=(col)=>{const i=el('i','lc');i.style.background=col;return i},d=el('i','ld');
+  return el('ul','legend maplg',it(c(K.red),'High-risk site'),it(c(K.gold),'Medium'),it(c(K.teal),'Low'),it(d,'Attack origin (size: attempts)'),it(el('i','la'),'Attack path to a site'))}
+function sitesTable(){const cols=[['city','Site'],['country','Country'],['staff','Staff'],['incidents','Incidents (12 wk)'],['risky_signins','Risky sign-ins'],['phish_clicks','Phishing clicks'],['no_edr','No EDR'],['overdue','Overdue'],['score','Risk score']];
+  const rows=GEO.offices.map((o)=>({...o,score:officeRisk(o)}));let key='score',dir=-1;const tb=el('tbody'),hr=el('tr');
+  const draw=()=>{tb.replaceChildren();[...rows].sort((a,b)=>(a[key]>b[key]?1:a[key]<b[key]?-1:0)*dir).forEach((r)=>{const [t,col]=tier(r.score),tr=el('tr','pick');tr.tabIndex=0;
+      cols.forEach(([k])=>{if(k==='score'){const m=el('span','sq');m.style.background=col;tr.append(el('td','num',m,`${r.score} ${t}`))}else tr.append(el('td',typeof r[k]==='number'?'num':'',typeof r[k]==='number'?f0(r[k]):r[k]))});
+      const go=()=>officeDrill(r);tr.addEventListener('click',go);tr.addEventListener('keydown',(e)=>{if(e.key==='Enter')go()});tb.append(tr)});
+    hr.querySelectorAll('th').forEach((th)=>{th.setAttribute('aria-sort',th.dataset.k===key?(dir>0?'ascending':'descending'):'none')})};
+  cols.forEach(([k,l])=>{const b=el('button','',l);b.type='button';const th=el('th',typeof rows[0][k]==='number'?'num':'',b);th.dataset.k=k;b.addEventListener('click',()=>{if(key===k)dir=-dir;else{key=k;dir=-1}draw()});hr.append(th)});draw();
+  return el('div','scroll',el('table','dtable',el('thead','',hr),tb))}
+
+/* ---------- Executive dashboard ---------- */
+function kcard(label,value,unit,change,good,vals,go,note){const sp=el('div','kspark');if(vals)miniArea(sp,vals,good===false?K.red:K.blue,34);
+  const c=el(go?'button':'div','kcard',el('div','kl',label),el('div','kv',value,unit?el('small','',unit):null),el('div','kc '+(good==null?'':good?'up':'down'),change),note?el('div','kn',note):null,vals?sp:null);if(go){c.type='button';c.addEventListener('click',()=>show(go,true))}return c}
+V.exec=()=>{const ps=postureSeries(),hi=S.sevC.map((v,i)=>v+S.sevH[i]),L2=weeks();
+  const kpis=el('section','krow keep',
+    kcard('Security posture index',String(last(ps)),'/100',`${sgn(last(ps)-prev(ps))} on last week`,last(ps)>=prev(ps),ps,null,'Weighted from 5 measures'),
+    kcard('Incidents this week',String(L.incidents),'',`${sgn(chg(S.inc))} on last week`,chg(S.inc)<=0,S.inc,'detection'),
+    kcard('Mean time to contain',f1(last(S.cont)),'h',`${sgn(chg(S.cont),1)} h on last week`,chg(S.cont)<=0,S.cont,'detection'),
+    kcard('Responses within SLA',String(last(S.rsla)),'%',`Target ${Q.response_target}%`,last(S.rsla)>=Q.response_target,S.rsla,'detection'),
+    kcard('Fixes within SLA',String(last(S.sla)),'%',`Target ${L.sla_target}%`,last(S.sla)>=L.sla_target,S.sla,'remediation'),
+    kcard('Critical and high open',f0(last(S.open)),'',`${sgn(Math.round((last(S.open)/S.open[0]-1)*100))}% in 12 weeks`,last(S.open)<=S.open[0],S.open,'vulnerabilities'));
+  const wkDrill=(i)=>drill(`Week ending ${wk(i)}`,'Threat activity and response',[['Incidents',String(S.inc[i])],['Critical and high',String(hi[i])],['Responded within SLA',`${S.rsla[i]}%`,S.rsla[i]<Q.response_target?'alert':''],['Hours to contain',f1(S.cont[i])]],[],'detection');
+  const combo2=cjPanel(300,{label:'Incidents per week and responses within SLA',data:{labels:L2,datasets:[
+      {type:'bar',label:'Critical and high',data:hi,backgroundColor:K.blue,stack:'i',borderRadius:2,yAxisID:'y'},
+      {type:'bar',label:'Other incidents',data:S.inc.map((v,i)=>v-hi[i]),backgroundColor:K.blue3,stack:'i',borderRadius:2,yAxisID:'y'},
+      {type:'line',label:'Responses within SLA (%)',data:S.rsla,borderColor:K.gold,backgroundColor:K.gold,pointRadius:3,borderWidth:2,tension:0.3,yAxisID:'y1'},
+      {type:'line',label:`SLA target (${Q.response_target}%)`,data:S.rsla.map(()=>Q.response_target),borderColor:K.gold2,borderDash:[5,5],pointRadius:0,borderWidth:1.5,yAxisID:'y1'}]},
+    options:{interaction:{mode:'index',intersect:false},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'Incidents'}},y1:{position:'right',min:60,max:100,grid:{display:false},ticks:{callback:(v)=>v+'%'}}}}},
+    (i)=>wkDrill(i),(b)=>combo(b,S.inc,S.rsla,Q.response_target,{h:270,pmin:60,label:'Incidents and SLA',pick:wkDrill}));
+  const cats=Q.categories,cc=[K.blue,K.gold,K.teal,K.blue3,K.gold2,K.slate];
+  const catDrill=(i)=>drill(cats[i].name,'Incidents this week',[['This week',String(cats[i].now)],['Last week',String(cats[i].previous)],['Share',Math.round(cats[i].now/L.incidents*100)+'%']],[],'detection');
+  const dough=cjPanel(300,{type:'doughnut',label:'Incidents by type this week',data:{labels:cats.map((c)=>c.name),datasets:[{data:cats.map((c)=>c.now),backgroundColor:cc,borderColor:'#fff',borderWidth:2}]},options:{cutout:'62%',plugins:{legend:{position:'right',align:'center'}}}},
+    (i)=>catDrill(i),(b)=>donut(b,cats.map((c)=>({name:c.name,v:c.now})),cc,[L.incidents,'incidents'],(p,i)=>catDrill(i)));
+  const offs=[...GEO.offices].map((o)=>({...o,score:officeRisk(o)})).sort((a,b)=>b.score-a.score);
+  const riskBars=cjPanel(300,{type:'bar',label:'Sites by risk score',data:{labels:offs.map((o)=>o.city),datasets:[{label:'Risk score',data:offs.map((o)=>o.score),backgroundColor:offs.map((o)=>tier(o.score)[1]),borderRadius:2}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100,grid:{color:'#EEF2F7'}},y:{grid:{display:false}}}}},
+    (i)=>officeDrill(offs[i]),(b)=>b.append(rowsBars(offs.map((o)=>[o.city,o.score,String(o.score),tier(o.score)[1]]),100,K.blue)));
+  const mbox=el('div','viz mapbox');worldMap(mbox,{});
+  const exp=cjPanel(260,{type:'bar',label:'Open critical and high findings by week',data:{labels:L2,datasets:[{label:'Critical',data:col('open_critical'),backgroundColor:K.blue,stack:'o'},{label:'High',data:col('open_high'),backgroundColor:K.blue3,stack:'o'}]},options:{scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:12}},y:{stacked:true,beginAtZero:true}}}},
+    (i)=>drill(`Week ending ${wk(i)}`,'Open findings',[['Critical',String(W[i].open_critical)],['High',String(W[i].open_high)],['Found that week',String(W[i].opened)],['Fixed that week',String(W[i].closed)]],[],'vulnerabilities'),
+    (b)=>stacked(b,[{vals:col('open_high'),color:K.blue3},{vals:col('open_critical'),color:K.blue}],{h:230,label:'Open findings',pick:()=>{}}));
+  const tac=Q.attack.map((a)=>a.tactic),rtDet=tac.map((t)=>{const x=OF.tactics.find((q)=>q.tactic===t);return x?Math.round((x.blocked+x.detected)/x.tested*100):0});
+  const tacDrill=(i)=>{const a=Q.attack[i],x=OF.tactics.find((q)=>q.tactic===a.tactic)||{};drill(a.tactic,'Detection coverage',[['Techniques with a rule',a.coverage+'%'],['Caught in testing',rtDet[i]+'%',rtDet[i]<50?'alert':''],['Missed in testing',String(x.missed??'—')]],[],'offsec')};
+  const rad=cjPanel(260,{type:'radar',label:'Detection coverage by attack stage',data:{labels:tac,datasets:[{label:'Rules in place',data:Q.attack.map((a)=>a.coverage),borderColor:K.blue,backgroundColor:'rgba(30,58,138,.15)',pointRadius:2},{label:'Caught in testing',data:rtDet,borderColor:K.gold,backgroundColor:'rgba(183,121,31,.15)',pointRadius:2}]},options:{scales:{r:{min:0,max:100,ticks:{display:false},pointLabels:{font:{size:10.5}}}}}},
+    (i)=>tacDrill(i),(b)=>radar(b,tac,[{vals:Q.attack.map((a)=>a.coverage),color:K.blue,label:'Rules'},{vals:rtDet,color:K.gold,label:'Testing'}],tacDrill));
+  const hbox=el('div','viz');heatmap(hbox,DATA.hot.teams,DATA.hot.scanners,DATA.hot.cells,(i,j)=>drill(`${DATA.hot.teams[i]} · ${DATA.hot.scanners[j]}`,'Overdue critical and high findings',[['Overdue',String(DATA.hot.cells[i][j])],['Team total',String(sum(DATA.hot.cells[i],(v)=>v))]],[],'remediation'));
   const ms=OC.flatMap((o)=>o.measures.map((m)=>({...m,outcome:o.outcome}))).filter((m)=>typeof m.now==='number'&&typeof m.target==='number');
   const units={'Acknowledge an alert':' min','Resolve a P1':' h','Resolve a P2':' h','Median containment':' h','Tier-1 systems monitored':'%','Telemetry coverage':'%','Adherence to SOC service levels':'%','Log ingestion per day':' GB'};ms.forEach((m)=>m.unit=units[m.label]||'');
   const met=ms.filter((m)=>m.better==='higher'?m.now>=m.target:m.now<=m.target).length;
-  const legend2=(items)=>el('ul','legend',...items.map(([l,c])=>{const sw=el('span','sw');sw.style.background=c;return el('li','',sw,l)}));
-  return[band2,
-    el('div','dgrid keep',
-      panel('Threat activity and response','Incidents per week (bars) and share responded to in time (line)',el('div','',legend2([['Incidents',C.navy],['Responded in time',C.teal],['Target',C.gold]]),cbox),'detection','span8'),
-      panel('Incidents by type','This week',el('div','donutbox',dbox,lg),'detection','span4'),
-      panel('Detection coverage','Rules in place against what testing caught, by attack stage',el('div','',legend2([['Rules in place',C.navy],['Caught in testing',C.gold]]),rbox),'offsec','span4'),
-      panel('Where fixes are overdue','Critical and high findings past deadline, team by scanner',hbox,'remediation','span5'),
-      panel('Alert to incident','This week',fbox,'detection','span3'),
-      panel('Exposure over time','Open critical and high findings',el('div','',legend2([['Critical',C.navy],['High',C.sky]]),sbox),'vulnerabilities','span6'),
-      panel(`Phase 2 targets: ${met} of ${ms.length} met`,'Bar: now. Mark: target. Select a row for detail.',bullets(ms),null,'span6'),
-      panel('Needs attention','Worked out from the figures',attention([IX.overlap(),IX.redteam(),IX.exposure(),IX.provider(),IX.siem(),IX.ai()]),null,'span12 dsays')),
+  const hot=offs[0],topO=[...GEO.origins].sort((a,b)=>b.attempts-a.attempts)[0];
+  return[kpis,el('div','dgrid keep',
+      panel('Threat activity and response','Incidents per week by severity, with the share responded to within SLA',combo2,'detection','span8'),
+      panel('Incidents by type','This week',dough,'detection','span4'),
+      panel('Sites and attack origins',`Highest-risk site: ${hot.city} (${hot.score}). Most attempts from ${topO.country} (${f0(topO.attempts)}).`,el('div','',mbox,mapLegend()),'geo','span8'),
+      panel('Sites by risk score','Select a bar for the breakdown',riskBars,'geo','span4'),
+      panel('Open critical and high','By week',exp,'vulnerabilities','span4'),
+      panel('Detection coverage','Rules in place against what testing caught',rad,'offsec','span4'),
+      panel('Overdue fixes','Team by scanner',hbox,'remediation','span4'),
+      panel(`Phase 2 targets: ${met} of ${ms.length} met`,'Bar is now, mark is target',bullets(ms),null,'span6'),
+      panel('Needs attention','Worked out from the figures',attention([IX.overlap(),IX.redteam(),IX.exposure(),IX.provider(),IX.siem(),IX.ai()]),null,'span6 dsays'),
+      panel('Sites','Sortable. Select a row for the breakdown.',sitesTable(),'geo','span12')),
     band('Performance over the period'),(()=>{const p=periodSection();p.classList.add('xtra');return p})(),band('Phase 2 outcomes'),scorecard(),
-    el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks'),el('span','cap','Select one to open it')),(()=>{const rl=el('ul','risks');risks().slice(0,5).forEach(([t,d,lvl,tone,go],i)=>{const b=el('button','risk',el('span','n',String(i+1)),el('span','',el('b','',t),el('span','d',d)),el('span','pill '+tone,lvl));b.type='button';b.addEventListener('click',()=>show(go,true));rl.append(el('li','',b))});return rl})()),
+    el('div','two',el('section','card',el('div','ph',el('h2','h','Top risks')),(()=>{const rl=el('ul','risks');risks().slice(0,5).forEach(([t,d,lvl,tone,go],i)=>{const b=el('button','risk',el('span','n',String(i+1)),el('span','',el('b','',t),el('span','d',d)),el('span','pill '+tone,lvl));b.type='button';b.addEventListener('click',()=>show(go,true));rl.append(el('li','',b))});return rl})()),
       el('section','card',el('div','ph',el('h2','h','Signals')),(()=>{const sl=el('ul','sig-list');[...DATA.notes].filter((r)=>r.confidence==='High').slice(0,4).forEach((r)=>sl.append(signal(r,true)));return sl})()))]};
+
+/* ---------- Locations ---------- */
+V.geo=()=>{const offs=[...GEO.offices].map((o)=>({...o,score:officeRisk(o)})).sort((a,b)=>b.score-a.score),hot=offs.filter((o)=>o.score>=60),mbox=el('div','viz mapbox');worldMap(mbox,{big:true});
+  const orig=[...GEO.origins].sort((a,b)=>b.attempts-a.attempts);
+  const head=vhead('Sites and attack origins',[[`${hot.length} of ${offs.length} sites`],` are high risk (${hot.map((o)=>o.city).join(', ')}). `,[`${f0(sum(orig,(o)=>o.attempts))} attempts`],` were blocked in 30 days, most from ${orig[0].country}.`],hot.length?'bad':'ok',hot.length?'Hot sites':'Normal');
+  return[head,el('div','dgrid keep',panel('Map','Circles: sites, sized by incidents. Diamonds: attack origins.',el('div','',mbox,mapLegend()),null,'span12'),
+    panel('Sites','Sortable',sitesTable(),null,'span8'),
+    panel('Attack origins','Blocked attempts, last 30 days',rank('Countries','Blocked sign-ins and web attacks',['Country','Attempts','Main target'],orig.map((o)=>[[o.country,''],o.attempts,o.target||'—']),{bar:1}),null,'span4')),
+    el('p','note',`Sites come from offices.json in the data folder (name, country, coordinates, staff); their figures are joined from Sentinel and Defender by office tag or IP range. Attack origins come from failed and blocked Entra ID sign-ins in Sentinel${GEO.source==='live'?' (live)':' (sample data until connected)'}.`)]};
 
 /* ---------- Operations: shared filters, live board, threat paths, workflows, reports, commands ---------- */
 const HOSTED=!!window.SECOPS_HOSTED;
@@ -887,7 +956,7 @@ V.reports=()=>{const sched=WF.workflows.find((w)=>w.trigger==='schedule.weekly')
     el('section','card',el('h2','h','Schedule'),el('p','',sched?`${sched.name}: ${sched.schedule||'weekly'}, sent to ${sched.actions.join(', ')}. ${sched.mode==='auto'?'Runs automatically.':'Waits for approval.'}`:'No scheduled report is set up.'),el('p','note','Change the schedule and recipients in ops.json. In Claude, ask for "the board deck for the last 90 days" to get the same deck with a different period.'))]};
 
 /* Command bar and voice. */
-const CMDS=[[/(red team|pen ?test|penetration|attack simulation|purple)/,'offsec'],[/agent/,'agents'],[/(executive|exec|board|summary)/,'exec'],[/(live|control|flight|board view|now)/,'live'],[/(operations overview|overview)/,'overview'],[/(soc|incident|detection)/,'detection'],
+const CMDS=[[/(map|site|office|countr|location|origin)/,'geo'],[/(red team|pen ?test|penetration|attack simulation|purple)/,'offsec'],[/agent/,'agents'],[/(executive|exec|board|summary)/,'exec'],[/(live|control|flight|board view|now)/,'live'],[/(operations overview|overview)/,'overview'],[/(soc|incident|detection)/,'detection'],
   [/(vuln)/,'vulnerabilities'],[/(remediat|fix)/,'remediation'],[/(email|phish)/,'email'],[/(user|app|dlp|data loss)/,'people'],[/(control area|coverage|blind)/,'controls'],
   [/(threat|path|near miss|kill chain)/,'threats'],[/cloud/,'cloud'],[/(devsecops|code|pipeline)/,'devsecops'],[/sap/,'sap'],[/signal/,'signals'],[/(workflow|approval|ticket|automation)/,'workflows'],[/(report|deck|slides)/,'reports'],[/(build|security setup)/,'build']];
 function speak(t){try{if('speechSynthesis' in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}}catch(e){}}
@@ -929,7 +998,7 @@ const NAV=[['exec','Executive view','M3 20h18M6 16V9m6 7V5m6 11v-4'],['socdir','
 const nav=$('#nav'),main=$('#main'),built={};
 NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['threats','Threat paths','M4 18c3-8 6-8 8-4s5 4 8-4M4 18h.01M20 10h.01'],...DOMS.map((d)=>[d.id,d.nav||d.title,d.icon]));
 NAV.splice(NAV.findIndex((n)=>n[0]==='overview'),0,['infra','Infrastructure','M4 5h16v5H4zM4 14h16v5H4zM8 7.500h.01M8 16.500h.01'],['eng','Engineering','m8 8-4 4 4 4m8-8 4 4-4 4M14 5l-4 14']);
-NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['offsec','Red team and testing','M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z'],['agents','Agents','M8 4h8v5H8zM5 9h14v11H5zM9 14h.01M15 14h.01M12 4V2'],['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
+NAV.splice(NAV.findIndex((n)=>n[0]==='signals'),0,['geo','Sites and attack origins','M12 21s-6-5.5-6-11a6 6 0 1 1 12 0c0 5.5-6 11-6 11Zm0-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z'],['offsec','Red team and testing','M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z'],['agents','Agents','M8 4h8v5H8zM5 9h14v11H5zM9 14h.01M15 14h.01M12 4V2'],['ai','AI use','M9 4h6v4H9zM5 10h14v10H5zM9 14h.01M15 14h.01M10 17h4']);
 NAV.splice(NAV.findIndex((n)=>n[0]==='build'),0,['workflows','Workflows','M5 6h6v4H5zM13 14h6v4h-6zM8 10v4h8'],['reports','Reports','M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6']);
 /* Sidebar: three short groups. "Areas" folds away and opens by itself when one of its pages is shown. */
 const GROUPS=[['Views',['exec','socdir','live','infra','eng'],false],['Areas',null,true],['Operations',['agents','offsec','threats','signals','workflows','reports','build'],false]];

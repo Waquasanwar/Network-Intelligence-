@@ -18,6 +18,14 @@ from .sources.base import NotConfigured
 
 log = logging.getLogger("secops-mcp.personas")
 
+GEO_KQL = """
+SigninLogs
+| where TimeGenerated > ago(30d) and ResultType != "0"
+| extend country = tostring(LocationDetails.countryOrRegion), lat = toreal(LocationDetails.geoCoordinates.latitude), lon = toreal(LocationDetails.geoCoordinates.longitude)
+| where isnotempty(country)
+| summarize attempts = count(), lat = avg(lat), lon = avg(lon) by country
+| top 12 by attempts
+"""
 MSSP_KQL = """
 let provider = "{provider}";
 SecurityIncident
@@ -127,11 +135,44 @@ def _sample() -> dict:
          "last_run": "This morning", "checked": 481, "found": "6 high-severity incidents closed late; 5 escalations with no action needed", "proposed": 1, "mode": "Reports only"},
         {"agent": "Reporting agent", "does": "Writes the weekly brief and the board pack from the figures and sends them for approval.",
          "last_run": "Monday 07:00", "checked": 48, "found": "Weekly brief drafted; board pack due 1 Dec", "proposed": 1, "mode": "Asks before sending"}]}
-    return {"mssp": mssp, "siem": siem, "ai": ai, "infra": infra, "eng": eng, "offsec": offsec, "agents": agents}
+    offices = [("London", "United Kingdom", 51.51, -0.13, 1850, 41, 22, 9, 31, 48, "Headquarters"),
+               ("Dubai", "United Arab Emirates", 25.20, 55.27, 2400, 58, 37, 14, 64, 71, "Regional hub"),
+               ("Riyadh", "Saudi Arabia", 24.71, 46.68, 1300, 33, 19, 11, 52, 39, "Office and stores"),
+               ("Paris", "France", 48.86, 2.35, 620, 12, 6, 3, 9, 14, "Office"),
+               ("New York", "United States", 40.71, -74.01, 410, 9, 11, 2, 6, 12, "Office"),
+               ("Singapore", "Singapore", 1.35, 103.82, 380, 14, 8, 4, 22, 17, "Office"),
+               ("Mumbai", "India", 19.08, 72.88, 760, 27, 15, 8, 71, 46, "Shared service centre"),
+               ("Cairo", "Egypt", 30.04, 31.24, 540, 19, 9, 7, 38, 25, "Office and stores")]
+    origins = [("Russia", 61.5, 105.3, 4120, "Dubai"), ("China", 35.9, 104.2, 3380, "Singapore"), ("Nigeria", 9.1, 8.7, 1640, "London"),
+               ("Brazil", -14.2, -51.9, 1190, "New York"), ("Vietnam", 14.1, 108.3, 980, "Mumbai"), ("Iran", 32.4, 53.7, 870, "Riyadh"),
+               ("Netherlands (hosting)", 52.1, 5.3, 2260, "London"), ("United States (cloud hosting)", 39.0, -77.5, 1530, "Dubai")]
+    geo = {"source": "sample",
+           "offices": [{"city": c, "country": k, "lat": la, "lon": lo, "staff": st, "incidents": inc, "risky_signins": rs, "phish_clicks": pc,
+                        "no_edr": ne, "overdue": od, "kind": kd} for c, k, la, lo, st, inc, rs, pc, ne, od, kd in offices],
+           "origins": [{"country": c, "lat": la, "lon": lo, "attempts": n, "target": t} for c, la, lo, n, t in origins]}
+    return {"mssp": mssp, "siem": siem, "ai": ai, "infra": infra, "eng": eng, "offsec": offsec, "agents": agents, "geo": geo}
+
+
+def _offices_file(out: dict) -> None:
+    """Your own sites: offices.json in the data folder, a list of {city, country, lat, lon, staff, kind} plus any figures you have."""
+    from pathlib import Path
+    import json
+
+    path = Path(os.environ.get("SECOPS_DATA_DIR", Path(__file__).parent.parent / "data")) / "offices.json"
+    if not path.exists():
+        return
+    try:
+        rows = json.loads(path.read_text())
+        keys = ("incidents", "risky_signins", "phish_clicks", "no_edr", "overdue")
+        out["geo"]["offices"] = [{**{k: 0 for k in keys}, "kind": "Office", **r} for r in rows if {"city", "lat", "lon", "staff"} <= set(r)]
+        out["geo"]["source"] = "export"
+    except (OSError, ValueError) as exc:
+        log.warning("offices.json not read: %s", exc)
 
 
 def build(live: bool) -> dict:
     out = _sample()
+    _offices_file(out)
     if not live:
         return out
     try:
@@ -159,4 +200,10 @@ def build(live: bool) -> dict:
                                by_source=[{"source": k, "gb_per_day": round(v / days, 1), "detection_value": ""} for k, v in sorted(by_src.items(), key=lambda x: -x[1])[:12]])
     except Exception as exc:  # noqa: BLE001
         log.warning("usage query failed: %s", exc)
+    try:
+        rows = sentinel.query(GEO_KQL)
+        if rows and {"country", "attempts", "lat", "lon"} <= set(rows[0]):
+            out["geo"].update(source="live", origins=[{"country": r["country"], "lat": r["lat"], "lon": r["lon"], "attempts": r["attempts"], "target": ""} for r in rows])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("sign-in location query failed: %s", exc)
     return out
