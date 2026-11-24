@@ -60,7 +60,7 @@ export function AgentComposer({ suggestions }: { suggestions: string[] }) {
   return (
     <div className="relative">
       <form onSubmit={(e) => { e.preventDefault(); ask(value); }} className="composer flex items-center gap-3 p-2 pl-4">
-        <AgentMark size={18} busy={phase === "thinking"} />
+        <AgentMark size={26} />
         <input
           ref={inputRef} id="agent-ask" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Ask your network"
           placeholder={suggestions.length ? `Who do you need? Try “${suggestions[hint % suggestions.length]}”` : "Who do you need?"}

@@ -92,7 +92,7 @@ export function Guide({ intro, steps, action, href, hidden = {}, compose, submit
   return (
     <div className={cn("guide", className)} data-guide>
       <div className="guide-head">
-        <span className="guide-orb" aria-hidden="true"><AgentMark size={15} busy={!done} /></span>
+        <span className="guide-orb" aria-hidden="true"><AgentMark size={24} /></span>
         <span className="min-w-0 flex-1 text-[13px] text-ink-muted">{intro}</span>
         <span className="flex-none text-[12px] tabular text-ink-faint" aria-hidden="true">{done ? "Ready" : `${at + 1} of ${live.length}`}</span>
       </div>

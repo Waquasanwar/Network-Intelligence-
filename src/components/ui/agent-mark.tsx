@@ -1,16 +1,15 @@
+import { BrandMark } from "./brand-mark";
+
 /**
- * The agent's mark: you, and two people you know, with the lines between you. It is the network
- * in its smallest form. It pulses only while the agent is working.
+ * Amana's mark wherever Amana speaks or asks: the Amana logo in white on an indigo tile with
+ * softened corners. One shape and one colour everywhere, so it reads as the brand, not as a
+ * generic assistant. `size` is the tile's width in pixels; `busy` is kept for callers but the
+ * mark is always still.
  */
-export function AgentMark({ size = 20, busy = false, className = "" }: { size?: number; busy?: boolean; className?: string }) {
+export function AgentMark({ size = 24, className = "" }: { size?: number; busy?: boolean; className?: string }) {
   return (
-    <svg viewBox="0 0 20 20" width={size} height={size} className={`agent-mark ${className}`} data-busy={busy || undefined} aria-hidden="true">
-      <line x1="5" y1="14.5" x2="10" y2="5" />
-      <line x1="10" y1="5" x2="15" y2="14.5" />
-      <line x1="5" y1="14.5" x2="15" y2="14.5" />
-      <circle className="is-you" cx="5" cy="14.5" r="2.6" />
-      <circle cx="10" cy="5" r="2.6" />
-      <circle cx="15" cy="14.5" r="2.6" />
-    </svg>
+    <span className={`agent-mark ${className}`} style={{ width: size, height: size, borderRadius: Math.round(size * 0.3) }} aria-hidden="true">
+      <BrandMark className="agent-mark-logo" />
+    </span>
   );
 }

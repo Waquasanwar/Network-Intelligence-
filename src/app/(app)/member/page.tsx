@@ -325,7 +325,7 @@ export default async function MemberPage({ searchParams }: { searchParams: Promi
                 <ul className="mt-3 space-y-2.5">
                   {notes.map((n) => (
                     <li key={n.id} className={`note-card ${n.question && !n.answer ? "is-ask" : ""}`} data-note={n.kind}>
-                      <span className="guide-orb flex-none" aria-hidden="true"><AgentMark size={14} busy={n.question && !n.answer} /></span>
+                      <span className="guide-orb flex-none" aria-hidden="true"><AgentMark size={24} /></span>
                       <div className="min-w-0 flex-1">
                         <p className="text-[14px] font-semibold leading-snug text-ink">{n.title}</p>
                         {n.body ? <p className="mt-1 text-[13px] leading-[1.5] text-ink-muted">{n.body}</p> : null}

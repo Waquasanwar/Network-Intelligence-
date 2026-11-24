@@ -38,7 +38,7 @@ export function CoreBar({ role, internal, released }: { role: string; internal: 
       <i.icon className="h-[20px] w-[20px]" aria-hidden="true" strokeWidth={on(i.href) ? 2.2 : 1.8} /><span>{i.label}</span>
     </Link>
   );
-  const coreInner = <><span className="core-orb" aria-hidden="true"><AgentMark size={22} /></span><span className="core-label">{core.label}</span></>;
+  const coreInner = <><span className="core-orb" aria-hidden="true"><AgentMark size={50} /></span><span className="core-label">{core.label}</span></>;
   return (
     <nav className="core-bar lg:hidden" aria-label="Main" data-core-bar>
       <div className="core-row">

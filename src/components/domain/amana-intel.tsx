@@ -24,7 +24,7 @@ export function AmanaIntelligence({ intel, asked }: { intel: Intel; asked?: numb
       <div className="stage-ink rounded-[24px] px-5 py-6 sm:px-8 sm:py-7">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="min-w-0">
-            <h2 id="amana-intel" className="flex items-center gap-2.5 font-display text-[20px] font-semibold text-white"><span className="pulse-orb"><AgentMark size={16} busy /></span>On the bench now</h2>
+            <h2 id="amana-intel" className="flex items-center gap-2.5 font-display text-[20px] font-semibold text-white"><span className="pulse-orb"><AgentMark size={28} /></span>On the bench now</h2>
             {asked !== undefined ? <p className="mt-3 text-[13px] text-[#6ee7c5]">{asked ? `Asked ${asked} ${asked === 1 ? "member" : "members"} to confirm. Their answers update the bench.` : "Everyone who could be asked has been asked this month."}</p> : null}
             <ul className="mt-4 space-y-2.5" data-insights>
               {insights.length ? insights.map((i) => (

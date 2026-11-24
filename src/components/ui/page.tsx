@@ -2,18 +2,15 @@ import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
-import { Constellation } from "@/components/ui/constellation";
 
 /**
- * Every page opens on the same ink stage as home: the title, Amana's one suggestion for this page,
- * and the figures that matter, in one band instead of three stacked boxes. Still, never animated.
+ * Every page opens on one light band: the title, Amana's one suggestion for this page, and the
+ * figures that matter, instead of three stacked boxes.
  * Anything passed as children (a NextStep, a StatStrip) sits inside the band.
  */
 export function PageHeader({ title, description, actions, children }: { title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode; eyebrow?: React.ReactNode; children?: React.ReactNode }) {
   return (
-    <section className="page-stage stage-ink mb-6" data-page-stage>
-      <Constellation focus={0.82} density={0.55} />
-      <span className="page-stage-veil" aria-hidden="true" />
+    <section className="page-stage mb-6" data-page-stage>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="min-w-0">
           <h1 className="page-stage-title">{title}</h1>

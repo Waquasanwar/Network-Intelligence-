@@ -76,7 +76,7 @@ export function Sidebar({ user, released = { home: true, connections: true, refe
         ) : (
           // Ask from anywhere: one fixed place in the rail, with a question that suits the section.
           <button type="button" onClick={() => openSearch(askFor(pathname))} className="ask-rail" aria-label={`Ask Amana. For example: ${askFor(pathname)}`} data-ask-rail>
-            <span className="ask-rail-orb" aria-hidden="true"><AgentMark size={14} /></span>
+            <span className="ask-rail-orb" aria-hidden="true"><AgentMark size={28} /></span>
             <span className="min-w-0 flex-1 text-left"><span className="block text-[13.5px] font-semibold text-ink">Ask Amana</span><span className="block truncate text-[12px] text-ink-faint">{askFor(pathname)}</span></span>
             <kbd className="!rounded-full !px-2 !py-1">⌘K</kbd>
           </button>

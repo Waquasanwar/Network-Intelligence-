@@ -23,7 +23,7 @@ export function AgentPulse({ lines, onInk = false, className }: { lines: PulseLi
   );
   return (
     <div className={cn("pulse", onInk && "is-ink", className)} data-agent-pulse>
-      <span className="pulse-orb" aria-hidden="true"><AgentMark size={16} busy /></span>
+      <span className="pulse-orb" aria-hidden="true"><AgentMark size={28} /></span>
       <span className="sr-only">Amana: </span>
       <span className="min-w-0 flex-1">
         {line.href ? <Link href={line.href} className="pulse-line">{body}</Link> : <span className="pulse-line">{body}</span>}

@@ -558,10 +558,6 @@ a.figure:hover { opacity: 0.72; }
 .chip[aria-pressed="true"] { background: var(--color-ink); border-color: var(--color-ink); color: var(--color-canvas); }
 
 /* The agent's mark: three people and the lines between them. It pulses only while it works. */
-.agent-mark { flex: none; color: var(--color-ink); }
-.agent-mark line { stroke: currentColor; stroke-width: 1.3; opacity: 0.3; }
-.agent-mark circle { fill: currentColor; transform-box: fill-box; transform-origin: center; }
-.agent-mark circle.is-you { fill: var(--color-teal-400); }
 @keyframes mark-pulse { 0%, 100% { opacity: 1; scale: 1; } 50% { opacity: 0.3; scale: 0.6; } }
 @media (prefers-reduced-motion: no-preference) {
   .agent-mark[data-busy] circle { animation: mark-pulse 1.1s ease-in-out infinite; }
@@ -757,8 +753,6 @@ a.swarm-more:focus-visible { outline: 2px solid #7ee3bc; outline-offset: 3px; }
 .pulse.is-ink { border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.07); color: #ffffff; backdrop-filter: blur(8px); }
 .pulse-orb { position: relative; display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 999px; background: color-mix(in srgb, var(--color-teal-400) 16%, transparent); }
 .pulse.is-ink .pulse-orb { background: rgba(110, 231, 183, 0.16); box-shadow: inset 0 0 0 1px rgba(110, 231, 183, 0.28); }
-.pulse.is-ink .pulse-orb .agent-mark { color: #ffffff; }
-.pulse.is-ink .pulse-orb .agent-mark line { opacity: 0.55; }
 .pulse-orb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid var(--color-teal-400); opacity: 0; }
 .pulse-line { display: flex; align-items: center; gap: 6px; min-width: 0; color: inherit; }
 .pulse-text { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -1171,36 +1165,9 @@ a.rail-row:hover { background: var(--color-surface-muted); }
    One band per page: title, Amana's one suggestion, and the figures that matter. The same navy and
    still constellation as home, so every screen reads as one product. Numerals are light and large,
    like an instrument, not bold like a spreadsheet. */
-.page-stage { border-radius: 28px; padding: 30px 32px 24px; margin-top: 2px; box-shadow: 0 30px 60px -40px rgba(7, 18, 43, 0.55); }
-.page-stage > canvas { opacity: 0.85; }
-.page-stage-veil { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(100deg, rgba(7, 12, 44, 0.78) 0%, rgba(7, 12, 44, 0.45) 45%, rgba(7, 12, 44, 0) 100%); }
-.page-stage-title { font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.06; letter-spacing: -0.022em; color: #ffffff; text-wrap: balance; }
-.page-stage-lede { margin-top: 10px; max-width: 64ch; font-size: 14.5px; line-height: 1.55; color: #c3cde2; }
-.page-stage-body { margin-top: 22px; }
-@media (min-width: 640px) { .page-stage-title { font-size: 36px; } }
-@media (max-width: 639.98px) { .page-stage { border-radius: 22px; padding: 22px 18px 18px; margin-inline: -4px; } }
 /* Actions on the stage: the primary is mint, the rest are glass. */
-.page-stage .btn-navy { background: var(--color-accent) !important; color: #0c1b33 !important; box-shadow: 0 10px 24px -12px rgba(126, 227, 188, 0.55); }
-.page-stage .btn-navy:hover { background: #95ecca !important; }
-.page-stage-actions .bg-surface { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.18); color: #ffffff; box-shadow: none; }
-.page-stage-actions .bg-surface:hover { border-color: rgba(255, 255, 255, 0.42); }
 /* Amana's suggestion, as glass on the stage. */
-.page-stage .next-step { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); box-shadow: none; }
-.page-stage .next-step p { color: #e8eefa; }
-.page-stage .next-step a { background: var(--color-accent); color: #0c1b33; }
-.page-stage .next-step .ai-orb { background: var(--color-accent); box-shadow: 0 0 0 4px rgba(126, 227, 188, 0.18); }
 /* Figures on the stage. */
-.page-stage .figures { margin-bottom: 0; border-color: rgba(255, 255, 255, 0.12); }
-.page-stage .figure + .figure { border-color: rgba(255, 255, 255, 0.12); }
-.page-stage .figure .text-ink-muted { color: #c3cde2; }
-.page-stage .figure .text-ink-faint { color: #8f9cbb; }
-.page-stage .figure .font-display { font-weight: 300; letter-spacing: -0.03em; font-size: 40px; color: #ffffff; -webkit-text-fill-color: currentColor; background: none; }
-.page-stage .figure .font-display.text-teal { color: var(--color-accent); }
-.page-stage .figure .font-display.text-amber { color: #f3c969; }
-.page-stage .figure[href]:hover .font-display { color: var(--color-accent); }
-@media (max-width: 639.98px) { .page-stage .figure .font-display { font-size: 32px; } }
-.page-stage .figures.is-five .figure .font-display { font-size: 34px; }
-.page-stage .text-ink, .page-stage .text-ink-muted { color: #c3cde2; }
 
 /* ---------- Navigation: the active place is a small piece of the stage ---------- */
 .nav-active { background: linear-gradient(135deg, #2a3b9c 0%, #142063 100%) !important; color: #ffffff !important; box-shadow: 0 12px 24px -14px rgba(30, 44, 140, 0.75) !important; }
@@ -1208,22 +1175,8 @@ a.rail-row:hover { background: var(--color-surface-muted); }
 .nav-active::before { display: none !important; }
 [data-theme="dark"] .nav-active { background: linear-gradient(135deg, #3445b0 0%, #1b2878 100%) !important; }
 /* Long values (two currencies, say) stay on one line at a smaller size. */
-.page-stage .figure .font-display:not(.whitespace-nowrap) { font-size: 28px; white-space: nowrap; }
-.page-stage .figures { border-bottom: 0; }
 /* A segmented switch on the stage. */
-.page-stage-actions .segmented { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); }
-.page-stage-actions .segmented a { color: #c3cde2; }
-.page-stage-actions .segmented a.bg-surface { background: #ffffff; color: #0c1b33; border: 0; }
 /* On a phone the stage stays compact so the page's own content starts on the first screen. */
-@media (max-width: 639.98px) {
-  .page-stage-lede { font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .page-stage-body { margin-top: 16px; }
-  .page-stage .figure { padding-block: 12px; }
-  .page-stage .figure > span:last-child:not(:nth-child(2)) { display: none; }
-  .page-stage .figure .font-display { font-size: 28px; margin-top: 4px; }
-  .page-stage .figure .font-display:not(.whitespace-nowrap) { font-size: 20px; }
-  .page-stage .next-step { border-radius: 18px; }
-}
 /* Ask Amana, in one fixed place in the rail rather than floating over the page. */
 .ask-rail { display: flex; width: 100%; align-items: center; gap: 10px; padding: 9px 8px 9px 10px; border-radius: 14px; border: 1px solid var(--color-line); background: var(--color-surface); cursor: pointer; transition: border-color 160ms ease, box-shadow 160ms ease; }
 .ask-rail:hover { border-color: var(--color-line-strong); box-shadow: 0 8px 20px -14px rgba(12, 27, 51, 0.35); }
@@ -1235,7 +1188,6 @@ a.rail-row:hover { background: var(--color-surface-muted); }
    mint is Amana; champagne is kept for one hairline of polish on each stage. */
 html { background: radial-gradient(1200px 700px at 92% -10%, #cfd8fb 0%, rgba(207, 216, 251, 0) 64%), radial-gradient(1000px 620px at -10% 110%, #d6f1e6 0%, rgba(214, 241, 230, 0) 60%), linear-gradient(180deg, #edf0fc 0%, #e6eafa 100%); background-attachment: fixed; }
 :root[data-theme="dark"] { background: radial-gradient(1100px 620px at 88% -8%, rgba(60, 78, 190, 0.28) 0%, rgba(60, 78, 190, 0) 62%), radial-gradient(900px 560px at -8% 108%, rgba(126, 227, 188, 0.07) 0%, rgba(126, 227, 188, 0) 58%), var(--color-canvas); background-attachment: fixed; }
-.page-stage::after { content: ""; position: absolute; inset: 0 28px auto; height: 1px; pointer-events: none; background: linear-gradient(90deg, rgba(126, 227, 188, 0) 0%, rgba(126, 227, 188, 0.7) 30%, rgba(214, 186, 120, 0.7) 70%, rgba(214, 186, 120, 0) 100%); }
 /* Primary actions are indigo, in light and dark alike. */
 .btn-navy { background: linear-gradient(180deg, #2c3d9f 0%, #1a2775 100%) !important; color: #ffffff !important; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 22px -12px rgba(30, 44, 140, 0.6); }
 .btn-navy:hover { background: linear-gradient(180deg, #3446ad 0%, #1f2d84 100%) !important; }
@@ -1249,3 +1201,54 @@ aside.rail { background: linear-gradient(180deg, #f9faff 0%, #eff2fd 100%); bord
 .widget { border-color: var(--color-line); }
 /* The top bar lets the indigo ground show through instead of laying a flat strip over it. */
 header.glass { background: color-mix(in srgb, var(--color-canvas) 55%, transparent); backdrop-filter: saturate(160%) blur(16px); }
+
+/* ---------- The page header band: light, indigo, consistent ----------
+   Each page opens on one light band: the title, Amana's one suggestion and the figures that
+   matter, on a white-to-indigo wash with a single indigo-to-mint hairline along the top. Home
+   keeps the dark stage as the one dramatic moment; every other page stays light. */
+.page-stage { position: relative; isolation: isolate; overflow: hidden; border-radius: 24px; padding: 28px 30px 22px; margin-top: 2px; background: linear-gradient(125deg, #ffffff 0%, #f6f7ff 48%, #e8ecff 100%); border: 1px solid var(--color-line); box-shadow: 0 1px 2px rgba(30, 42, 120, 0.04), 0 18px 40px -28px rgba(30, 42, 120, 0.35); }
+.page-stage::after { content: ""; position: absolute; inset: 0 28px auto; height: 2px; border-radius: 2px; pointer-events: none; background: linear-gradient(90deg, rgba(44, 61, 159, 0) 0%, #2c3d9f 25%, #6fd8b2 75%, rgba(111, 216, 178, 0) 100%); opacity: 0.8; }
+:root[data-theme="dark"] .page-stage { background: linear-gradient(125deg, #121a3a 0%, #0f1633 55%, #141d45 100%); }
+.page-stage-title { font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.06; letter-spacing: -0.022em; color: var(--color-ink); text-wrap: balance; }
+.page-stage-lede { margin-top: 9px; max-width: 64ch; font-size: 14.5px; line-height: 1.55; color: var(--color-ink-muted); }
+.page-stage-body { margin-top: 20px; }
+@media (min-width: 640px) { .page-stage-title { font-size: 34px; } }
+.page-stage .next-step { background: rgba(255, 255, 255, 0.75); }
+:root[data-theme="dark"] .page-stage .next-step { background: rgba(255, 255, 255, 0.04); }
+.page-stage .next-step a { background: linear-gradient(180deg, #2c3d9f, #1a2775); color: #ffffff; }
+.page-stage .figures { margin-bottom: 0; border-bottom: 0; }
+.page-stage .figure .font-display { font-weight: 300; letter-spacing: -0.03em; font-size: 40px; color: #24348f; -webkit-text-fill-color: currentColor; background: none; }
+:root[data-theme="dark"] .page-stage .figure .font-display { color: #b9c4ff; }
+.page-stage .figure .font-display.text-teal { color: var(--color-teal); }
+.page-stage .figure .font-display.text-amber { color: var(--color-amber); }
+.page-stage .figure[href]:hover .font-display { color: var(--color-ink); }
+.page-stage .figure .font-display:not(.whitespace-nowrap) { font-size: 28px; white-space: nowrap; }
+.page-stage .figures.is-five .figure .font-display { font-size: 34px; }
+@media (max-width: 639.98px) {
+  .page-stage { border-radius: 20px; padding: 20px 18px 16px; margin-inline: -4px; }
+  .page-stage-lede { font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .page-stage-body { margin-top: 14px; }
+  .page-stage .figure { padding-block: 12px; }
+  .page-stage .figure > span:last-child:not(:nth-child(2)) { display: none; }
+  .page-stage .figure .font-display { font-size: 28px; margin-top: 4px; }
+  .page-stage .figure .font-display:not(.whitespace-nowrap) { font-size: 20px; }
+  .page-stage .next-step { border-radius: 18px; }
+}
+
+/* ---------- Amana's mark: one tile, everywhere ----------
+   The logo in white on an indigo tile with softened corners. The containers that used to draw
+   mint glowing circles around it now just hold it, so the mark looks the same in every place. */
+.agent-mark { display: inline-grid; place-items: center; flex: none; color: #ffffff; background: linear-gradient(150deg, #3546ad 0%, #1a2775 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 4px 12px -6px rgba(30, 44, 140, 0.55); }
+.agent-mark-logo { width: 60%; height: auto; display: block; }
+.stage-ink .agent-mark { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.16); }
+:is(.pulse-orb, .guide-orb, .door-mark, .ask-rail-orb, .core-orb, .not-open-core) { width: auto !important; height: auto !important; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+:is(.pulse-orb, .guide-orb)::after { display: none !important; }
+.core-orb .agent-mark { box-shadow: 0 0 0 5px var(--color-surface), 0 12px 26px -10px rgba(30, 44, 140, 0.55); }
+.not-open-core .agent-mark { box-shadow: 0 0 0 8px color-mix(in srgb, #3546ad 10%, transparent), 0 18px 34px -16px rgba(30, 44, 140, 0.55); }
+/* On a phone, Amana's mark stays beside its suggestion and the action sits under the words. */
+@media (max-width: 639.98px) {
+  .next-step { display: grid !important; grid-template-columns: auto minmax(0, 1fr); align-items: start; column-gap: 10px; row-gap: 8px; }
+  .next-step > .agent-mark { grid-row: 1 / span 2; }
+  .next-step > p { grid-column: 2; }
+  .next-step > a { grid-column: 2; justify-self: start; }
+}

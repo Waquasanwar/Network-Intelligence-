@@ -96,7 +96,7 @@ export function FrontDoor({ sendNeed, applyToJoin, initialMode = "need", sent, e
   if (sent) {
     return (
       <div className="door mx-auto mt-10 w-full max-w-[640px] text-left" role="status" data-door-sent={sent}>
-        <div className="door-line"><span className="door-mark"><AgentMark size={16} /></span>
+        <div className="door-line"><span className="door-mark"><AgentMark size={28} /></span>
           <div><b className="block text-[16px] text-ink">{sent === "need" ? "Thank you. We have it." : "Thank you. Your application is with us."}</b>
             <p className="mt-1 text-[14.5px] leading-[1.55] text-ink-muted">{sent === "need" ? "A person will read it and come back to you by email, usually with a question or two before any names are discussed." : "A person reads every application. If it is a fit you will get a personal invitation by email, with a link to create your login."}</p></div>
         </div>
@@ -113,8 +113,8 @@ export function FrontDoor({ sendNeed, applyToJoin, initialMode = "need", sent, e
         <ol className="door-thread" aria-live="polite" aria-label={`Conversation with ${networkName}`}>
           {said.map((s, i) => s.who === "you"
             ? <li key={i} className="door-you">{s.text}</li>
-            : <li key={i} className="door-line"><span className="door-mark"><AgentMark size={16} /></span><div><p>{s.text}</p>{s.chips?.length ? <div className="mt-2 flex flex-wrap gap-1.5">{s.chips.map((c) => <span key={c} className="door-chip">{c}</span>)}</div> : null}</div></li>)}
-          {step !== "ask" ? <li className="door-line"><span className="door-mark"><AgentMark size={16} /></span><p data-door-question>{question[step]}</p></li> : null}
+            : <li key={i} className="door-line"><span className="door-mark"><AgentMark size={28} /></span><div><p>{s.text}</p>{s.chips?.length ? <div className="mt-2 flex flex-wrap gap-1.5">{s.chips.map((c) => <span key={c} className="door-chip">{c}</span>)}</div> : null}</div></li>)}
+          {step !== "ask" ? <li className="door-line"><span className="door-mark"><AgentMark size={28} /></span><p data-door-question>{question[step]}</p></li> : null}
         </ol>
       ) : null}
 
@@ -139,7 +139,7 @@ export function FrontDoor({ sendNeed, applyToJoin, initialMode = "need", sent, e
         <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="composer p-2.5">
           {step === "ask" ? (
             <div className="flex items-start gap-3 px-2.5 pt-2">
-              <span className="mt-[3px]"><AgentMark size={18} /></span>
+              <span className="mt-[3px]"><AgentMark size={24} /></span>
               <label htmlFor="front-ask" className="sr-only">{mode === "need" ? "Who do you need?" : "What do you do?"}</label>
               <textarea ref={box} id="front-ask" rows={1} value={draft} placeholder={PLACEHOLDER[mode]}
                 onChange={(e) => { setDraft(e.target.value); grow(e.target); }}

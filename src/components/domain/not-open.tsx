@@ -9,7 +9,7 @@ import { AgentMark } from "@/components/ui/agent-mark";
 export function NotOpen({ title = "Your space is being prepared", body, privacyHref, member = false }: { title?: string; body?: string; privacyHref?: string; member?: boolean }) {
   return (
     <section className="not-open" data-not-open>
-      <span className="not-open-core" aria-hidden="true"><AgentMark size={22} /></span>
+      <span className="not-open-core" aria-hidden="true"><AgentMark size={56} /></span>
       <h1 className="mt-5 font-display text-[26px] font-semibold leading-tight tracking-[-0.015em] text-ink sm:text-[30px]">{title}</h1>
       <p className="mt-2.5 max-w-[46ch] text-[15px] leading-[1.6] text-ink-muted">{body ?? "Amana Network opens in stages. This part is not open yet. We will let you know as soon as it is, and nothing you have shared is used until then."}</p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
